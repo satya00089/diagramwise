@@ -26,24 +26,32 @@ export interface GroupNodeData {
 interface GroupNodeProps {
   id: string;
   data: GroupNodeData;
+  disableProviderSprites?: boolean;
 }
 
-const GroupNode: React.FC<GroupNodeProps> = ({ id, data }) => {
+const GroupNode: React.FC<GroupNodeProps> = ({
+  id,
+  data,
+  disableProviderSprites = false,
+}) => {
   const dispatch = useAppDispatch();
   const bgColor = data.backgroundColor || "rgba(100, 100, 255, 0.05)";
   const borderColor = data.borderColor || "rgba(100, 100, 255, 0.3)";
   const spriteIcons = useAppSelector((state) => state.sprites.allIcons);
-  const sprite = data.componentId ? spriteIcons[data.componentId] : undefined;
+  const sprite =
+    !disableProviderSprites && data.componentId
+      ? spriteIcons[data.componentId]
+      : undefined;
   const useDirectIcon =
     shouldUseDirectIcon(data.componentId) && Boolean(data.iconUrl);
 
   // condition in the thunk deduplicates — safe to dispatch every mount.
   React.useEffect(() => {
-    if (!data.componentId) return;
+    if (disableProviderSprites || !data.componentId) return;
     const provider = providerFromId(data.componentId);
     if (!provider) return;
     dispatch(loadSpriteManifest(provider));
-  }, [data.componentId, dispatch]);
+  }, [data.componentId, disableProviderSprites, dispatch]);
 
   const onDelete = React.useCallback(
     (e: React.MouseEvent) => {
