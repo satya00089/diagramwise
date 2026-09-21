@@ -216,6 +216,152 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   gap: 12px;
 }
 
+/* Shared editorial popup primitives. New modal surfaces should compose these
+   classes instead of inventing a second color and control language. */
+.app-modal {
+  max-width: 760px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 18%);
+}
+
+.app-modal__body {
+  padding: 32px;
+}
+
+.app-modal__close {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--muted);
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.app-modal__close:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.app-modal__close:focus-visible,
+.app-modal__field:focus-visible,
+.app-modal__secondary:focus-visible,
+.app-modal__primary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.app-modal__title {
+  margin: 0;
+  color: var(--text);
+  font-family: "Instrument Serif", Georgia, serif;
+  font-size: 32px;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.app-modal__intro {
+  max-width: 22ch;
+  line-height: 1.5;
+}
+
+.app-modal__note {
+  max-width: 26ch;
+  line-height: 1.45;
+}
+
+.app-modal__label {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.app-modal__field {
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid var(--border) !important;
+  border-radius: 8px;
+  background: var(--bg) !important;
+  color: var(--text) !important;
+  font: inherit;
+  font-size: 14px;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.app-modal__field:hover {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border)) !important;
+}
+
+.app-modal__field:focus-visible {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.app-modal__secondary,
+.app-modal__primary {
+  min-height: 40px;
+  padding: 9px 16px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.app-modal__secondary {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+}
+
+.app-modal__secondary:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.app-modal__primary {
+  border: 1px solid var(--text);
+  background: var(--text);
+  color: var(--bg);
+}
+
+.app-modal__primary:hover {
+  background: color-mix(in srgb, var(--text) 86%, var(--accent));
+}
+
+.app-modal__primary:active,
+.app-modal__secondary:active {
+  transform: translateY(1px);
+}
+
+@media (max-width: 767px) {
+  .app-modal__body {
+    padding: 24px;
+  }
+
+  .app-modal__title {
+    font-size: 28px;
+  }
+
+  .app-modal__intro,
+  .app-modal__note {
+    max-width: 34ch;
+  }
+}
+
 .announcement-bar__icon {
   display: inline-flex;
   width: 28px;

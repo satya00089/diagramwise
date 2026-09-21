@@ -1,5 +1,10 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import type { EdgeProps, ReactFlowState, Position } from "@xyflow/react";
+import type {
+  Edge,
+  EdgeProps,
+  Node,
+  ReactFlowState,
+} from "@xyflow/react";
 import {
   EdgeLabelRenderer,
   getBezierPath,
@@ -7,9 +12,11 @@ import {
   getStraightPath,
   getSmoothStepPath,
   useStore,
+  Position,
 } from "@xyflow/react";
 import {
   getEdgeLabelLayout,
+  type EdgeLabelRect,
   type EdgeLabelNode,
 } from "../utils/edgeLabelLayout";
 
@@ -31,6 +38,74 @@ type CustomEdgeData = {
   readOnly?: boolean;
   highlighted?: boolean;
   dimmed?: boolean;
+};
+
+const FALLBACK_NODE_WIDTH = 320;
+const FALLBACK_NODE_HEIGHT = 200;
+
+type PositionedNode = Node & {
+  internals?: { positionAbsolute?: { x: number; y: number } };
+};
+
+const nodePosition = (node: Node) =>
+  (node as PositionedNode).internals?.positionAbsolute ?? node.position;
+
+const handlePosition = (handleId: string | null | undefined): Position | null => {
+  const normalized = handleId?.split(":").at(-1);
+  if (!normalized) return null;
+  if (normalized.startsWith("top")) return Position.Top;
+  if (normalized.startsWith("right")) return Position.Right;
+  if (normalized.startsWith("bottom")) return Position.Bottom;
+  if (normalized.startsWith("left")) return Position.Left;
+  return null;
+};
+
+const handleFraction = (handleId: string | null | undefined) => {
+  const normalized = handleId?.split(":").at(-1) ?? "";
+  if (normalized.endsWith("-top")) return 0.25;
+  if (normalized.endsWith("-bottom")) return 0.75;
+  if (normalized.endsWith("-left")) return 0.25;
+  if (normalized.endsWith("-right")) return 0.75;
+  return 0.5;
+};
+
+const getNodeAnchor = (
+  node: Node,
+  handleId: string | null | undefined,
+  fallbackPosition: Position,
+) => {
+  const position = nodePosition(node);
+  const width = node.measured?.width ?? node.width ?? FALLBACK_NODE_WIDTH;
+  const height = node.measured?.height ?? node.height ?? FALLBACK_NODE_HEIGHT;
+  const side = handlePosition(handleId) ?? fallbackPosition;
+  const fraction = handleFraction(handleId);
+
+  if (side === Position.Top || side === Position.Bottom) {
+    return {
+      x: position.x + width * fraction,
+      y: position.y + (side === Position.Top ? 0 : height),
+      position: side,
+    };
+  }
+
+  return {
+    x: position.x + (side === Position.Left ? 0 : width),
+    y: position.y + height * fraction,
+    position: side,
+  };
+};
+
+const fallbackHandlePositions = (source: Node, target: Node) => {
+  const sourcePosition = nodePosition(source);
+  const targetPosition = nodePosition(target);
+  const sourceSide =
+    targetPosition.x >= sourcePosition.x ? Position.Right : Position.Left;
+  const targetSide =
+    sourceSide === Position.Right ? Position.Left : Position.Right;
+  return {
+    sourcePosition: sourceSide,
+    targetPosition: targetSide,
+  };
 };
 
 type ResolvedColors = {
@@ -123,6 +198,83 @@ const computeEdgeParams = (
     targetY,
   });
   return { edgePath, centerX, centerY };
+};
+
+const getEdgeLabelData = (edge: Edge) => {
+  const data = (edge.data ?? {}) as CustomEdgeData;
+  const label = typeof data.label === "string" ? data.label : "";
+  const hasLabel = data.hasLabel ?? Boolean(label);
+  return { data, label, hasLabel };
+};
+
+const estimateEdgeLabelRect = ({
+  edge,
+  nodes,
+  edges,
+  occupiedLabels,
+}: {
+  edge: Edge;
+  nodes: Node[];
+  edges: Edge[];
+  occupiedLabels: EdgeLabelRect[];
+}): EdgeLabelRect | null => {
+  const { data, label, hasLabel } = getEdgeLabelData(edge);
+  if (!hasLabel || !label) return null;
+
+  const sourceNode = nodes.find((node) => node.id === edge.source);
+  const targetNode = nodes.find((node) => node.id === edge.target);
+  if (!sourceNode || !targetNode) return null;
+
+  const fallback = fallbackHandlePositions(sourceNode, targetNode);
+  const sourceAnchor = getNodeAnchor(
+    sourceNode,
+    edge.sourceHandle,
+    fallback.sourcePosition,
+  );
+  const targetAnchor = getNodeAnchor(
+    targetNode,
+    edge.targetHandle,
+    fallback.targetPosition,
+  );
+  const pathType: EdgePathType = data.pathType || "smoothstep";
+  const isBidirectional = edges.some(
+    (candidate) =>
+      candidate.id !== edge.id &&
+      candidate.source === edge.target &&
+      candidate.target === edge.source,
+  );
+  const { edgePath, centerX, centerY } = computeEdgeParams(
+    {
+      sourceX: sourceAnchor.x,
+      sourceY: sourceAnchor.y,
+      targetX: targetAnchor.x,
+      targetY: targetAnchor.y,
+      sourcePosition: sourceAnchor.position,
+      targetPosition: targetAnchor.position,
+    },
+    isBidirectional,
+    pathType,
+  );
+  const labelOffset = Math.min(Math.max(data.labelOffset ?? 0.18, 0), 0.95);
+  const labelDirection = { source: -1, target: 1, center: 0 };
+  const labelShift =
+    (labelDirection[data.labelPosition ?? "center"] ?? 0) * labelOffset;
+  const textWidth = Math.max(6, label.length * 6);
+  return getEdgeLabelLayout({
+    label,
+    edgePath,
+    centerX,
+    centerY,
+    sourceX: sourceAnchor.x,
+    sourceY: sourceAnchor.y,
+    targetX: targetAnchor.x,
+    targetY: targetAnchor.y,
+    labelShift,
+    textWidth,
+    nodes: nodes as EdgeLabelNode[],
+    occupiedLabels,
+    labelMaxWidth: data.labelMaxWidth,
+  });
 };
 
 const EdgeLabelContent: React.FC<{
@@ -343,6 +495,7 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
     ),
   );
   const flowNodes = useStore((s: ReactFlowState) => s.nodes);
+  const flowEdges = useStore((s: ReactFlowState) => s.edges);
 
   // Calculate path and center using extracted helper
   const pathType: EdgePathType = edgeData?.pathType || "smoothstep";
@@ -388,6 +541,25 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
     return context.measureText(labelText).width;
   }, [labelText]);
   const labelVisible = hasLabel || (!readOnly && Boolean(selected));
+  const occupiedLabels = useMemo(() => {
+    if (!labelVisible) return [];
+
+    const orderedEdges = [...flowEdges].sort((first, second) =>
+      first.id.localeCompare(second.id),
+    );
+    const currentIndex = orderedEdges.findIndex((edge) => edge.id === id);
+    const labels: EdgeLabelRect[] = [];
+    for (const edge of orderedEdges.slice(0, Math.max(currentIndex, 0))) {
+      const rect = estimateEdgeLabelRect({
+        edge,
+        nodes: flowNodes,
+        edges: flowEdges,
+        occupiedLabels: labels,
+      });
+      if (rect) labels.push(rect);
+    }
+    return labels;
+  }, [flowEdges, flowNodes, id, labelVisible]);
   const labelLayout = getEdgeLabelLayout({
     label: labelText,
     edgePath,
@@ -400,6 +572,7 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
     labelShift,
     textWidth,
     nodes: flowNodes as EdgeLabelNode[],
+    occupiedLabels,
     labelMaxWidth: edgeData?.labelMaxWidth,
   });
 
