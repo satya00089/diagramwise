@@ -96,7 +96,7 @@ export const QuickSetupModal: React.FC = () => {
     };
 
     globalThis.addEventListener("open-quick-setup", handler as EventListener);
-  return () =>
+    return () =>
       globalThis.removeEventListener(
         "open-quick-setup",
         handler as EventListener,
@@ -167,26 +167,26 @@ export const QuickSetupModal: React.FC = () => {
         onClick={() => setVisible(false)}
       />
 
-      <div className="relative w-full max-w-3xl bg-[var(--surface)] border border-theme rounded-2xl shadow-2xl overflow-hidden">
+      <div className="app-modal relative w-full overflow-hidden">
         <button
           aria-label="Close quick setup"
           onClick={() => setVisible(false)}
-          className="absolute top-4 right-4 text-muted hover:text-theme p-2 rounded"
+          className="app-modal__close absolute top-4 right-4"
         >
           <MdClose className="w-5 h-5" />
         </button>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+        <div className="app-modal__body grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
           <div className="flex flex-col items-center text-center md:items-start md:text-left md:col-span-1">
-            <h3 className="text-lg font-semibold text-theme">
+            <h3 className="app-modal__title">
               {isEditing ? "Edit your preferences" : "Quick setup"}
             </h3>
-            <p className="text-sm text-muted mt-2 max-w-xs">
+            <p className="app-modal__intro text-sm text-muted mt-2 max-w-xs">
               Tell us a bit about you so we can surface the most relevant
               content and problems.
             </p>
             {isEditing && (
-              <p className="text-xs text-muted mt-3">
+              <p className="app-modal__note text-xs text-muted mt-3">
                 Your choices are private and used to personalize
                 recommendations.
               </p>
@@ -196,11 +196,11 @@ export const QuickSetupModal: React.FC = () => {
           <form onSubmit={handleSubmit} className="md:col-span-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <label className="block">
-                <div className="text-sm font-medium text-theme">Role</div>
+                <div className="app-modal__label">Role</div>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="mt-1 block w-full border border-theme/40 rounded p-2 bg-[transparent]"
+                  className="app-modal__field mt-1 block w-full"
                 >
                   {roles.map((r) => (
                     <option key={r} value={r}>
@@ -211,11 +211,11 @@ export const QuickSetupModal: React.FC = () => {
               </label>
 
               <label className="block">
-                <div className="text-sm font-medium text-theme">Experience</div>
+                <div className="app-modal__label">Experience</div>
                 <select
                   value={experience}
                   onChange={(e) => setExperience(e.target.value)}
-                  className="mt-1 block w-full border border-theme/40 rounded p-2 bg-[transparent]"
+                  className="app-modal__field mt-1 block w-full"
                 >
                   {experienceLevels.map((lev) => (
                     <option key={lev} value={lev}>
@@ -226,14 +226,12 @@ export const QuickSetupModal: React.FC = () => {
               </label>
 
               <label className="block md:col-span-2">
-                <div className="text-sm font-medium text-theme">
-                  Primary interest
-                </div>
+                <div className="app-modal__label">Primary interest</div>
                 <input
                   value={primaryInterest}
                   onChange={(e) => setPrimaryInterest(e.target.value)}
                   placeholder="e.g., distributed systems, ML"
-                  className="mt-1 block w-full border border-theme/40 rounded p-2 bg-[transparent]"
+                  className="app-modal__field mt-1 block w-full"
                 />
                 <div className="text-xs text-muted mt-1">
                   This helps prioritize problem recommendations and learning
@@ -242,13 +240,11 @@ export const QuickSetupModal: React.FC = () => {
               </label>
 
               <label className="block">
-                <div className="text-sm font-medium text-theme">
-                  Preferred cloud
-                </div>
+                <div className="app-modal__label">Preferred cloud</div>
                 <select
                   value={preferredCloud}
                   onChange={(e) => setPreferredCloud(e.target.value)}
-                  className="mt-1 block w-full border border-theme/40 rounded p-2 bg-[transparent]"
+                  className="app-modal__field mt-1 block w-full"
                 >
                   {clouds.map((c) => (
                     <option key={c} value={c}>
@@ -259,13 +255,11 @@ export const QuickSetupModal: React.FC = () => {
               </label>
 
               <label className="block">
-                <div className="text-sm font-medium text-theme">
-                  Preferred content
-                </div>
+                <div className="app-modal__label">Preferred content</div>
                 <select
                   value={preferredContent}
                   onChange={(e) => setPreferredContent(e.target.value)}
-                  className="mt-1 block w-full border border-theme/40 rounded p-2 bg-[transparent]"
+                  className="app-modal__field mt-1 block w-full"
                 >
                   {contentTypes.map((ct) => (
                     <option key={ct} value={ct}>
@@ -281,14 +275,14 @@ export const QuickSetupModal: React.FC = () => {
                 type="button"
                 onClick={handleSkip}
                 disabled={submitting}
-                className="px-4 py-2 rounded border text-sm text-muted hover:text-theme cursor-pointer"
+                className="app-modal__secondary"
               >
                 Skip
               </button>
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-2 rounded bg-[var(--brand)] text-white text-sm shadow-sm cursor-pointer"
+                className="app-modal__primary"
               >
                 {submitting ? "Saving..." : saveLabel}
               </button>
