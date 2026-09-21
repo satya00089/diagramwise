@@ -717,6 +717,7 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
                   "subtitle",
                   "componentId",
                   "componentName",
+                  "properties",
                   "_customProperties",
                   "backgroundColor",
                   "borderColor",
