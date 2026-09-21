@@ -70,6 +70,39 @@
   --announcement-text: var(--share-text);
 }
 
+/* Neutral glass only: these alpha layers deliberately contain no brand or
+   preset color, so the user's selected node fill is the glass color. */
+.node-action-toolbar {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.3),
+      rgba(255, 255, 255, 0.07) 52%,
+      rgba(0, 0, 0, 0.1)
+    ),
+    rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  box-shadow:
+    0 12px 24px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.48),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+  -webkit-backdrop-filter: blur(18px) saturate(175%);
+  backdrop-filter: blur(18px) saturate(175%);
+}
+
+.node-action-button {
+  /* Inherit the node's user-configured text color. The appearance presets and
+     custom text picker already supply the foreground that contrasts its fill. */
+  color: inherit;
+}
+
+.node-action-button:hover,
+.node-action-button.is-active {
+  color: inherit;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
 /* Apply defaults */
 html,
 body {

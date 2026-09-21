@@ -99,7 +99,7 @@ const toFlowNodes = (architecture: GuideArchitecture): Node[] =>
         icon: definition?.icon,
         iconUrl: definition?.iconUrl,
         subtitle: component.description,
-        description: component.description,
+        purpose: component.description,
         backgroundColor:
           "color-mix(in srgb, var(--surface) 94%, var(--brand) 6%)",
         borderColor: "color-mix(in srgb, var(--brand) 58%, var(--border))",
@@ -131,7 +131,7 @@ const toFlowEdges = (architecture: GuideArchitecture): Edge[] => {
       data: {
         label: connection.label || connection.type,
         hasLabel: Boolean(connection.label),
-        description: connection.description,
+        purpose: connection.description,
         connectionType: connection.type,
         readOnly: true,
         pathType: properties.pathType === "bezier" ? "bezier" : "smoothstep",

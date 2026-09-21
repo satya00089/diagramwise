@@ -418,7 +418,7 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
 
         {/* Node actions stay quiet until the node is hovered, focused, or active. */}
         <motion.div
-          className="node-action-toolbar absolute top-2 right-2 z-10 flex items-center gap-1 rounded-xl border border-theme bg-surface p-1 shadow-lg backdrop-blur-md"
+          className="node-action-toolbar absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-[20px] p-1.5"
           initial={{ opacity: 0, y: -4, scale: 0.96 }}
           animate={{
             opacity: showNodeActions ? 1 : 0,
@@ -443,8 +443,7 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
             aria-expanded={showProperties}
             aria-controls={`node-properties-${id}`}
             data-tooltip={showProperties ? "Hide properties" : "Show properties"}
-            className={`flex h-6 w-6 items-center justify-center rounded-lg transition-colors hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] ${showProperties ? "bg-[var(--bg-hover)]" : ""}`}
-            style={{ color: showProperties ? "var(--brand)" : "var(--text)" }}
+            className={`node-action-button flex h-7 w-7 items-center justify-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${showProperties ? "is-active" : ""}`}
           >
             <MdTune className="h-4 w-4" aria-hidden="true" />
           </motion.button>
@@ -465,8 +464,7 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
             aria-expanded={contextMenu.visible}
             aria-controls={`node-actions-${id}`}
             data-tooltip="More actions"
-            className="flex h-6 w-6 items-center justify-center rounded-lg transition-colors hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-            style={{ color: "var(--text)" }}
+            className="node-action-button flex h-7 w-7 items-center justify-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
           >
             <BiDotsVertical className="h-4 w-4" aria-hidden="true" />
           </motion.button>

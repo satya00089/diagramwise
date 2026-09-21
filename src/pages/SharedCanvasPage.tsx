@@ -217,6 +217,7 @@ const SYSTEM_PROPERTY_KEYS = new Set([
   "icon",
   "iconUrl",
   "subtitle",
+  "purpose",
   "description",
   "properties",
   "backgroundColor",
@@ -229,6 +230,7 @@ const SYSTEM_PROPERTY_KEYS = new Set([
 const EDGE_PROPERTY_KEYS = new Set([
   "label",
   "hasLabel",
+  "purpose",
   "description",
   "readOnly",
   "color",
@@ -296,7 +298,7 @@ const getNodeName = (node: Node | undefined): string => {
 
 const getNodeDescription = (node: Node): string => {
   const data = node.data as Record<string, unknown>;
-  return plainText(data.description) || plainText(data.subtitle);
+  return plainText(data.purpose) || plainText(data.description) || plainText(data.subtitle);
 };
 
 const getNodeProperties = (node: Node): InspectorEntry[] => {
@@ -811,7 +813,7 @@ const SelectionInspector: React.FC<{
   const sourceNode = nodes.find((node) => node.id === edge.source);
   const targetNode = nodes.find((node) => node.id === edge.target);
   const label = plainText(data.label) || "Unlabelled connection";
-  const description = plainText(data.description);
+  const description = plainText(data.purpose) || plainText(data.description);
   const flowType =
     plainText(data.connectionType) || plainText(data.type) || "Data flow";
   const properties: InspectorEntry[] = [

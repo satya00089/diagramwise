@@ -213,6 +213,7 @@ export function buildAssessmentPayload(
           label: conn.label,
           type: conn.type,
           description:
+            (conn.properties?.purpose as string | undefined) ||
             conn.description ||
             (conn.properties?.description as string | undefined),
         }));

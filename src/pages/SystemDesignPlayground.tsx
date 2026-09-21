@@ -92,6 +92,14 @@ import {
 
 // Configuration
 import { COMPONENTS } from "../config/components";
+import {
+  FLOW_PURPOSE_PLACEHOLDER,
+  getPurposeValue,
+  normalizeComponentProperties,
+  normalizeEdgeDataPurpose,
+  normalizeNodeDataPurpose,
+  PURPOSE_PLACEHOLDER,
+} from "../utils/purposeMigration";
 
 // UI Components - Shared
 import AnimatedCheckbox from "../components/shared/AnimatedCheckbox";
@@ -385,7 +393,7 @@ const buildSystemDesignSolution = (
         ? (maybeType as ConnectionType)
         : "api-call";
     const maybeLabel = (dataObj as { label?: unknown }).label;
-    const maybeDescription = (dataObj as { description?: unknown }).description;
+    const maybePurpose = getPurposeValue(dataObj as Record<string, unknown>);
 
     return {
       id: e.id ?? `${e.source}-${e.target}`,
@@ -394,8 +402,8 @@ const buildSystemDesignSolution = (
       type: inferredType,
       label: typeof maybeLabel === "string" ? maybeLabel : undefined,
       description:
-        typeof maybeDescription === "string" && maybeDescription.trim()
-          ? maybeDescription
+        typeof maybePurpose === "string" && maybePurpose.trim()
+          ? maybePurpose
           : undefined,
       properties: dataObj as Record<string, unknown>,
     };
@@ -577,6 +585,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
         // Restore icon from local component if available
         const restoredIcon = localComp?.icon || node.data?.icon;
+        const componentProperties = normalizeComponentProperties(
+          localComp?.properties || fullComponentsCache[componentId || ""]?.properties || [],
+        );
 
         // Fetch full component data if it's a provider component (AWS, Azure, etc.)
         // Imported extension nodes intentionally use a generic architectureType
@@ -594,7 +605,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         return {
           ...node,
           data: {
-            ...node.data,
+            ...normalizeNodeDataPurpose(
+              (node.data || {}) as Record<string, unknown>,
+              componentProperties,
+            ),
             icon: restoredIcon, // Restore React icon component
             iconUrl: node.data?.iconUrl, // Keep iconUrl if it exists
           },
@@ -602,6 +616,17 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       });
     },
     [fullComponentsCache, dispatch],
+  );
+
+  const restoreEdgePurposes = useCallback(
+    (edgesToRestore: Edge[]): Edge[] =>
+      edgesToRestore.map((edge) => ({
+        ...edge,
+        data: normalizeEdgeDataPurpose(
+          (edge.data || {}) as Record<string, unknown>,
+        ),
+      })),
+    [],
   );
 
   // Chat bot context for getting user intent
@@ -897,7 +922,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           tags: [],
         });
         setNodes(restoreNodeIcons(d.nodes));
-        setEdges(d.edges);
+        setEdges(restoreEdgePurposes(d.edges));
         if (d.assessment)
           setAssessment(d.assessment as unknown as ValidationResult);
         setActiveRightTab("assessment");
@@ -1067,11 +1092,11 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           const publicDiagram =
             await apiService.getPublicDiagramData(remixIdFromUrl);
           const restoredNodes = restoreNodeIcons(publicDiagram.nodes as Node[]);
-          const restoredEdges = publicDiagram.edges as Edge[];
+          const restoredEdges = restoreEdgePurposes(publicDiagram.edges as Edge[]);
           const baseTitle = publicDiagram.title.trim() || "Shared design";
 
           setNodes(restoredNodes);
-          setEdges(restoredEdges);
+          setEdges(restoreEdgePurposes(restoredEdges));
           setCurrentDiagramId(null);
           setCurrentDiagram(null);
           setRemixOrigin({
@@ -1117,13 +1142,13 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             ? await apiService.getDiagram(diagramIdFromUrl)
             : await apiService.getPublicDiagram(diagramIdFromUrl);
           const loadedNodes = diagram.nodes as Node[];
-          const loadedEdges = diagram.edges as Edge[];
+          const loadedEdges = restoreEdgePurposes(diagram.edges as Edge[]);
 
           // Restore icon components and ensure we have full component data
           const restoredNodes = restoreNodeIcons(loadedNodes);
 
           setNodes(restoredNodes);
-          setEdges(loadedEdges);
+          setEdges(restoreEdgePurposes(loadedEdges));
           setCurrentDiagramId(diagram.id);
           setCurrentDiagram(diagram);
           setRemixOrigin(null);
@@ -1150,13 +1175,13 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           try {
             const diagram = await apiService.getDiagram(lastDiagramId);
             const loadedNodes = diagram.nodes as Node[];
-            const loadedEdges = diagram.edges as Edge[];
+            const loadedEdges = restoreEdgePurposes(diagram.edges as Edge[]);
 
             // Restore icon components and ensure we have full component data
             const restoredNodes = restoreNodeIcons(loadedNodes);
 
             setNodes(restoredNodes);
-            setEdges(loadedEdges);
+            setEdges(restoreEdgePurposes(loadedEdges));
             setCurrentDiagramId(diagram.id);
             setCurrentDiagram(diagram);
             setRemixOrigin(null);
@@ -1201,13 +1226,13 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             setAssessmentHistory(attempt.assessmentHistory ?? []);
             setAddressedFindingIds(attempt.addressedFindingIds ?? []);
             const loadedNodes = attempt.nodes;
-            const loadedEdges = attempt.edges;
+            const loadedEdges = restoreEdgePurposes(attempt.edges);
 
             // Restore icon components and ensure we have full component data
             const restoredNodes = restoreNodeIcons(loadedNodes);
 
             setNodes(restoredNodes);
-            setEdges(loadedEdges);
+            setEdges(restoreEdgePurposes(loadedEdges));
 
             lastSavedAttemptContentRef.current = getAttemptContentSnapshot({
               problemId: idFromUrl,
@@ -2125,9 +2150,27 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           // include icon so the custom node can render it
           data: {
             // Spread guided step properties first so the Inspector and
-            // assessment service can read description, auth settings, etc.
+            // assessment service can read purpose, auth settings, etc.
             // Explicit fields below take precedence over anything in properties.
-            ...comp.properties,
+            ...(() => {
+              const guidedProperties = { ...comp.properties } as Record<
+                string,
+                unknown
+              >;
+              const guidedSchema = normalizeComponentProperties(
+                localCompDef?.properties ?? fullComp?.properties ?? [],
+              );
+              if (guidedSchema.some((property) => property.key === "purpose")) {
+                if (
+                  guidedProperties.purpose === undefined &&
+                  guidedProperties.description !== undefined
+                ) {
+                  guidedProperties.purpose = guidedProperties.description;
+                }
+                delete guidedProperties.description;
+              }
+              return guidedProperties;
+            })(),
             label: comp.label, // Use label from priority order
             componentId: comp.componentType, // Store the original component ID (the type from drag data)
             icon: localCompDef?.icon,
@@ -2187,7 +2230,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           type: "customEdge",
           data: {
             label: conn.label,
-            description: conn?.description ?? "",
+            purpose: conn?.description ?? "",
             hasLabel: true,
           },
         } as Edge;
@@ -2307,10 +2350,18 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       setInspectedEdgeId(edge.id);
       setInspectedNodeId(null);
       const d = (edge.data || {}) as EdgeProps;
-      setEdgeProps(d);
+      const normalizedData = normalizeEdgeDataPurpose(d);
+      setEdgeProps(normalizedData as EdgeProps);
+      setEdges((eds) =>
+        eds.map((currentEdge) =>
+          currentEdge.id === edge.id
+            ? { ...currentEdge, data: normalizedData }
+            : currentEdge,
+        ),
+      );
       setActiveRightTab("inspector");
     },
-    [],
+    [setEdges],
   );
 
   const edgeLabelChangeHandlerRef = React.useRef<
@@ -2726,15 +2777,20 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     // Prevent unnecessary updates
     if (nodeProps[key] === value) return;
 
-    setNodeProps((s) => ({ ...s, [key]: value }));
+    setNodeProps((s) => {
+      const updated = { ...s, [key]: value };
+      if (key === "purpose") delete updated.description;
+      return updated;
+    });
     // Auto-save property changes to node data
     if (inspectedNodeId) {
       setNodes((nds) =>
-        nds.map((n) =>
-          n.id === inspectedNodeId
-            ? { ...n, data: { ...n.data, [key]: value } }
-            : n,
-        ),
+        nds.map((n) => {
+          if (n.id !== inspectedNodeId) return n;
+          const data = { ...n.data, [key]: value } as Record<string, unknown>;
+          if (key === "purpose") delete data.description;
+          return { ...n, data };
+        }),
       );
     }
   };
@@ -2850,7 +2906,12 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
   const renderProperty = (p: ComponentProperty) => {
     const inputId = `${inspectedNodeId}-${p.key}`;
-    const raw = nodeProps[p.key];
+    const raw =
+      p.key === "purpose"
+        ? (nodeProps.purpose ?? nodeProps.description)
+        : nodeProps[p.key];
+    const placeholder =
+      p.key === "purpose" ? PURPOSE_PLACEHOLDER : p.placeholder;
 
     // coerce values to types expected by inputs (avoid nested ternary expressions)
     let numberValue: number | undefined;
@@ -2905,7 +2966,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             id={inputId}
             label={p.label}
             value={stringValue}
-            placeholder={p.placeholder}
+            placeholder={placeholder}
             onChange={(val) => setPropString(p.key, val)}
           />
         )}
@@ -2914,7 +2975,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             id={inputId}
             label={p.label}
             value={stringValue}
-            placeholder={p.placeholder}
+            placeholder={placeholder}
             onChange={(v) => setPropString(p.key, v)}
           />
         )}
@@ -3076,8 +3137,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       // Use properties from Redux cache (priority) or local COMPONENTS.
       // Mermaid imports also expose their visible subtitle directly, including
       // generic nodes that do not have a catalog component definition.
-      const componentProperties =
-        fullComp?.properties || comp?.properties || [];
+      const componentProperties = normalizeComponentProperties(
+        fullComp?.properties || comp?.properties || [],
+      );
       const subtitleProperty: ComponentProperty = {
         key: "subtitle",
         label: "Subtitle",
@@ -3387,14 +3449,17 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           />
         </div>
 
-        {/* Description */}
+        {/* Flow purpose */}
         <div className="flex flex-col gap-1.5">
           <AnimatedTextarea
-            id="edge-desc"
-            label="Description"
-            value={(edgeProps["description"] as string) || ""}
-            placeholder="Describe this connection…"
-            onChange={(val) => updateEdgeProperty("description", val)}
+            id="edge-purpose"
+            label="Flow purpose"
+            value={
+              ((edgeProps["purpose"] ?? edgeProps["description"]) as string) ||
+              ""
+            }
+            placeholder={FLOW_PURPOSE_PLACEHOLDER}
+            onChange={(val) => updateEdgeProperty("purpose", val)}
           />
         </div>
 
@@ -4266,7 +4331,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
       // Apply imported data
       setNodes(restoredNodes);
-      setEdges(importedData.edges);
+      setEdges(restoreEdgePurposes(importedData.edges));
 
       // Clear current diagram ID since this is now a new/imported diagram
       setCurrentDiagramId(null);

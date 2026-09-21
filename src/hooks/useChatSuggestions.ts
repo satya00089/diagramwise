@@ -39,8 +39,9 @@ export const useChatSuggestions = (
       // Transform nodes to component info with rich details
       const components = nodes.map((node) => {
         const nodeData = node.data || {};
+        const purpose = nodeData.purpose || nodeData.description || nodeData.subtitle || "";
         const hasDescription = Boolean(
-          nodeData.description ||
+          purpose ||
             nodeData.subtitle ||
             (nodeData.properties &&
               Object.keys(nodeData.properties).length > 0),
@@ -48,7 +49,7 @@ export const useChatSuggestions = (
 
         // Gather all properties
         const properties: Record<string, unknown> = {
-          description: nodeData.description || nodeData.subtitle || "",
+          purpose,
           componentId: nodeData.componentId,
           icon: nodeData.icon,
         };
@@ -64,6 +65,7 @@ export const useChatSuggestions = (
           if (
             ![
               "description",
+              "purpose",
               "subtitle",
               "componentId",
               "icon",
