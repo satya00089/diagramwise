@@ -86,6 +86,21 @@ describe("getEdgeLabelLayout", () => {
     expect(Math.abs(layout.center.y)).toBeGreaterThan(0);
   });
 
+  it("moves a label when an earlier edge already occupies the preferred area", () => {
+    const layout = getEdgeLabelLayout({
+      ...baseOptions,
+      edgePath: "M 0,0L 300,0",
+      centerX: 150,
+      targetX: 300,
+      textWidth: 90,
+      occupiedLabels: [
+        { center: { x: 150, y: 0 }, width: 100, height: 18 },
+      ],
+    });
+
+    expect(Math.abs(layout.center.y)).toBeGreaterThan(0);
+  });
+
   it("respects an explicit maximum width", () => {
     const layout = getEdgeLabelLayout({
       ...baseOptions,

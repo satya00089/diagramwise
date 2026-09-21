@@ -21,6 +21,12 @@ export type EdgeLabelLayout = {
   lineCount: number;
 };
 
+export type EdgeLabelRect = {
+  center: EdgePoint;
+  width: number;
+  height: number;
+};
+
 type EdgePathSegment = {
   start: EdgePoint;
   end: EdgePoint;
@@ -41,6 +47,7 @@ type EdgeLabelLayoutOptions = {
   labelShift: number;
   textWidth: number;
   nodes?: EdgeLabelNode[];
+  occupiedLabels?: EdgeLabelRect[];
   labelMaxWidth?: number;
 };
 
@@ -50,6 +57,7 @@ const LABEL_MIN_WIDTH = 100;
 const LABEL_MAX_WIDTH = 240;
 const PATH_CLEARANCE = 24;
 const NODE_CLEARANCE = 8;
+const LABEL_CLEARANCE = 6;
 const LABEL_LINE_HEIGHT = 14;
 
 const clamp = (value: number, min: number, max: number) =>
@@ -332,6 +340,31 @@ const intersectsNode = (
   });
 };
 
+const intersectsLabel = (
+  center: EdgePoint,
+  width: number,
+  height: number,
+  occupiedLabels: EdgeLabelRect[],
+) => {
+  const left = center.x - width / 2;
+  const right = center.x + width / 2;
+  const top = center.y - height / 2;
+  const bottom = center.y + height / 2;
+
+  return occupiedLabels.some((label) => {
+    const labelLeft = label.center.x - label.width / 2 - LABEL_CLEARANCE;
+    const labelRight = label.center.x + label.width / 2 + LABEL_CLEARANCE;
+    const labelTop = label.center.y - label.height / 2 - LABEL_CLEARANCE;
+    const labelBottom = label.center.y + label.height / 2 + LABEL_CLEARANCE;
+    return (
+      left < labelRight &&
+      right > labelLeft &&
+      top < labelBottom &&
+      bottom > labelTop
+    );
+  });
+};
+
 const getLabelDimensions = (
   textWidth: number,
   segmentLength: number,
@@ -379,6 +412,10 @@ const getCandidateCenters = (
     { x: midpoint.x - normal.x * 16, y: midpoint.y - normal.y * 16 },
     { x: midpoint.x + normal.x * 28, y: midpoint.y + normal.y * 28 },
     { x: midpoint.x - normal.x * 28, y: midpoint.y - normal.y * 28 },
+    { x: midpoint.x + normal.x * 44, y: midpoint.y + normal.y * 44 },
+    { x: midpoint.x - normal.x * 44, y: midpoint.y - normal.y * 44 },
+    { x: midpoint.x + normal.x * 64, y: midpoint.y + normal.y * 64 },
+    { x: midpoint.x - normal.x * 64, y: midpoint.y - normal.y * 64 },
   ];
 };
 
@@ -399,6 +436,7 @@ export const getEdgeLabelLayout = ({
   labelShift,
   textWidth,
   nodes = [],
+  occupiedLabels = [],
   labelMaxWidth,
 }: EdgeLabelLayoutOptions): EdgeLabelLayout => {
   const safeTextWidth = Math.max(textWidth, label.length * 6);
@@ -452,7 +490,13 @@ export const getEdgeLabelLayout = ({
   );
   const safeCandidate = candidates.find(
     ({ center, dimensions }) =>
-      !intersectsNode(center, dimensions.width, dimensions.height, nodes),
+      !intersectsNode(center, dimensions.width, dimensions.height, nodes) &&
+      !intersectsLabel(
+        center,
+        dimensions.width,
+        dimensions.height,
+        occupiedLabels,
+      ),
   );
 
   if (safeCandidate) {
