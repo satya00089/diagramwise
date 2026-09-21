@@ -26,6 +26,7 @@ export type EdgeLabelPosition = "source" | "center" | "target";
 type CustomEdgeData = {
   label?: string;
   hasLabel?: boolean;
+  purpose?: string;
   description?: string;
   pathType?: EdgePathType;
   labelPosition?: EdgeLabelPosition;
@@ -645,7 +646,7 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
           readOnly={readOnly}
           selected={Boolean(selected || isHighlighted)}
           value={value}
-          description={edgeData?.description}
+          description={edgeData?.purpose ?? edgeData?.description}
           colors={resolvedColors}
           inputRef={inputRef}
           onChange={setValue}

@@ -16,6 +16,7 @@ export type ERNodeData = {
   label: string;
   icon?: string;
   componentName?: string;
+  purpose?: string;
   description?: string;
   attributes?: string;
   primaryKey?: string;
@@ -60,7 +61,8 @@ const ERNode: React.FC<Props> = React.memo(
       return false;
     };
 
-    const hasDescription = !isEmptyValue(data.description);
+    const purpose = data.purpose ?? data.description;
+    const hasDescription = !isEmptyValue(purpose);
 
     const onDelete = React.useCallback(
       (e: React.MouseEvent) => {
@@ -337,7 +339,7 @@ const ERNode: React.FC<Props> = React.memo(
                 <div
                   className="text-xs [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:ml-1 [&_p]:mb-1"
                   dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(data.description!),
+                    __html: DOMPurify.sanitize(purpose!),
                   }}
                 />
               )}
@@ -376,7 +378,7 @@ const ERNode: React.FC<Props> = React.memo(
                   <div
                     className="mt-1 pt-1 border-t border-gray-300 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:ml-1 [&_p]:mb-1"
                     dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(data.description!),
+                      __html: DOMPurify.sanitize(purpose!),
                     }}
                   />
                 )}
@@ -396,7 +398,7 @@ const ERNode: React.FC<Props> = React.memo(
                   <div
                     className="text-xs text-muted mt-1 text-left [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:ml-1 [&_p]:mb-1"
                     dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(data.description!),
+                      __html: DOMPurify.sanitize(purpose!),
                     }}
                   />
                 )}
