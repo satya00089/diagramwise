@@ -218,6 +218,7 @@ const SYSTEM_PROPERTY_KEYS = new Set([
   "iconUrl",
   "subtitle",
   "description",
+  "properties",
   "backgroundColor",
   "borderColor",
   "textColor",
