@@ -13,6 +13,7 @@ import "@xyflow/react/dist/style.css";
 import "./SharedCanvasPage.css";
 
 import { apiService } from "../services/api";
+import { componentProviderService } from "../services/componentProviderService";
 import CustomNode from "../components/Node";
 import ERNode from "../components/ERNode";
 import TableNode from "../components/TableNode";
@@ -26,6 +27,7 @@ import AssessmentFindings from "../components/AssessmentFindings";
 import SEO from "../components/SEO";
 import type { ValidationResult } from "../types/systemDesign";
 import { COMPONENTS } from "../config/components";
+import { shouldUseDirectIcon } from "../utils/iconRendering";
 import {
   MdAccountTree,
   MdArrowForward,
@@ -118,7 +120,12 @@ const ReadOnlyNodeShell: React.FC<React.PropsWithChildren> = ({ children }) => (
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const ReadOnlyCustomNode = (props: any) => (
   <ReadOnlyNodeShell>
-    <CustomNode {...props} onCopy={noop} isInGroup={false} />
+    <CustomNode
+      {...props}
+      onCopy={noop}
+      isInGroup={false}
+      disableProviderSprites
+    />
   </ReadOnlyNodeShell>
 );
 const ReadOnlyERNode = (props: any) => (
@@ -138,7 +145,7 @@ const ReadOnlyFreeformNode = (props: any) => (
 );
 const ReadOnlyGroupNode = (props: any) => (
   <ReadOnlyNodeShell>
-    <GroupNode {...props} />
+    <GroupNode {...props} disableProviderSprites />
   </ReadOnlyNodeShell>
 );
 const ReadOnlyCustomEdge = (props: any) => (
@@ -173,7 +180,10 @@ const formatDate = (iso: string | null | undefined): string => {
   });
 };
 
-const restorePublicNodeIcons = (nodes: Node[]): Node[] =>
+const restorePublicNodeIcons = (
+  nodes: Node[],
+  iconUrls: Record<string, string> = {},
+): Node[] =>
   nodes.map((node) => {
     const componentId =
       typeof node.data?.componentId === "string" ? node.data.componentId : null;
@@ -186,12 +196,16 @@ const restorePublicNodeIcons = (nodes: Node[]): Node[] =>
       (typeof storedIcon === "object" && storedIcon !== null)
         ? storedIcon
         : undefined;
+    const storedIconUrl =
+      typeof node.data?.iconUrl === "string" ? node.data.iconUrl : undefined;
 
     return {
       ...node,
       data: {
         ...node.data,
         icon: localComponent?.icon ?? safeStoredIcon,
+        iconUrl:
+          storedIconUrl ?? (componentId ? iconUrls[componentId] : undefined),
       },
     };
   });
@@ -1123,6 +1137,9 @@ const SharedCanvasPage: React.FC = () => {
   const [showDetails, setShowDetails] = useState(false);
   const [selection, setSelection] = useState<SelectedElement>(null);
   const [activePanelTab, setActivePanelTab] = useState<PanelTab>("overview");
+  const [publicIconUrls, setPublicIconUrls] = useState<Record<string, string>>(
+    {},
+  );
 
   // Reconstruct composite id if hash was not URL-encoded (legacy broken links)
   const resolvedId = useMemo(() => {
@@ -1187,9 +1204,69 @@ const SharedCanvasPage: React.FC = () => {
       .finally(() => setLoading(false));
   }, [resolvedId]);
 
+  useEffect(() => {
+    if (!data) {
+      setPublicIconUrls({});
+      return;
+    }
+
+    const componentIds = Array.from(
+      new Set(
+        data.nodes
+          .map((node) =>
+            typeof node.data?.componentId === "string"
+              ? node.data.componentId
+              : null,
+          )
+          .filter((componentId): componentId is string => {
+            if (!componentId) return false;
+            const node = data.nodes.find(
+              (candidate) => candidate.data?.componentId === componentId,
+            );
+            return !node?.data?.iconUrl && shouldUseDirectIcon(componentId);
+          }),
+      ),
+    );
+
+    if (componentIds.length === 0) {
+      setPublicIconUrls({});
+      return;
+    }
+
+    let cancelled = false;
+    setPublicIconUrls({});
+
+    Promise.all(
+      componentIds.map(async (componentId) => {
+        try {
+          const component =
+            await componentProviderService.getComponentById(componentId);
+          return component.iconUrl
+            ? ([componentId, component.iconUrl] as const)
+            : null;
+        } catch {
+          return null;
+        }
+      }),
+    ).then((entries) => {
+      if (cancelled) return;
+      setPublicIconUrls(
+        Object.fromEntries(
+          entries.filter(
+            (entry): entry is readonly [string, string] => entry !== null,
+          ),
+        ),
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data]);
+
   const nodes = useMemo(
-    () => restorePublicNodeIcons(data?.nodes ?? []),
-    [data],
+    () => restorePublicNodeIcons(data?.nodes ?? [], publicIconUrls),
+    [data, publicIconUrls],
   );
   const edges = useMemo(
     () =>

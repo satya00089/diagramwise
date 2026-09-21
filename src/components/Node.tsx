@@ -60,14 +60,18 @@ type Props = {
   data: NodeData;
   onCopy?: (id: string, data: NodeData) => void;
   isInGroup?: boolean;
+  disableProviderSprites?: boolean;
 };
 
-const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup }) => {
+const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disableProviderSprites = false }) => {
   const dispatch = useAppDispatch();
   const spriteIcons = useAppSelector((state) => state.sprites.allIcons);
   const componentId =
     typeof data.componentId === "string" ? data.componentId : undefined;
-  const sprite = componentId ? spriteIcons[componentId] : undefined;
+  const sprite =
+    !disableProviderSprites && componentId
+      ? spriteIcons[componentId]
+      : undefined;
   const provider = componentId ? providerFromId(componentId) : null;
   // Select only this node's provider status to avoid re-renders from other providers loading.
   const spriteStatus = useAppSelector((state) =>
@@ -79,17 +83,18 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup }) => {
   // Only fall back to iconUrl if sprite load definitively failed (status 'error'),
   // or if this is a non-cloud component with no sprite provider at all.
   const showIconUrl =
+    disableProviderSprites ||
     useDirectIcon ||
     (!sprite && !!data.iconUrl && (!provider || spriteStatus === "error"));
 
   // Self-load sprite manifest for this node's provider if not already loaded.
   // condition in the thunk handles deduplication (won't re-fetch if loading/ready).
   React.useEffect(() => {
-    if (!componentId) return;
+    if (disableProviderSprites || !componentId) return;
     const p = providerFromId(componentId);
     if (!p) return;
     dispatch(loadSpriteManifest(p));
-  }, [componentId, dispatch]);
+  }, [componentId, disableProviderSprites, dispatch]);
 
   const [contextMenu, setContextMenu] = React.useState<{
     visible: boolean;
