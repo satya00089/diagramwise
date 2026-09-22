@@ -5,7 +5,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import {
   MdAccessTime,
   MdArrowBack,
@@ -27,7 +27,6 @@ import { useAuth } from "../hooks/useAuth";
 import { getApiBaseUrl } from "../services/api";
 import type { SystemDesignProblem } from "../types/systemDesign";
 import { featuredProblems, getFeaturedProblem } from "../utils/problemSlug";
-import NotFound from "./NotFound";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
 
 const PublicArchitectureCanvas = lazyWithRetry(
@@ -255,7 +254,7 @@ const ProblemLanding: React.FC = () => {
       .slice(0, 4);
   }, [problem, slug]);
 
-  if (missing) return <NotFound />;
+  if (missing) return <Navigate to="/" replace />;
 
   if (!problem || loading) {
     return <ProblemLandingSkeleton />;
