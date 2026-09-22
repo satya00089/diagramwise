@@ -64,6 +64,7 @@ const VerifyEmail = lazyWithRetry(
   () => import("./pages/VerifyEmail"),
   "verify-email",
 );
+const AuthEntry = lazyWithRetry(() => import("./pages/AuthEntry"), "auth-entry");
 const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "not-found");
 
 const RouteLoading: React.FC = () => (
@@ -256,6 +257,7 @@ const AppContent: React.FC = () => {
                     }
                   />
                   <Route path="/verify-email" element={<VerifyEmail />} />
+                  <Route path="/auth" element={<AuthEntry />} />
                   <Route
                     path="/playground/:id"
                     element={

@@ -24,6 +24,7 @@ export interface SignupCredentials {
   email: string;
   password: string;
   name?: string;
+  verificationReturnUrl?: string;
 }
 
 export interface AuthResponse {
