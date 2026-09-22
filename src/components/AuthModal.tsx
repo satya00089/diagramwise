@@ -57,8 +57,15 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLogin: (email: string, password: string) => Promise<void>;
-  onSignup: (email: string, password: string, name?: string) => Promise<void>;
+  onSignup: (
+    email: string,
+    password: string,
+    name?: string,
+    context?: { verificationReturnUrl?: string },
+  ) => Promise<void>;
   onGoogleLogin?: (credential: string) => Promise<void>;
+  initialMode?: AuthMode;
+  signupContext?: { verificationReturnUrl?: string };
 }
 
 type AuthMode = "login" | "signup";
@@ -335,8 +342,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onLogin,
   onSignup,
   onGoogleLogin,
+  initialMode = "login",
+  signupContext,
 }) => {
-  const [mode, setMode] = useState<AuthMode>("login");
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -456,7 +465,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       return;
     }
 
-    await onSignup(email, password, name || undefined);
+    await onSignup(email, password, name || undefined, signupContext);
     setVerificationEmail(email);
   };
 

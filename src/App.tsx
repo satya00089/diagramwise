@@ -1,5 +1,11 @@
 import React, { Suspense, useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Routes,
+  Route,
+  useLocation,
+} from "react-router-dom";
 import { ThemeProvider } from "./hooks/useTheme";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ChatBotProvider } from "./contexts/ChatBotContext";
@@ -64,8 +70,7 @@ const VerifyEmail = lazyWithRetry(
   () => import("./pages/VerifyEmail"),
   "verify-email",
 );
-const NotFound = lazyWithRetry(() => import("./pages/NotFound"), "not-found");
-
+const AuthEntry = lazyWithRetry(() => import("./pages/AuthEntry"), "auth-entry");
 const RouteLoading: React.FC = () => (
   <output className="min-h-screen bg-[var(--bg)] text-theme grid place-items-center px-6">
     <span className="block text-center">
@@ -256,6 +261,7 @@ const AppContent: React.FC = () => {
                     }
                   />
                   <Route path="/verify-email" element={<VerifyEmail />} />
+                  <Route path="/auth" element={<AuthEntry />} />
                   <Route
                     path="/playground/:id"
                     element={
@@ -272,7 +278,7 @@ const AppContent: React.FC = () => {
                       </StoreBoundary>
                     }
                   />
-                  <Route path="*" element={<NotFound />} />
+                  <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
               </Suspense>
               <GlobalProductChrome />

@@ -10,8 +10,29 @@ const STATUS_HEADING = {
   error: "Activation link unavailable",
 } as const;
 
+const getSafeContinuation = (value: string | null): string | null => {
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    const issuer = new URL(
+      import.meta.env.VITE_MCP_OAUTH_ISSUER || "https://mcp.diagramwise.com",
+    );
+    if (
+      url.origin !== issuer.origin ||
+      url.pathname !== "/oauth/continue" ||
+      !url.searchParams.get("token")
+    ) {
+      return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
+};
+
 const VerifyEmail: React.FC = () => {
   const [params] = useSearchParams();
+  const continuation = getSafeContinuation(params.get("return_to"));
   const { trackEvent } = useAnalytics({ isEnabled: true });
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading",
@@ -60,12 +81,21 @@ const VerifyEmail: React.FC = () => {
           </h1>
           <p className="mt-4 text-muted">{message}</p>
           {status !== "loading" && (
-            <Link
-              className="mt-6 inline-block rounded-lg bg-[var(--brand)] px-5 py-3 font-semibold text-white"
-              to="/"
-            >
-              Go to Diagramwise
-            </Link>
+            continuation && status === "success" ? (
+              <a
+                className="mt-6 inline-block rounded-lg bg-[var(--brand)] px-5 py-3 font-semibold text-white"
+                href={continuation}
+              >
+                Continue to authorization
+              </a>
+            ) : (
+              <Link
+                className="mt-6 inline-block rounded-lg bg-[var(--brand)] px-5 py-3 font-semibold text-white"
+                to="/"
+              >
+                Go to Diagramwise
+              </Link>
+            )
           )}
         </section>
       </main>
