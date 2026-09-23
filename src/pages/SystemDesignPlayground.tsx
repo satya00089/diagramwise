@@ -2809,7 +2809,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     if (!inspectedNodeId) return;
 
     const newProperty: CustomProperty = {
-      id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+      id: `custom-${Date.now()}-${crypto.randomUUID()}`,
       key: `customProperty${(customProperties[inspectedNodeId]?.length || 0) + 1}`,
       label: `Custom Property ${(customProperties[inspectedNodeId]?.length || 0) + 1}`,
       type: "text",
