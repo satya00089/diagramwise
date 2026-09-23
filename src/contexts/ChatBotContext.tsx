@@ -46,7 +46,7 @@ export const ChatBotProvider: React.FC<{ children: React.ReactNode }> = ({
     (message: Omit<ChatMessage, "id" | "timestamp">) => {
       const newMessage: ChatMessage = {
         ...message,
-        id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        id: `msg-${Date.now()}-${crypto.randomUUID()}`,
         timestamp: new Date(),
       };
       setState((prev) => ({
