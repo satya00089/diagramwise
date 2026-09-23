@@ -6,7 +6,7 @@ export const useToast = () => {
 
   const showToast = useCallback(
     (message: string, type: ToastType = "info", duration?: number) => {
-      const id = `toast-${Date.now()}-${Math.random()}`;
+      const id = `toast-${Date.now()}-${crypto.randomUUID()}`;
       const newToast: ToastMessage = {
         id,
         message,
