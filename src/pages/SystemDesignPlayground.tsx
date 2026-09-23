@@ -2795,6 +2795,14 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     }
   };
 
+  const createCustomPropertyId = () => {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return `custom-${Date.now()}-${crypto.randomUUID()}`;
+    }
+
+    return `custom-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+  };
+
   const setPropBoolean = (key: string, value: boolean) =>
     updateNodeProperty(key, value);
   const setPropNumber = (key: string, value: number) =>
@@ -2809,7 +2817,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     if (!inspectedNodeId) return;
 
     const newProperty: CustomProperty = {
-      id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+      id: createCustomPropertyId(),
       key: `customProperty${(customProperties[inspectedNodeId]?.length || 0) + 1}`,
       label: `Custom Property ${(customProperties[inspectedNodeId]?.length || 0) + 1}`,
       type: "text",

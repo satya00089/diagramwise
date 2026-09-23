@@ -26,6 +26,14 @@ export const ChatBotProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [state, setState] = useState<ChatBotState>(initialState);
 
+  const createMessageId = useCallback(() => {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return `msg-${Date.now()}-${crypto.randomUUID()}`;
+    }
+
+    return `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+  }, []);
+
   const toggleChatBot = useCallback(() => {
     setState((prev) => ({ ...prev, isOpen: !prev.isOpen }));
   }, []);
@@ -46,7 +54,7 @@ export const ChatBotProvider: React.FC<{ children: React.ReactNode }> = ({
     (message: Omit<ChatMessage, "id" | "timestamp">) => {
       const newMessage: ChatMessage = {
         ...message,
-        id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        id: createMessageId(),
         timestamp: new Date(),
       };
       setState((prev) => ({

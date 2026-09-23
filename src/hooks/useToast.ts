@@ -4,9 +4,17 @@ import type { ToastMessage, ToastType } from "../components/Toast";
 export const useToast = () => {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
+  const createToastId = useCallback(() => {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return `toast-${Date.now()}-${crypto.randomUUID()}`;
+    }
+
+    return `toast-${Date.now()}-${Math.random()}`;
+  }, []);
+
   const showToast = useCallback(
     (message: string, type: ToastType = "info", duration?: number) => {
-      const id = `toast-${Date.now()}-${Math.random()}`;
+      const id = createToastId();
       const newToast: ToastMessage = {
         id,
         message,
@@ -16,7 +24,7 @@ export const useToast = () => {
 
       setToasts((prev) => [...prev, newToast]);
     },
-    [],
+    [createToastId],
   );
 
   const removeToast = useCallback((id: string) => {
