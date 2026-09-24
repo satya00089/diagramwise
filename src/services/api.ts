@@ -31,6 +31,17 @@ const API_BASE_URL = getApiBaseUrl(
 );
 
 class ApiService {
+  private async createApiError(
+    response: Response,
+    fallback: string,
+  ): Promise<Error & { status: number }> {
+    const error = new Error(await this.getErrorMessage(response, fallback)) as Error & {
+      status: number;
+    };
+    error.status = response.status;
+    return error;
+  }
+
   private getAuthHeaders(): HeadersInit {
     const token = localStorage.getItem("auth_token");
     return {
@@ -277,7 +288,7 @@ class ApiService {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to fetch diagram");
+      throw await this.createApiError(response, "Failed to fetch diagram");
     }
 
     return response.json();
@@ -292,7 +303,7 @@ class ApiService {
     );
 
     if (!response.ok) {
-      throw new Error("Failed to fetch diagram");
+      throw await this.createApiError(response, "Failed to fetch diagram");
     }
 
     return response.json();
