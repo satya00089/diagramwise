@@ -13,6 +13,7 @@ import { IoDuplicateOutline } from "react-icons/io5";
 import { FiUnlock } from "react-icons/fi";
 import { BiDotsVertical } from "react-icons/bi";
 import { COMPONENTS } from "../config/components";
+import { getNodeDisplayLabel } from "../utils/nodePresentation";
 import NodePropertyDisplay from "./NodePropertyDisplay";
 import { useAppSelector, useAppDispatch } from "../store/hooks";
 import SpriteIcon from "./SpriteIcon";
@@ -122,8 +123,7 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
   const firstMenuItemRef = React.useRef<HTMLButtonElement>(null);
   const returnFocusToTrigger = React.useRef(false);
 
-  // Use componentName if available, otherwise fall back to label
-  const displayLabel = data.componentName || data.label;
+  const displayLabel = getNodeDisplayLabel(data);
   const defaultMermaidSubtitle = componentId
     ? COMPONENTS.find((component) => component.id === componentId)?.description
     : "Microservice";
