@@ -8,7 +8,6 @@ type ProductHeaderProps = {
 };
 
 const navItems = [
-  { label: "How it works", to: "/#how-it-works" },
   { label: "Practice problems", to: "/problems/" },
   { label: "Design Studio", to: "/playground/free" },
   { label: "Learning paths", to: "/learning-paths/" },

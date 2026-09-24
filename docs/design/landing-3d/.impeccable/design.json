@@ -85,7 +85,7 @@
       "name": "Desktop navigation",
       "kind": "nav",
       "description": "Quiet links to explanation, practice problems, and learning paths.",
-      "html": "<nav class=\"ds-nav\" aria-label=\"Main navigation\"><a href=\"#how-it-works\">How it works</a><a href=\"/problems/\">Practice problems</a><a href=\"/learning-paths/\">Learning paths</a></nav>",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Main navigation\"><a href=\"/problems/\">Practice problems</a><a href=\"/learning-paths/\">Learning paths</a></nav>",
       "css": ".ds-nav{display:flex;gap:29px}.ds-nav a{font:400 12px Inter,sans-serif;color:#9a9a98;text-decoration:none;transition:color 180ms}.ds-nav a:hover{color:#f5f5f3}.ds-nav a:focus-visible{outline:2px solid #f5f5f3;outline-offset:5px}@media(prefers-reduced-motion:reduce){.ds-nav a{transition:none}}"
     }
   ],
