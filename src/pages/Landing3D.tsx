@@ -335,9 +335,6 @@ export default function Landing3D() {
       <header className="systema-header systema-container">
         <Brand />
         <nav aria-label="Main navigation" className="systema-desktop-nav">
-          <a href="#how-it-works" aria-label="How it works">
-            <RollingNavLabel>How it works</RollingNavLabel>
-          </a>
           <Link to="/problems/" aria-label="Practice problems">
             <RollingNavLabel>Practice problems</RollingNavLabel>
           </Link>
@@ -460,9 +457,6 @@ export default function Landing3D() {
             aria-label="Mobile navigation"
             className="systema-mobile-nav"
           >
-            <a onClick={() => setMenuOpen(false)} href="#how-it-works">
-              How it works
-            </a>
             <Link onClick={() => setMenuOpen(false)} to="/problems/">
               Practice problems
             </Link>
@@ -547,9 +541,6 @@ export default function Landing3D() {
                   Start designing <HiArrowUpRight />
                 </Link>
               </Button>
-              <a className="systema-text-link" href="#how-it-works">
-                See how it works <HiArrowDown />
-              </a>
             </div>
             <div className="systema-scroll-note">
               <span className="systema-scroll-line" />A first draft is just the
