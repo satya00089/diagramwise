@@ -27,6 +27,7 @@ import AssessmentFindings from "../components/AssessmentFindings";
 import SEO from "../components/SEO";
 import type { ValidationResult } from "../types/systemDesign";
 import { COMPONENTS } from "../config/components";
+import { getNodeDisplayLabel } from "../utils/nodePresentation";
 import { shouldUseDirectIcon } from "../utils/iconRendering";
 import {
   MdAccountTree,
@@ -324,12 +325,7 @@ const formatInspectorValue = (value: unknown): string | null => {
 const getNodeName = (node: Node | undefined): string => {
   if (!node) return "Unknown component";
   const data = node.data as Record<string, unknown>;
-  return (
-    plainText(data.componentName) ||
-    plainText(data.label) ||
-    plainText(data.componentId) ||
-    "Untitled component"
-  );
+  return getNodeDisplayLabel(data);
 };
 
 const getNodeDescription = (node: Node): string => {
