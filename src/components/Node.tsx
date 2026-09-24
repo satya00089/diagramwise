@@ -21,7 +21,7 @@ import { shouldUseDirectIcon } from "../utils/iconRendering";
 
 /** Extract provider slug from a component ID like "aws-cognito" → "aws" */
 function providerFromId(id: string): string | null {
-  const prefix = id.split("-")[0].toLowerCase();
+  const prefix = id.split(/[-_.]/)[0].toLowerCase();
   return ["aws", "azure", "gcp", "kubernetes"].includes(prefix) ? prefix : null;
 }
 
@@ -78,14 +78,21 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
     provider ? state.sprites.providerStatus[provider] : undefined,
   );
   const useDirectIcon = shouldUseDirectIcon(componentId) && !!data.iconUrl;
+  const [iconUrlFailed, setIconUrlFailed] = React.useState(false);
+
+  React.useEffect(() => {
+    setIconUrlFailed(false);
+  }, [data.iconUrl]);
   // For known sprite providers (aws/azure/gcp/kubernetes): NEVER fire iconUrl <img>.
   // Show nothing while loading (status undefined or 'loading'), sprite once ready.
   // Only fall back to iconUrl if sprite load definitively failed (status 'error'),
   // or if this is a non-cloud component with no sprite provider at all.
   const showIconUrl =
-    disableProviderSprites ||
-    useDirectIcon ||
-    (!sprite && !!data.iconUrl && (!provider || spriteStatus === "error"));
+    !!data.iconUrl &&
+    !iconUrlFailed &&
+    (disableProviderSprites ||
+      useDirectIcon ||
+      (!sprite && (!provider || spriteStatus === "error")));
 
   // Self-load sprite manifest for this node's provider if not already loaded.
   // condition in the thunk handles deduplication (won't re-fetch if loading/ready).
@@ -333,6 +340,7 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
           alt={displayLabel}
           className="w-full h-full object-contain"
           style={{ maxWidth: "10rem", maxHeight: "10rem" }}
+          onError={() => setIconUrlFailed(true)}
         />
       </div>
     );

@@ -17,6 +17,7 @@ describe("shouldUseDirectIcon", () => {
     expect(shouldUseDirectIcon("AWS-simple-storage-service-storage")).toBe(
       true,
     );
+    expect(shouldUseDirectIcon("aws.cache.redis")).toBe(true);
     expect(shouldUseDirectIcon("custom-service")).toBe(false);
     expect(shouldUseDirectIcon()).toBe(false);
   });
