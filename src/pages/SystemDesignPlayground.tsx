@@ -173,6 +173,27 @@ type DiagramAccessState =
   | "error"
   | null;
 
+// These IDs are the stable internal IDs of provider-neutral catalog entries.
+// They must never be sent to the provider-backed component endpoint, which
+// only knows provider-specific records.
+const GENERIC_COMPONENT_IDS = new Set([
+  "application-server",
+  "cache",
+  "custom-component",
+  "database",
+  "load-balancer",
+  "queue",
+]);
+
+const isGenericComponentReference = (
+  componentId: string | null | undefined,
+  provider?: unknown,
+  catalogRef?: unknown,
+): boolean =>
+  provider === "generic" ||
+  (typeof catalogRef === "string" && catalogRef.startsWith("generic.")) ||
+  (typeof componentId === "string" && GENERIC_COMPONENT_IDS.has(componentId));
+
 const getApiErrorStatus = (error: unknown): number | undefined => {
   if (!error || typeof error !== "object") return undefined;
   const status = (error as { status?: unknown }).status;
@@ -596,6 +617,15 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         const localComp = componentId
           ? COMPONENTS.find((c) => c.id === componentId)
           : null;
+        const catalogRef =
+          typeof node.data?.catalogRef === "string"
+            ? node.data.catalogRef
+            : "";
+        const isGenericCatalogComponent = isGenericComponentReference(
+          componentId,
+          node.data?.provider,
+          catalogRef,
+        );
 
         // Restore icon from local component if available
         const restoredIcon = localComp?.icon || node.data?.icon;
@@ -611,7 +641,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           componentId &&
           !localComp &&
           !fullComponentsCache[componentId] &&
-          !node.data?.extensionSource
+          !node.data?.extensionSource &&
+          !isGenericCatalogComponent
         ) {
           dispatch(fetchFullComponent(componentId));
         }
@@ -1928,7 +1959,13 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     const fullComp = fullComponentsCache[type];
 
     // If not in cache and it's not a local component, trigger fetch for next time
-    if (!fullComp && type && !comp && minimalComp) {
+    if (
+      !fullComp &&
+      type &&
+      !comp &&
+      minimalComp &&
+      !isGenericComponentReference(type)
+    ) {
       dispatch(fetchFullComponent(type));
     }
 
@@ -2283,7 +2320,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         if (
           comp.componentType &&
           !COMPONENTS.find((c) => c.id === comp.componentType) &&
-          !fullComponentsCache[comp.componentType]
+          !fullComponentsCache[comp.componentType] &&
+          !isGenericComponentReference(comp.componentType)
         ) {
           dispatch(fetchFullComponent(comp.componentType));
         }
