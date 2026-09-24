@@ -1,0 +1,1 @@
+import{j as a}from"./index-qUo-kVGg.js";const n=({children:l})=>a.jsxs("span",{className:"rolling-nav-label","aria-hidden":"true",children:[a.jsx("span",{className:"rolling-nav-label__copy",children:l}),a.jsx("span",{className:"rolling-nav-label__copy rolling-nav-label__copy--incoming",children:l})]});export{n as R};
