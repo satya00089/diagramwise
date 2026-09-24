@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import {
   ReactFlow,
   Background,
@@ -124,7 +124,6 @@ const ReadOnlyCustomNode = (props: any) => (
       {...props}
       onCopy={noop}
       isInGroup={false}
-      disableProviderSprites
     />
   </ReadOnlyNodeShell>
 );
@@ -145,7 +144,7 @@ const ReadOnlyFreeformNode = (props: any) => (
 );
 const ReadOnlyGroupNode = (props: any) => (
   <ReadOnlyNodeShell>
-    <GroupNode {...props} disableProviderSprites />
+    <GroupNode {...props} />
   </ReadOnlyNodeShell>
 );
 const ReadOnlyCustomEdge = (props: any) => (
@@ -180,6 +179,45 @@ const formatDate = (iso: string | null | undefined): string => {
   });
 };
 
+// MCP clients may use a semantic generic ID that differs from the stable
+// built-in canvas ID. Resolve those aliases locally so public diagrams still
+// render the product's real icon component without another catalog request.
+const PUBLIC_COMPONENT_ALIASES: Record<string, string> = {
+  "application-server": "backend-server",
+  application_service: "backend-server",
+  "application-service": "backend-server",
+  "api-server": "backend-server",
+  "api-service": "backend-server",
+  "backend-service": "backend-server",
+  redis: "cache",
+  "redis-cache": "cache",
+  "cache-service": "cache",
+  "web-client": "web-app",
+  "browser-client": "web-app",
+  frontend: "web-app",
+  "frontend-client": "web-app",
+  postgres: "database",
+  postgresql: "database",
+  "postgres-database": "database",
+  "database-server": "database",
+  s3: "object-storage",
+  "s3-bucket": "object-storage",
+  "object-store": "object-storage",
+  cloudfront: "cdn",
+  "content-delivery-network": "cdn",
+};
+
+const resolveLocalPublicComponent = (componentId?: string) => {
+  if (!componentId) return null;
+  const normalizedId = componentId.trim().toLowerCase().replace(/_/g, "-");
+  const direct = COMPONENTS.find((component) => component.id === normalizedId);
+  if (direct) return direct;
+  const alias = PUBLIC_COMPONENT_ALIASES[normalizedId];
+  return alias
+    ? COMPONENTS.find((component) => component.id === alias) ?? null
+    : null;
+};
+
 const restorePublicNodeIcons = (
   nodes: Node[],
   iconUrls: Record<string, string> = {},
@@ -187,9 +225,7 @@ const restorePublicNodeIcons = (
   nodes.map((node) => {
     const componentId =
       typeof node.data?.componentId === "string" ? node.data.componentId : null;
-    const localComponent = componentId
-      ? COMPONENTS.find((component) => component.id === componentId)
-      : null;
+    const localComponent = resolveLocalPublicComponent(componentId ?? undefined);
     const storedIcon = node.data?.icon;
     const safeStoredIcon =
       typeof storedIcon === "function" ||
@@ -884,41 +920,67 @@ const ReadOnlyCanvas: React.FC<{
   onSelectNode: (node: Node) => void;
   onSelectEdge: (edge: Edge) => void;
   onClearSelection: () => void;
-}> = ({ nodes, edges, onSelectNode, onSelectEdge, onClearSelection }) => (
-  <ReactFlow
-    className="public-read-only-canvas"
-    nodes={nodes}
-    edges={edges}
-    nodeTypes={NODE_TYPES}
-    edgeTypes={EDGE_TYPES}
-    nodesDraggable={false}
-    nodesConnectable={false}
-    elementsSelectable
-    nodesFocusable
-    edgesFocusable
-    connectionMode={ConnectionMode.Loose}
-    onNodeClick={(_, node) => onSelectNode(node)}
-    onEdgeClick={(_, edge) => onSelectEdge(edge)}
-    onPaneClick={onClearSelection}
-    panOnDrag
-    zoomOnScroll
-    zoomOnPinch
-    minZoom={0.08}
-    maxZoom={2}
-    fitView
-    fitViewOptions={{ padding: 0.12 }}
-    proOptions={{ hideAttribution: true }}
-  >
-    <Background gap={20} size={1} color="var(--border)" />
-    <StyledFlowControls showInteractive={false} />
-    <MiniMap
-      nodeStrokeWidth={3}
-      zoomable
-      pannable
-      className="!bottom-4 !right-4"
-    />
-  </ReactFlow>
-);
+  captureMode?: boolean;
+  onCaptureReady?: () => void;
+}> = ({
+  nodes,
+  edges,
+  onSelectNode,
+  onSelectEdge,
+  onClearSelection,
+  captureMode = false,
+  onCaptureReady,
+}) => {
+  useEffect(() => {
+    if (!captureMode) return;
+    let secondFrame: number | undefined;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        onCaptureReady?.();
+      });
+    });
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      if (secondFrame !== undefined) window.cancelAnimationFrame(secondFrame);
+    };
+  }, [captureMode, nodes.length, onCaptureReady]);
+
+  return (
+    <ReactFlow
+      className="public-read-only-canvas"
+      nodes={nodes}
+      edges={edges}
+      nodeTypes={NODE_TYPES}
+      edgeTypes={EDGE_TYPES}
+      nodesDraggable={false}
+      nodesConnectable={false}
+      elementsSelectable
+      nodesFocusable
+      edgesFocusable
+      connectionMode={ConnectionMode.Loose}
+      onNodeClick={(_, node) => onSelectNode(node)}
+      onEdgeClick={(_, edge) => onSelectEdge(edge)}
+      onPaneClick={onClearSelection}
+      panOnDrag
+      zoomOnScroll
+      zoomOnPinch
+      minZoom={0.08}
+      maxZoom={2}
+      fitView
+      fitViewOptions={{ padding: 0.12 }}
+      proOptions={{ hideAttribution: true }}
+    >
+      <Background gap={20} size={1} color="var(--border)" />
+      <StyledFlowControls showInteractive={false} />
+      <MiniMap
+        nodeStrokeWidth={3}
+        zoomable
+        pannable
+        className="!bottom-4 !right-4"
+      />
+    </ReactFlow>
+  );
+};
 
 // ---------------------------------------------------------------------------
 // Right panel — mirrors playground InspectorPanel look (no ScoreRing)
@@ -1134,6 +1196,8 @@ const RightPanel: React.FC<{
 
 const SharedCanvasPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const captureMode = searchParams.get("capture") === "png";
   const [data, setData] = useState<PublicData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -1143,6 +1207,27 @@ const SharedCanvasPage: React.FC = () => {
   const [publicIconUrls, setPublicIconUrls] = useState<Record<string, string>>(
     {},
   );
+  const [publicIconLoading, setPublicIconLoading] = useState(false);
+  const [captureCanvasReady, setCaptureCanvasReady] = useState(false);
+
+  const markCaptureReady = useCallback(() => {
+    setCaptureCanvasReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!captureMode) return;
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousBodyMargin = document.body.style.margin;
+    const previousDocumentOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.body.style.margin = "0";
+    document.documentElement.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.body.style.margin = previousBodyMargin;
+      document.documentElement.style.overflow = previousDocumentOverflow;
+    };
+  }, [captureMode]);
 
   // Reconstruct composite id if hash was not URL-encoded (legacy broken links)
   const resolvedId = useMemo(() => {
@@ -1198,6 +1283,7 @@ const SharedCanvasPage: React.FC = () => {
     req
       .then((result) => {
         setData(result);
+        setCaptureCanvasReady(false);
         setSelection(null);
         setActivePanelTab("overview");
       })
@@ -1210,6 +1296,7 @@ const SharedCanvasPage: React.FC = () => {
   useEffect(() => {
     if (!data) {
       setPublicIconUrls({});
+      setPublicIconLoading(false);
       return;
     }
 
@@ -1233,11 +1320,13 @@ const SharedCanvasPage: React.FC = () => {
 
     if (componentIds.length === 0) {
       setPublicIconUrls({});
+      setPublicIconLoading(false);
       return;
     }
 
     let cancelled = false;
     setPublicIconUrls({});
+    setPublicIconLoading(true);
 
     Promise.all(
       componentIds.map(async (componentId) => {
@@ -1260,6 +1349,7 @@ const SharedCanvasPage: React.FC = () => {
           ),
         ),
       );
+      setPublicIconLoading(false);
     });
 
     return () => {
@@ -1407,7 +1497,22 @@ const SharedCanvasPage: React.FC = () => {
         imageAlt={pageTitle}
       />
 
-      <div className="shared-page flex h-[100dvh] flex-col overflow-hidden bg-[var(--bg)]">
+      <div
+        className={`shared-page flex h-[100dvh] flex-col overflow-hidden bg-[var(--bg)]${
+          captureMode ? " diagramwise-capture-root" : ""
+        }`}
+        data-diagramwise-capture-root={captureMode ? "true" : undefined}
+        data-diagramwise-capture-ready={
+          captureMode
+            ? publicIconLoading || !captureCanvasReady
+              ? "false"
+              : "true"
+            : undefined
+        }
+        aria-label={
+          captureMode ? `${data.title} Diagramwise architecture preview` : undefined
+        }
+      >
         {/* Top bar */}
         <header className="shared-header flex h-16 flex-shrink-0 items-center gap-3 border-b border-[var(--border)] bg-[var(--surface)] px-4 sm:px-7">
           <Link
@@ -1448,6 +1553,8 @@ const SharedCanvasPage: React.FC = () => {
                 onSelectNode={inspectNode}
                 onSelectEdge={inspectEdge}
                 onClearSelection={() => setSelection(null)}
+                captureMode={captureMode}
+                onCaptureReady={captureMode ? markCaptureReady : undefined}
               />
             </ReactFlowProvider>
             <div className="shared-canvas-label" aria-hidden="true">

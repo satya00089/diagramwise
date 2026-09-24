@@ -8,6 +8,6 @@ const SPRITE_PROVIDERS = new Set(["aws", "azure", "gcp", "kubernetes"]);
 
 export function shouldUseDirectIcon(componentId?: string): boolean {
   if (!componentId) return false;
-  const provider = componentId.split("-", 1)[0].toLowerCase();
+  const provider = componentId.split(/[-_.]/, 1)[0].toLowerCase();
   return SPRITE_PROVIDERS.has(provider);
 }
