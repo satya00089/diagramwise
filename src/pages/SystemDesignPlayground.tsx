@@ -165,6 +165,20 @@ import {
 // Type alias for all node data types
 type AnyNodeData = NodeData | ERNodeData | TableNodeData | FreeformNodeData;
 
+type DiagramAccessState =
+  | "loading"
+  | "requires-auth"
+  | "forbidden"
+  | "not-found"
+  | "error"
+  | null;
+
+const getApiErrorStatus = (error: unknown): number | undefined => {
+  if (!error || typeof error !== "object") return undefined;
+  const status = (error as { status?: unknown }).status;
+  return typeof status === "number" ? status : undefined;
+};
+
 // Persists the user's "Skip for now" / submit choice on the project intent
 // dialog so it doesn't reappear after a remount or after the canvas briefly
 // goes non-blank and back (e.g. add then delete a node).
@@ -675,6 +689,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
   // Auth and diagram management state
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [diagramAccessState, setDiagramAccessState] =
+    useState<DiagramAccessState>(null);
   const [currentDiagramId, setCurrentDiagramId] = useState<string | null>(null);
   const [currentDiagram, setCurrentDiagram] = useState<SavedDiagram | null>(
     null,
@@ -1085,6 +1101,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   // Load diagram from URL parameter if diagramId is present, or load saved progress for problems
   useEffect(() => {
     lastSavedAttemptContentRef.current = null;
+    if (!diagramIdFromUrl) {
+      setDiagramAccessState(null);
+    }
 
     if (idFromUrl === "free" && remixIdFromUrl) {
       const loadRemix = async () => {
@@ -1134,13 +1153,20 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
       void loadRemix();
     } else if (diagramIdFromUrl) {
-      // Load specific diagram from URL (allow for both authenticated and unauthenticated users for shared diagrams)
+      // A diagram URL can point to either a private editor record or a public
+      // snapshot. Try the account-scoped record first for signed-in users,
+      // while preserving the public-link experience for everyone else.
+      let cancelled = false;
       const loadDiagramFromUrl = async () => {
-        try {
-          // Use public endpoint for unauthenticated users, authenticated endpoint for logged-in users
-          const diagram = isAuthenticated
-            ? await apiService.getDiagram(diagramIdFromUrl)
-            : await apiService.getPublicDiagram(diagramIdFromUrl);
+        if (cancelled) return;
+        setDiagramAccessState("loading");
+        setNodes([]);
+        setEdges([]);
+        setCurrentDiagramId(null);
+        setCurrentDiagram(null);
+
+        const applyDiagram = (diagram: SavedDiagram) => {
+          if (cancelled) return;
           const loadedNodes = diagram.nodes as Node[];
           const loadedEdges = restoreEdgePurposes(diagram.edges as Edge[]);
 
@@ -1153,17 +1179,61 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           setCurrentDiagram(diagram);
           setRemixOrigin(null);
 
-          // Immediately update canvas state to prevent undo/redo from clearing the loaded data
+          // Immediately update canvas state to prevent undo/redo from
+          // clearing the loaded data while the rest of the page mounts.
           setCanvasState({ nodes: restoredNodes, edges: loadedEdges });
+          setDiagramAccessState(null);
+        };
+
+        try {
+          if (!isAuthenticated) {
+            applyDiagram(await apiService.getPublicDiagram(diagramIdFromUrl));
+            return;
+          }
+
+          try {
+            applyDiagram(await apiService.getDiagram(diagramIdFromUrl));
+          } catch (privateError) {
+            if (cancelled) return;
+            // A signed-in user may still be opening a public editor-shaped
+            // link. Keep that compatible by falling back to the public copy.
+            try {
+              applyDiagram(
+                await apiService.getPublicDiagram(diagramIdFromUrl),
+              );
+            } catch (publicError) {
+              if (cancelled) return;
+              const privateStatus = getApiErrorStatus(privateError);
+              const publicStatus = getApiErrorStatus(publicError);
+              const status = publicStatus ?? privateStatus;
+
+              if (status === 403 || privateStatus === 403) {
+                setDiagramAccessState("forbidden");
+              } else if (status === 404 || privateStatus === 404) {
+                setDiagramAccessState("not-found");
+              } else {
+                setDiagramAccessState("error");
+              }
+            }
+          }
         } catch (err) {
+          if (cancelled) return;
           console.error("Failed to load diagram:", err);
-          toast.error(
-            "Failed to load diagram. It may have been deleted or you don't have access to it.",
-          );
+          const status = getApiErrorStatus(err);
+          if (!isAuthenticated && [401, 403, 404].includes(status ?? 0)) {
+            setDiagramAccessState("requires-auth");
+          } else if (status === 404) {
+            setDiagramAccessState("not-found");
+          } else {
+            setDiagramAccessState("error");
+          }
         }
       };
 
-      loadDiagramFromUrl();
+      void loadDiagramFromUrl();
+      return () => {
+        cancelled = true;
+      };
     } else if (idFromUrl === "free" && isAuthenticated) {
       // For Design Studio: restore the last auto-saved diagram
       const lastDiagramKey = `last-diagram-${user?.id || "anonymous"}`;
@@ -5231,6 +5301,112 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
         {/* Main Content */}
         <div className="relative flex-1 flex min-h-0 min-w-0 overflow-hidden">
+          {diagramAccessState && (
+            <div
+              className="absolute inset-0 z-40 flex items-center justify-center bg-theme/95 px-6 py-10 backdrop-blur-sm"
+              role={diagramAccessState === "loading" ? undefined : "dialog"}
+              aria-labelledby="diagram-access-title"
+              aria-describedby="diagram-access-description"
+            >
+              <div className="w-full max-w-lg rounded-2xl border border-theme/15 bg-surface p-8 text-center shadow-2xl">
+                {diagramAccessState === "loading" && (
+                  <div
+                    className="mx-auto mb-5 h-10 w-10 animate-spin rounded-full border-4 border-theme/15 border-t-accent"
+                    aria-label="Loading diagram"
+                  />
+                )}
+                {diagramAccessState === "requires-auth" && (
+                  <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 text-2xl">
+                    🔒
+                  </div>
+                )}
+                {diagramAccessState === "forbidden" && (
+                  <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-2xl">
+                    🔐
+                  </div>
+                )}
+                {(diagramAccessState === "not-found" ||
+                  diagramAccessState === "error") && (
+                  <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-2xl">
+                    !
+                  </div>
+                )}
+
+                <h2
+                  id="diagram-access-title"
+                  className="text-xl font-semibold text-theme"
+                >
+                  {diagramAccessState === "loading" && "Loading diagram…"}
+                  {diagramAccessState === "requires-auth" &&
+                    "Sign in to view this design"}
+                  {diagramAccessState === "forbidden" &&
+                    "This design belongs to another account"}
+                  {diagramAccessState === "not-found" &&
+                    "This design is no longer available"}
+                  {diagramAccessState === "error" &&
+                    "We couldn’t load this design"}
+                </h2>
+                <p
+                  id="diagram-access-description"
+                  className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted"
+                >
+                  {diagramAccessState === "loading" &&
+                    "We’re checking the diagram link and preparing the canvas."}
+                  {diagramAccessState === "requires-auth" &&
+                    "This link points to a private or account-scoped design. Sign in to continue. After you sign in, we’ll return here and load it automatically."}
+                  {diagramAccessState === "forbidden" &&
+                    "The signed-in account does not have access to this design. Sign in with the account that owns it or use a public Diagramwise link."}
+                  {diagramAccessState === "not-found" &&
+                    "The link may be expired, deleted, or no longer shared with you."}
+                  {diagramAccessState === "error" &&
+                    "The diagram service could not load this link. Please try again."}
+                </p>
+
+                {diagramAccessState !== "loading" && (
+                  <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+                    {diagramAccessState === "requires-auth" && (
+                      <button
+                        type="button"
+                        onClick={() => setShowAuthModal(true)}
+                        className="rounded-lg bg-accent px-5 py-2.5 font-semibold text-[var(--bg)] transition hover:brightness-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                      >
+                        Sign in to continue
+                      </button>
+                    )}
+                    {diagramAccessState === "forbidden" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          logout();
+                          setDiagramAccessState("requires-auth");
+                          setShowAuthModal(true);
+                        }}
+                        className="rounded-lg bg-accent px-5 py-2.5 font-semibold text-[var(--bg)] transition hover:brightness-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                      >
+                        Sign in with another account
+                      </button>
+                    )}
+                    {diagramAccessState === "error" && (
+                      <button
+                        type="button"
+                        onClick={() => globalThis.location.reload()}
+                        className="rounded-lg bg-accent px-5 py-2.5 font-semibold text-[var(--bg)] transition hover:brightness-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                      >
+                        Try again
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={onBack}
+                      className="rounded-lg border border-theme/20 bg-theme/5 px-5 py-2.5 font-semibold text-theme transition hover:bg-theme/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+                    >
+                      Back to Diagramwise
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           {!isSharedView && (
             <ComponentPalette
               components={COMPONENTS}
