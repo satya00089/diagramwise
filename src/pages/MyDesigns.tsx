@@ -6,7 +6,9 @@ import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../hooks/useAuth";
 import { useOnboarding } from "../hooks/useOnboarding";
 import { useTour } from "../hooks/useTour";
+import { useToast } from "../hooks/useToast";
 import SEO from "../components/SEO";
+import { ToastContainer } from "../components/Toast";
 import { apiService } from "../services/api";
 import type { SavedDiagramSummary } from "../types/auth";
 import {
@@ -285,6 +287,8 @@ const MyDesigns: React.FC = () => {
   const [diagramToDelete, setDiagramToDelete] = useState<SavedDiagramSummary | null>(
     null,
   );
+  const deleteCancelRef = useRef<HTMLButtonElement>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [diagramToUnpublish, setDiagramToUnpublish] =
     useState<SavedDiagramSummary | null>(null);
   const [isUnpublishing, setIsUnpublishing] = useState(false);
@@ -301,6 +305,7 @@ const MyDesigns: React.FC = () => {
     googleLogin,
     logout,
   } = useAuth();
+  const toast = useToast();
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -409,18 +414,24 @@ const MyDesigns: React.FC = () => {
   };
 
   const confirmDeleteDiagram = async () => {
-    if (!diagramToDelete) return;
+    if (!diagramToDelete || isDeleting) return;
+
+    const diagram = diagramToDelete;
+    setIsDeleting(true);
 
     try {
-      await apiService.deleteDiagram(diagramToDelete.id);
+      await apiService.deleteDiagram(diagram.id);
       setSavedDiagrams((prev) =>
-        prev.filter((d) => d.id !== diagramToDelete.id),
+        prev.filter((d) => d.id !== diagram.id),
       );
       setShowDeleteDialog(false);
       setDiagramToDelete(null);
+      toast.success(`“${diagram.title}” was deleted.`);
     } catch (error) {
       console.error("Failed to delete diagram:", error);
-      alert("Failed to delete diagram. Please try again.");
+      toast.error("The design could not be deleted. Please try again.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -428,6 +439,26 @@ const MyDesigns: React.FC = () => {
     setShowDeleteDialog(false);
     setDiagramToDelete(null);
   };
+
+  useEffect(() => {
+    if (!showDeleteDialog) return;
+
+    const focusCancel = window.requestAnimationFrame(() => {
+      deleteCancelRef.current?.focus();
+    });
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isDeleting) {
+        setShowDeleteDialog(false);
+        setDiagramToDelete(null);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusCancel);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isDeleting, showDeleteDialog]);
 
   const publicUrlFor = (diagramId: string) =>
     `${window.location.origin}/public/${encodeURIComponent(diagramId)}`;
@@ -1193,58 +1224,74 @@ const MyDesigns: React.FC = () => {
 
       {/* Delete Confirmation Dialog */}
       {showDeleteDialog && diagramToDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[var(--surface)] rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 border border-[var(--theme)]/10">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-red-600 dark:text-red-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+        <dialog
+          open
+          className="fixed inset-0 z-50 m-0 flex h-full max-h-none w-full max-w-none items-center justify-center border-0 bg-slate-950/65 p-4"
+          aria-modal="true"
+          aria-labelledby="delete-design-title"
+          aria-describedby="delete-design-description"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default"
+            aria-label="Cancel deleting design"
+            onClick={() => !isDeleting && cancelDeleteDiagram()}
+            disabled={isDeleting}
+          />
+          <div className="app-modal my-designs-delete-dialog relative w-full">
+            <div className="app-modal__body">
+              <div className="my-designs-delete-dialog__header">
+                <div className="my-designs-delete-dialog__icon" aria-hidden="true">
+                  <MdDeleteOutline size={22} />
+                </div>
+                <div className="min-w-0">
+                  <h2 id="delete-design-title" className="app-modal__title">
+                    Delete this design?
+                  </h2>
+                  <p className="my-designs-delete-dialog__eyebrow">
+                    Permanent action
+                  </p>
+                </div>
+              </div>
+
+              <p id="delete-design-description" className="my-designs-delete-dialog__copy">
+                “<strong>{diagramToDelete.title}</strong>” and all of its saved
+                data will be permanently removed. You won’t be able to recover
+                this design.
+              </p>
+
+              <div className="my-designs-delete-dialog__actions">
+                <button
+                  ref={deleteCancelRef}
+                  type="button"
+                  onClick={cancelDeleteDiagram}
+                  disabled={isDeleting}
+                  className="app-modal__secondary disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                  />
-                </svg>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void confirmDeleteDiagram()}
+                  disabled={isDeleting}
+                  aria-busy={isDeleting}
+                  className="my-designs-delete-dialog__danger disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {isDeleting && (
+                    <span
+                      className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                      aria-hidden="true"
+                    />
+                  )}
+                  {isDeleting ? "Deleting…" : "Delete design"}
+                </button>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-[var(--theme)]">
-                  Delete Design?
-                </h3>
-                <p className="text-sm text-muted">
-                  This action cannot be undone
-                </p>
-              </div>
-            </div>
-            <p className="text-muted mb-6">
-              Are you sure you want to delete{" "}
-              <strong>"{diagramToDelete.title}"</strong>? This will permanently
-              remove the design and all its data.
-            </p>
-            <div className="flex space-x-3">
-              <button
-                type="button"
-                onClick={cancelDeleteDiagram}
-                className="flex-1 px-4 py-2 bg-[var(--theme)]/5 hover:bg-[var(--theme)]/10 text-[var(--theme)] font-medium rounded-lg transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmDeleteDiagram}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors cursor-pointer"
-              >
-                Delete Design
-              </button>
             </div>
           </div>
-        </div>
+        </dialog>
       )}
+
+      <ToastContainer toasts={toast.toasts} onClose={toast.removeToast} />
 
       {diagramToUnpublish && (
         <dialog

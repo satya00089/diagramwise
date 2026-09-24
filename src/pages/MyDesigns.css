@@ -547,6 +547,101 @@
   background: color-mix(in srgb, var(--text) 11%, transparent);
 }
 
+.my-designs-delete-dialog {
+  max-width: 32rem;
+}
+
+.my-designs-delete-dialog__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.my-designs-delete-dialog__icon {
+  display: inline-flex;
+  width: 3rem;
+  height: 3rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, #b42318 28%, var(--border));
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, #b42318 12%, transparent);
+  color: #b42318;
+}
+
+.my-designs-delete-dialog__eyebrow {
+  margin-top: 0.65rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.my-designs-delete-dialog__copy {
+  max-width: 46ch;
+  margin: 1.75rem 0 0;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.my-designs-delete-dialog__copy strong {
+  color: var(--text);
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.my-designs-delete-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.my-designs-delete-dialog__actions .app-modal__secondary,
+.my-designs-delete-dialog__danger {
+  min-width: 7.5rem;
+}
+
+.my-designs-delete-dialog__danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 40px;
+  padding: 9px 16px;
+  border: 1px solid #b42318;
+  border-radius: 9px;
+  background: #b42318;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+.my-designs-delete-dialog__danger:hover {
+  border-color: #941d14;
+  background: #941d14;
+}
+
+.my-designs-delete-dialog__danger:active {
+  transform: translateY(1px);
+}
+
+.my-designs-delete-dialog__danger:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+
 @media (max-width: 420px) {
   .my-designs-sharing {
     align-items: flex-start;
@@ -579,6 +674,17 @@
   .my-designs-tab {
     width: 100%;
     text-align: left;
+  }
+}
+
+@media (max-width: 520px) {
+  .my-designs-delete-dialog__actions {
+    flex-direction: column-reverse;
+  }
+
+  .my-designs-delete-dialog__actions .app-modal__secondary,
+  .my-designs-delete-dialog__danger {
+    width: 100%;
   }
 }
 
