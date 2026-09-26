@@ -19,6 +19,7 @@ import type {
   FeedbackResponse,
   FeedbackSubmission,
 } from "../types/feedback";
+import { getGoogleLoginStartUri } from "./googleAuth";
 
 // VITE_API_URL is the application's documented API endpoint. Keep the older
 // assessment-specific name as a fallback for existing deployments.
@@ -34,6 +35,7 @@ const API_BASE_URL = getApiBaseUrl(
 );
 
 export const GOOGLE_LOGIN_REDIRECT_URI = getGoogleLoginRedirectUri(API_BASE_URL);
+export const GOOGLE_LOGIN_START_URI = getGoogleLoginStartUri(API_BASE_URL);
 
 class ApiService {
   private async createApiError(

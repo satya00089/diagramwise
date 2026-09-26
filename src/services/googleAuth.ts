@@ -1,5 +1,8 @@
 const GOOGLE_AUTH_RETURN_KEY = "diagramwise_google_auth_return_to";
 
+export const getGoogleLoginStartUri = (apiBaseUrl: string): string =>
+  `${apiBaseUrl.replace(/\/$/, "")}/api/v1/auth/google/redirect/start`;
+
 const isAllowedMcpContinuation = (value: URL): boolean =>
   value.protocol === "https:" &&
   value.hostname === "mcp.diagramwise.com" &&
@@ -54,4 +57,12 @@ export const consumeGoogleAuthReturnTo = (): string => {
   }
 
   return "/";
+};
+
+export const startGoogleLogin = (startUri: string, returnTo: string): void => {
+  const target = returnTo || "/";
+  storeGoogleAuthReturnTo(target);
+  window.location.assign(
+    `${startUri}?return_to=${encodeURIComponent(target)}`,
+  );
 };
