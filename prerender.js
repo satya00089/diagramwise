@@ -1041,7 +1041,7 @@ fs.writeFileSync(
 // GitHub Pages serves nested application routes as static files. Keep the
 // authenticated entry points available for OAuth/signup links while React
 // takes over the route and renders the interactive experience.
-for (const route of ["/auth", "/verify-email"]) {
+for (const route of ["/auth", "/auth/callback", "/verify-email"]) {
   fs.copyFileSync(indexPath, outputPathFor(route));
 }
 

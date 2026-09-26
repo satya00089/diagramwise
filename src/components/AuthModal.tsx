@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MdClose, MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { useTheme } from "../hooks/useTheme";
-import { apiService } from "../services/api";
+import { apiService, GOOGLE_LOGIN_REDIRECT_URI } from "../services/api";
+import { storeGoogleAuthReturnTo } from "../services/googleAuth";
 
 const GOOGLE_IDENTITY_SCRIPT_ID = "google-identity-services";
 let googleIdentityScriptPromise: Promise<void> | null = null;
@@ -66,6 +67,7 @@ interface AuthModalProps {
   onGoogleLogin?: (credential: string) => Promise<void>;
   initialMode?: AuthMode;
   signupContext?: { verificationReturnUrl?: string };
+  googleReturnTo?: string;
 }
 
 type AuthMode = "login" | "signup";
@@ -344,6 +346,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onGoogleLogin,
   initialMode = "login",
   signupContext,
+  googleReturnTo,
 }) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
@@ -357,48 +360,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [verificationEmail, setVerificationEmail] = useState("");
   const [resendMessage, setResendMessage] = useState("");
   const { theme } = useTheme();
-  const googleResponseRef = useRef<
-    (response: GoogleCredentialResponse) => void
-  >(() => {});
 
   const resolvedDarkMode =
     theme === "dark" ||
     (theme === "system" &&
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches);
-
-  const handleGoogleResponse = useCallback(
-    async (response: GoogleCredentialResponse) => {
-      if (!onGoogleLogin) return;
-
-      setIsLoading(true);
-      setError("");
-
-      try {
-        await onGoogleLogin(response.credential);
-        onClose();
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Google authentication failed",
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [onGoogleLogin, onClose],
-  );
-
-  useEffect(() => {
-    googleResponseRef.current = handleGoogleResponse;
-  }, [handleGoogleResponse]);
+  const googleLoginAvailable = Boolean(onGoogleLogin);
 
   // Initialize Google Sign-In
   useEffect(() => {
-    if (!isOpen || !onGoogleLogin) return;
+    if (!isOpen || !googleLoginAvailable) return;
 
     let cancelled = false;
     let renderedButtonWidth = 0;
     let resizeObserver: ResizeObserver | undefined;
+
+    const currentReturnTo =
+      googleReturnTo ||
+      `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    storeGoogleAuthReturnTo(currentReturnTo || "/");
 
     const renderGoogleButton = () => {
       const container = document.getElementById("google-signin-button");
@@ -426,9 +407,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       if (!googleIdentityInitialized) {
         window.google.accounts.id.initialize({
           client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "",
-          callback: (response: GoogleCredentialResponse) => {
-            googleResponseRef.current(response);
-          },
+          ux_mode: "redirect",
+          login_uri: GOOGLE_LOGIN_REDIRECT_URI,
         });
         googleIdentityInitialized = true;
       }
@@ -449,7 +429,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       cancelled = true;
       resizeObserver?.disconnect();
     };
-  }, [isOpen, mode, onGoogleLogin, resolvedDarkMode]);
+  }, [
+    isOpen,
+    mode,
+    googleLoginAvailable,
+    resolvedDarkMode,
+    googleReturnTo,
+  ]);
 
   const resetCredentialForm = () => {
     setEmail("");

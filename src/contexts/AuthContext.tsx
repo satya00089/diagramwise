@@ -8,6 +8,7 @@ import React, {
 import { jwtDecode } from "jwt-decode";
 import type {
   AuthState,
+  AuthResponse,
   LoginCredentials,
   SignupCredentials,
 } from "../types/auth";
@@ -18,6 +19,7 @@ interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   signup: (credentials: SignupCredentials) => Promise<void>;
   googleLogin: (credential: string) => Promise<void>;
+  completeSession: (response: AuthResponse) => void;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -112,8 +114,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     trackEvent("account_signup_submitted", { method: "password" }, true);
   }, [trackEvent]);
 
-  const googleLogin = useCallback(async (credential: string) => {
-    const { user, token } = await apiService.googleLogin(credential);
+  const completeSession = useCallback((response: AuthResponse) => {
+    const { user, token } = response;
     localStorage.setItem("auth_token", token);
     setState({
       user,
@@ -122,6 +124,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       isLoading: false,
     });
   }, []);
+
+  const googleLogin = useCallback(async (credential: string) => {
+    const { user, token } = await apiService.googleLogin(credential);
+    completeSession({ user, token });
+  }, [completeSession]);
 
   const refreshUser = useCallback(async () => {
     if (!state.token) return;
@@ -136,8 +143,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [state.token, logout]);
 
   const contextValue = useMemo(
-    () => ({ ...state, login, signup, googleLogin, logout, refreshUser }),
-    [state, login, signup, googleLogin, logout, refreshUser],
+    () => ({
+      ...state,
+      login,
+      signup,
+      googleLogin,
+      completeSession,
+      logout,
+      refreshUser,
+    }),
+    [state, login, signup, googleLogin, completeSession, logout, refreshUser],
   );
 
   return (

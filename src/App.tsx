@@ -71,6 +71,10 @@ const VerifyEmail = lazyWithRetry(
   "verify-email",
 );
 const AuthEntry = lazyWithRetry(() => import("./pages/AuthEntry"), "auth-entry");
+const AuthCallback = lazyWithRetry(
+  () => import("./pages/AuthCallback"),
+  "auth-callback",
+);
 const RouteLoading: React.FC = () => (
   <output className="min-h-screen bg-[var(--bg)] text-theme grid place-items-center px-6">
     <span className="block text-center">
@@ -262,6 +266,7 @@ const AppContent: React.FC = () => {
                   />
                   <Route path="/verify-email" element={<VerifyEmail />} />
                   <Route path="/auth" element={<AuthEntry />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
                   <Route
                     path="/playground/:id"
                     element={
