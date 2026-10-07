@@ -18,7 +18,6 @@ import RollingNavLabel from "../components/RollingNavLabel";
 import ArchitectureDiagram, {
   type DesignPhase,
 } from "../components/landing3d/ArchitectureDiagram";
-import PathFigure from "../components/landing3d/PathFigures";
 import Seo from "../components/SEO";
 import { AuthModal } from "../components/AuthModal";
 import { useAuth } from "../hooks/useAuth";
@@ -62,7 +61,23 @@ function Brand() {
 function FeatureArt({
   type,
 }: Readonly<{ type: "design" | "reason" | "review" | "canvas" }>) {
-  return <PathFigure type={type} />;
+  const figures = {
+    design: ["workbench", "A system design workbench with connected modules"],
+    reason: ["switchback", "A stepped learning route with a moving study marker"],
+    review: ["inspection-stack", "Architecture layers opening for inspection"],
+    canvas: ["drafting-board", "A blank drafting board with a moving T-square"],
+  } as const;
+  const [name, label] = figures[type];
+  return (
+    <iframe
+      className="systema-feature-art"
+      src={`/path-figures/embed/${name}.html?theme=dark`}
+      title={label}
+      aria-hidden="true"
+      tabIndex={-1}
+      loading="eager"
+    />
+  );
 }
 
 export default function Landing3D() {

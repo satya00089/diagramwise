@@ -6,6 +6,7 @@
   "homepage": "https://diagramwise.com",
   "scripts": {
     "dev": "vite",
+    "build:path-figures": "node scripts/build-hairline-figures.mjs",
     "build": "tsc -b && vite build",
     "postbuild": "node prerender.js && node scripts/seo-check.js",
     "lint": "eslint .",
