@@ -13,6 +13,12 @@ import {
   HiSun,
   HiXMark,
 } from "react-icons/hi2";
+import {
+  Branches,
+  Elevator,
+  Exploded,
+  Loupe,
+} from "@lucasmarkes/hairline/react";
 import { Button } from "../components/ui/button";
 import RollingNavLabel from "../components/RollingNavLabel";
 import ArchitectureDiagram, {
@@ -58,272 +64,39 @@ function Brand() {
   );
 }
 
-function IsoFeatureNode({
-  x,
-  y,
-  accent = false,
-}: Readonly<{ x: number; y: number; accent?: boolean }>) {
-  return (
-    <g
-      className={`systema-feature-node${accent ? " systema-feature-node--accent" : ""}`}
-      transform={`translate(${x} ${y})`}
-    >
-      <path
-        className="systema-feature-side systema-feature-side--left"
-        d="M-15 0 0 8v16l-15-8Z"
-      />
-      <path
-        className="systema-feature-side systema-feature-side--right"
-        d="M0 8 15 0v16L0 24Z"
-      />
-      <path className="systema-feature-face" d="M-15 0 0-8 15 0 0 8Z" />
-      <path className="systema-feature-detail" d="m-8 0 8-4 8 4" />
-    </g>
-  );
-}
-
-function IsoFeatureTile({ x, y }: Readonly<{ x: number; y: number }>) {
-  return (
-    <g transform={`translate(${x} ${y})`}>
-      <path
-        className="systema-feature-side systema-feature-side--left"
-        d="M0 18v10l40 20V38Z"
-      />
-      <path
-        className="systema-feature-side systema-feature-side--right"
-        d="M40 38v10l40-20V18Z"
-      />
-      <path className="systema-feature-face" d="M0 18 40-2l40 20-40 20Z" />
-      <path
-        className="systema-feature-detail"
-        d="m18 18 22-11 22 11-22 11ZM29 23l11-5 11 5M40 18v11"
-      />
-    </g>
-  );
-}
-
-function FeatureArt({
+function HairlineFeatureArt({
   type,
 }: Readonly<{ type: "design" | "reason" | "review" | "canvas" }>) {
+  const sharedProps = {
+    className: `systema-feature-art systema-feature-art--${type}`,
+    intensity: 0.72,
+    theme: "auto" as const,
+  };
+
+  if (type === "design") {
+    return (
+      <Branches
+        {...sharedProps}
+        aria-label="Branching system design paths"
+      />
+    );
+  }
+
+  if (type === "reason") {
+    return <Elevator {...sharedProps} aria-label="Learning path progress" />;
+  }
+
+  if (type === "review") {
+    return (
+      <Exploded
+        {...sharedProps}
+        aria-label="Architecture layers under review"
+      />
+    );
+  }
+
   return (
-    <svg
-      viewBox="0 0 320 150"
-      fill="none"
-      aria-hidden="true"
-      className={`systema-feature-art systema-feature-art--${type}`}
-    >
-      {type === "design" && (
-        <g className="systema-feature-scene">
-          <path className="systema-feature-guide" d="M49 91 97 66m82 0 49 25" />
-          <rect
-            className="systema-feature-panel"
-            x="18"
-            y="54"
-            width="52"
-            height="42"
-            rx="5"
-          />
-          <path
-            className="systema-feature-detail"
-            d="M29 67h29M29 75h22M29 83h29"
-          />
-          <path className="systema-feature-accent" d="M29 89h14" />
-          <IsoFeatureTile x={91} y={53} />
-          <IsoFeatureNode x={157} y={50} accent />
-          <IsoFeatureNode x={198} y={86} />
-          <path
-            className="systema-feature-connection"
-            d="M171 58 191 78M212 92l17 11"
-          />
-          <path
-            className="systema-feature-database"
-            d="M229 102v19c0 7 15 12 25 12s25-5 25-12v-19"
-          />
-          <ellipse
-            className="systema-feature-panel"
-            cx="254"
-            cy="102"
-            rx="25"
-            ry="9"
-          />
-          <path
-            className="systema-feature-detail"
-            d="M233 105c4 4 13 6 21 6s17-2 21-6"
-          />
-          <circle className="systema-feature-port" cx="81" cy="73" r="2.5" />
-        </g>
-      )}
-      {type === "reason" && (
-        <g className="systema-feature-scene">
-          <path
-            className="systema-feature-guide"
-            d="M38 110 90 85l52 25 52-27"
-          />
-          <g className="systema-feature-path-step systema-feature-path-step--one">
-            <IsoFeatureTile x={24} y={89} />
-            <circle className="systema-feature-port" cx="64" cy="105" r="3" />
-          </g>
-          <g className="systema-feature-path-step systema-feature-path-step--two">
-            <IsoFeatureTile x={78} y={63} />
-            <path className="systema-feature-accent" d="m103 81 15-7 15 7" />
-          </g>
-          <g className="systema-feature-path-step systema-feature-path-step--three">
-            <IsoFeatureTile x={132} y={89} />
-            <path
-              className="systema-feature-detail"
-              d="m157 107 10-5 10 5-10 5Z"
-            />
-          </g>
-          <g className="systema-feature-path-step systema-feature-path-step--four">
-            <IsoFeatureTile x={186} y={62} />
-            <path className="systema-feature-detail" d="M211 80h30M211 87h20" />
-          </g>
-          <path
-            className="systema-feature-accent"
-            d="m245 104 10-6m-10 6 6 9"
-          />
-        </g>
-      )}
-      {type === "review" && (
-        <g className="systema-feature-scene">
-          <g
-            className="systema-feature-review-panel"
-            transform="matrix(1 -0.14 0.1 0.99 38 36)"
-          >
-            <rect
-              className="systema-feature-panel systema-feature-panel--deep"
-              x="0"
-              y="0"
-              width="178"
-              height="96"
-              rx="6"
-            />
-            <path className="systema-feature-detail" d="M0 22h178" />
-            <circle className="systema-feature-port" cx="14" cy="11" r="2" />
-            <circle
-              className="systema-feature-detail-dot"
-              cx="22"
-              cy="11"
-              r="2"
-            />
-            <circle
-              className="systema-feature-detail-dot"
-              cx="30"
-              cy="11"
-              r="2"
-            />
-            <path
-              className="systema-feature-detail"
-              d="M47 11h84M15 39h97M15 51h122"
-            />
-            <rect
-              className="systema-feature-row"
-              x="12"
-              y="63"
-              width="12"
-              height="12"
-              rx="3"
-            />
-            <path
-              className="systema-feature-check"
-              d="m15 69 3 3 5-6M34 69h78"
-            />
-            <rect
-              className="systema-feature-row"
-              x="12"
-              y="80"
-              width="12"
-              height="12"
-              rx="3"
-            />
-            <path
-              className="systema-feature-check"
-              d="m15 86 3 3 5-6M34 86h58"
-            />
-          </g>
-          <g className="systema-feature-review-architecture">
-            <IsoFeatureNode x={215} y={80} />
-            <IsoFeatureNode x={243} y={105} accent />
-            <path
-              className="systema-feature-connection"
-              d="M227 87 236 100M254 110l10 8"
-            />
-            <path
-              className="systema-feature-database"
-              d="M262 117v15c0 5 9 8 15 8s15-3 15-8v-15"
-            />
-            <ellipse
-              className="systema-feature-panel"
-              cx="277"
-              cy="117"
-              rx="15"
-              ry="5.5"
-            />
-          </g>
-          <path
-            className="systema-feature-accent systema-feature-review-mark"
-            d="m220 61 7 7 13-16"
-          />
-        </g>
-      )}
-      {type === "canvas" && (
-        <g className="systema-feature-scene">
-          <rect
-            className="systema-feature-canvas-frame"
-            x="42"
-            y="33"
-            width="236"
-            height="91"
-            rx="6"
-          />
-          <path className="systema-feature-detail" d="M42 54h236" />
-          <circle
-            className="systema-feature-detail-dot"
-            cx="54"
-            cy="44"
-            r="2"
-          />
-          <circle
-            className="systema-feature-detail-dot"
-            cx="62"
-            cy="44"
-            r="2"
-          />
-          <path className="systema-feature-detail" d="M75 44h36" />
-          <g className="systema-feature-canvas-nodes">
-            <rect
-              className="systema-feature-node-card"
-              x="67"
-              y="73"
-              width="49"
-              height="30"
-              rx="4"
-            />
-            <path className="systema-feature-detail" d="M77 83h29M77 90h20" />
-            <rect
-              className="systema-feature-node-card"
-              x="138"
-              y="73"
-              width="49"
-              height="30"
-              rx="4"
-            />
-            <path className="systema-feature-detail" d="M148 83h29M148 90h20" />
-            <path className="systema-feature-connection" d="M116 88h22" />
-          </g>
-          <g className="systema-feature-canvas-add">
-            <circle
-              className="systema-feature-add-button"
-              cx="239"
-              cy="88"
-              r="11"
-            />
-            <path className="systema-feature-accent" d="M233 88h12M239 82v12" />
-          </g>
-          <path className="systema-feature-guide" d="M79 116h75m14 0h34" />
-        </g>
-      )}
-    </svg>
+    <Loupe {...sharedProps} aria-label="Blank canvas ready for your first design" />
   );
 }
 
@@ -826,7 +599,7 @@ export default function Landing3D() {
           </div>
           <div className="systema-features">
             <Link to="/problems/" className="systema-feature">
-              <FeatureArt type="design" />
+              <HairlineFeatureArt type="design" />
               <div>
                 <h3>
                   Practice system design <HiArrowUpRight />
@@ -838,7 +611,7 @@ export default function Landing3D() {
               </div>
             </Link>
             <Link to="/learning-paths/" className="systema-feature">
-              <FeatureArt type="reason" />
+              <HairlineFeatureArt type="reason" />
               <div>
                 <h3>
                   Follow a learning path <HiArrowUpRight />
@@ -850,7 +623,7 @@ export default function Landing3D() {
               </div>
             </Link>
             <a href="#how-it-works" className="systema-feature">
-              <FeatureArt type="review" />
+              <HairlineFeatureArt type="review" />
               <div>
                 <h3>
                   Review your architecture <HiArrowDown />
@@ -862,7 +635,7 @@ export default function Landing3D() {
               </div>
             </a>
             <Link to="/playground/free" className="systema-feature">
-              <FeatureArt type="canvas" />
+              <HairlineFeatureArt type="canvas" />
               <div>
                 <h3>
                   Start from a blank canvas <HiArrowUpRight />
