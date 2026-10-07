@@ -868,30 +868,78 @@ html:has(.systema-page[data-theme="dark"]) {
   height: auto;
   color: var(--systema-text);
   overflow: visible;
-  --hairline-plate: var(--systema-surface);
-  --hairline-hi: var(--systema-text);
-  --hairline-edge: color-mix(
-    in srgb,
-    var(--systema-text) 58%,
-    var(--systema-surface)
-  );
-  --hairline-mid: color-mix(
-    in srgb,
-    var(--systema-text) 34%,
-    var(--systema-surface)
-  );
-  --hairline-lo: color-mix(
-    in srgb,
-    var(--systema-text) 17%,
-    var(--systema-surface)
-  );
-  --hairline-stroke: 0.9;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  touch-action: pan-y;
+  user-select: none;
 }
 .systema-feature-art path,
 .systema-feature-art rect,
 .systema-feature-art ellipse,
 .systema-feature-art circle {
   vector-effect: non-scaling-stroke;
+}
+.systema-feature-art .figure-base,
+.systema-feature-art .figure-plate,
+.systema-feature-art .figure-sheet {
+  fill: var(--systema-surface);
+  stroke: color-mix(in srgb, var(--systema-text) 56%, var(--systema-surface));
+}
+.systema-feature-art .figure-base .figure-top,
+.systema-feature-art .figure-plate .figure-top,
+.systema-feature-art .figure-sheet {
+  fill: color-mix(in srgb, var(--systema-surface) 86%, var(--systema-bg));
+}
+.systema-feature-art .figure-side {
+  fill: color-mix(in srgb, var(--systema-surface) 76%, var(--systema-text));
+  stroke: color-mix(in srgb, var(--systema-text) 52%, var(--systema-surface));
+}
+.systema-feature-art .figure-side-right {
+  fill: color-mix(in srgb, var(--systema-surface) 92%, var(--systema-bg));
+}
+.systema-feature-art .figure-crease,
+.systema-feature-art .figure-detail,
+.systema-feature-art .figure-low,
+.systema-feature-art .figure-rail,
+.systema-feature-art .figure-route,
+.systema-feature-art .figure-guide,
+.systema-feature-art .figure-ruler,
+.systema-feature-art .figure-inspection {
+  stroke: color-mix(in srgb, var(--systema-text) 38%, var(--systema-surface));
+}
+.systema-feature-art .figure-edge,
+.systema-feature-art .figure-clip {
+  stroke: color-mix(in srgb, var(--systema-text) 62%, var(--systema-surface));
+}
+.systema-feature-art .figure-route,
+.systema-feature-art .figure-guide {
+  stroke-dasharray: 3 5;
+}
+.systema-feature-art .figure-part-active > .figure-top,
+.systema-feature-art .figure-part-active > .figure-crease,
+.systema-feature-art .figure-part-active > .figure-edge,
+.systema-feature-art .figure-part-active .figure-top,
+.systema-feature-art .figure-part-active .figure-crease {
+  stroke: var(--systema-text);
+}
+.systema-feature-art .figure-cursor-top {
+  fill: var(--systema-surface);
+  stroke: var(--systema-text);
+}
+.systema-feature-art .figure-cursor {
+  transition: transform 360ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+.systema-feature-art .figure-part {
+  transition: transform 460ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .systema-feature-art .figure-cursor,
+  .systema-feature-art .figure-part {
+    transition: none;
+  }
 }
 .systema-feature h3 {
   display: flex;

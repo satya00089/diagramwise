@@ -13,17 +13,12 @@ import {
   HiSun,
   HiXMark,
 } from "react-icons/hi2";
-import {
-  Branches,
-  Elevator,
-  Exploded,
-  Loupe,
-} from "@lucasmarkes/hairline/react";
 import { Button } from "../components/ui/button";
 import RollingNavLabel from "../components/RollingNavLabel";
 import ArchitectureDiagram, {
   type DesignPhase,
 } from "../components/landing3d/ArchitectureDiagram";
+import PathFigure from "../components/landing3d/PathFigures";
 import Seo from "../components/SEO";
 import { AuthModal } from "../components/AuthModal";
 import { useAuth } from "../hooks/useAuth";
@@ -64,40 +59,10 @@ function Brand() {
   );
 }
 
-function HairlineFeatureArt({
+function FeatureArt({
   type,
 }: Readonly<{ type: "design" | "reason" | "review" | "canvas" }>) {
-  const sharedProps = {
-    className: `systema-feature-art systema-feature-art--${type}`,
-    intensity: 0.72,
-    theme: "auto" as const,
-  };
-
-  if (type === "design") {
-    return (
-      <Branches
-        {...sharedProps}
-        aria-label="Branching system design paths"
-      />
-    );
-  }
-
-  if (type === "reason") {
-    return <Elevator {...sharedProps} aria-label="Learning path progress" />;
-  }
-
-  if (type === "review") {
-    return (
-      <Exploded
-        {...sharedProps}
-        aria-label="Architecture layers under review"
-      />
-    );
-  }
-
-  return (
-    <Loupe {...sharedProps} aria-label="Blank canvas ready for your first design" />
-  );
+  return <PathFigure type={type} />;
 }
 
 export default function Landing3D() {
@@ -599,7 +564,7 @@ export default function Landing3D() {
           </div>
           <div className="systema-features">
             <Link to="/problems/" className="systema-feature">
-              <HairlineFeatureArt type="design" />
+              <FeatureArt type="design" />
               <div>
                 <h3>
                   Practice system design <HiArrowUpRight />
@@ -611,7 +576,7 @@ export default function Landing3D() {
               </div>
             </Link>
             <Link to="/learning-paths/" className="systema-feature">
-              <HairlineFeatureArt type="reason" />
+              <FeatureArt type="reason" />
               <div>
                 <h3>
                   Follow a learning path <HiArrowUpRight />
@@ -623,7 +588,7 @@ export default function Landing3D() {
               </div>
             </Link>
             <a href="#how-it-works" className="systema-feature">
-              <HairlineFeatureArt type="review" />
+              <FeatureArt type="review" />
               <div>
                 <h3>
                   Review your architecture <HiArrowDown />
@@ -635,7 +600,7 @@ export default function Landing3D() {
               </div>
             </a>
             <Link to="/playground/free" className="systema-feature">
-              <HairlineFeatureArt type="canvas" />
+              <FeatureArt type="canvas" />
               <div>
                 <h3>
                   Start from a blank canvas <HiArrowUpRight />
