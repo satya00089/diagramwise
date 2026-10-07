@@ -864,132 +864,34 @@ html:has(.systema-page[data-theme="dark"]) {
 .systema-feature-art {
   display: block;
   width: 100%;
-  height: 150px;
-  color: #66655e;
+  aspect-ratio: 5 / 4;
+  height: auto;
+  color: var(--systema-text);
   overflow: visible;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  --hairline-plate: var(--systema-surface);
+  --hairline-hi: var(--systema-text);
+  --hairline-edge: color-mix(
+    in srgb,
+    var(--systema-text) 58%,
+    var(--systema-surface)
+  );
+  --hairline-mid: color-mix(
+    in srgb,
+    var(--systema-text) 34%,
+    var(--systema-surface)
+  );
+  --hairline-lo: color-mix(
+    in srgb,
+    var(--systema-text) 17%,
+    var(--systema-surface)
+  );
+  --hairline-stroke: 0.9;
 }
 .systema-feature-art path,
 .systema-feature-art rect,
 .systema-feature-art ellipse,
 .systema-feature-art circle {
   vector-effect: non-scaling-stroke;
-}
-.systema-feature-panel,
-.systema-feature-canvas-frame {
-  fill: color-mix(in srgb, var(--systema-surface) 82%, var(--systema-bg));
-  stroke: color-mix(in srgb, var(--systema-text) 58%, var(--systema-surface));
-  stroke-width: 1.2;
-}
-.systema-feature-panel--deep {
-  fill: color-mix(in srgb, var(--systema-surface) 92%, var(--systema-bg));
-}
-.systema-feature-side {
-  stroke: color-mix(in srgb, var(--systema-text) 58%, var(--systema-surface));
-  stroke-width: 1.1;
-}
-.systema-feature-side--left {
-  fill: color-mix(in srgb, var(--systema-surface) 62%, var(--systema-text));
-}
-.systema-feature-side--right {
-  fill: color-mix(in srgb, var(--systema-surface) 90%, var(--systema-bg));
-}
-.systema-feature-face,
-.systema-feature-node-card,
-.systema-feature-row,
-.systema-feature-add-button {
-  fill: color-mix(in srgb, var(--systema-surface) 80%, var(--systema-bg));
-  stroke: color-mix(in srgb, var(--systema-text) 58%, var(--systema-surface));
-  stroke-width: 1.1;
-}
-.systema-feature-detail,
-.systema-feature-detail-dot {
-  stroke: color-mix(in srgb, var(--systema-text) 35%, var(--systema-surface));
-  stroke-width: 0.95;
-}
-.systema-feature-detail-dot {
-  fill: color-mix(in srgb, var(--systema-text) 35%, var(--systema-surface));
-  stroke: none;
-}
-.systema-feature-guide {
-  stroke: color-mix(in srgb, var(--systema-text) 33%, var(--systema-surface));
-  stroke-width: 1.1;
-  stroke-dasharray: 3 5;
-}
-.systema-feature-connection {
-  stroke: color-mix(in srgb, var(--systema-text) 55%, var(--systema-surface));
-  stroke-width: 1.1;
-}
-.systema-feature-accent,
-.systema-feature-check {
-  stroke: var(--systema-text);
-  stroke-width: 1.7;
-}
-.systema-feature-port {
-  fill: var(--systema-text);
-  stroke: none;
-}
-.systema-feature-node--accent .systema-feature-face {
-  fill: color-mix(in srgb, var(--systema-text) 13%, var(--systema-surface));
-  stroke: var(--systema-text);
-}
-.systema-feature-database {
-  fill: color-mix(in srgb, var(--systema-surface) 84%, var(--systema-bg));
-  stroke: color-mix(in srgb, var(--systema-text) 58%, var(--systema-surface));
-  stroke-width: 1.1;
-}
-.systema-feature-path-step,
-.systema-feature-review-panel,
-.systema-feature-review-architecture,
-.systema-feature-canvas-nodes,
-.systema-feature-canvas-add {
-  transform-box: fill-box;
-  transform-origin: center;
-  transition: transform 240ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-.systema-feature-path-step--two {
-  transform: translateY(-3px);
-}
-.systema-feature-review-mark {
-  stroke-width: 2;
-}
-.systema-feature:hover .systema-feature-path-step--one,
-.systema-feature:focus-visible .systema-feature-path-step--one {
-  transform: translate(-3px, 2px);
-}
-.systema-feature:hover .systema-feature-path-step--two,
-.systema-feature:focus-visible .systema-feature-path-step--two {
-  transform: translateY(-6px);
-}
-.systema-feature:hover .systema-feature-path-step--three,
-.systema-feature:focus-visible .systema-feature-path-step--three {
-  transform: translate(2px, 2px);
-}
-.systema-feature:hover .systema-feature-review-panel,
-.systema-feature:focus-visible .systema-feature-review-panel {
-  transform: matrix(1, -0.14, 0.1, 0.99, 34, 31);
-}
-.systema-feature:hover .systema-feature-review-architecture,
-.systema-feature:focus-visible .systema-feature-review-architecture {
-  transform: translate(4px, -3px);
-}
-.systema-feature:hover .systema-feature-canvas-nodes,
-.systema-feature:focus-visible .systema-feature-canvas-nodes {
-  transform: translateX(-3px);
-}
-.systema-feature:hover .systema-feature-canvas-add,
-.systema-feature:focus-visible .systema-feature-canvas-add {
-  transform: translate(3px, -3px);
-}
-@media (prefers-reduced-motion: reduce) {
-  .systema-feature-path-step,
-  .systema-feature-review-panel,
-  .systema-feature-review-architecture,
-  .systema-feature-canvas-nodes,
-  .systema-feature-canvas-add {
-    transition: none;
-  }
 }
 .systema-feature h3 {
   display: flex;
@@ -1301,9 +1203,6 @@ html:has(.systema-page[data-theme="dark"]) {
   .systema-feature h3 {
     font-size: 15px;
   }
-  .systema-feature-art {
-    height: 110px;
-  }
   .systema-value {
     grid-template-columns: 1fr;
     gap: 42px;
@@ -1417,9 +1316,6 @@ html:has(.systema-page[data-theme="dark"]) {
   }
   .systema-feature {
     padding: 18px 24px 28px;
-  }
-  .systema-feature-art {
-    height: 130px;
   }
   .systema-value {
     gap: 36px;
