@@ -45,6 +45,7 @@ const AuthEntry: React.FC = () => {
           initialMode={initialMode}
           signupContext={{ verificationReturnUrl: continuationUrl }}
           onClose={() => navigate("/")}
+          googleReturnTo={continuationUrl || "/"}
           onLogin={async (email, password) => {
             await login({ email, password });
             if (continuationUrl) window.location.assign(continuationUrl);

@@ -19,16 +19,23 @@ import type {
   FeedbackResponse,
   FeedbackSubmission,
 } from "../types/feedback";
+import { getGoogleLoginStartUri } from "./googleAuth";
 
 // VITE_API_URL is the application's documented API endpoint. Keep the older
 // assessment-specific name as a fallback for existing deployments.
 export const getApiBaseUrl = (apiUrl?: string, legacyApiUrl?: string): string =>
   apiUrl || legacyApiUrl || "";
 
+export const getGoogleLoginRedirectUri = (apiBaseUrl: string): string =>
+  `${apiBaseUrl.replace(/\/$/, "")}/api/v1/auth/google/redirect`;
+
 const API_BASE_URL = getApiBaseUrl(
   import.meta.env.VITE_API_URL,
   import.meta.env.VITE_ASSESSMENT_API_URL,
 );
+
+export const GOOGLE_LOGIN_REDIRECT_URI = getGoogleLoginRedirectUri(API_BASE_URL);
+export const GOOGLE_LOGIN_START_URI = getGoogleLoginStartUri(API_BASE_URL);
 
 class ApiService {
   private async createApiError(
@@ -172,6 +179,28 @@ class ApiService {
     if (!response.ok) {
       throw new Error(
         await this.getErrorMessage(response, "Google login failed"),
+      );
+    }
+
+    return response.json();
+  }
+
+  async exchangeGoogleLoginHandoff(code: string): Promise<AuthResponse> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/auth/google/redirect/exchange`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        await this.getErrorMessage(
+          response,
+          "Google authentication link is invalid or expired",
+        ),
       );
     }
 

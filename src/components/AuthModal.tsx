@@ -1,57 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MdClose, MdVisibility, MdVisibilityOff } from "react-icons/md";
 import { useTheme } from "../hooks/useTheme";
-import { apiService } from "../services/api";
-
-const GOOGLE_IDENTITY_SCRIPT_ID = "google-identity-services";
-let googleIdentityScriptPromise: Promise<void> | null = null;
-let googleIdentityInitialized = false;
-
-const loadGoogleIdentityScript = (): Promise<void> => {
-  if (typeof window === "undefined") {
-    return Promise.resolve();
-  }
-
-  if (window.google) {
-    return Promise.resolve();
-  }
-
-  if (googleIdentityScriptPromise) {
-    return googleIdentityScriptPromise;
-  }
-
-  googleIdentityScriptPromise = new Promise<void>((resolve, reject) => {
-    const existingScript = document.getElementById(
-      GOOGLE_IDENTITY_SCRIPT_ID,
-    ) as HTMLScriptElement | null;
-
-    if (existingScript) {
-      existingScript.addEventListener("load", () => resolve(), { once: true });
-      existingScript.addEventListener(
-        "error",
-        () => {
-          reject(new Error("Failed to load Google Identity Services"));
-        },
-        { once: true },
-      );
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.id = GOOGLE_IDENTITY_SCRIPT_ID;
-    script.src = "https://accounts.google.com/gsi/client";
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () =>
-      reject(new Error("Failed to load Google Identity Services"));
-    document.body.appendChild(script);
-  });
-
-  return googleIdentityScriptPromise;
-};
+import { apiService, GOOGLE_LOGIN_START_URI } from "../services/api";
+import { startGoogleLogin } from "../services/googleAuth";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -66,6 +19,7 @@ interface AuthModalProps {
   onGoogleLogin?: (credential: string) => Promise<void>;
   initialMode?: AuthMode;
   signupContext?: { verificationReturnUrl?: string };
+  googleReturnTo?: string;
 }
 
 type AuthMode = "login" | "signup";
@@ -183,6 +137,7 @@ const CredentialsForm: React.FC<{
   showConfirmPassword: boolean;
   isLoading: boolean;
   googleLoginAvailable: boolean;
+  onGoogleLoginStart: () => void;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onConfirmPasswordChange: (value: string) => void;
@@ -201,6 +156,7 @@ const CredentialsForm: React.FC<{
   showConfirmPassword,
   isLoading,
   googleLoginAvailable,
+  onGoogleLoginStart,
   onEmailChange,
   onPasswordChange,
   onConfirmPasswordChange,
@@ -223,10 +179,20 @@ const CredentialsForm: React.FC<{
     <>
       {googleLoginAvailable && (
         <>
-          <div
-            id="google-signin-button"
-            className="mb-4 flex w-full min-w-0 justify-center overflow-hidden"
-          />
+          <button
+            type="button"
+            onClick={onGoogleLoginStart}
+            disabled={isLoading}
+            className="mb-4 flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-theme/30 bg-surface px-4 text-sm font-semibold text-theme transition-colors hover:bg-theme/5 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span
+              aria-hidden="true"
+              className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-sm font-bold text-[#4285F4] shadow-sm"
+            >
+              G
+            </span>
+            <span>Sign in with Google</span>
+          </button>
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-theme/20" />
@@ -344,6 +310,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onGoogleLogin,
   initialMode = "login",
   signupContext,
+  googleReturnTo,
 }) => {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [email, setEmail] = useState("");
@@ -357,99 +324,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [verificationEmail, setVerificationEmail] = useState("");
   const [resendMessage, setResendMessage] = useState("");
   const { theme } = useTheme();
-  const googleResponseRef = useRef<
-    (response: GoogleCredentialResponse) => void
-  >(() => {});
 
   const resolvedDarkMode =
     theme === "dark" ||
     (theme === "system" &&
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const googleLoginAvailable = Boolean(onGoogleLogin);
 
-  const handleGoogleResponse = useCallback(
-    async (response: GoogleCredentialResponse) => {
-      if (!onGoogleLogin) return;
-
-      setIsLoading(true);
-      setError("");
-
-      try {
-        await onGoogleLogin(response.credential);
-        onClose();
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Google authentication failed",
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [onGoogleLogin, onClose],
-  );
-
-  useEffect(() => {
-    googleResponseRef.current = handleGoogleResponse;
-  }, [handleGoogleResponse]);
-
-  // Initialize Google Sign-In
-  useEffect(() => {
-    if (!isOpen || !onGoogleLogin) return;
-
-    let cancelled = false;
-    let renderedButtonWidth = 0;
-    let resizeObserver: ResizeObserver | undefined;
-
-    const renderGoogleButton = () => {
-      const container = document.getElementById("google-signin-button");
-      if (!container || !window.google) return;
-
-      const width = Math.min(400, container.clientWidth);
-      if (width <= 0 || width === renderedButtonWidth) return;
-
-      container.replaceChildren();
-      window.google.accounts.id.renderButton(container, {
-        theme: resolvedDarkMode ? "filled_black" : "outline",
-        size: "large",
-        width,
-        text: mode === "login" ? "signin_with" : "signup_with",
-        shape: "rectangular",
-        logo_alignment: "left",
-      });
-      renderedButtonWidth = width;
-    };
-
-    const initializeGoogle = async () => {
-      await loadGoogleIdentityScript();
-      if (cancelled || !window.google) return;
-
-      if (!googleIdentityInitialized) {
-        window.google.accounts.id.initialize({
-          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "",
-          callback: (response: GoogleCredentialResponse) => {
-            googleResponseRef.current(response);
-          },
-        });
-        googleIdentityInitialized = true;
-      }
-
-      const container = document.getElementById("google-signin-button");
-      if (container) {
-        resizeObserver = new ResizeObserver(renderGoogleButton);
-        resizeObserver.observe(container);
-      }
-      renderGoogleButton();
-    };
-
-    initializeGoogle().catch((err) => {
-      console.error("Failed to initialize Google Sign-In", err);
-    });
-
-    return () => {
-      cancelled = true;
-      resizeObserver?.disconnect();
-    };
-  }, [isOpen, mode, onGoogleLogin, resolvedDarkMode]);
+  const handleGoogleLoginStart = () => {
+    const currentReturnTo =
+      googleReturnTo ||
+      `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    startGoogleLogin(GOOGLE_LOGIN_START_URI, currentReturnTo || "/");
+  };
 
   const resetCredentialForm = () => {
     setEmail("");
@@ -640,7 +528,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 showPassword={showPassword}
                 showConfirmPassword={showConfirmPassword}
                 isLoading={isLoading}
-                googleLoginAvailable={Boolean(onGoogleLogin)}
+                googleLoginAvailable={googleLoginAvailable}
+                onGoogleLoginStart={handleGoogleLoginStart}
                 onEmailChange={setEmail}
                 onPasswordChange={setPassword}
                 onConfirmPasswordChange={setConfirmPassword}

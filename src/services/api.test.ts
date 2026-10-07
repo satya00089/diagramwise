@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getApiBaseUrl } from "./api";
+import {
+  getApiBaseUrl,
+  getGoogleLoginRedirectUri,
+} from "./api";
+import { getGoogleLoginStartUri } from "./googleAuth";
 
 describe("getApiBaseUrl", () => {
   it("uses the documented API URL for authentication requests", () => {
@@ -11,6 +15,22 @@ describe("getApiBaseUrl", () => {
   it("supports deployments that still use the legacy API URL", () => {
     expect(getApiBaseUrl(undefined, "https://legacy.example.com")).toBe(
       "https://legacy.example.com",
+    );
+  });
+});
+
+describe("getGoogleLoginRedirectUri", () => {
+  it("builds the backend redirect endpoint without a duplicate slash", () => {
+    expect(getGoogleLoginRedirectUri("https://api.example.com/")).toBe(
+      "https://api.example.com/api/v1/auth/google/redirect",
+    );
+  });
+});
+
+describe("getGoogleLoginStartUri", () => {
+  it("builds the top-level OAuth start endpoint without a duplicate slash", () => {
+    expect(getGoogleLoginStartUri("https://api.example.com/")).toBe(
+      "https://api.example.com/api/v1/auth/google/redirect/start",
     );
   });
 });

@@ -17,7 +17,7 @@ interface GoogleButtonConfig {
 
 interface GoogleIdConfiguration {
   client_id: string;
-  callback: (response: GoogleCredentialResponse) => void;
+  callback?: (response: GoogleCredentialResponse) => void;
   auto_select?: boolean;
   cancel_on_tap_outside?: boolean;
   prompt_parent_id?: string;
@@ -25,6 +25,7 @@ interface GoogleIdConfiguration {
   context?: "signin" | "signup" | "use";
   state_cookie_domain?: string;
   ux_mode?: "popup" | "redirect";
+  login_uri?: string;
   allowed_parent_origin?: string | string[];
   intermediate_iframe_close_callback?: () => void;
 }

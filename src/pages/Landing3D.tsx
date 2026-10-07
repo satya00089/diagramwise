@@ -58,124 +58,269 @@ function Brand() {
   );
 }
 
+function IsoFeatureNode({
+  x,
+  y,
+  accent = false,
+}: Readonly<{ x: number; y: number; accent?: boolean }>) {
+  return (
+    <g
+      className={`systema-feature-node${accent ? " systema-feature-node--accent" : ""}`}
+      transform={`translate(${x} ${y})`}
+    >
+      <path
+        className="systema-feature-side systema-feature-side--left"
+        d="M-15 0 0 8v16l-15-8Z"
+      />
+      <path
+        className="systema-feature-side systema-feature-side--right"
+        d="M0 8 15 0v16L0 24Z"
+      />
+      <path className="systema-feature-face" d="M-15 0 0-8 15 0 0 8Z" />
+      <path className="systema-feature-detail" d="m-8 0 8-4 8 4" />
+    </g>
+  );
+}
+
+function IsoFeatureTile({ x, y }: Readonly<{ x: number; y: number }>) {
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <path
+        className="systema-feature-side systema-feature-side--left"
+        d="M0 18v10l40 20V38Z"
+      />
+      <path
+        className="systema-feature-side systema-feature-side--right"
+        d="M40 38v10l40-20V18Z"
+      />
+      <path className="systema-feature-face" d="M0 18 40-2l40 20-40 20Z" />
+      <path
+        className="systema-feature-detail"
+        d="m18 18 22-11 22 11-22 11ZM29 23l11-5 11 5M40 18v11"
+      />
+    </g>
+  );
+}
+
 function FeatureArt({
   type,
 }: Readonly<{ type: "design" | "reason" | "review" | "canvas" }>) {
   return (
     <svg
-      viewBox="0 0 320 140"
+      viewBox="0 0 320 150"
       fill="none"
       aria-hidden="true"
-      className="systema-feature-art"
+      className={`systema-feature-art systema-feature-art--${type}`}
     >
       {type === "design" && (
-        <g stroke="currentColor">
-          <path d="M98 69H135M185 69H225" opacity=".4" />
-          <rect x="48" y="44" width="50" height="50" rx="3" />
-          <rect x="135" y="31" width="50" height="76" rx="3" />
-          <path d="M145 47H175M145 59H175M145 71H175M145 83H166" opacity=".5" />
-          <ellipse cx="249" cy="48" rx="24" ry="10" />
-          <path d="M225 48V88C225 101 273 101 273 88V48M225 67C225 80 273 80 273 67" />
-          <circle cx="117" cy="69" r="3" fill="currentColor" />
+        <g className="systema-feature-scene">
+          <path className="systema-feature-guide" d="M49 91 97 66m82 0 49 25" />
+          <rect
+            className="systema-feature-panel"
+            x="18"
+            y="54"
+            width="52"
+            height="42"
+            rx="5"
+          />
+          <path
+            className="systema-feature-detail"
+            d="M29 67h29M29 75h22M29 83h29"
+          />
+          <path className="systema-feature-accent" d="M29 89h14" />
+          <IsoFeatureTile x={91} y={53} />
+          <IsoFeatureNode x={157} y={50} accent />
+          <IsoFeatureNode x={198} y={86} />
+          <path
+            className="systema-feature-connection"
+            d="M171 58 191 78M212 92l17 11"
+          />
+          <path
+            className="systema-feature-database"
+            d="M229 102v19c0 7 15 12 25 12s25-5 25-12v-19"
+          />
+          <ellipse
+            className="systema-feature-panel"
+            cx="254"
+            cy="102"
+            rx="25"
+            ry="9"
+          />
+          <path
+            className="systema-feature-detail"
+            d="M233 105c4 4 13 6 21 6s17-2 21-6"
+          />
+          <circle className="systema-feature-port" cx="81" cy="73" r="2.5" />
         </g>
       )}
       {type === "reason" && (
-        <g stroke="currentColor">
-          <path d="M28 70H112M196 70H238" opacity=".42" />
-          <rect x="28" y="43" width="64" height="54" rx="3" />
-          <text
-            x="60"
-            y="64"
-            fill="currentColor"
-            stroke="none"
-            textAnchor="middle"
-            fontSize="10"
-          >
-            READS
-          </text>
-          <text
-            x="60"
-            y="80"
-            fill="currentColor"
-            stroke="none"
-            textAnchor="middle"
-            fontSize="11"
-          >
-            volume
-          </text>
-          <rect
-            x="112"
-            y="31"
-            width="84"
-            height="78"
-            rx="3"
-            fill="currentColor"
-            opacity=".08"
-          />
-          <path d="M125 50H183M125 62H173" opacity=".42" />
-          <text
-            x="154"
-            y="86"
-            fill="currentColor"
-            stroke="none"
-            textAnchor="middle"
-            fontSize="12"
-          >
-            CACHE
-          </text>
+        <g className="systema-feature-scene">
           <path
-            d="M196 70H214Q226 70 226 55V43M214 70Q226 70 226 85V97H238"
-            opacity=".55"
+            className="systema-feature-guide"
+            d="M38 110 90 85l52 25 52-27"
           />
-          <rect x="238" y="27" width="54" height="32" rx="3" />
-          <rect x="238" y="81" width="54" height="32" rx="3" />
-          <text
-            x="265"
-            y="47"
-            fill="currentColor"
-            stroke="none"
-            textAnchor="middle"
-            fontSize="10"
-          >
-            faster
-          </text>
-          <text
-            x="265"
-            y="101"
-            fill="currentColor"
-            stroke="none"
-            textAnchor="middle"
-            fontSize="10"
-          >
-            fresher
-          </text>
-          <path d="m232 43 6-3v6m-6 54 6-3v6" fill="none" />
+          <g className="systema-feature-path-step systema-feature-path-step--one">
+            <IsoFeatureTile x={24} y={89} />
+            <circle className="systema-feature-port" cx="64" cy="105" r="3" />
+          </g>
+          <g className="systema-feature-path-step systema-feature-path-step--two">
+            <IsoFeatureTile x={78} y={63} />
+            <path className="systema-feature-accent" d="m103 81 15-7 15 7" />
+          </g>
+          <g className="systema-feature-path-step systema-feature-path-step--three">
+            <IsoFeatureTile x={132} y={89} />
+            <path
+              className="systema-feature-detail"
+              d="m157 107 10-5 10 5-10 5Z"
+            />
+          </g>
+          <g className="systema-feature-path-step systema-feature-path-step--four">
+            <IsoFeatureTile x={186} y={62} />
+            <path className="systema-feature-detail" d="M211 80h30M211 87h20" />
+          </g>
+          <path
+            className="systema-feature-accent"
+            d="m245 104 10-6m-10 6 6 9"
+          />
         </g>
       )}
       {type === "review" && (
-        <g stroke="currentColor">
-          <rect x="84" y="25" width="153" height="92" rx="4" />
-          <path d="M125 48H216M125 71H202M125 94H189" opacity=".4" />
-          <path d="m99 47 5 5 9-10m-14 28 5 5 9-10" />
-          <circle cx="106" cy="94" r="6" />
-          <path d="M106 90V94M106 97V98" />
+        <g className="systema-feature-scene">
+          <g
+            className="systema-feature-review-panel"
+            transform="matrix(1 -0.14 0.1 0.99 38 36)"
+          >
+            <rect
+              className="systema-feature-panel systema-feature-panel--deep"
+              x="0"
+              y="0"
+              width="178"
+              height="96"
+              rx="6"
+            />
+            <path className="systema-feature-detail" d="M0 22h178" />
+            <circle className="systema-feature-port" cx="14" cy="11" r="2" />
+            <circle
+              className="systema-feature-detail-dot"
+              cx="22"
+              cy="11"
+              r="2"
+            />
+            <circle
+              className="systema-feature-detail-dot"
+              cx="30"
+              cy="11"
+              r="2"
+            />
+            <path
+              className="systema-feature-detail"
+              d="M47 11h84M15 39h97M15 51h122"
+            />
+            <rect
+              className="systema-feature-row"
+              x="12"
+              y="63"
+              width="12"
+              height="12"
+              rx="3"
+            />
+            <path
+              className="systema-feature-check"
+              d="m15 69 3 3 5-6M34 69h78"
+            />
+            <rect
+              className="systema-feature-row"
+              x="12"
+              y="80"
+              width="12"
+              height="12"
+              rx="3"
+            />
+            <path
+              className="systema-feature-check"
+              d="m15 86 3 3 5-6M34 86h58"
+            />
+          </g>
+          <g className="systema-feature-review-architecture">
+            <IsoFeatureNode x={215} y={80} />
+            <IsoFeatureNode x={243} y={105} accent />
+            <path
+              className="systema-feature-connection"
+              d="M227 87 236 100M254 110l10 8"
+            />
+            <path
+              className="systema-feature-database"
+              d="M262 117v15c0 5 9 8 15 8s15-3 15-8v-15"
+            />
+            <ellipse
+              className="systema-feature-panel"
+              cx="277"
+              cy="117"
+              rx="15"
+              ry="5.5"
+            />
+          </g>
+          <path
+            className="systema-feature-accent systema-feature-review-mark"
+            d="m220 61 7 7 13-16"
+          />
         </g>
       )}
       {type === "canvas" && (
-        <g stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="54" y="30" width="212" height="80" rx="4" />
-          <path d="M54 49H266" opacity=".28" />
-          <circle cx="67" cy="39" r="2" fill="currentColor" stroke="none" opacity=".55" />
-          <circle cx="75" cy="39" r="2" fill="currentColor" stroke="none" opacity=".35" />
-          <circle cx="83" cy="39" r="2" fill="currentColor" stroke="none" opacity=".2" />
-          <path d="M94 39H126M138 39H166" opacity=".16" />
-          <path d="M76 66H244M76 78H244M76 90H213" strokeDasharray="1 6" opacity=".16" />
-          <rect x="82" y="60" width="42" height="25" rx="3" opacity=".85" />
-          <path d="M90 68H116M90 76H108" opacity=".42" />
-          <rect x="145" y="55" width="48" height="35" rx="3" opacity=".85" />
-          <path d="M154 65H184M154 74H178M154 83H171" opacity=".42" />
-          <circle cx="224" cy="73" r="13" opacity=".85" />
-          <path d="M218 73H230M224 67V79" opacity=".42" />
+        <g className="systema-feature-scene">
+          <rect
+            className="systema-feature-canvas-frame"
+            x="42"
+            y="33"
+            width="236"
+            height="91"
+            rx="6"
+          />
+          <path className="systema-feature-detail" d="M42 54h236" />
+          <circle
+            className="systema-feature-detail-dot"
+            cx="54"
+            cy="44"
+            r="2"
+          />
+          <circle
+            className="systema-feature-detail-dot"
+            cx="62"
+            cy="44"
+            r="2"
+          />
+          <path className="systema-feature-detail" d="M75 44h36" />
+          <g className="systema-feature-canvas-nodes">
+            <rect
+              className="systema-feature-node-card"
+              x="67"
+              y="73"
+              width="49"
+              height="30"
+              rx="4"
+            />
+            <path className="systema-feature-detail" d="M77 83h29M77 90h20" />
+            <rect
+              className="systema-feature-node-card"
+              x="138"
+              y="73"
+              width="49"
+              height="30"
+              rx="4"
+            />
+            <path className="systema-feature-detail" d="M148 83h29M148 90h20" />
+            <path className="systema-feature-connection" d="M116 88h22" />
+          </g>
+          <g className="systema-feature-canvas-add">
+            <circle
+              className="systema-feature-add-button"
+              cx="239"
+              cy="88"
+              r="11"
+            />
+            <path className="systema-feature-accent" d="M233 88h12M239 82v12" />
+          </g>
+          <path className="systema-feature-guide" d="M79 116h75m14 0h34" />
         </g>
       )}
     </svg>
@@ -219,7 +364,8 @@ export default function Landing3D() {
     const animateToNewPattern = () => {
       const startSize1 = size1;
       const startSize2 = size2;
-      const target = landingPatternSizes[patternIndex % landingPatternSizes.length];
+      const target =
+        landingPatternSizes[patternIndex % landingPatternSizes.length];
       patternIndex += 1;
       const startedAt = performance.now();
       const duration = 1200;
@@ -231,7 +377,8 @@ export default function Landing3D() {
           startSize1 + (target.size1 - startSize1) * eased,
           startSize2 + (target.size2 - startSize2) * eased,
         );
-        if (progress < 1) animationFrame = window.requestAnimationFrame(animate);
+        if (progress < 1)
+          animationFrame = window.requestAnimationFrame(animate);
       };
 
       animationFrame = window.requestAnimationFrame(animate);
@@ -320,7 +467,11 @@ export default function Landing3D() {
 
   return (
     <div className="systema-page" data-theme={landingTheme}>
-      <div ref={patternRef} className="systema-pattern-layer" aria-hidden="true" />
+      <div
+        ref={patternRef}
+        className="systema-pattern-layer"
+        aria-hidden="true"
+      />
       <Seo
         title="Diagramwise — System design. Understand every decision."
         description="Practice system design on a visual canvas. Build an architecture, explain your trade-offs, review your assumptions, and improve your next iteration."
