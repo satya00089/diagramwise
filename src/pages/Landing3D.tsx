@@ -621,32 +621,36 @@ export default function Landing3D() {
             </h2>
           </div>
           <div className="systema-toolkit-grid">
-            <article>
+            <article tabIndex={0}>
               <span className="systema-toolkit-index">01</span>
+              <FeatureArt type="library" />
               <h3>Architecture library</h3>
               <p>
                 Start with generic building blocks or use accurate AWS, Azure,
                 and GCP components across cloud, ER, and UML diagrams.
               </p>
             </article>
-            <article>
+            <article tabIndex={0}>
               <span className="systema-toolkit-index">02</span>
+              <FeatureArt type="annotate" />
               <h3>Connected, annotated diagrams</h3>
               <p>
                 Draw labeled data flows and attach notes, metadata, and custom
                 fields to explain every important decision.
               </p>
             </article>
-            <article>
+            <article tabIndex={0}>
               <span className="systema-toolkit-index">03</span>
+              <FeatureArt type="assessment" />
               <h3>Structured AI assessment</h3>
               <p>
                 See what is strong, what is risky, and what to improve next,
                 with interview follow-up questions tailored to your design.
               </p>
             </article>
-            <article>
+            <article tabIndex={0}>
               <span className="systema-toolkit-index">04</span>
+              <FeatureArt type="share" />
               <h3>Export and share</h3>
               <p>
                 Export the architecture as an image or share a live link with

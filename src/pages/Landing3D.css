@@ -917,6 +917,15 @@ html:has(.systema-page[data-theme="dark"]) {
   border-top: 1px solid var(--systema-line);
   padding-top: 14px;
 }
+.systema-toolkit-grid article:focus-visible {
+  outline-offset: 7px;
+}
+.systema-toolkit-art {
+  height: 160px;
+  aspect-ratio: auto;
+  margin-top: 5px;
+  margin-bottom: 12px;
+}
 .systema-toolkit-index {
   color: var(--systema-muted);
   font-size: 10px;
@@ -926,7 +935,7 @@ html:has(.systema-page[data-theme="dark"]) {
   font-size: 16px;
   font-weight: 400;
   line-height: 1.35;
-  margin-top: 23px;
+  margin-top: 0;
 }
 .systema-toolkit-grid p {
   color: var(--systema-muted);
