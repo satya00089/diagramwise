@@ -33,6 +33,8 @@ test("the vendored kernel retains its published content hash", () => {
 
 test("the embed only accepts bounded input from its same-origin parent and cleans up", () => {
   const template = read(`${source}embed.html`);
+  assert.match(template, /background:#111111;color-scheme:dark/);
+  assert.match(template, /background:#ebeae5;color-scheme:light/);
   const host = [...template.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)[1];
   const calls = [], listeners = new Map(), parent = {};
   const stage = {dataset:{}, querySelector:()=>({})};
