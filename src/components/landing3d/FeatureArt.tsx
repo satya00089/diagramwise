@@ -6,6 +6,19 @@ const figures = {
   reason: ["switchback", "Open a lesson along a learning path"],
   review: ["inspection-stack", "Inspect an architecture connection"],
   canvas: ["drafting-board", "Place the first component on a blank canvas"],
+  library: [
+    "component-rack",
+    "Select a component from the architecture library",
+  ],
+  annotate: [
+    "annotation-bridge",
+    "Open a note attached to a diagram connection",
+  ],
+  assessment: [
+    "assessment-sheet",
+    "Open a finding on a structured review sheet",
+  ],
+  share: ["share-frame", "Move a diagram copy into a share frame"],
 } as const;
 
 export default function FeatureArt({
@@ -24,7 +37,9 @@ export default function FeatureArt({
 
   useEffect(() => {
     const frame = frameRef.current;
-    const card = frame?.closest<HTMLAnchorElement>(".systema-feature");
+    const card = frame?.closest<HTMLElement>(
+      ".systema-feature, .systema-toolkit-grid article",
+    );
     if (!frame || !card) return;
     const move = (event: PointerEvent) => {
       const bounds = frame.getBoundingClientRect();
@@ -65,7 +80,11 @@ export default function FeatureArt({
   return (
     <iframe
       ref={frameRef}
-      className="systema-feature-art"
+      className={
+        type in { library: true, annotate: true, assessment: true, share: true }
+          ? "systema-feature-art systema-toolkit-art"
+          : "systema-feature-art"
+      }
       src={`/path-figures/embed/${name}.html?theme=${flowColorMode}&v=2`}
       title={label}
       aria-hidden="true"
