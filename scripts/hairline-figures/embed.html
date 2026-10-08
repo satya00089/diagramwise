@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diagramwise feature illustration</title><link rel="icon" href="data:,">
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
+#stage{width:100%;height:100%;--hl-plate:#111111;--hl-edge:#939594;--hl-mid:#777a79;--hl-lo:#343735;--hl-hi:#f2f1ed;--hairline-stroke:1}
+html[data-theme=light] #stage{--hl-plate:#ebeae5;--hl-edge:#747b72;--hl-mid:#8d938a;--hl-lo:#c4c8bf;--hl-hi:#242c24}
+@media(prefers-reduced-motion:reduce){svg *{transition:none!important}}
+</style>
+</head>
+<body><div id="stage"><svg viewBox="0 0 400 320" aria-hidden="true"></svg></div>
+<script>/*KERNEL*/</script>
+<script>
+function hairline(config) {
+  const stage = document.getElementById('stage');
+  const theme = new URLSearchParams(location.search).get('theme');
+  document.documentElement.dataset.theme = theme === 'light' ? 'light' : 'dark';
+  stage.dataset.hairline = config.name;
+  const read = {set textContent(value){stage.dataset.state=value;}};
+  HL.inject(document);
+  const scene = config.mount({stage,svg:stage.querySelector('svg'),read},config.range[1]);
+  // The link owns input so the illustration never intercepts navigation or focus.
+  const receive = event => {
+    if(event.source !== parent || event.origin !== location.origin || event.data?.type !== 'diagramwise:figure') return;
+    const {active,x} = event.data;
+    if(typeof active !== 'boolean' || typeof x !== 'number' || !Number.isFinite(x)) return;
+    if(active) scene.move(Math.max(0,Math.min(400,x)));
+    else scene.reset();
+  };
+  addEventListener('message',receive);
+  addEventListener('pagehide',()=>{removeEventListener('message',receive);scene.destroy();},{once:true});
+}
+/*FIGURE*/
+</script></body></html>

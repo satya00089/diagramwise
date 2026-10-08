@@ -15,6 +15,7 @@ import {
 } from "react-icons/hi2";
 import { Button } from "../components/ui/button";
 import RollingNavLabel from "../components/RollingNavLabel";
+import FeatureArt from "../components/landing3d/FeatureArt";
 import ArchitectureDiagram, {
   type DesignPhase,
 } from "../components/landing3d/ArchitectureDiagram";
@@ -55,28 +56,6 @@ function Brand() {
       <img src="/logo-64.png" alt="" aria-hidden="true" />
       <span>Diagramwise</span>
     </Link>
-  );
-}
-
-function FeatureArt({
-  type,
-}: Readonly<{ type: "design" | "reason" | "review" | "canvas" }>) {
-  const figures = {
-    design: ["workbench", "A system design workbench with connected modules"],
-    reason: ["switchback", "A stepped learning route with a moving study marker"],
-    review: ["inspection-stack", "Architecture layers opening for inspection"],
-    canvas: ["drafting-board", "A blank drafting board with a moving T-square"],
-  } as const;
-  const [name, label] = figures[type];
-  return (
-    <iframe
-      className="systema-feature-art"
-      src={`/path-figures/embed/${name}.html?theme=dark`}
-      title={label}
-      aria-hidden="true"
-      tabIndex={-1}
-      loading="eager"
-    />
   );
 }
 

@@ -862,6 +862,7 @@ html:has(.systema-page[data-theme="dark"]) {
   background: #e4e2dc;
 }
 .systema-feature-art {
+  pointer-events: none;
   display: block;
   width: 100%;
   aspect-ratio: 5 / 4;
