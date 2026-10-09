@@ -795,14 +795,17 @@ html:has(.systema-page[data-theme="dark"]) {
   font-size: 11px;
 }
 .systema-ai-dialog-footnote a {
-  display: inline;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   color: var(--systema-text);
   text-underline-offset: 3px;
+  white-space: nowrap;
 }
 .systema-ai-dialog-footnote a svg {
+  flex: 0 0 auto;
   width: 12px;
   height: 12px;
-  vertical-align: -2px;
 }
 .systema-ai-coming-soon-panel {
   padding: 12px 0 22px;
