@@ -9,9 +9,9 @@ type GeminiClient = "apps" | "cli";
 const connectionDetails = {
   chatgpt: {
     name: "ChatGPT",
-    endpoint: "https://mcp.diagramwise.com/chatgpt-mcp",
+    endpoint: "https://mcp.diagramwise.com/mcp",
     helpUrl:
-      "https://help.openai.com/en/articles/12584461-developer-mode-and-mcp-apps",
+      "https://help.openai.com/en/articles/12584461-developer-mode-and-full-mcp-connectors-in-chatgpt",
   },
   claude: {
     name: "Claude",
@@ -92,8 +92,8 @@ export default function AiConnectionGuideDialog({
         </div>
         <h2 id="ai-connection-dialog-title">Connect Diagramwise to AI</h2>
         <p className="systema-ai-dialog-intro">
-          Choose an assistant for setup steps. Connectors let you explore
-          Diagramwise components from your AI workspace.
+          Create and refine architectures in Diagramwise from your AI workspace.
+          Choose the assistant you use below.
         </p>
 
         <div
@@ -175,8 +175,8 @@ export default function AiConnectionGuideDialog({
             <>
               <p className="systema-ai-connection-summary">
                 {provider === "chatgpt"
-                  ? "Add Diagramwise as a custom remote MCP app in ChatGPT. This connection is read-only."
-                  : "Add Diagramwise as a custom remote MCP connector in Claude. You control access when you sign in."}
+                  ? "Connect ChatGPT to Diagramwise so it can help you design and save architecture to your account."
+                  : "Connect Claude to Diagramwise so it can help you design and save architecture to your account."}
               </p>
               <div className="systema-ai-endpoint">
                 <code>{activeConnection?.endpoint}</code>
@@ -203,26 +203,28 @@ export default function AiConnectionGuideDialog({
                 <>
                   <ol className="systema-ai-steps">
                     <li>
-                      In ChatGPT, open <strong>Settings → Apps</strong> and
-                      enable <strong>Developer mode</strong> if it’s available
-                      for your plan or workspace.
+                      In a supported ChatGPT workspace, open{" "}
+                      <strong>Settings → Apps</strong> and enable{" "}
+                      <strong>Developer mode</strong>. Your workspace admin may
+                      need to allow custom apps.
                     </li>
                     <li>
                       Choose <strong>Create app</strong>, name it Diagramwise,
-                      and paste the URL above as the MCP server address. No
-                      sign-in is needed for this read-only connection.
+                      paste the URL above, select <strong>OAuth</strong>, and
+                      scan the available tools.
                     </li>
                     <li>
-                      Save the app, then select Diagramwise from the tools menu
-                      in a chat.
+                      Sign in or create your Diagramwise account when prompted,
+                      authorize the connection, then finish creating the app.
+                      Select Diagramwise from the tools menu in a chat.
                     </li>
                   </ol>
                   <div className="systema-ai-access-note">
-                    <strong>Read-only access</strong>
+                    <strong>Design and save with Diagramwise</strong>
                     <p>
-                      ChatGPT can search components, look up definitions, and
-                      validate properties. It can’t create or change your
-                      architecture.
+                      Your authorized Diagramwise account is used to create and
+                      save architecture. Full MCP write actions require a
+                      supported Business, Enterprise, or Edu workspace.
                     </p>
                   </div>
                 </>
@@ -238,17 +240,17 @@ export default function AiConnectionGuideDialog({
                       then choose <strong>Sign in now</strong>.
                     </li>
                     <li>
-                      Sign in to Diagramwise and enable the connector in the
-                      chat where you want to use it.
+                      Sign in or create your Diagramwise account, authorize the
+                      connection, then enable it in the chat where you want to
+                      work on an architecture.
                     </li>
                   </ol>
                   <div className="systema-ai-access-note">
-                    <strong>Access you authorize</strong>
+                    <strong>Design and save with Diagramwise</strong>
                     <p>
-                      Read component information and validate designs; with your
-                      permission, create and save architecture work. Sign-in
-                      happens securely with Diagramwise—Claude does not receive
-                      your password.
+                      Use Claude to create and save architecture through the
+                      Diagramwise account you authorize, then continue working
+                      with your design in Diagramwise.
                     </p>
                   </div>
                 </>
