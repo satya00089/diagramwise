@@ -21,7 +21,7 @@ import ArchitectureDiagram, {
 } from "../components/landing3d/ArchitectureDiagram";
 import Seo from "../components/SEO";
 import { AuthModal } from "../components/AuthModal";
-import ClaudeMcpSetupDialog from "../components/ClaudeMcpSetupDialog";
+import AiConnectionGuideDialog from "../components/AiConnectionGuideDialog";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
 import { useRoughAnnotation } from "../hooks/useRoughAnnotation";
@@ -66,7 +66,7 @@ export default function Landing3D() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showClaudeMcpGuide, setShowClaudeMcpGuide] = useState(false);
+  const [showAiConnectionGuide, setShowAiConnectionGuide] = useState(false);
   const { user, isAuthenticated, login, signup, googleLogin, logout } =
     useAuth();
   const { setTheme, flowColorMode } = useTheme();
@@ -238,6 +238,15 @@ export default function Landing3D() {
               <RollingNavLabel>My Designs</RollingNavLabel>
             </Link>
           )}
+          <button
+            type="button"
+            className="systema-nav-connect"
+            aria-haspopup="dialog"
+            aria-controls="ai-connection-guide-dialog"
+            onClick={() => setShowAiConnectionGuide(true)}
+          >
+            Connect to AI
+          </button>
         </nav>
         <div className="systema-nav-actions">
           <span className="systema-theme-control">
@@ -360,6 +369,18 @@ export default function Landing3D() {
                 My Designs
               </Link>
             )}
+            <button
+              type="button"
+              className="systema-mobile-nav-connect"
+              aria-haspopup="dialog"
+              aria-controls="ai-connection-guide-dialog"
+              onClick={() => {
+                setMenuOpen(false);
+                setShowAiConnectionGuide(true);
+              }}
+            >
+              Connect to AI
+            </button>
             {isAuthenticated ? (
               <>
                 <div className="systema-mobile-nav-account">
@@ -430,10 +451,10 @@ export default function Landing3D() {
                 type="button"
                 className="systema-text-link systema-text-button"
                 aria-haspopup="dialog"
-                aria-controls="claude-mcp-setup-dialog"
-                onClick={() => setShowClaudeMcpGuide(true)}
+                aria-controls="ai-connection-guide-dialog"
+                onClick={() => setShowAiConnectionGuide(true)}
               >
-                Use with Claude <HiArrowRight aria-hidden="true" />
+                Connect to AI <HiArrowRight aria-hidden="true" />
               </button>
             </div>
             <div className="systema-scroll-note">
@@ -747,8 +768,10 @@ export default function Landing3D() {
           onGoogleLogin={googleLogin}
         />
       )}
-      {showClaudeMcpGuide && (
-        <ClaudeMcpSetupDialog onClose={() => setShowClaudeMcpGuide(false)} />
+      {showAiConnectionGuide && (
+        <AiConnectionGuideDialog
+          onClose={() => setShowAiConnectionGuide(false)}
+        />
       )}
       <footer className="systema-footer systema-container">
         <Brand />
