@@ -574,6 +574,172 @@ html:has(.systema-page[data-theme="dark"]) {
   width: 14px;
   height: 14px;
 }
+.systema-page .systema-text-button {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.systema-page .systema-text-button:focus-visible,
+.systema-claude-dialog button:focus-visible,
+.systema-claude-dialog a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+.systema-claude-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-width: none;
+  max-height: min(760px, calc(100dvh - 32px));
+  margin: auto;
+  padding: 0;
+  overflow-y: auto;
+  border: 1px solid var(--systema-line);
+  border-radius: 12px;
+  background: var(--systema-bg);
+  color: var(--systema-text);
+  box-shadow: 0 24px 90px rgb(0 0 0 / 24%);
+}
+.systema-claude-dialog::backdrop {
+  background: rgb(10 10 9 / 58%);
+  backdrop-filter: blur(2px);
+}
+.systema-claude-dialog-content {
+  padding: 28px clamp(22px, 5vw, 38px) 32px;
+}
+.systema-claude-dialog-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--systema-muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+.systema-claude-icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin: -8px -10px 0 0;
+  border: 0;
+  background: transparent;
+  color: var(--systema-text);
+  cursor: pointer;
+}
+.systema-claude-icon-button svg {
+  width: 20px;
+  height: 20px;
+}
+.systema-claude-dialog h2 {
+  margin: 10px 0 0;
+  color: var(--systema-text);
+  font-size: clamp(27px, 5vw, 34px);
+  line-height: 1.12;
+}
+.systema-claude-dialog-intro,
+.systema-claude-access-note p,
+.systema-claude-dialog-footnote {
+  color: var(--systema-muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.systema-claude-dialog-intro {
+  margin: 14px 0 20px;
+}
+.systema-claude-endpoint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--systema-line);
+  background: var(--systema-surface);
+}
+.systema-claude-endpoint code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--systema-text);
+  font-size: 12px;
+}
+.systema-claude-copy-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--systema-text);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.systema-claude-copy-button svg {
+  width: 15px;
+  height: 15px;
+}
+.systema-claude-copy-status {
+  display: block;
+  min-height: 20px;
+  margin-top: 3px;
+  color: var(--systema-muted);
+  font-size: 11px;
+}
+.systema-claude-steps {
+  display: grid;
+  gap: 13px;
+  margin: 18px 0 20px;
+  padding-left: 22px;
+  color: var(--systema-text);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.systema-claude-steps li::marker {
+  color: var(--systema-muted);
+  font-variant-numeric: tabular-nums;
+}
+.systema-claude-steps strong,
+.systema-claude-access-note strong {
+  font-weight: 600;
+}
+.systema-claude-access-note {
+  padding: 15px 0 14px;
+  border-block: 1px solid var(--systema-line);
+}
+.systema-claude-access-note > strong {
+  font-size: 12px;
+}
+.systema-claude-access-note p {
+  margin: 6px 0 0;
+  font-size: 12px;
+}
+.systema-claude-dialog-footnote {
+  margin: 14px 0 20px;
+  font-size: 11px;
+}
+.systema-claude-dialog-footnote a {
+  display: inline;
+  color: var(--systema-text);
+  text-underline-offset: 3px;
+}
+.systema-claude-dialog-footnote a svg {
+  width: 12px;
+  height: 12px;
+  vertical-align: -2px;
+}
+.systema-claude-done-button {
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid var(--systema-text);
+  background: var(--systema-primary-bg);
+  color: var(--systema-primary-text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
 .systema-page .systema-outline-cta {
   border-color: var(--systema-line);
   background: transparent;
@@ -1369,5 +1535,22 @@ html:has(.systema-page[data-theme="dark"]) {
   }
   .systema-motion-toggle {
     display: none;
+  }
+}
+@media (max-width: 600px) {
+  .systema-claude-dialog-content {
+    padding: 21px 19px 23px;
+  }
+  .systema-claude-endpoint {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .systema-claude-endpoint code {
+    font-size: 11px;
+  }
+  .systema-claude-copy-button {
+    min-height: 40px;
+    padding-inline: 0;
   }
 }
