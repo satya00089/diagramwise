@@ -48,7 +48,7 @@
     "elkjs": "^0.12.0",
     "framer-motion": "^12.23.12",
     "fuse.js": "^7.1.0",
-    "gh-pages": "^6.3.0",
+    "gh-pages": "6.1.1",
     "html-to-image": "^1.11.13",
     "jwt-decode": "^4.0.0",
     "marked": "^5.1.2",
@@ -84,6 +84,11 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.39.1",
     "vite": "^7.1.2",
-    "vitest": "^3.2.4"
+    "vitest": "^5.0.3"
+  },
+  "overrides": {
+    "@tailwindcss/typography": {
+      "postcss-selector-parser": "7.1.6"
+    }
   }
 }
