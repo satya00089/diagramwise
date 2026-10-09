@@ -261,6 +261,10 @@ if (fs.existsSync(distDir)) {
         (sectionId) => problemHtml.includes(`id="${sectionId}"`),
       ),
     );
+    check(
+      `Built ${problem.slug} exposes related problem links`,
+      problemHtml.includes('id="related-problems"'),
+    );
   }
 
   for (const route of guideRoutes) {
@@ -271,6 +275,10 @@ if (fs.existsSync(distDir)) {
     check(
       `Built ${route} exposes article data`,
       guideHtml.includes('"@type":"Article"'),
+    );
+    check(
+      `Built ${route} links concrete practice problems`,
+      /href="\/problems\/[^"/]+\/"/.test(guideHtml),
     );
   }
   check(

@@ -177,6 +177,14 @@ const routes = {
     lastmod: "2026-08-23",
     indexable: true,
     kind: "article",
+    relatedProblemSlugs: [
+      "url-shortener-like-bit-ly",
+      "design-an-api-rate-limiter",
+      "notification-system",
+      "distributed-cache",
+      "video-streaming-platform",
+      "ride-sharing-system",
+    ],
   },
   "/system-design-practice": {
     title:
@@ -217,6 +225,14 @@ const routes = {
     lastmod: "2026-08-23",
     indexable: true,
     kind: "article",
+    relatedProblemSlugs: [
+      "job-scheduler",
+      "pastebin-system-design",
+      "google-calendar-system-design",
+      "design-a-hotel-booking-system",
+      "web-crawler",
+      "payment-system",
+    ],
   },
   "/ai-system-design-interview": {
     title: "AI System Design Interview Questions & Practice | Diagramwise",
@@ -260,6 +276,14 @@ const routes = {
     lastmod: "2026-08-23",
     indexable: true,
     kind: "article",
+    relatedProblemSlugs: [
+      "design-a-conversational-ai-platform-with-rag",
+      "semantic-search-engine",
+      "recommendation-engine",
+      "real-time-recommendation-system",
+      "observability-platform",
+      "video-transcoding-pipeline",
+    ],
   },
   "/kubernetes-architecture": {
     title:
@@ -303,6 +327,11 @@ const routes = {
     lastmod: "2026-08-30",
     indexable: true,
     kind: "article",
+    relatedProblemSlugs: [
+      "design-a-container-based-microservices-architecture",
+      "build-a-multi-cloud-kubernetes-orchestration-platform",
+      "design-a-secure-multi-cloud-kubernetes-architecture",
+    ],
   },
   "/playground/free": {
     title: "Design Studio | Diagramwise",
@@ -522,11 +551,22 @@ function renderStaticRoute(data) {
           <ul class="static-route-list">${items}</ul>
         </section>
         ${renderGuideContent(data.guide)}
+        ${renderRelatedProblems(data.relatedProblems)}
       </main>
       <footer class="static-route-footer">
         Diagramwise — system design practice and architecture review.
       </footer>
     </div>`;
+}
+
+function renderRelatedProblems(items = []) {
+  if (!items.length) return "";
+
+  return `<section class="static-route-section" id="related-problems">
+    <h2>Practice related problems</h2>
+    <p>Apply the ideas from this page to a concrete architecture challenge.</p>
+    <ul class="static-route-list">${items.map(itemMarkup).join("")}</ul>
+  </section>`;
 }
 
 function breadcrumbsFor(route, title) {
@@ -914,6 +954,57 @@ function addProblemRoutes(problems, guideCatalog) {
   }
 }
 
+function problemLinksBySlug(problems, slugs) {
+  const problemsBySlug = new Map(
+    problems.map((problem) => [problem.slug, problem]),
+  );
+
+  return slugs
+    .map((slug) => problemsBySlug.get(slug))
+    .filter(Boolean)
+    .map((problem) => ({
+      title: problem.title,
+      description: `${problem.difficulty || "Practice"} system design challenge`,
+      href: `/problems/${problem.slug}/`,
+    }));
+}
+
+function relatedProblemLinks(problem, problems) {
+  const tags = new Set(problem.tags || []);
+
+  return problems
+    .filter((candidate) => candidate.slug !== problem.slug)
+    .map((candidate) => ({
+      candidate,
+      score:
+        (candidate.category === problem.category ? 3 : 0) +
+        (candidate.tags || []).filter((tag) => tags.has(tag)).length,
+    }))
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 4)
+    .map(({ candidate }) => ({
+      title: candidate.title,
+      description: `${candidate.difficulty || "Practice"} system design challenge`,
+      href: `/problems/${candidate.slug}/`,
+    }));
+}
+
+function addRelatedProblemLinks(problems) {
+  for (const route of Object.values(routes)) {
+    if (Array.isArray(route.relatedProblemSlugs)) {
+      route.relatedProblems = problemLinksBySlug(
+        problems,
+        route.relatedProblemSlugs,
+      );
+    }
+  }
+
+  for (const problem of problems) {
+    const route = routes[`/problems/${problem.slug}`];
+    if (route) route.relatedProblems = relatedProblemLinks(problem, problems);
+  }
+}
+
 function addLearningPathRoutes(learningPaths) {
   routes["/learning-paths"].initialData = learningPaths.map((learningPath) => ({
     id: learningPath.id,
@@ -1025,6 +1116,7 @@ const featuredProblems = loadFeaturedProblems();
 const liveProblems = await loadLiveProblems();
 const publicProblems = mergeProblemCatalogs(featuredProblems, liveProblems);
 addProblemRoutes(publicProblems, loadGuideCatalog());
+addRelatedProblemLinks(publicProblems);
 const baseHtml = fs.readFileSync(indexPath, "utf-8");
 
 for (const [route, data] of Object.entries(routes)) {
