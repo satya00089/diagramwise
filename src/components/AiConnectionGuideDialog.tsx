@@ -74,9 +74,6 @@ export default function AiConnectionGuideDialog({
       className="systema-ai-dialog"
       aria-labelledby="ai-connection-dialog-title"
       onCancel={onClose}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
     >
       <div className="systema-ai-dialog-content">
         <div className="systema-ai-dialog-topline">

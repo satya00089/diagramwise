@@ -12,7 +12,7 @@ export function useLearningProgress(pathId: string) {
       return;
     }
 
-    (async () => {
+    void (async () => {
       try {
         const serverProgress = await apiService.getLearningProgress(pathId);
         if (mounted)

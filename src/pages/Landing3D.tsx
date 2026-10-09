@@ -653,7 +653,7 @@ export default function Landing3D() {
             </h2>
           </div>
           <div className="systema-toolkit-grid">
-            <article tabIndex={0}>
+            <article>
               <span className="systema-toolkit-index">01</span>
               <FeatureArt type="library" />
               <h3>Architecture library</h3>
@@ -662,7 +662,7 @@ export default function Landing3D() {
                 and GCP components across cloud, ER, and UML diagrams.
               </p>
             </article>
-            <article tabIndex={0}>
+            <article>
               <span className="systema-toolkit-index">02</span>
               <FeatureArt type="annotate" />
               <h3>Connected, annotated diagrams</h3>
@@ -671,7 +671,7 @@ export default function Landing3D() {
                 fields to explain every important decision.
               </p>
             </article>
-            <article tabIndex={0}>
+            <article>
               <span className="systema-toolkit-index">03</span>
               <FeatureArt type="assessment" />
               <h3>Structured AI assessment</h3>
@@ -680,7 +680,7 @@ export default function Landing3D() {
                 with interview follow-up questions tailored to your design.
               </p>
             </article>
-            <article tabIndex={0}>
+            <article>
               <span className="systema-toolkit-index">04</span>
               <FeatureArt type="share" />
               <h3>Export and share</h3>
@@ -761,8 +761,8 @@ export default function Landing3D() {
         <AuthModal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
-          onLogin={async (email, password) => login({ email, password })}
-          onSignup={async (email, password, name) =>
+          onLogin={(email, password) => login({ email, password })}
+          onSignup={(email, password, name) =>
             signup({ email, password, name })
           }
           onGoogleLogin={googleLogin}

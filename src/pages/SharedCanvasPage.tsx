@@ -210,7 +210,7 @@ const PUBLIC_COMPONENT_ALIASES: Record<string, string> = {
 
 const resolveLocalPublicComponent = (componentId?: string) => {
   if (!componentId) return null;
-  const normalizedId = componentId.trim().toLowerCase().replace(/_/g, "-");
+  const normalizedId = componentId.trim().toLowerCase().replaceAll("_", "-");
   const direct = COMPONENTS.find((component) => component.id === normalizedId);
   if (direct) return direct;
   const alias = PUBLIC_COMPONENT_ALIASES[normalizedId];
@@ -1345,6 +1345,10 @@ const SharedCanvasPage: React.FC = () => {
           ),
         ),
       );
+      setPublicIconLoading(false);
+    }).catch(() => {
+      if (cancelled) return;
+      setPublicIconUrls({});
       setPublicIconLoading(false);
     });
 

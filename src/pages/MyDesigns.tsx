@@ -1106,7 +1106,7 @@ const MyDesigns: React.FC = () => {
                                 >
                                   <span className="my-designs-related-heading">
                                     <span className="my-designs-related-dot" aria-hidden="true" />
-                                    Related designs
+                                    {" "}Related designs
                                     <span className="my-designs-related-count">{related.length}</span>
                                   </span>
                                   <HiChevronDown

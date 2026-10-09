@@ -605,8 +605,8 @@ const ProblemLanding: React.FC = () => {
         <AuthModal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
-          onLogin={async (email, password) => login({ email, password })}
-          onSignup={async (email, password, name) =>
+          onLogin={(email, password) => login({ email, password })}
+          onSignup={(email, password, name) =>
             signup({ email, password, name })
           }
           onGoogleLogin={googleLogin}

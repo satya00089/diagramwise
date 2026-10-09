@@ -57,7 +57,7 @@ const AuthCallback: React.FC = () => {
           className="mx-auto mb-4 block h-9 w-9 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent"
           aria-hidden
         />
-        Completing Google sign-in…
+        <span className="block">Completing Google sign-in…</span>
       </output>
     </main>
   );

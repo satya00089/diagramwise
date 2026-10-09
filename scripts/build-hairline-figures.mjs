@@ -18,7 +18,7 @@ await mkdir(outputRoot, { recursive: true });
 await mkdir(embedRoot, { recursive: true });
 const read = (file) =>
   readFile(join(sourceRoot, file), "utf8").then((text) =>
-    text.replace(/\r\n/g, "\n").trimEnd(),
+    text.replaceAll("\r\n", "\n").trimEnd(),
   );
 const [kernel, bench, geometry, embed, license] = await Promise.all([
   read("vendor/kernel.js"),
