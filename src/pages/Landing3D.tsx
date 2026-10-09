@@ -21,6 +21,7 @@ import ArchitectureDiagram, {
 } from "../components/landing3d/ArchitectureDiagram";
 import Seo from "../components/SEO";
 import { AuthModal } from "../components/AuthModal";
+import ClaudeMcpSetupDialog from "../components/ClaudeMcpSetupDialog";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
 import { useRoughAnnotation } from "../hooks/useRoughAnnotation";
@@ -65,6 +66,7 @@ export default function Landing3D() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showClaudeMcpGuide, setShowClaudeMcpGuide] = useState(false);
   const { user, isAuthenticated, login, signup, googleLogin, logout } =
     useAuth();
   const { setTheme, flowColorMode } = useTheme();
@@ -424,6 +426,15 @@ export default function Landing3D() {
                   Start designing <HiArrowUpRight />
                 </Link>
               </Button>
+              <button
+                type="button"
+                className="systema-text-link systema-text-button"
+                aria-haspopup="dialog"
+                aria-controls="claude-mcp-setup-dialog"
+                onClick={() => setShowClaudeMcpGuide(true)}
+              >
+                Use with Claude <HiArrowRight aria-hidden="true" />
+              </button>
             </div>
             <div className="systema-scroll-note">
               <span className="systema-scroll-line" />A first draft is just the
@@ -735,6 +746,9 @@ export default function Landing3D() {
           }
           onGoogleLogin={googleLogin}
         />
+      )}
+      {showClaudeMcpGuide && (
+        <ClaudeMcpSetupDialog onClose={() => setShowClaudeMcpGuide(false)} />
       )}
       <footer className="systema-footer systema-container">
         <Brand />
