@@ -969,15 +969,15 @@ function problemLinksBySlug(problems, slugs) {
     }));
 }
 
-function relatedProblemLinks(problem, problems) {
-  const tags = new Set(problem.tags || []);
+function relatedProblemLinksForContext(context, problems) {
+  const tags = new Set(context.tags || []);
 
   return problems
-    .filter((candidate) => candidate.slug !== problem.slug)
+    .filter((candidate) => candidate.slug !== context.slug)
     .map((candidate) => ({
       candidate,
       score:
-        (candidate.category === problem.category ? 3 : 0) +
+        (candidate.category === context.category ? 3 : 0) +
         (candidate.tags || []).filter((tag) => tags.has(tag)).length,
     }))
     .sort((left, right) => right.score - left.score)
@@ -987,6 +987,10 @@ function relatedProblemLinks(problem, problems) {
       description: `${candidate.difficulty || "Practice"} system design challenge`,
       href: `/problems/${candidate.slug}/`,
     }));
+}
+
+function relatedProblemLinks(problem, problems) {
+  return relatedProblemLinksForContext(problem, problems);
 }
 
 function addRelatedProblemLinks(problems) {
@@ -1003,9 +1007,30 @@ function addRelatedProblemLinks(problems) {
     const route = routes[`/problems/${problem.slug}`];
     if (route) route.relatedProblems = relatedProblemLinks(problem, problems);
   }
+
+  for (const [routePath, route] of Object.entries(routes)) {
+    if (!routePath.startsWith("/learning-paths/")) continue;
+    if (route.relatedProblems?.length) continue;
+    route.relatedProblems = relatedProblemLinksForContext(
+      { tags: route.learningPathTags || [] },
+      problems,
+    );
+  }
 }
 
 function addLearningPathRoutes(learningPaths) {
+  const learningPathRelatedProblemSlugs = {
+    "dns-fundamentals": [
+      "design-a-global-content-delivery-network",
+      "design-a-secure-multi-tier-web-application",
+    ],
+    "database-replication": [
+      "distributed-file-storage",
+      "distributed-cache",
+      "design-a-distributed-file-storage-system",
+    ],
+  };
+
   routes["/learning-paths"].initialData = learningPaths.map((learningPath) => ({
     id: learningPath.id,
     slug: learningPath.slug,
@@ -1075,6 +1100,11 @@ function addLearningPathRoutes(learningPaths) {
       })),
       lastmod: "2026-08-23",
       indexable: true,
+      learningPathTags: Array.isArray(learningPath.tags)
+        ? learningPath.tags
+        : [],
+      relatedProblemSlugs:
+        learningPathRelatedProblemSlugs[learningPath.slug] || [],
     };
   }
 }

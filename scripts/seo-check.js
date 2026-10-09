@@ -287,6 +287,21 @@ if (fs.existsSync(distDir)) {
       learningIndex.includes(`href="/learning-paths/${learningPath.slug}/"`),
     ),
   );
+  for (const learningPath of learningPaths) {
+    const learningPathHtml = fs.readFileSync(
+      path.join(
+        distDir,
+        "learning-paths",
+        learningPath.slug,
+        "index.html",
+      ),
+      "utf-8",
+    );
+    check(
+      `Built ${learningPath.slug} exposes related problem links`,
+      learningPathHtml.includes('id="related-problems"'),
+    );
+  }
 
   const notFoundPath = path.join(distDir, "404.html");
   check("Built 404.html exists", fs.existsSync(notFoundPath));
