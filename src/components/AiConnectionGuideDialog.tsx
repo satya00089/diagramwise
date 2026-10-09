@@ -90,7 +90,9 @@ export default function AiConnectionGuideDialog({
             <HiXMark aria-hidden="true" />
           </button>
         </div>
-        <h2 id="ai-connection-dialog-title">Connect Diagramwise to AI</h2>
+        <h2 id="ai-connection-dialog-title">
+          Connect Diagramwise to your AI assistant
+        </h2>
         <p className="systema-ai-dialog-intro">
           Create and refine architectures in Diagramwise from your AI workspace.
           Choose the assistant you use below.
