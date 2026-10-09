@@ -245,7 +245,7 @@ export default function Landing3D() {
             aria-controls="ai-connection-guide-dialog"
             onClick={() => setShowAiConnectionGuide(true)}
           >
-            Connect to AI
+            AI connections
           </button>
         </nav>
         <div className="systema-nav-actions">
@@ -379,7 +379,7 @@ export default function Landing3D() {
                 setShowAiConnectionGuide(true);
               }}
             >
-              Connect to AI
+              AI connections
             </button>
             {isAuthenticated ? (
               <>
@@ -454,7 +454,7 @@ export default function Landing3D() {
                 aria-controls="ai-connection-guide-dialog"
                 onClick={() => setShowAiConnectionGuide(true)}
               >
-                Connect to AI <HiArrowRight aria-hidden="true" />
+                Connect an AI assistant <HiArrowRight aria-hidden="true" />
               </button>
             </div>
             <div className="systema-scroll-note">
