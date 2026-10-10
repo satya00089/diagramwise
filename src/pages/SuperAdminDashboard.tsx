@@ -19,6 +19,7 @@ import SelectDropdown from "../components/shared/SelectDropdown";
 import type {
   AdminAccessUser,
   AdminFeedbackItem,
+  AdminGoogleAnalyticsReport,
   AdminOverview,
 } from "../types/admin";
 import "./SuperAdminDashboard.css";
@@ -280,6 +281,9 @@ const SuperAdminDashboard = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [days, setDays] = useState(30);
   const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [googleAnalytics, setGoogleAnalytics] =
+    useState<AdminGoogleAnalyticsReport | null>(null);
+  const [googleAnalyticsLoading, setGoogleAnalyticsLoading] = useState(true);
   const [access, setAccess] = useState<AdminAccessUser[]>([]);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
@@ -308,11 +312,32 @@ const SuperAdminDashboard = () => {
     }
   }, [days]);
 
+  const loadGoogleAnalytics = useCallback(async () => {
+    setGoogleAnalyticsLoading(true);
+    try {
+      setGoogleAnalytics(await apiService.getAdminGoogleAnalytics(days));
+    } catch {
+      setGoogleAnalytics({
+        status: "error",
+        channelGroups: [],
+        message: "Unable to load Google Analytics. Try again shortly.",
+      });
+    } finally {
+      setGoogleAnalyticsLoading(false);
+    }
+  }, [days]);
+
   useEffect(() => {
     if (!authLoading && isAuthenticated && user?.isSuperAdmin) {
       void loadDashboard();
     }
   }, [authLoading, isAuthenticated, user?.isSuperAdmin, loadDashboard]);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user?.isSuperAdmin) {
+      void loadGoogleAnalytics();
+    }
+  }, [authLoading, isAuthenticated, user?.isSuperAdmin, loadGoogleAnalytics]);
 
   const maximumDailyEvents = useMemo(
     () =>
@@ -431,7 +456,10 @@ const SuperAdminDashboard = () => {
               <button
                 className="admin-icon-button"
                 type="button"
-                onClick={() => void loadDashboard()}
+                onClick={() => {
+                  void loadDashboard();
+                  void loadGoogleAnalytics();
+                }}
                 aria-label="Refresh dashboard"
               >
                 <MdRefresh aria-hidden="true" />
@@ -584,30 +612,95 @@ const SuperAdminDashboard = () => {
                     <div>
                       <h2 id="acquisition-title">Google Analytics</h2>
                       <p className="admin-panel__description">
-                        Acquisition and conversion data from GA4.
+                        Sessions, visitors, page views, and acquisition
+                        channels.
                       </p>
                     </div>
-                    <MdTrendingUp
-                      className="admin-panel__icon"
-                      aria-hidden="true"
-                    />
-                  </div>
-                  <div className="admin-connection-state">
-                    <span className="admin-connection-state__badge">
-                      Not connected
-                    </span>
-                    <div>
-                      <strong>Connect a GA4 property</strong>
-                      <p>
-                        Acquisition sources and landing-page conversions will
-                        appear here, separate from first-party product events.
-                      </p>
+                    <div className="admin-panel__header-actions">
+                      {googleAnalytics?.status === "connected" && (
+                        <span className="admin-panel__count">Connected</span>
+                      )}
+                      <MdTrendingUp
+                        className="admin-panel__icon"
+                        aria-hidden="true"
+                      />
                     </div>
                   </div>
+                  {googleAnalyticsLoading ? (
+                    <div
+                      className="admin-ga-loading"
+                      role="status"
+                      aria-label="Loading Google Analytics report"
+                    >
+                      <span />
+                      <span />
+                    </div>
+                  ) : googleAnalytics?.status === "connected" ? (
+                    <div className="admin-ga-content">
+                      <dl className="admin-ga-metrics">
+                        <div>
+                          <dt>Active users</dt>
+                          <dd>
+                            {formatNumber(googleAnalytics.activeUsers ?? 0)}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>New users</dt>
+                          <dd>{formatNumber(googleAnalytics.newUsers ?? 0)}</dd>
+                        </div>
+                        <div>
+                          <dt>Sessions</dt>
+                          <dd>{formatNumber(googleAnalytics.sessions ?? 0)}</dd>
+                        </div>
+                        <div>
+                          <dt>Page views</dt>
+                          <dd>
+                            {formatNumber(googleAnalytics.screenPageViews ?? 0)}
+                          </dd>
+                        </div>
+                      </dl>
+                      <div className="admin-ga-channels">
+                        <h3>Sessions by channel</h3>
+                        {googleAnalytics.channelGroups.length ? (
+                          googleAnalytics.channelGroups.map((channel) => (
+                            <div className="admin-ranking" key={channel.name}>
+                              <span>{channel.name}</span>
+                              <strong>{formatNumber(channel.sessions)}</strong>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="admin-empty">
+                            No channel data in this period.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="admin-connection-state">
+                      <span
+                        className={`admin-connection-state__badge${googleAnalytics?.status === "error" ? " admin-connection-state__badge--error" : ""}`}
+                      >
+                        {googleAnalytics?.status === "error"
+                          ? "Connection issue"
+                          : "Not connected"}
+                      </span>
+                      <div>
+                        <strong>
+                          {googleAnalytics?.status === "error"
+                            ? "Google Analytics is unavailable"
+                            : "Connect a GA4 property"}
+                        </strong>
+                        <p>
+                          {googleAnalytics?.message ??
+                            "Configure a GA4 property and credentials on the API server."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   <div className="admin-source-note">
-                    <MdCheckCircle aria-hidden="true" /> Product usage above
-                    comes from Diagramwise’s privacy-preserving first-party
-                    pipeline.
+                    <MdCheckCircle aria-hidden="true" /> GA4 is queried
+                    read-only for the selected date range. Product events above
+                    come from Diagramwise’s first-party pipeline.
                   </div>
                 </section>
               </div>

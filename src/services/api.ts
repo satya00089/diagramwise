@@ -19,7 +19,12 @@ import type {
   FeedbackResponse,
   FeedbackSubmission,
 } from "../types/feedback";
-import type { AdminAccessUser, AdminOverview, AdminFeedbackItem } from "../types/admin";
+import type {
+  AdminAccessUser,
+  AdminGoogleAnalyticsReport,
+  AdminOverview,
+  AdminFeedbackItem,
+} from "../types/admin";
 import { getGoogleLoginStartUri } from "./googleAuth";
 
 // VITE_API_URL is the application's documented API endpoint. Keep the older
@@ -897,6 +902,22 @@ class ApiService {
       throw await this.createApiError(response, "Unable to load admin overview");
     }
     return response.json() as Promise<AdminOverview>;
+  }
+
+  async getAdminGoogleAnalytics(
+    days = 30,
+  ): Promise<AdminGoogleAnalyticsReport> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/admin/google-analytics?days=${days}`,
+      { headers: this.getAuthHeaders() },
+    );
+    if (!response.ok) {
+      throw await this.createApiError(
+        response,
+        "Unable to load Google Analytics",
+      );
+    }
+    return response.json() as Promise<AdminGoogleAnalyticsReport>;
   }
 
   async getAdminAccess(): Promise<AdminAccessUser[]> {

@@ -39,6 +39,17 @@ export interface AdminOverview {
   recentFeedback: AdminFeedbackItem[];
 }
 
+export interface AdminGoogleAnalyticsReport {
+  status: "not_configured" | "connected" | "error";
+  propertyId?: string | null;
+  activeUsers?: number | null;
+  newUsers?: number | null;
+  sessions?: number | null;
+  screenPageViews?: number | null;
+  channelGroups: Array<{ name: string; sessions: number }>;
+  message?: string | null;
+}
+
 export interface AdminAccessUser {
   id: string;
   email: string;

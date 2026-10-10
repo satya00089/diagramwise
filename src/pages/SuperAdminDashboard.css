@@ -441,6 +441,18 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
   white-space: nowrap;
 }
 
+.admin-connection-state__badge--error {
+  border-color: #c9a5a5;
+  background: #f5e9e8;
+  color: #7b3030;
+}
+
+.dark .admin-connection-state__badge--error {
+  border-color: #654040;
+  background: #352020;
+  color: #efb8b8;
+}
+
 .admin-connection-state strong {
   display: block;
   font-size: 0.92rem;
@@ -451,6 +463,61 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
   color: var(--muted);
   font-size: 0.8rem;
   line-height: 1.5;
+}
+
+.admin-ga-content {
+  display: grid;
+  gap: 18px;
+  padding-top: 6px;
+}
+
+.admin-ga-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+  margin: 0;
+}
+
+.admin-ga-metrics > div {
+  min-width: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-ga-metrics dt {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.admin-ga-metrics dd {
+  margin: 5px 0 0;
+  font-size: 1.35rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.admin-ga-channels h3 {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.admin-ga-loading {
+  display: grid;
+  gap: 14px;
+  padding: 20px 0;
+}
+
+.admin-ga-loading span {
+  display: block;
+  height: 38px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--bg), var(--bg-hover), var(--bg));
+  background-size: 200% 100%;
+  animation: admin-skeleton-pulse 1.6s ease-in-out infinite;
 }
 
 .admin-source-note {
@@ -917,7 +984,8 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
 
 @media (prefers-reduced-motion: reduce) {
   .admin-skeleton,
-  .admin-skeleton-block {
+  .admin-skeleton-block,
+  .admin-ga-loading span {
     animation: none;
   }
 }
