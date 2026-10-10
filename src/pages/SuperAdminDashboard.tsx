@@ -5,6 +5,8 @@ import { HiChevronDown } from "react-icons/hi2";
 import {
   MdAdminPanelSettings,
   MdCheckCircle,
+  MdChevronLeft,
+  MdChevronRight,
   MdFeedback,
   MdInsights,
   MdRefresh,
@@ -290,6 +292,11 @@ const SuperAdminDashboard = () => {
   const [error, setError] = useState<string | null>(null);
   const [accessError, setAccessError] = useState<string | null>(null);
   const [accessSaving, setAccessSaving] = useState(false);
+  const chartScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollToOlderActivity, setCanScrollToOlderActivity] =
+    useState(false);
+  const [canScrollToNewestActivity, setCanScrollToNewestActivity] =
+    useState(false);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -339,18 +346,51 @@ const SuperAdminDashboard = () => {
     }
   }, [authLoading, isAuthenticated, user?.isSuperAdmin, loadGoogleAnalytics]);
 
-  const maximumDailyEvents = useMemo(
+  const dailyActivity = useMemo(
     () =>
-      Math.max(
-        ...(overview?.analytics.daily.map((day) => day.events) ?? [1]),
-        1,
+      [...(overview?.analytics.daily ?? [])].sort((first, second) =>
+        first.date.localeCompare(second.date),
       ),
-    [overview],
+    [overview?.analytics.daily],
   );
-  const chartLabelInterval = Math.max(
-    1,
-    Math.ceil((overview?.analytics.daily.length ?? 0) / 6),
+  const maximumDailyEvents = useMemo(
+    () => Math.max(...dailyActivity.map((day) => day.events), 1),
+    [dailyActivity],
   );
+  const chartLabelInterval = Math.max(1, Math.ceil(dailyActivity.length / 6));
+
+  const syncChartNavigation = useCallback(() => {
+    const chart = chartScrollRef.current;
+    if (!chart) return;
+
+    const maxScrollLeft = chart.scrollWidth - chart.clientWidth;
+    setCanScrollToOlderActivity(chart.scrollLeft > 1);
+    setCanScrollToNewestActivity(chart.scrollLeft < maxScrollLeft - 1);
+  }, []);
+
+  useEffect(() => {
+    const chart = chartScrollRef.current;
+    if (!chart) return;
+
+    chart.scrollLeft = chart.scrollWidth;
+    syncChartNavigation();
+
+    const resizeObserver = new ResizeObserver(syncChartNavigation);
+    resizeObserver.observe(chart);
+    return () => resizeObserver.disconnect();
+  }, [days, dailyActivity, syncChartNavigation]);
+
+  const scrollActivity = (direction: "older" | "newest") => {
+    const chart = chartScrollRef.current;
+    if (!chart) return;
+
+    chart.scrollBy({
+      left:
+        (direction === "older" ? -1 : 1) *
+        Math.max(chart.clientWidth * 0.8, 240),
+      behavior: "smooth",
+    });
+  };
 
   if (authLoading) return null;
   if (!isAuthenticated || !user?.isSuperAdmin) {
@@ -534,52 +574,82 @@ const SuperAdminDashboard = () => {
                       aria-hidden="true"
                     />
                   </div>
-                  <div
-                    className="admin-chart-scroll"
-                    aria-label="Scrollable daily usage chart"
-                  >
-                    {overview.analytics.daily.length ? (
-                      <div
-                        className="admin-chart"
-                        role="img"
-                        aria-label={`Daily tracked events over the last ${days} days`}
-                        style={{
-                          gridTemplateColumns: `repeat(${overview.analytics.daily.length}, minmax(0, 1fr))`,
-                          minWidth: `${overview.analytics.daily.length * 12}px`,
-                        }}
-                      >
-                        {overview.analytics.daily.map((day, index) => {
-                          const dateLabel = new Date(
-                            `${day.date}T00:00:00`,
-                          ).toLocaleDateString("en-IN", {
-                            day: "numeric",
-                            month: "short",
-                          });
-                          const showDate =
-                            index % chartLabelInterval === 0 ||
-                            index === overview.analytics.daily.length - 1;
-                          return (
-                            <div className="admin-chart__column" key={day.date}>
-                              <div className="admin-chart__bar-wrap">
-                                <div
-                                  className="admin-chart__bar"
-                                  style={{
-                                    height: `${Math.max((day.events / maximumDailyEvents) * 100, day.events ? 7 : 2)}%`,
-                                  }}
-                                  title={`${day.events} events on ${day.date}`}
-                                />
+                  <div className="admin-chart-carousel">
+                    <div
+                      ref={chartScrollRef}
+                      className="admin-chart-scroll"
+                      aria-label="Daily product activity chart. Scroll horizontally to explore older dates."
+                      onScroll={syncChartNavigation}
+                    >
+                      {dailyActivity.length ? (
+                        <div
+                          className="admin-chart"
+                          id="admin-activity-chart"
+                          role="img"
+                          aria-label={`Daily tracked events over the last ${days} days`}
+                          style={{
+                            gridTemplateColumns: `repeat(${dailyActivity.length}, minmax(0, 1fr))`,
+                            minWidth: `${dailyActivity.length * 12}px`,
+                          }}
+                        >
+                          {dailyActivity.map((day, index) => {
+                            const dateLabel = new Date(
+                              `${day.date}T00:00:00`,
+                            ).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                            });
+                            const showDate =
+                              index % chartLabelInterval === 0 ||
+                              index === dailyActivity.length - 1;
+                            return (
+                              <div
+                                className="admin-chart__column"
+                                key={day.date}
+                              >
+                                <div className="admin-chart__bar-wrap">
+                                  <div
+                                    className="admin-chart__bar"
+                                    style={{
+                                      height: `${Math.max((day.events / maximumDailyEvents) * 100, day.events ? 7 : 2)}%`,
+                                    }}
+                                    title={`${day.events} events on ${day.date}`}
+                                  />
+                                </div>
+                                <span aria-hidden="true">
+                                  {showDate ? dateLabel : ""}
+                                </span>
                               </div>
-                              <span aria-hidden="true">
-                                {showDate ? dateLabel : ""}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="admin-empty">
-                        No events were recorded in this period.
-                      </p>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="admin-empty">
+                          No events were recorded in this period.
+                        </p>
+                      )}
+                    </div>
+                    {canScrollToOlderActivity && (
+                      <button
+                        className="admin-chart-nav admin-chart-nav--older"
+                        type="button"
+                        aria-label="Show older product activity"
+                        aria-controls="admin-activity-chart"
+                        onClick={() => scrollActivity("older")}
+                      >
+                        <MdChevronLeft aria-hidden="true" />
+                      </button>
+                    )}
+                    {canScrollToNewestActivity && (
+                      <button
+                        className="admin-chart-nav admin-chart-nav--newest"
+                        type="button"
+                        aria-label="Return to newest product activity"
+                        aria-controls="admin-activity-chart"
+                        onClick={() => scrollActivity("newest")}
+                      >
+                        <MdChevronRight aria-hidden="true" />
+                      </button>
                     )}
                   </div>
                   <div className="admin-list-split">

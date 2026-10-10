@@ -329,29 +329,60 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
 .admin-chart-scroll {
   max-width: 100%;
   overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #aaa89f transparent;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  touch-action: pan-x;
 }
 
 .admin-chart-scroll::-webkit-scrollbar {
-  height: 4px;
+  display: none;
 }
 
-.admin-chart-scroll::-webkit-scrollbar-track {
-  background: transparent;
+.admin-chart-carousel {
+  position: relative;
 }
 
-.admin-chart-scroll::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: #aaa89f;
+.admin-chart-nav {
+  position: absolute;
+  z-index: 1;
+  top: 42%;
+  display: grid;
+  width: 38px;
+  height: 52px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 1.65rem;
+  opacity: 0.96;
+  transition:
+    background-color 150ms ease,
+    transform 150ms ease;
 }
 
-.dark .admin-chart-scroll {
-  scrollbar-color: #555550 transparent;
+.admin-chart-nav:hover {
+  background: var(--bg-hover);
+  transform: scale(1.04);
 }
 
-.dark .admin-chart-scroll::-webkit-scrollbar-thumb {
-  background: #555550;
+.admin-chart-nav:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+
+.admin-chart-nav--older {
+  left: 6px;
+}
+
+.admin-chart-nav--newest {
+  right: 6px;
+}
+
+.admin-chart-nav svg {
+  width: 24px;
+  height: 24px;
 }
 
 .admin-chart__column {
