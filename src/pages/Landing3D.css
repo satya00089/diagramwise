@@ -234,6 +234,10 @@ html:has(.systema-page[data-theme="dark"]) {
   font: inherit;
   cursor: pointer;
 }
+.systema-nav-connect {
+  display: inline-flex;
+  align-items: center;
+}
 .systema-desktop-nav button:focus-visible,
 .systema-mobile-nav button:focus-visible {
   outline: 2px solid currentColor;

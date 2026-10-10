@@ -241,11 +241,12 @@ export default function Landing3D() {
           <button
             type="button"
             className="systema-nav-connect"
+            aria-label="AI connections"
             aria-haspopup="dialog"
             aria-controls="ai-connection-guide-dialog"
             onClick={() => setShowAiConnectionGuide(true)}
           >
-            AI connections
+            <RollingNavLabel>AI connections</RollingNavLabel>
           </button>
         </nav>
         <div className="systema-nav-actions">
