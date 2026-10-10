@@ -327,6 +327,8 @@ const SuperAdminDashboard = () => {
       setGoogleAnalytics({
         status: "error",
         channelGroups: [],
+        referralSources: [],
+        cities: [],
         message: "Unable to load Google Analytics. Try again shortly.",
       });
     } finally {
@@ -673,64 +675,70 @@ const SuperAdminDashboard = () => {
                     </div>
                   </div>
                 </section>
+              </div>
 
-                <section
-                  className="admin-panel admin-panel--acquisition"
-                  aria-labelledby="acquisition-title"
-                >
-                  <div className="admin-panel__header">
-                    <div>
-                      <h2 id="acquisition-title">Google Analytics</h2>
-                      <p className="admin-panel__description">
-                        Sessions, visitors, page views, and acquisition
-                        channels.
-                      </p>
-                    </div>
-                    <div className="admin-panel__header-actions">
-                      {googleAnalytics?.status === "connected" && (
-                        <span className="admin-panel__count">Connected</span>
-                      )}
-                      <MdTrendingUp
-                        className="admin-panel__icon"
-                        aria-hidden="true"
-                      />
-                    </div>
+              <section
+                className="admin-panel admin-panel--acquisition"
+                aria-labelledby="acquisition-title"
+              >
+                <div className="admin-panel__header">
+                  <div>
+                    <h2 id="acquisition-title">Google Analytics</h2>
+                    <p className="admin-panel__description">
+                      Traffic sources and approximate visitor locations for the
+                      selected period.
+                    </p>
                   </div>
-                  {googleAnalyticsLoading ? (
-                    <div
-                      className="admin-ga-loading"
-                      role="status"
-                      aria-label="Loading Google Analytics report"
-                    >
-                      <span />
-                      <span />
-                    </div>
-                  ) : googleAnalytics?.status === "connected" ? (
-                    <div className="admin-ga-content">
-                      <dl className="admin-ga-metrics">
-                        <div>
-                          <dt>Active users</dt>
-                          <dd>
-                            {formatNumber(googleAnalytics.activeUsers ?? 0)}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt>New users</dt>
-                          <dd>{formatNumber(googleAnalytics.newUsers ?? 0)}</dd>
-                        </div>
-                        <div>
-                          <dt>Sessions</dt>
-                          <dd>{formatNumber(googleAnalytics.sessions ?? 0)}</dd>
-                        </div>
-                        <div>
-                          <dt>Page views</dt>
-                          <dd>
-                            {formatNumber(googleAnalytics.screenPageViews ?? 0)}
-                          </dd>
-                        </div>
-                      </dl>
-                      <div className="admin-ga-channels">
+                  <div className="admin-panel__header-actions">
+                    {googleAnalytics?.status === "connected" && (
+                      <span className="admin-panel__count">Connected</span>
+                    )}
+                    <MdTrendingUp
+                      className="admin-panel__icon"
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+                {googleAnalyticsLoading ? (
+                  <div
+                    className="admin-ga-loading"
+                    role="status"
+                    aria-label="Loading Google Analytics report"
+                  >
+                    <span />
+                    <span />
+                  </div>
+                ) : googleAnalytics?.status === "connected" ? (
+                  <div className="admin-ga-content">
+                    <dl className="admin-ga-metrics">
+                      <div>
+                        <dt>Active users</dt>
+                        <dd>
+                          {formatNumber(googleAnalytics.activeUsers ?? 0)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>New users</dt>
+                        <dd>{formatNumber(googleAnalytics.newUsers ?? 0)}</dd>
+                      </div>
+                      <div>
+                        <dt>Sessions</dt>
+                        <dd>{formatNumber(googleAnalytics.sessions ?? 0)}</dd>
+                      </div>
+                      <div>
+                        <dt>Page views</dt>
+                        <dd>
+                          {formatNumber(googleAnalytics.screenPageViews ?? 0)}
+                        </dd>
+                      </div>
+                    </dl>
+                    <div className="admin-ga-breakdowns">
+                      <section className="admin-ga-breakdown">
                         <h3>Sessions by channel</h3>
+                        <p className="admin-ga-breakdown__description">
+                          Sessions grouped by Google Analytics’ default
+                          channels.
+                        </p>
                         {googleAnalytics.channelGroups.length ? (
                           googleAnalytics.channelGroups.map((channel) => (
                             <div className="admin-ranking" key={channel.name}>
@@ -743,37 +751,86 @@ const SuperAdminDashboard = () => {
                             No channel data in this period.
                           </p>
                         )}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="admin-connection-state">
-                      <span
-                        className={`admin-connection-state__badge${googleAnalytics?.status === "error" ? " admin-connection-state__badge--error" : ""}`}
-                      >
-                        {googleAnalytics?.status === "error"
-                          ? "Connection issue"
-                          : "Not connected"}
-                      </span>
-                      <div>
-                        <strong>
-                          {googleAnalytics?.status === "error"
-                            ? "Google Analytics is unavailable"
-                            : "Connect a GA4 property"}
-                        </strong>
-                        <p>
-                          {googleAnalytics?.message ??
-                            "Configure a GA4 property and credentials on the API server."}
+                      </section>
+                      <section className="admin-ga-breakdown">
+                        <h3>Top referral sources</h3>
+                        <p className="admin-ga-breakdown__description">
+                          Sessions attributed to links from other sites.
                         </p>
-                      </div>
+                        {googleAnalytics.referralSources?.length ? (
+                          googleAnalytics.referralSources.map((source) => (
+                            <div
+                              className="admin-ranking"
+                              key={source.sourceMedium}
+                            >
+                              <span title={source.sourceMedium}>
+                                {source.sourceMedium}
+                              </span>
+                              <strong>{formatNumber(source.sessions)}</strong>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="admin-empty">
+                            No referral sessions in this period.
+                          </p>
+                        )}
+                      </section>
+                      <section className="admin-ga-breakdown">
+                        <h3>Top cities</h3>
+                        <p className="admin-ga-breakdown__description">
+                          Approximate locations reported by Google Analytics.
+                        </p>
+                        {googleAnalytics.cities?.length ? (
+                          googleAnalytics.cities.map((city) => (
+                            <div
+                              className="admin-ranking admin-ranking--city"
+                              key={`${city.country}-${city.region}-${city.city}`}
+                            >
+                              <span className="admin-ranking__place">
+                                <strong>{city.city}</strong>
+                                <small>
+                                  {city.region} · {city.country}
+                                </small>
+                              </span>
+                              <strong>{formatNumber(city.sessions)}</strong>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="admin-empty">
+                            No city data in this period.
+                          </p>
+                        )}
+                      </section>
                     </div>
-                  )}
-                  <div className="admin-source-note">
-                    <MdCheckCircle aria-hidden="true" /> GA4 is queried
-                    read-only for the selected date range. Product events above
-                    come from Diagramwise’s first-party pipeline.
                   </div>
-                </section>
-              </div>
+                ) : (
+                  <div className="admin-connection-state">
+                    <span
+                      className={`admin-connection-state__badge${googleAnalytics?.status === "error" ? " admin-connection-state__badge--error" : ""}`}
+                    >
+                      {googleAnalytics?.status === "error"
+                        ? "Connection issue"
+                        : "Not connected"}
+                    </span>
+                    <div>
+                      <strong>
+                        {googleAnalytics?.status === "error"
+                          ? "Google Analytics is unavailable"
+                          : "Connect a GA4 property"}
+                      </strong>
+                      <p>
+                        {googleAnalytics?.message ??
+                          "Configure a GA4 property and credentials on the API server."}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <div className="admin-source-note">
+                  <MdCheckCircle aria-hidden="true" />
+                  GA4 is queried read-only for the selected date range. City
+                  values are approximate and may appear as “(not set)”.
+                </div>
+              </section>
 
               <section className="admin-panel" aria-labelledby="feedback-title">
                 <div className="admin-panel__header">

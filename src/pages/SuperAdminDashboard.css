@@ -258,7 +258,7 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
 
 .admin-overview-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.85fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   margin-bottom: 20px;
 }
@@ -498,14 +498,14 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
 
 .admin-ga-content {
   display: grid;
-  gap: 18px;
+  gap: 24px;
   padding-top: 6px;
 }
 
 .admin-ga-metrics {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 18px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0 24px;
   margin: 0;
 }
 
@@ -529,11 +529,55 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
   letter-spacing: -0.025em;
 }
 
-.admin-ga-channels h3 {
+.admin-ga-breakdowns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.admin-ga-breakdown {
+  min-width: 0;
+}
+
+.admin-ga-breakdown h3 {
+  margin: 0 0 8px;
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 650;
+}
+
+.admin-ga-breakdown__description {
+  min-height: 2.6em;
   margin: 0 0 8px;
   color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 650;
+  font-size: 0.73rem;
+  line-height: 1.4;
+}
+
+.admin-ranking--city {
+  align-items: center;
+}
+
+.admin-ranking__place {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  white-space: normal;
+}
+
+.admin-ranking__place strong {
+  overflow: hidden;
+  font-size: 0.81rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-ranking__place small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.69rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .admin-ga-loading {
@@ -933,8 +977,12 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .admin-overview-grid {
-    grid-template-columns: 1fr;
+  .admin-ga-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-ga-breakdowns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -978,6 +1026,15 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
   .admin-list-split {
     grid-template-columns: 1fr;
     gap: 22px;
+  }
+
+  .admin-ga-breakdowns {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .admin-ga-breakdown__description {
+    min-height: 0;
   }
 
   .admin-feedback-row,

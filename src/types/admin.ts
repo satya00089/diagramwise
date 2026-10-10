@@ -47,6 +47,13 @@ export interface AdminGoogleAnalyticsReport {
   sessions?: number | null;
   screenPageViews?: number | null;
   channelGroups: Array<{ name: string; sessions: number }>;
+  referralSources?: Array<{ sourceMedium: string; sessions: number }>;
+  cities?: Array<{
+    country: string;
+    region: string;
+    city: string;
+    sessions: number;
+  }>;
   message?: string | null;
 }
 
