@@ -52,11 +52,13 @@ const escapeHtml = (value: string): string =>
     .replaceAll(">", "&gt;")
     .replaceAll("\n", "<br />");
 
-const toEditorContent = (value: string, contentFormat: "text" | "html"): string =>
-  {
-    if (!value.trim()) return "";
-    return contentFormat === "html" ? value : `<p>${escapeHtml(value)}</p>`;
-  };
+const toEditorContent = (
+  value: string,
+  contentFormat: "text" | "html",
+): string => {
+  if (!value.trim()) return "";
+  return contentFormat === "html" ? value : `<p>${escapeHtml(value)}</p>`;
+};
 
 const ToolbarButton: React.FC<ToolbarButtonProps> = ({
   onClick,
@@ -151,6 +153,7 @@ const TiptapAnswerEditor: React.FC<TiptapAnswerEditorProps> = ({
       },
     },
     onUpdate: ({ editor: currentEditor }) => {
+      if (currentEditor.isDestroyed || !currentEditor.schema) return;
       const text = currentEditor.getText({ blockSeparator: "\n" });
       if (maxLength !== undefined && text.length > maxLength) {
         currentEditor.commands.undo();
@@ -164,7 +167,8 @@ const TiptapAnswerEditor: React.FC<TiptapAnswerEditorProps> = ({
   });
 
   useEffect(() => {
-    if (!editor) return;
+    // StrictMode can replay this effect after Tiptap has cleared the schema.
+    if (!editor || editor.isDestroyed || !editor.schema) return;
 
     const editorText = editor.getText({ blockSeparator: "\n" });
     if (contentFormat === "html") {
@@ -211,13 +215,14 @@ const TiptapAnswerEditor: React.FC<TiptapAnswerEditorProps> = ({
     cancelRecording,
   } = useAudioTranscription({
     onTranscript: (text) => {
-      editor?.chain().focus().insertContent(text).run();
+      if (!editor || editor.isDestroyed || !editor.schema) return;
+      editor.chain().focus().insertContent(text).run();
     },
   });
 
   const isRecordingOrTranscribing = isRecording || isTranscribing;
 
-  if (!editor) return null;
+  if (!editor || !editor.schema) return null;
 
   const inlineButtons = [
     {

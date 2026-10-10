@@ -1,3 +1,5 @@
+import type { RequirementCoverage, RequirementSpec } from "./requirements";
+
 export interface SystemDesignProblem {
   id: string;
   slug?: string;
@@ -8,6 +10,7 @@ export interface SystemDesignProblem {
   domain: string;
   estimated_time: string;
   requirements: string[];
+  requirementSpec?: RequirementSpec;
   constraints: string[];
   hints: string[];
   sampleSolution?: SystemDesignSolution;
@@ -145,6 +148,23 @@ export interface ValidationResult {
   source?: "ai" | "rule_based";
   assessmentId?: string;
   traceId?: string;
+  /** Legacy numeric score is a compatibility placeholder when this is false. */
+  scoreAvailable?: boolean;
+  verdict?:
+    | "strong_alignment"
+    | "needs_revision"
+    | "more_context_needed"
+    | "unavailable";
+  rubricVersion?: string;
+  requirementRevision?: string;
+  modelVersion?: string;
+  inputFingerprint?: string;
+  requirementCoverage?: RequirementCoverage[];
+  structuralChecks?: Array<{
+    title: string;
+    status: string;
+    explanation: string;
+  }>;
 }
 
 export type ReviewFindingSeverity =
@@ -158,15 +178,25 @@ export interface ReviewFinding {
   explanation: string;
   recommendation?: string;
   severity: ReviewFindingSeverity;
+  evidence_ids?: string[];
+  requirement_ids?: string[];
+  kind?: "defect" | "clarification" | "extension" | "strength";
+  criterion?: string | null;
+  scored_gap?: boolean;
 }
 
 export interface AssessmentHistoryEntry {
   id: string;
-  score: number;
+  score: number | null;
   findingCount: number;
   createdAt: string;
   source?: "ai" | "rule_based";
   addressedFindingIds: string[];
+  scoreAvailable?: boolean;
+  rubricVersion?: string;
+  requirementRevision?: string;
+  modelVersion?: string;
+  inputFingerprint?: string;
 }
 
 export const getReviewFindingId = (finding: ReviewFinding): string =>
@@ -224,12 +254,13 @@ export type GuidedStepType =
   | "add_component"
   | "add_connection"
   | "decision_point"
-  | "scale_trigger";
+  | "scale_trigger"
+  | "update_component";
 
 export interface GuidedComponentStep {
   /** Stable node ID — prefixed with "guided_" when placed on the canvas */
   nodeId: string;
-  componentType: ComponentType;
+  componentType: string;
   label: string;
   /** Short description shown as the node subtitle on the canvas */
   description?: string;
@@ -282,6 +313,9 @@ export interface GuidedStep {
   connection?: GuidedConnectionStep;
   decision?: GuidedDecisionPoint;
   scaleTrigger?: GuidedScaleTrigger;
+  requirementIds?: string[];
+  /** Applied only after the learner explicitly accepts this design change. */
+  componentUpdate?: { nodeId: string; properties: Record<string, unknown> };
 }
 
 export interface GuidedWalkthroughPhase {
@@ -296,4 +330,5 @@ export interface GuidedWalkthrough {
   totalSteps: number;
   phases: GuidedWalkthroughPhase[];
   steps: GuidedStep[];
+  requirementRevision?: string;
 }

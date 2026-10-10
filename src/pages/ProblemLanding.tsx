@@ -15,6 +15,7 @@ import {
   MdSignalCellularAlt,
 } from "react-icons/md";
 import { AuthModal } from "../components/AuthModal";
+import ProblemRequirements from "../components/ProblemRequirements";
 import ProblemGuideContent, {
   ProblemGuideNavigation,
 } from "../components/problem-guide/ProblemGuideContent";
@@ -383,35 +384,33 @@ const ProblemLanding: React.FC = () => {
                 {guide ? (
                   <ProblemGuideContent
                     guide={guide}
+                    requirementSpec={problem.requirementSpec}
+                    requirements={requirements}
+                    constraints={constraints}
+                    problemDescription={problem.description}
                     onPractice={startProblem}
                     problemSlug={slug}
                   />
                 ) : (
                   <>
-                    {requirements.length > 0 && (
-                      <section aria-labelledby="requirements-heading">
-                        <h2
-                          id="requirements-heading"
-                          className="text-2xl font-bold tracking-[-0.02em]"
-                        >
-                          Requirements
-                        </h2>
-                        <ul className="mt-5 space-y-3">
-                          {requirements.map((requirement) => (
-                            <li
-                              key={requirement}
-                              className="flex gap-3 leading-7 text-muted"
-                            >
-                              <MdCheckCircleOutline
-                                className="mt-1 shrink-0 text-xl text-[var(--brand)]"
-                                aria-hidden="true"
-                              />
-                              <span>{requirement}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </section>
-                    )}
+                    <section
+                      id="requirements"
+                      aria-labelledby="requirements-heading"
+                    >
+                      <h2
+                        id="requirements-heading"
+                        className="text-2xl font-bold tracking-[-0.02em]"
+                      >
+                        Problem requirements
+                      </h2>
+                      <div className="mt-5">
+                        <ProblemRequirements
+                          requirementSpec={problem.requirementSpec}
+                          requirements={requirements}
+                          constraints={constraints}
+                        />
+                      </div>
+                    </section>
 
                     <section aria-labelledby="concepts-heading">
                       <h2
@@ -431,22 +430,6 @@ const ProblemLanding: React.FC = () => {
                         ))}
                       </div>
                     </section>
-
-                    {constraints.length > 0 && (
-                      <section aria-labelledby="constraints-heading">
-                        <h2
-                          id="constraints-heading"
-                          className="text-2xl font-bold tracking-[-0.02em]"
-                        >
-                          Constraints
-                        </h2>
-                        <ul className="mt-5 list-disc space-y-3 pl-5 leading-7 text-muted">
-                          {constraints.map((constraint) => (
-                            <li key={constraint}>{constraint}</li>
-                          ))}
-                        </ul>
-                      </section>
-                    )}
 
                     <section aria-labelledby="questions-heading">
                       <h2
@@ -507,10 +490,10 @@ const ProblemLanding: React.FC = () => {
                         What the review looks for
                       </h2>
                       <p className="mt-4 max-w-3xl leading-7 text-muted">
-                        Diagramwise reviews the reasoning behind your
-                        components and connections—not just whether the right
-                        boxes appear. Make assumptions explicit and label the
-                        important data flows.
+                        Diagramwise reviews the reasoning behind your components
+                        and connections—not just whether the right boxes appear.
+                        Make assumptions explicit and label the important data
+                        flows.
                       </p>
                       <ul className="mt-5 grid gap-x-8 gap-y-3 sm:grid-cols-2">
                         {[

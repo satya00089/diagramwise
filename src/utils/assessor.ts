@@ -8,6 +8,10 @@ import type {
   InterviewResponse,
   InterviewSession,
 } from "../types/systemDesign";
+import type {
+  RequirementCoverage,
+  RequirementSpec,
+} from "../types/requirements";
 
 export type AssessmentPayload = {
   components: Array<{
@@ -30,6 +34,9 @@ export type AssessmentPayload = {
   reasoningContext?: DesignReasoningContext;
   interviewSession?: InterviewSession;
   problem: {
+    id?: string;
+    requirementSpec?: RequirementSpec;
+    requirementRevision?: string;
     title: string;
     description: string;
     requirements?: string;
@@ -59,9 +66,9 @@ const VALID_BACKEND_TYPES = new Set([
   "custom",
 ]);
 
-const normalizeComponentType = (type: string): string => {
-  if (VALID_BACKEND_TYPES.has(type)) return type;
+export const normalizeComponentType = (type: string): string => {
   const t = type.toLowerCase();
+  if (VALID_BACKEND_TYPES.has(t)) return t;
   if (t === "client" || t === "web-server" || t === "web_server")
     return "frontend";
   if (
@@ -73,7 +80,9 @@ const normalizeComponentType = (type: string): string => {
     t === "notification-service" ||
     t === "search-engine" ||
     t === "backend-server" ||
-    t === "scheduler"
+    t === "scheduler" ||
+    t === "search" ||
+    t === "configuration-service"
   )
     return "backend";
   if (t === "nosql" || t === "sql" || t === "rdbms" || t === "db")
@@ -82,7 +91,8 @@ const normalizeComponentType = (type: string): string => {
     t === "file-storage" ||
     t === "file_storage" ||
     t === "blob" ||
-    t === "s3"
+    t === "s3" ||
+    t === "object-storage"
   )
     return "storage";
   if (t === "firewall" || t === "waf" || t === "auth" || t === "auth-service")
@@ -102,6 +112,8 @@ export async function assessSolution(
     return {
       isValid: false,
       score: 0,
+      scoreAvailable: false,
+      verdict: "unavailable",
       summary: "No design was submitted for review.",
       findings: [],
       feedback: [
@@ -143,16 +155,19 @@ export async function assessSolution(
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
       throw new Error(
-        `Assessment API failed: ${response.status} ${response.statusText} - ${errorText}`,
+        response.status === 409
+          ? "The problem requirements changed. Reload this problem and review the updated brief before assessing again."
+          : "The assessment service is temporarily unavailable. Your design is still on the canvas; please retry the AI review.",
       );
     }
 
     const result = await response.json();
 
     // Transform FastAPI response to match frontend ValidationResult interface
-    return transformApiResponse(result);
+    const assessment = transformApiResponse(result);
+    assessment.inputFingerprint = fingerprintAssessmentPayload(requestPayload);
+    return assessment;
   } catch (error) {
     console.error("AI Assessment failed:", error);
 
@@ -160,6 +175,12 @@ export async function assessSolution(
     return {
       isValid: false,
       score: 0,
+      scoreAvailable: false,
+      verdict: "unavailable",
+      summary:
+        error instanceof Error
+          ? error.message
+          : "The assessment service is temporarily unavailable. Please retry the AI review.",
       feedback: [
         {
           type: "error",
@@ -188,8 +209,10 @@ export function buildAssessmentPayload(
     components: solution.components
       .filter((comp) => (comp.type as string) !== "group")
       .map((comp, i) => ({
-        id: comp.id || `comp-${Date.now()}-${i}`,
-        type: normalizeComponentType(comp.type),
+        id: comp.id || `component-${i}`,
+        type: normalizeComponentType(
+          String(comp.properties?.componentId ?? comp.type),
+        ),
         label: comp.label,
         properties: comp.properties || {},
         position: comp.position,
@@ -207,7 +230,7 @@ export function buildAssessmentPayload(
             !excludedIds.has(conn.source) && !excludedIds.has(conn.target),
         )
         .map((conn, i) => ({
-          id: conn.id || `conn-${Date.now()}-${i}`,
+          id: conn.id || `connection-${i}`,
           source: conn.source,
           target: conn.target,
           label: conn.label,
@@ -225,6 +248,9 @@ export function buildAssessmentPayload(
     // Include problem context for better AI assessment
     problem: problem
       ? {
+          id: problem.id || undefined,
+          requirementSpec: problem.requirementSpec,
+          requirementRevision: problem.requirementSpec?.revision,
           title: problem.title,
           description: problem.description,
           requirements: Array.isArray(problem.requirements)
@@ -239,6 +265,51 @@ export function buildAssessmentPayload(
         }
       : null,
   };
+}
+
+/** Non-security identity of meaningful review input; moving nodes is not a revision. */
+export function fingerprintAssessmentPayload(
+  payload: AssessmentPayload,
+): string {
+  const presentation = new Set([
+    "position",
+    "x",
+    "y",
+    "width",
+    "height",
+    "selected",
+    "dragging",
+    "icon",
+    "iconUrl",
+    "subtitle",
+    "_guidedAppliedSteps",
+  ]);
+  const canonical = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(canonical);
+    if (value && typeof value === "object")
+      return Object.fromEntries(
+        Object.entries(value)
+          .filter(([key]) => !presentation.has(key))
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([key, item]) => [key, canonical(item)]),
+      );
+    return value;
+  };
+  const input = JSON.stringify(
+    canonical({
+      ...payload,
+      components: [...payload.components].sort((a, b) =>
+        a.id.localeCompare(b.id),
+      ),
+      connections: [...payload.connections].sort((a, b) =>
+        a.id.localeCompare(b.id),
+      ),
+    }),
+  );
+  let hash = 2166136261;
+  for (const character of input)
+    hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
+  return `design-v1-${(hash >>> 0).toString(16).padStart(8, "0")}`;
 }
 
 export async function generateInterviewQuestions(
@@ -377,6 +448,13 @@ export function transformApiResponse(apiResult: unknown): ValidationResult {
     processing_time_ms?: number;
     assessment_id?: string;
     trace_id?: string;
+    score_available?: boolean;
+    verdict?: ValidationResult["verdict"];
+    rubric_version?: string;
+    requirement_revision?: string;
+    model_version?: string;
+    requirement_coverage?: RequirementCoverage[];
+    structural_checks?: ValidationResult["structuralChecks"];
   };
 
   const feedback: ValidationFeedback[] = (result.feedback || []).map((fb) => ({
@@ -411,6 +489,21 @@ export function transformApiResponse(apiResult: unknown): ValidationResult {
               ? finding.recommendation
               : undefined,
           severity: finding.severity as ReviewFinding["severity"],
+          ...("evidence_ids" in finding
+            ? { evidence_ids: (finding as ReviewFinding).evidence_ids }
+            : {}),
+          ...("requirement_ids" in finding
+            ? { requirement_ids: (finding as ReviewFinding).requirement_ids }
+            : {}),
+          ...("kind" in finding
+            ? { kind: (finding as ReviewFinding).kind }
+            : {}),
+          ...("criterion" in finding
+            ? { criterion: (finding as ReviewFinding).criterion }
+            : {}),
+          ...("scored_gap" in finding
+            ? { scored_gap: (finding as ReviewFinding).scored_gap }
+            : {}),
         },
       ];
     },
@@ -435,6 +528,13 @@ export function transformApiResponse(apiResult: unknown): ValidationResult {
     source: result.source === "rule_based" ? "rule_based" : "ai",
     assessmentId: result.assessment_id,
     traceId: result.trace_id,
+    scoreAvailable: result.source === "ai" && result.score_available !== false,
+    verdict: result.verdict,
+    rubricVersion: result.rubric_version,
+    requirementRevision: result.requirement_revision,
+    modelVersion: result.model_version,
+    requirementCoverage: result.requirement_coverage ?? [],
+    structuralChecks: result.structural_checks ?? [],
   };
 }
 

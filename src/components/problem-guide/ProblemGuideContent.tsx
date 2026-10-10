@@ -12,6 +12,8 @@ import {
   MdWarningAmber,
 } from "react-icons/md";
 import type { ProblemGuide } from "../../types/problemGuide";
+import type { RequirementSpec } from "../../types/requirements";
+import ProblemRequirements from "../ProblemRequirements";
 import { useRoughAnnotation } from "../../hooks/useRoughAnnotation";
 import { lazyWithRetry } from "../../utils/lazyWithRetry";
 
@@ -154,97 +156,110 @@ type GuideHighlights = {
   asyncStepTitle: string | undefined;
 };
 
-const guideHighlights = new Map<string, GuideHighlights>(Object.entries({
-  "document-management-system": {
-    "highlightedMetricLabel": "Peak edit rate",
-    "durableStepTitle": "Accept and fan out an edit",
-    "asyncStepTitle": "Buffer asynchronous work"
-  },
-  "url-shortener-like-bit-ly": {
-    "highlightedMetricLabel": "Redirect traffic",
-    "durableStepTitle": "Resolve the redirect",
-    "asyncStepTitle": "Emit click telemetry"
-  },
-  "design-a-parts-compatibility-feature-for-an-ecommerce-site": {
-    "highlightedMetricLabel": "Peak lookup rate",
-    "durableStepTitle": "Revalidate before purchase",
-    "asyncStepTitle": "Publish catalog changes asynchronously"
-  },
-  "design-a-price-alert-system": {
-    "highlightedMetricLabel": "Observation rate",
-    "durableStepTitle": "Accept a price observation",
-    "asyncStepTitle": "Deliver asynchronously"
-  },
-  "design-a-feature-to-show-the-number-of-users-viewing-a-page": {
-    "highlightedMetricLabel": "Heartbeat rate",
-    "durableStepTitle": "Join the page",
-    "asyncStepTitle": "Expire inactive presence"
-  },
-  "design-facebook-likes-feature-with-live-updates": {
-    "highlightedMetricLabel": "Peak write rate",
-    "durableStepTitle": "Commit the user's like state",
-    "asyncStepTitle": "Broadcast asynchronously"
-  },
-  "twitter-system-design": {
-    "highlightedMetricLabel": "Timeline reads",
-    "durableStepTitle": "Accept the post",
-    "asyncStepTitle": "Read and refresh asynchronously"
-  },
-  "top-k-ranking-system": {
-    "highlightedMetricLabel": "Peak event rate",
-    "durableStepTitle": "Maintain the Top-K",
-    "asyncStepTitle": "Serve or rebuild asynchronously"
-  },
-  "design-a-cost-optimized-architecture-for-batch-processing": {
-    "highlightedMetricLabel": "Peak runnable tasks",
-    "durableStepTitle": "Commit the durable state",
-    "asyncStepTitle": "Reconcile and report asynchronously"
-  },
-  "instagram-system-design": {
-    "highlightedMetricLabel": "Media upload rate",
-    "durableStepTitle": "Commit content metadata",
-    "asyncStepTitle": "Serve and invalidate asynchronously"
-  },
-  "pastebin-system-design": {
-    "highlightedMetricLabel": "Paste create rate",
-    "durableStepTitle": "Commit immutable content",
-    "asyncStepTitle": "Invalidate and expire asynchronously"
-  },
-  "design-a-system-for-sorting-large-data-sets": {
-    "highlightedMetricLabel": "Input throughput",
-    "durableStepTitle": "Spill sorted runs",
-    "asyncStepTitle": "Commit the output manifest"
-  },
-  "build-a-marketplace-feature-for-facebook": {
-    "highlightedMetricLabel": "Search throughput",
-    "durableStepTitle": "Commit the listing",
-    "asyncStepTitle": "Notify and moderate asynchronously"
-  }
-}));
+const guideHighlights = new Map<string, GuideHighlights>(
+  Object.entries({
+    "document-management-system": {
+      highlightedMetricLabel: "Peak edit rate",
+      durableStepTitle: "Accept and fan out an edit",
+      asyncStepTitle: "Buffer asynchronous work",
+    },
+    "url-shortener-like-bit-ly": {
+      highlightedMetricLabel: "Redirect traffic",
+      durableStepTitle: "Resolve the redirect",
+      asyncStepTitle: "Emit click telemetry",
+    },
+    "design-a-parts-compatibility-feature-for-an-ecommerce-site": {
+      highlightedMetricLabel: "Peak lookup rate",
+      durableStepTitle: "Revalidate before purchase",
+      asyncStepTitle: "Publish catalog changes asynchronously",
+    },
+    "design-a-price-alert-system": {
+      highlightedMetricLabel: "Observation rate",
+      durableStepTitle: "Accept a price observation",
+      asyncStepTitle: "Deliver asynchronously",
+    },
+    "design-a-feature-to-show-the-number-of-users-viewing-a-page": {
+      highlightedMetricLabel: "Heartbeat rate",
+      durableStepTitle: "Join the page",
+      asyncStepTitle: "Expire inactive presence",
+    },
+    "design-facebook-likes-feature-with-live-updates": {
+      highlightedMetricLabel: "Peak write rate",
+      durableStepTitle: "Commit the user's like state",
+      asyncStepTitle: "Broadcast asynchronously",
+    },
+    "twitter-system-design": {
+      highlightedMetricLabel: "Timeline reads",
+      durableStepTitle: "Accept the post",
+      asyncStepTitle: "Read and refresh asynchronously",
+    },
+    "top-k-ranking-system": {
+      highlightedMetricLabel: "Peak event rate",
+      durableStepTitle: "Maintain the Top-K",
+      asyncStepTitle: "Serve or rebuild asynchronously",
+    },
+    "design-a-cost-optimized-architecture-for-batch-processing": {
+      highlightedMetricLabel: "Peak runnable tasks",
+      durableStepTitle: "Commit the durable state",
+      asyncStepTitle: "Reconcile and report asynchronously",
+    },
+    "instagram-system-design": {
+      highlightedMetricLabel: "Media upload rate",
+      durableStepTitle: "Commit content metadata",
+      asyncStepTitle: "Serve and invalidate asynchronously",
+    },
+    "pastebin-system-design": {
+      highlightedMetricLabel: "Paste create rate",
+      durableStepTitle: "Commit immutable content",
+      asyncStepTitle: "Invalidate and expire asynchronously",
+    },
+    "design-a-system-for-sorting-large-data-sets": {
+      highlightedMetricLabel: "Input throughput",
+      durableStepTitle: "Spill sorted runs",
+      asyncStepTitle: "Commit the output manifest",
+    },
+    "build-a-marketplace-feature-for-facebook": {
+      highlightedMetricLabel: "Search throughput",
+      durableStepTitle: "Commit the listing",
+      asyncStepTitle: "Notify and moderate asynchronously",
+    },
+  }),
+);
 
 interface ProblemGuideContentProps {
   guide: ProblemGuide;
   onPractice?: () => void;
   problemSlug?: string;
+  requirementSpec?: RequirementSpec;
+  requirements?: string[];
+  constraints?: string[];
+  problemDescription?: string;
 }
 
 const ProblemGuideContent: React.FC<ProblemGuideContentProps> = ({
   guide,
   onPractice,
   problemSlug,
+  requirementSpec,
+  requirements,
+  constraints,
+  problemDescription,
 }) => {
+  const hasApprovedBrief =
+    Boolean(requirementSpec) || requirements !== undefined;
   const isAnnotatedProblem = Boolean(problemSlug);
-  const { highlightedMetricLabel, durableStepTitle, asyncStepTitle } = guideHighlights.get(problemSlug ?? "") ?? {
-    highlightedMetricLabel: problemSlug
-                              ? guide.requirements.metrics[0]?.label
-                              : "Peak dispatch rate",
-    durableStepTitle: problemSlug
-                                ? guide.dataFlow[1]?.title
-                                : "Claim due work",
-    asyncStepTitle: problemSlug
-                              ? guide.dataFlow[4]?.title
-                              : "Enqueue an execution",
-  };
+  const { highlightedMetricLabel, durableStepTitle, asyncStepTitle } =
+    guideHighlights.get(problemSlug ?? "") ?? {
+      highlightedMetricLabel: problemSlug
+        ? guide.requirements.metrics[0]?.label
+        : "Peak dispatch rate",
+      durableStepTitle: problemSlug
+        ? guide.dataFlow[1]?.title
+        : "Claim due work",
+      asyncStepTitle: problemSlug
+        ? guide.dataFlow[4]?.title
+        : "Enqueue an execution",
+    };
   const [isDarkTheme, setIsDarkTheme] = useState(false);
   const promptRef = useRef<HTMLSpanElement>(null);
   const successSignalRef = useRef<HTMLSpanElement>(null);
@@ -355,12 +370,16 @@ const ProblemGuideContent: React.FC<ProblemGuideContentProps> = ({
             ref={isAnnotatedProblem ? promptRef : undefined}
             className="relative inline max-w-full px-2 py-1"
           >
-            {guide.prompt.brief}
+            {problemDescription ?? guide.prompt.brief}
           </span>
         </p>
         <details className="group mt-6 border-t border-theme/10">
           <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 py-4 text-sm font-semibold focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--brand)] [&::-webkit-details-marker]:hidden">
-            <span>What a strong answer should cover</span>
+            <span>
+              {hasApprovedBrief
+                ? "Worked-example discussion points"
+                : "What a strong answer should cover"}
+            </span>
             <span className="flex items-center gap-2 text-xs text-muted">
               {guide.prompt.successSignals.length} points
               <MdExpandMore
@@ -409,50 +428,65 @@ const ProblemGuideContent: React.FC<ProblemGuideContentProps> = ({
           title="Requirements"
           description="Start by defining the product boundary and the service qualities the architecture must protect."
         />
-        <div className="mt-8 grid gap-10 border-y border-theme/10 py-8 md:grid-cols-2">
-          <RequirementList
-            title="Functional requirements"
-            items={guide.requirements.functional}
-          />
-          <RequirementList
-            title="Non-functional requirements"
-            items={guide.requirements.nonFunctional}
-          />
-        </div>
-
-        <div className="mt-9">
-          <h3 className="text-lg font-bold">Scale assumptions</h3>
-          <ul className="mt-4 list-disc space-y-2 pl-5 leading-7 text-muted marker:text-[var(--brand)]">
-            {guide.requirements.scaleAssumptions.map((assumption) => (
-              <li key={assumption}>{assumption}</li>
-            ))}
-          </ul>
-        </div>
-
-        <dl className="mt-8 grid border-y border-theme/10 sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-theme/10">
-          {guide.requirements.metrics.map((metric) => (
-            <div key={metric.label} className="px-1 py-5 xl:px-5 xl:first:pl-0">
-              <dt className="text-sm font-semibold text-muted">
-                {metric.label}
-              </dt>
-              <dd className="mt-2 text-xl font-bold tabular-nums text-[var(--brand)]">
-                {metric.label === highlightedMetricLabel ? (
-                  <span
-                    ref={isAnnotatedProblem ? peakEditRateRef : undefined}
-                    className="relative inline-block px-1 py-0.5"
-                  >
-                    {metric.value}
-                  </span>
-                ) : (
-                  metric.value
-                )}
-              </dd>
-              <dd className="mt-2 text-sm leading-6 text-muted">
-                {metric.description}
-              </dd>
+        {hasApprovedBrief ? (
+          <div className="mt-8 border-y border-theme/10 py-8">
+            <ProblemRequirements
+              requirementSpec={requirementSpec}
+              requirements={requirements}
+              constraints={constraints}
+            />
+          </div>
+        ) : (
+          <>
+            <div className="mt-8 grid gap-10 border-y border-theme/10 py-8 md:grid-cols-2">
+              <RequirementList
+                title="Functional requirements"
+                items={guide.requirements.functional}
+              />
+              <RequirementList
+                title="Non-functional requirements"
+                items={guide.requirements.nonFunctional}
+              />
             </div>
-          ))}
-        </dl>
+
+            <div className="mt-9">
+              <h3 className="text-lg font-bold">Scale assumptions</h3>
+              <ul className="mt-4 list-disc space-y-2 pl-5 leading-7 text-muted marker:text-[var(--brand)]">
+                {guide.requirements.scaleAssumptions.map((assumption) => (
+                  <li key={assumption}>{assumption}</li>
+                ))}
+              </ul>
+            </div>
+
+            <dl className="mt-8 grid border-y border-theme/10 sm:grid-cols-2 xl:grid-cols-4 xl:divide-x xl:divide-theme/10">
+              {guide.requirements.metrics.map((metric) => (
+                <div
+                  key={metric.label}
+                  className="px-1 py-5 xl:px-5 xl:first:pl-0"
+                >
+                  <dt className="text-sm font-semibold text-muted">
+                    {metric.label}
+                  </dt>
+                  <dd className="mt-2 text-xl font-bold tabular-nums text-[var(--brand)]">
+                    {metric.label === highlightedMetricLabel ? (
+                      <span
+                        ref={isAnnotatedProblem ? peakEditRateRef : undefined}
+                        className="relative inline-block px-1 py-0.5"
+                      >
+                        {metric.value}
+                      </span>
+                    ) : (
+                      metric.value
+                    )}
+                  </dd>
+                  <dd className="mt-2 text-sm leading-6 text-muted">
+                    {metric.description}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </>
+        )}
       </section>
 
       <section
@@ -580,7 +614,22 @@ const ProblemGuideContent: React.FC<ProblemGuideContentProps> = ({
               </span>
               <div>
                 <h3 className="text-lg font-bold">
-                  {<span ref={isAnnotatedProblem ? getStepAnnotationRef(step.title) : undefined} className={step.title === durableStepTitle ? "relative inline-block px-2 py-1" : "relative inline-block"}>{step.title}</span>}
+                  {
+                    <span
+                      ref={
+                        isAnnotatedProblem
+                          ? getStepAnnotationRef(step.title)
+                          : undefined
+                      }
+                      className={
+                        step.title === durableStepTitle
+                          ? "relative inline-block px-2 py-1"
+                          : "relative inline-block"
+                      }
+                    >
+                      {step.title}
+                    </span>
+                  }
                 </h3>
                 <p className="mt-2 leading-7 text-muted">{step.description}</p>
               </div>

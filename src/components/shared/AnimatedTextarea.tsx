@@ -174,7 +174,11 @@ const AnimatedTextarea: React.FC<AnimatedTextareaProps> = ({
     ],
     content: value,
     editable: !disabled,
+    editorProps: {
+      attributes: { "aria-label": label ?? placeholder, "aria-multiline": "true", role: "textbox" },
+    },
     onUpdate: ({ editor }) => {
+      if (editor.isDestroyed || !editor.schema) return;
       onChange(editor.getHTML());
     },
     onFocus: onFocus,
@@ -190,7 +194,8 @@ const AnimatedTextarea: React.FC<AnimatedTextareaProps> = ({
   });
 
   useEffect(() => {
-    if (!editor) return;
+    // StrictMode can replay this effect after Tiptap has cleared the schema.
+    if (!editor || editor.isDestroyed || !editor.schema) return;
     if (value !== editor.getHTML()) {
       editor.commands.setContent(value, { emitUpdate: false });
     }
@@ -207,7 +212,8 @@ const AnimatedTextarea: React.FC<AnimatedTextareaProps> = ({
     cancelRecording,
   } = useAudioTranscription({
     onTranscript: (text) => {
-      editor?.chain().focus().insertContent(text).run();
+      if (!editor || editor.isDestroyed || !editor.schema) return;
+      editor.chain().focus().insertContent(text).run();
     },
   });
 
@@ -233,7 +239,7 @@ const AnimatedTextarea: React.FC<AnimatedTextareaProps> = ({
     };
   }, [isFullscreen]);
 
-  if (!editor) return null;
+  if (!editor || !editor.schema) return null;
 
   // build a compact list of buttons to render which reduces branching inside JSX
   const inlineButtons = [
@@ -531,7 +537,10 @@ const AnimatedTextarea: React.FC<AnimatedTextareaProps> = ({
 
             {/* Normal Content */}
             <div className="min-w-0 max-w-full overflow-hidden p-3 min-h-[8rem] prose prose-invert">
-              <EditorContent editor={editor} className="min-w-0 max-w-full focus:outline-none" />
+              <EditorContent
+                editor={editor}
+                className="min-w-0 max-w-full focus:outline-none"
+              />
             </div>
           </motion.div>
         </FieldWrapper>

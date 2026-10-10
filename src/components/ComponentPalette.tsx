@@ -25,6 +25,9 @@ interface Props {
   readonly onAdd: (id: string) => void;
   readonly enableProviderFilter?: boolean;
   readonly customProviders?: ProviderOption[];
+  readonly compact?: boolean;
+  readonly compactOpen?: boolean;
+  readonly onCompactOpenChange?: (open: boolean) => void;
 }
 
 export default function ComponentPalette({
@@ -32,6 +35,9 @@ export default function ComponentPalette({
   onAdd,
   enableProviderFilter = false,
   customProviders,
+  compact = false,
+  compactOpen = false,
+  onCompactOpenChange,
 }: Props) {
   const dispatch = useAppDispatch();
 
@@ -43,7 +49,8 @@ export default function ComponentPalette({
     (state) => state.sprites.providerStatus,
   );
 
-  const [open, setOpen] = React.useState(true);
+  const [desktopOpen, setOpen] = React.useState(true);
+  const open = compact ? compactOpen : desktopOpen;
   const [expandedGroups, setExpandedGroups] = React.useState<Set<string>>(
     new Set(),
   );
@@ -348,15 +355,16 @@ export default function ComponentPalette({
   };
 
   return (
-    <div className="relative z-40" data-tour="component-palette">
+    <div className="relative z-40 max-md:absolute max-md:inset-y-0 max-md:left-0" data-tour="component-palette">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => compact ? onCompactOpenChange?.(!open) : setOpen(!open)}
+        aria-expanded={open}
         aria-label={
           open ? "Collapse component palette" : "Expand component palette"
         }
         aria-controls="component-palette-panel"
-        className="absolute top-5 -right-3 h-6 w-6 flex items-center justify-center rounded-full border border-theme bg-surface text-theme shadow cursor-pointer hover:bg-[var(--bg-hover)] transition-colors z-50"
+        className={`absolute top-5 -right-3 h-6 w-6 max-md:h-11 max-md:w-11 flex items-center justify-center rounded-full border border-theme bg-surface text-theme shadow cursor-pointer hover:bg-[var(--bg-hover)] transition-colors z-50 ${open ? "max-md:-right-11" : "max-md:right-auto max-md:left-0"}`}
       >
         {open ? <PiCaretLeftBold size={16} /> : <PiCaretRightBold size={16} />}
       </button>

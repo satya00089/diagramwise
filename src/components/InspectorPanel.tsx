@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import GuidedHelpPanel from "./GuidedHelpPanel";
 import type { ApplyStepPayload } from "./GuidedHelpPanel";
 import AssessmentFindings from "./AssessmentFindings";
+import ProblemRequirements from "./ProblemRequirements";
+import type { RequirementSpec } from "../types/requirements";
 import ReasoningPanel from "./ReasoningPanel";
 import type { DesignReasoningContext } from "../types/systemDesign";
 import {
@@ -10,15 +12,11 @@ import {
   PiCaretDownBold,
   PiCaretLeftBold,
   PiCaretRightBold,
-  PiWarningCircle,
 } from "react-icons/pi";
 import {
   MdAdd,
   MdAssessment,
-  MdArrowForward,
-  MdArrowUpward,
   MdAutoAwesome,
-  MdCheck,
   MdCheckCircle,
   MdClose,
   MdContentCopy,
@@ -31,7 +29,6 @@ import {
   MdLink,
   MdLockOpen,
   MdMenuBook,
-  MdSearch,
   MdSettings,
   MdTrackChanges,
   MdWarning,
@@ -41,34 +38,6 @@ import { FiShare2 } from "react-icons/fi";
 import { useFeedback } from "../contexts/FeedbackContext";
 
 // ── Assessment tab constants (defined once, not inside render) ──────────────
-const RING_RADIUS = 26;
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS; // ~163.4
-
-// Display groups for the Score Breakdown bars.
-// Composite groups (multiple keys) show the average of their member scores.
-const DISPLAY_GROUPS: { label: string; keys: string[] }[] = [
-  { label: "Scalability", keys: ["scalability"] },
-  { label: "Reliability", keys: ["reliability"] },
-  { label: "Security", keys: ["security"] },
-  { label: "Maintainability", keys: ["maintainability"] },
-  { label: "Performance", keys: ["performance"] },
-  // Composite: avg of cost_efficiency + observability + deliverability
-  {
-    label: "Operations",
-    keys: ["cost_efficiency", "observability", "deliverability"],
-  },
-  // Composite: avg of requirements_alignment + constraint_compliance
-  {
-    label: "Alignment",
-    keys: ["requirements_alignment", "constraint_compliance"],
-  },
-  // Composite: avg of component_justification + connection_clarity
-  {
-    label: "Documentation",
-    keys: ["component_justification", "connection_clarity"],
-  },
-];
-
 const DIM_LABELS: Record<string, string> = {
   scalability: "Scalability",
   reliability: "Reliability",
@@ -99,12 +68,6 @@ const FeedbackIcon: React.FC<{ type: string; className?: string }> = ({
   return <Icon className={className} aria-hidden="true" />;
 };
 
-const FEEDBACK_TYPE_BORDER: Record<string, string> = {
-  success: "border-green-500/50",
-  warning: "border-amber-400/50",
-  error: "border-red-500/50",
-  info: "border-[var(--brand)]/50",
-};
 // ────────────────────────────────────────────────────────────────────────────
 
 const AssessmentFeedbackPrompt: React.FC<{
@@ -113,9 +76,7 @@ const AssessmentFeedbackPrompt: React.FC<{
   traceId?: string;
 }> = ({ problemId, assessmentId, traceId }) => {
   const { openFeedback, submitFeedback } = useFeedback();
-  const [state, setState] = React.useState<"idle" | "sending" | "sent">(
-    "idle",
-  );
+  const [state, setState] = React.useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = React.useState(false);
 
   const context = {
@@ -186,7 +147,10 @@ const AssessmentFeedbackPrompt: React.FC<{
             )}
           </div>
           {error && (
-            <p role="alert" className="mt-2 text-xs text-red-600 dark:text-red-300">
+            <p
+              role="alert"
+              className="mt-2 text-xs text-red-600 dark:text-red-300"
+            >
               Could not send that signal. Please try again.
             </p>
           )}
@@ -197,11 +161,15 @@ const AssessmentFeedbackPrompt: React.FC<{
 };
 
 type InspectorPanelProps = {
+  compact?: boolean;
+  compactOpen?: boolean;
+  onCompactOpenChange?: (open: boolean) => void;
   problem: {
     id?: string;
     title: string;
     description: string;
     requirements: string[];
+    requirementSpec?: RequirementSpec;
     constraints: string[];
     hints: string[];
     tags: string[];
@@ -211,7 +179,8 @@ type InspectorPanelProps = {
   /** Problem ID used to fetch the guided walkthrough */
   problemId?: string | null;
   /** Called when the user clicks "Apply to Canvas" on a guided step */
-  onApplyStep?: (step: ApplyStepPayload) => void;
+  onApplyStep?: (step: ApplyStepPayload) => boolean | void;
+  appliedGuidedStepIds?: string[];
   /** Current step index for the guided walkthrough (0-based) */
   guideCurrentStep?: number;
   /** Callback when guided walkthrough step changes */
@@ -226,9 +195,15 @@ type InspectorPanelProps = {
   onAddCustomProperty: () => void;
   handleSave: () => void;
   assessmentResult?: import("../types/systemDesign").ValidationResult | null;
+  previousAiAssessment?:
+    | import("../types/systemDesign").ValidationResult
+    | null;
+  /** Server-pinned original brief, used only for a review of that revision. */
+  reviewedRequirementSpec?: RequirementSpec;
   assessmentHistory?: import("../types/systemDesign").AssessmentHistoryEntry[];
   addressedFindingIds?: string[];
   onToggleFindingAddressed?: (findingId: string) => void;
+  onSelectEvidence?: (evidenceId: string) => void;
   onReviewAgain?: () => void;
   onDetachFromGroup?: () => void;
   isNodeInGroup?: boolean;
@@ -244,11 +219,15 @@ type InspectorPanelProps = {
 };
 
 const InspectorPanel: React.FC<InspectorPanelProps> = ({
+  compact = false,
+  compactOpen = false,
+  onCompactOpenChange,
   problem,
   activeTab,
   setActiveTab,
   problemId,
   onApplyStep,
+  appliedGuidedStepIds,
   guideCurrentStep,
   onGuideStepChange,
   inspectedNodeId,
@@ -261,9 +240,12 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
   onAddCustomProperty,
   handleSave,
   assessmentResult,
+  previousAiAssessment,
+  reviewedRequirementSpec,
   assessmentHistory = [],
   addressedFindingIds = [],
   onToggleFindingAddressed,
+  onSelectEvidence,
   onReviewAgain,
   onDetachFromGroup,
   isNodeInGroup,
@@ -278,15 +260,10 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
   const resizingRef = React.useRef(false);
   const panelRef = React.useRef<HTMLElement | null>(null);
   const [showHints, setShowHints] = React.useState(true);
-  const [open, setOpen] = React.useState(true);
+  const [desktopOpen, setOpen] = React.useState(true);
+  const open = compact ? compactOpen : desktopOpen;
   const [showInterviewQuestions, setShowInterviewQuestions] =
     React.useState(false);
-
-  const scoreColor = (v: number) => {
-    if (v >= 75) return "#22c55e";
-    if (v >= 50) return "#f59e0b";
-    return "#ef4444";
-  };
 
   const onMouseMove = React.useCallback((e: MouseEvent) => {
     if (!resizingRef.current) return;
@@ -313,11 +290,6 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
       globalThis.removeEventListener("mouseup", stopResize);
     };
   }, [onMouseMove, stopResize]);
-  React.useEffect(() => {
-    if (panelRef.current) {
-      panelRef.current.style.width = width + "px";
-    }
-  }, [width]);
 
   // Auto-collapse panel in free design mode when no node is selected
   const isFreeDesignMode = problem?.id === "free";
@@ -338,6 +310,187 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
   }, [isFreeDesignMode, inspectedNodeId, inspectedEdgeId, setActiveTab]);
 
   if (!problem) return null;
+
+  const reviewSpec =
+    !assessmentResult?.requirementRevision ||
+    assessmentResult.requirementRevision === problem.requirementSpec?.revision
+      ? problem.requirementSpec
+      : assessmentResult.requirementRevision === reviewedRequirementSpec?.revision
+        ? reviewedRequirementSpec
+        : undefined;
+  const reviewUsesOlderBrief = Boolean(
+    assessmentResult?.requirementRevision &&
+      problem.requirementSpec &&
+      assessmentResult.requirementRevision !== problem.requirementSpec.revision,
+  );
+  const knownRequirements = new Map(
+    (reviewSpec
+      ? [
+          ...(reviewSpec?.functional ?? []),
+          ...(reviewSpec?.nonFunctional ?? []),
+        ]
+      : !problem.requirementSpec
+        ? [
+            ...problem.requirements
+              .join(".\n")
+              .split("\n")
+              .map((text, index) => ({
+                id: `legacy-requirement:${index + 1}`,
+                text,
+                scope: "core" as const,
+              })),
+            ...problem.constraints
+              .join(".\n")
+              .split("\n")
+              .map((text, index) => ({
+                id: `legacy-constraint:${index + 1}`,
+                text,
+                scope: "core" as const,
+              })),
+            {
+              id: "problem-brief",
+              text: problem.description,
+              scope: "core" as const,
+            },
+          ]
+        : []
+    ).map((requirement) => [requirement.id, requirement]),
+  );
+  const isExtensionFinding = (
+    finding: import("../types/systemDesign").ReviewFinding,
+  ) =>
+    finding.kind === "extension" ||
+    (Boolean(finding.requirement_ids?.length) &&
+      finding.requirement_ids?.every(
+        (id) => knownRequirements.get(id)?.scope === "extension",
+      ));
+  const hasCriticalFinding = assessmentResult?.findings?.some(
+    (finding) =>
+      finding.severity === "critical" &&
+      finding.kind !== "strength" &&
+      !isExtensionFinding(finding),
+  );
+  const showAiScore =
+    assessmentResult?.source === "ai" &&
+    assessmentResult.scoreAvailable !== false &&
+    assessmentResult.verdict !== "unavailable" &&
+    Number.isFinite(assessmentResult.score) &&
+    assessmentResult.score >= 0 &&
+    assessmentResult.score <= 100;
+  const verdict = !showAiScore
+    ? "unavailable"
+    : hasCriticalFinding
+      ? "needs_revision"
+      : (assessmentResult?.verdict ?? "more_context_needed");
+  const verdictLabels = {
+    strong_alignment: "Strong alignment",
+    needs_revision: "Needs revision",
+    more_context_needed: "More context needed",
+    unavailable: "AI review unavailable",
+  };
+  const advice = [
+    ...(assessmentResult?.improvements ?? []),
+    ...(assessmentResult?.suggestions ?? []),
+    ...(assessmentResult?.missingComponents ?? []),
+    ...(assessmentResult?.missingDescriptions ?? []),
+    ...(assessmentResult?.unclearConnections ?? []),
+  ];
+  const normalizeAdvice = (text: string) =>
+    text
+      .trim()
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, " ")
+      .trim();
+  const representedAdvice = new Set(
+    [
+      ...advice,
+      ...(assessmentResult?.architectureStrengths ?? []),
+      ...(assessmentResult?.findings ?? []).flatMap((finding) => [
+        finding.title,
+        finding.explanation,
+        finding.recommendation ?? "",
+      ]),
+    ].map(normalizeAdvice),
+  );
+  const feedback = (assessmentResult?.feedback ?? []).filter((item) => {
+    const key = normalizeAdvice(item.message);
+    if (!key || representedAdvice.has(key)) return false;
+    representedAdvice.add(key);
+    return true;
+  });
+  const detailedAnalysis = Object.entries(
+    assessmentResult?.detailedAnalysis ?? {},
+  ).filter(([, text]) => {
+    const key = normalizeAdvice(text);
+    if (!key || representedAdvice.has(key)) return false;
+    representedAdvice.add(key);
+    return true;
+  });
+  const coverage = [
+    ...new Map(
+      (assessmentResult?.requirementCoverage ?? []).map((item) => [
+        item.requirement_id,
+        item,
+      ]),
+    ).values(),
+  ];
+  const coreCoverage = coverage.filter(
+    (item) => knownRequirements.get(item.requirement_id)?.scope !== "extension",
+  );
+  const extensionCoverage = coverage.filter(
+    (item) => knownRequirements.get(item.requirement_id)?.scope === "extension",
+  );
+  const renderCoverage = (items: typeof coverage, optional = false) => (
+    <ul className="space-y-3">
+      {items.map((item) => (
+        <li
+          key={item.requirement_id}
+          className="border-t border-theme/10 pt-3 first:border-0 first:pt-0"
+        >
+          <p className="break-words text-xs font-semibold text-theme">
+            {knownRequirements.get(item.requirement_id)?.text ??
+              item.requirement_id}
+          </p>
+          <p className="mt-1 text-xs font-semibold text-muted">
+            {optional && item.status !== "supported"
+              ? "Optional — beyond core scope"
+              : {
+                  supported: "Supported by the design",
+                  partial: "Partially supported",
+                  missing: "Missing",
+                  needs_clarification: "Needs clarification",
+                }[item.status]}
+          </p>
+          <p className="mt-1 break-words text-xs leading-relaxed text-muted">
+            {item.explanation}
+          </p>
+          {item.evidence_ids?.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {[...new Set(item.evidence_ids)].map((evidenceId) =>
+                onSelectEvidence ? (
+                  <button
+                    key={evidenceId}
+                    type="button"
+                    onClick={() => onSelectEvidence(evidenceId)}
+                    className="max-w-full break-words rounded-md border border-theme/15 px-2 py-1 text-xs text-[var(--brand)] hover:bg-[var(--bg-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]"
+                  >
+                    Show evidence: {evidenceId}
+                  </button>
+                ) : (
+                  <span
+                    key={evidenceId}
+                    className="break-words text-xs text-muted"
+                  >
+                    Evidence: {evidenceId}
+                  </span>
+                ),
+              )}
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
 
   const copyAssessment = async () => {
     if (!assessmentResult) return;
@@ -366,17 +519,22 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
   };
 
   return (
-    <div className="relative z-40 shrink-0" data-tour="inspector-panel">
+    <div className="relative z-40 shrink-0 max-md:absolute max-md:inset-y-0 max-md:right-0" data-tour="inspector-panel">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => compact ? onCompactOpenChange?.(!open) : setOpen(!open)}
+        aria-expanded={open}
         aria-label={
           open ? "Collapse inspector panel" : "Expand inspector panel"
         }
         aria-controls="inspector-panel"
         data-tour="inspector-toggle"
-        data-tooltip={open ? "Inspector panel is open — click to close" : "Inspector panel is closed — click to expand"}
-        className="absolute top-5 -left-3 h-6 w-6 flex items-center justify-center rounded-full border border-theme bg-surface text-theme shadow cursor-pointer hover:bg-[var(--bg-hover)] transition-colors z-50"
+        data-tooltip={
+          open
+            ? "Inspector panel is open — click to close"
+            : "Inspector panel is closed — click to expand"
+        }
+        className="absolute top-5 -left-3 h-6 w-6 max-md:-left-11 max-md:h-11 max-md:w-11 flex items-center justify-center rounded-full border border-theme bg-surface text-theme shadow cursor-pointer hover:bg-[var(--bg-hover)] transition-colors z-50"
       >
         {open ? <PiCaretRightBold size={16} /> : <PiCaretLeftBold size={16} />}
       </button>
@@ -387,7 +545,11 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
           open ? "p-4" : "w-6 p-1"
         }`}
         data-width={width}
-        style={{ width: open ? `${width}px` : "24px" }}
+        style={{
+          width: open ? `${width}px` : "24px",
+          // Leave room for both 44px drawer toggles without overlapping them.
+          maxWidth: compact ? "calc(100vw - 6rem)" : "calc(100vw - 3rem)",
+        }}
       >
         {open && (
           <>
@@ -395,7 +557,7 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
               type="button"
               onMouseDown={onMouseDown}
               aria-label="Resize inspector panel"
-              className="absolute left-0 top-0 h-full w-2 -ml-1 cursor-col-resize flex items-center justify-center group"
+              className="absolute left-0 top-0 h-full w-2 -ml-1 cursor-col-resize hidden md:flex items-center justify-center group"
             >
               <span className="w-px h-full bg-transparent group-hover:bg-[var(--brand)]/40 transition-colors" />
               <PiDotsSixVerticalBold
@@ -406,7 +568,7 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
             </button>
 
             {/* ── Share-to-World announcement bar — above the tabs ── */}
-            {onShareToWorld && assessmentResult && (
+            {onShareToWorld && showAiScore && (
               <button
                 type="button"
                 onClick={onShareToWorld}
@@ -451,12 +613,13 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                     className="h-4 w-4 shrink-0"
                     aria-hidden="true"
                   />
-                  <span className="text-sm font-medium">Assessment</span>
-                  {assessmentResult && (
-                    <span className="ml-1 px-1.5 py-0.5 text-xs font-semibold rounded-full bg-[var(--brand)] text-[var(--bg)]">
-                      {assessmentResult.score}
-                    </span>
-                  )}
+                  <span className="text-sm font-medium">
+                    {assessmentResult && !showAiScore
+                      ? assessmentResult.source === "rule_based"
+                        ? "Structure checks"
+                        : "Review unavailable"
+                      : "Assessment"}
+                  </span>
                 </button>
               )}
 
@@ -499,6 +662,7 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   onApplyStep={onApplyStep ?? (() => {})}
                   currentStep={guideCurrentStep}
                   onStepChange={onGuideStepChange}
+                  appliedGuidedStepIds={appliedGuidedStepIds}
                 />
               </div>
             )}
@@ -522,121 +686,81 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
                     {!isFreeDesignMode && (
                       <>
-                        <div className="mb-4">
-                      <h4 className="flex items-center gap-1.5 text-sm font-semibold text-theme mb-2">
-                        <MdCheckCircle className="h-4 w-4 text-green-500" aria-hidden="true" />
-                        <span>Requirements</span>
-                      </h4>
-                      {problem.requirements.length > 0 ? (
-                        <ul className="space-y-1.5">
-                          {problem.requirements.map((req) => (
-                            <li
-                              key={req}
-                              className="flex items-start gap-2 text-xs"
-                            >
-                              <span className="text-green-500 mt-0.5 flex-shrink-0">
-                                •
-                              </span>
-                              <span className="text-muted leading-relaxed">
-                                {req}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-xs text-muted italic">
-                          No requirements listed.
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="mb-4">
-                      <h4 className="flex items-center gap-1.5 text-sm font-semibold text-theme mb-2">
-                        <MdWarning className="h-4 w-4 text-yellow-500" aria-hidden="true" />
-                        <span>Constraints</span>
-                      </h4>
-                      {problem.constraints.length > 0 ? (
-                        <ul className="space-y-1.5">
-                          {problem.constraints.map((constraint) => (
-                            <li
-                              key={constraint}
-                              className="flex items-start gap-2 text-xs"
-                            >
-                              <span className="text-yellow-500 mt-0.5 flex-shrink-0">
-                                •
-                              </span>
-                              <span className="text-muted leading-relaxed">
-                                {constraint}
-                              </span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-xs text-muted italic">
-                          No constraints listed.
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="mb-4">
-                      <button
-                        type="button"
-                        onClick={() => setShowHints(!showHints)}
-                        className="w-full flex items-center justify-between mb-2 cursor-pointer hover:bg-[var(--bg-hover)] p-2 rounded-md transition-colors"
-                        aria-controls="hints-content"
-                      >
-                        <h4 className="flex items-center gap-1.5 text-sm font-semibold text-theme">
-                          <MdLightbulbOutline className="h-4 w-4 text-amber-400" aria-hidden="true" />
-                          <span>Hints</span>
-                        </h4>
-                        <PiCaretDownBold
-                          size={14}
-                          className={`text-muted transition-transform duration-150 ${
-                            showHints ? "rotate-0" : "-rotate-90"
-                          }`}
+                        <ProblemRequirements
+                          requirementSpec={problem.requirementSpec}
+                          requirements={problem.requirements}
+                          constraints={problem.constraints}
+                          compact
                         />
-                      </button>
-                      {showHints && (
-                        <div id="hints-content" className="space-y-2">
-                          {problem.hints.length > 0 ? (
-                            problem.hints.map((hint) => (
-                              <div
-                                key={hint}
-                                className="rounded-lg bg-yellow-50 p-2 ring-1 ring-inset ring-yellow-400/50 dark:bg-yellow-900/40 dark:ring-yellow-600/60"
-                              >
-                                <div className="text-xs text-yellow-900 dark:text-yellow-100 leading-relaxed">
-                                  {hint}
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <p className="text-xs text-muted italic px-2">
-                              No hints available.
-                            </p>
+
+                        <div className="mb-4">
+                          <button
+                            type="button"
+                            onClick={() => setShowHints(!showHints)}
+                            className="w-full flex items-center justify-between mb-2 cursor-pointer hover:bg-[var(--bg-hover)] p-2 rounded-md transition-colors"
+                            aria-controls="hints-content"
+                            aria-expanded={showHints}
+                          >
+                            <h4 className="flex items-center gap-1.5 text-sm font-semibold text-theme">
+                              <MdLightbulbOutline
+                                className="h-4 w-4 text-amber-400"
+                                aria-hidden="true"
+                              />
+                              <span>Hints</span>
+                            </h4>
+                            <PiCaretDownBold
+                              size={14}
+                              className={`text-muted transition-transform duration-150 ${
+                                showHints ? "rotate-0" : "-rotate-90"
+                              }`}
+                            />
+                          </button>
+                          {showHints && (
+                            <div id="hints-content" className="space-y-2">
+                              {problem.hints.length > 0 ? (
+                                problem.hints.map((hint) => (
+                                  <div
+                                    key={hint}
+                                    className="rounded-lg bg-yellow-50 p-2 ring-1 ring-inset ring-yellow-400/50 dark:bg-yellow-900/40 dark:ring-yellow-600/60"
+                                  >
+                                    <div className="text-xs text-yellow-900 dark:text-yellow-100 leading-relaxed">
+                                      {hint}
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                <p className="text-xs text-muted italic px-2">
+                                  No hints available.
+                                </p>
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
 
-                    <div>
-                      <h4 className="flex items-center gap-1.5 text-sm font-semibold text-theme mb-2">
-                        <MdLabel className="h-4 w-4 text-muted" aria-hidden="true" />
-                        <span>Tags</span>
-                      </h4>
-                      {problem.tags.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5">
-                          {problem.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-1 bg-[var(--brand)]/10 text-[var(--brand)] text-xs rounded-full font-medium"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted italic">No tags.</p>
-                      )}
+                        <div>
+                          <h4 className="flex items-center gap-1.5 text-sm font-semibold text-theme mb-2">
+                            <MdLabel
+                              className="h-4 w-4 text-muted"
+                              aria-hidden="true"
+                            />
+                            <span>Tags</span>
+                          </h4>
+                          {problem.tags.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5">
+                              {problem.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="px-2 py-1 bg-[var(--brand)]/10 text-[var(--brand)] text-xs rounded-full font-medium"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted italic">
+                              No tags.
+                            </p>
+                          )}
                         </div>
                       </>
                     )}
@@ -652,7 +776,10 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-[var(--brand)]/10 flex items-center justify-center flex-shrink-0">
-                              <MdLink className="h-4 w-4 text-[var(--brand)]" aria-hidden="true" />
+                              <MdLink
+                                className="h-4 w-4 text-[var(--brand)]"
+                                aria-hidden="true"
+                              />
                             </div>
                             <div>
                               <h3 className="text-sm font-semibold text-theme leading-tight">
@@ -693,7 +820,10 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                         <div className="flex min-w-0 items-center justify-between gap-2">
                           <div className="flex min-w-0 items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-[var(--brand)]/10 flex items-center justify-center flex-shrink-0">
-                              <MdSettings className="h-4 w-4 text-[var(--brand)]" aria-hidden="true" />
+                              <MdSettings
+                                className="h-4 w-4 text-[var(--brand)]"
+                                aria-hidden="true"
+                              />
                             </div>
                             <div className="min-w-0">
                               <h3 className="text-sm font-semibold text-theme leading-tight">
@@ -727,7 +857,9 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                             <span className="text-[11px] font-semibold text-muted uppercase tracking-widest">
                               Properties
                             </span>
-                            <div className="min-w-0 space-y-2">{propertyElements}</div>
+                            <div className="min-w-0 space-y-2">
+                              {propertyElements}
+                            </div>
                           </div>
                         )}
 
@@ -765,7 +897,10 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                               onClick={onDetachFromGroup}
                               data-tooltip="Remove this node from its parent group"
                             >
-                              <MdLockOpen className="h-4 w-4" aria-hidden="true" />
+                              <MdLockOpen
+                                className="h-4 w-4"
+                                aria-hidden="true"
+                              />
                               <span>Detach from Group</span>
                             </button>
                           )}
@@ -784,7 +919,10 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                     {!inspectedNodeId && !inspectedEdgeId && (
                       <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
                         <div className="w-12 h-12 rounded-2xl bg-[var(--brand)]/8 flex items-center justify-center">
-                          <MdAutoAwesome className="h-6 w-6 text-[var(--brand)]" aria-hidden="true" />
+                          <MdAutoAwesome
+                            className="h-6 w-6 text-[var(--brand)]"
+                            aria-hidden="true"
+                          />
                         </div>
                         <div>
                           <p className="text-sm font-medium text-theme">
@@ -804,240 +942,176 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   <div>
                     {assessmentResult ? (
                       <div className="space-y-4">
-                        {/* ── 1. Score Header ── */}
-                        <div className="p-4 border rounded-xl bg-[var(--surface)] flex items-center gap-4">
-                          {/* Score ring */}
-                          <div className="relative w-16 h-16 flex-shrink-0">
-                            <svg
-                              className="w-16 h-16 -rotate-90"
-                              viewBox="0 0 64 64"
-                            >
-                              <circle
-                                cx="32"
-                                cy="32"
-                                r={RING_RADIUS}
-                                fill="none"
-                                stroke="var(--border)"
-                                strokeWidth="6"
-                              />
-                              <circle
-                                cx="32"
-                                cy="32"
-                                r={RING_RADIUS}
-                                fill="none"
-                                stroke={scoreColor(assessmentResult.score)}
-                                strokeWidth="6"
-                                strokeDasharray={`${(assessmentResult.score / 100) * RING_CIRCUMFERENCE} ${RING_CIRCUMFERENCE}`}
-                                strokeLinecap="round"
-                              />
-                            </svg>
-                            <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-theme">
-                              {assessmentResult.score}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-theme text-base">
-                              Architecture review
-                            </div>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span
-                                className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                                  assessmentResult.isValid
-                                    ? "bg-green-500/15 text-green-500"
-                                    : "bg-amber-500/15 text-amber-500"
-                                }`}
+                        <section
+                          className="p-4 border rounded-xl bg-[var(--surface)] space-y-3"
+                          aria-labelledby="architecture-review-heading"
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                              <h3
+                                id="architecture-review-heading"
+                                className="font-semibold text-theme text-base"
                               >
-                                <span className="inline-flex items-center gap-1">
-                                  {assessmentResult.isValid ? (
-                                    <MdCheckCircle className="h-3.5 w-3.5" aria-hidden="true" />
-                                  ) : (
-                                    <MdWarning className="h-3.5 w-3.5" aria-hidden="true" />
-                                  )}
-                                  {assessmentResult.isValid ? "Pass" : "Needs Work"}
-                                </span>
-                              </span>
-                              <span className="text-[10px] text-muted">
-                                {assessmentResult.source === "rule_based"
-                                  ? "Basic structural check"
-                                  : "AI review"}
-                              </span>
+                                {showAiScore
+                                  ? "Architecture review"
+                                  : "Structure checks"}
+                              </h3>
+                              <p
+                                className={`mt-1 text-xs font-semibold ${verdict === "strong_alignment" ? "text-green-500" : "text-muted"}`}
+                              >
+                                {verdictLabels[verdict]}
+                              </p>
                             </div>
-                            {assessmentResult.summary && (
-                              <p className="text-xs text-theme/80 leading-relaxed mt-2">
-                                {assessmentResult.summary}
+                            {showAiScore && (
+                              <p className="text-xl font-bold tabular-nums text-theme">
+                                {assessmentResult.score}
+                                <span className="text-sm font-medium text-muted">
+                                  /100
+                                </span>
                               </p>
                             )}
-                            {assessmentResult.processingTimeMs && (
-                              <div className="text-[10px] text-muted mt-1">
-                                Analysed in{" "}
-                                {(
-                                  assessmentResult.processingTimeMs / 1000
-                                ).toFixed(1)}
-                                s
-                              </div>
-                            )}
                           </div>
-                        </div>
-
-                        <AssessmentFeedbackPrompt
-                          problemId={problemId}
-                          assessmentId={assessmentResult.assessmentId}
-                          traceId={assessmentResult.traceId}
-                        />
-
-                        <details className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs">
-                          <summary className="cursor-pointer font-semibold text-theme">
-                            How this score works
-                          </summary>
-                          <p className="mt-2 leading-relaxed text-muted">
-                            This is a directional learning signal: the API
-                            computes a weighted average of the scored
-                            architecture dimensions, with scalability,
-                            reliability, security, and maintainability weighted
-                            more heavily. A score of 50 or higher meets the
-                            current baseline; it is not a production-readiness
-                            approval.
-                          </p>
-                        </details>
-
-                        {/* ── 2. Score Breakdown ── */}
-                        {assessmentResult.scores && (
-                          <div className="p-4 border rounded-xl bg-[var(--surface)] space-y-3">
-                            <div className="font-semibold text-theme text-sm flex items-center gap-2">
-                              <MdAssessment className="h-4 w-4 text-[var(--brand)]" aria-hidden="true" />
-                              <span>Score Breakdown</span>
-                            </div>
-                            {DISPLAY_GROUPS.map(({ label, keys }) => {
-                              const s = assessmentResult.scores;
-                              if (!s) return null;
-                              const vals = keys
-                                .map(
-                                  (k) =>
-                                    (
-                                      s as unknown as Record<
-                                        string,
-                                        number | undefined
-                                      >
-                                    )[k],
-                                )
-                                .filter((v): v is number => v != null);
-                              if (vals.length === 0) return null;
-                              const val = Math.round(
-                                vals.reduce((a, b) => a + b, 0) / vals.length,
-                              );
-                              const color = scoreColor(val);
-                              const subtitle =
-                                keys.length > 1
-                                  ? keys
-                                      .map(
-                                        (k) =>
-                                          DIM_LABELS[k] ??
-                                          k.replaceAll("_", " "),
-                                      )
-                                      .join(" · ")
-                                  : null;
-                              return (
-                                <div key={label}>
-                                  <div className="flex justify-between items-center mb-1">
-                                    <div>
-                                      <span className="text-xs text-muted">
-                                        {label}
-                                      </span>
-                                      {subtitle && (
-                                        <span className="text-[10px] text-muted/50 ml-1.5">
-                                          {subtitle}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <span
-                                      className="text-xs font-semibold"
-                                      style={{ color }}
-                                    >
-                                      {val}
-                                    </span>
-                                  </div>
-                                  <div className="h-1.5 rounded-full bg-[var(--border)] overflow-hidden">
-                                    <div
-                                      className="h-full rounded-full transition-all"
-                                      style={{
-                                        width: `${val}%`,
-                                        backgroundColor: color,
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {assessmentHistory.length > 1 && (
-                          <div className="rounded-xl border border-theme/10 bg-[var(--surface)] p-4">
-                            <div className="mb-3 flex items-center justify-between gap-3">
-                              <div>
-                                <h3 className="text-sm font-semibold text-theme">
-                                  Review progress
-                                </h3>
-                                <p className="mt-1 text-xs text-muted">
-                                  Compare your latest reviews as you improve the design.
+                          {showAiScore ? (
+                            <>
+                              {assessmentResult.summary && (
+                                <p className="break-words text-xs leading-relaxed text-theme">
+                                  {assessmentResult.summary}
                                 </p>
-                              </div>
-                              <span className="text-xs font-semibold text-muted">
-                                {assessmentHistory.length} reviews
-                              </span>
-                            </div>
-                            <div className="space-y-2">
-                              {assessmentHistory.slice(-5).map((entry, index, entries) => {
-                                const previous = entries[index - 1];
-                                const delta = previous ? entry.score - previous.score : 0;
-                                const deltaClass = new Map([[-1, "text-red-500"], [0, "text-muted"], [1, "text-green-500"]]).get(Math.sign(delta));
-                                return (
-                                  <div key={entry.id} className="flex items-center justify-between rounded-lg bg-[var(--bg)] px-3 py-2 text-xs">
-                                    <span className="text-muted">Review {assessmentHistory.length - entries.length + index + 1}</span>
-                                    <span className="font-semibold text-theme">{entry.score}/100</span>
-                                    <span className={deltaClass}>
-                                      {delta > 0 ? `+${delta}` : delta || "—"}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* ── 3. What Went Well ── */}
-                        <div className="p-4 border rounded-xl bg-[var(--surface)]">
-                          <div className="font-semibold text-theme text-sm mb-3 flex items-center gap-2">
-                            <MdCheck className="h-4 w-4 text-green-500" aria-hidden="true" />
-                            <span>What Went Well</span>
-                          </div>
-                          {assessmentResult.architectureStrengths.length > 0 ? (
-                            <ul className="space-y-1.5">
-                              {assessmentResult.architectureStrengths.map(
-                                (s) => (
-                                  <li
-                                    key={s}
-                                    className="flex items-start gap-2 text-sm"
-                                  >
-                                    <span className="text-green-500 mt-0.5 flex-shrink-0">
-                                      •
-                                    </span>
-                                    <span className="text-theme">{s}</span>
-                                  </li>
-                                ),
                               )}
-                            </ul>
+                              <p className="text-xs leading-relaxed text-muted">
+                                AI architecture review against the exercise
+                                scope. This score is a learning signal, not
+                                requirement completion or production readiness.
+                              </p>
+                            </>
                           ) : (
-                            <p className="text-sm text-muted">
-                              No notable strengths detected.
+                            <div
+                              className="space-y-2 text-xs leading-relaxed text-muted"
+                              role="status"
+                            >
+                              <p className="text-theme">
+                                {assessmentResult.source === "rule_based"
+                                  ? "AI review is unavailable. These are walkthrough-structure checks, not an architecture assessment."
+                                  : "The AI review is incomplete or unavailable. No architecture score is available."}
+                              </p>
+                              {assessmentResult.summary && (
+                                <p className="break-words text-theme">
+                                  {assessmentResult.summary}
+                                </p>
+                              )}
+                              <p>
+                                Your design is still available. Retry the AI
+                                review to receive an architecture score and
+                                requirement-level feedback.
+                              </p>
+                            </div>
+                          )}
+                          {(assessmentResult.rubricVersion ||
+                            assessmentResult.requirementRevision) && (
+                            <p className="break-words text-xs text-muted">
+                              {assessmentResult.requirementRevision &&
+                                `Requirements: ${assessmentResult.requirementRevision}`}
+                              {assessmentResult.rubricVersion &&
+                                ` · Rubric: ${assessmentResult.rubricVersion}`}
                             </p>
                           )}
-                        </div>
+                          {reviewUsesOlderBrief && (
+                            <p className="break-words rounded-lg border border-theme/10 px-3 py-2 text-xs leading-relaxed text-muted">
+                              This review uses an earlier problem brief. The
+                              Details tab shows requirements {problem.requirementSpec?.revision}.
+                              Review the updated requirements before assessing
+                              again; a new review will use that current brief.
+                            </p>
+                          )}
+                        </section>
+
+                        {!showAiScore &&
+                          previousAiAssessment?.source === "ai" &&
+                          previousAiAssessment.scoreAvailable !== false &&
+                          Number.isFinite(previousAiAssessment.score) &&
+                          previousAiAssessment.score >= 0 &&
+                          previousAiAssessment.score <= 100 && (
+                            <p className="rounded-lg border border-theme/10 px-3 py-2 text-xs leading-relaxed text-muted">
+                              Previous AI review: {previousAiAssessment.score}
+                              /100. It belongs to an earlier review; current
+                              design has not been AI-reviewed.
+                            </p>
+                          )}
+
+                        {showAiScore &&
+                          coreCoverage.length + extensionCoverage.length >
+                            0 && (
+                            <section
+                              className="p-4 border rounded-xl bg-[var(--surface)] space-y-3"
+                              aria-labelledby="requirement-coverage-heading"
+                            >
+                              <h3
+                                id="requirement-coverage-heading"
+                                className="text-sm font-semibold text-theme"
+                              >
+                                Requirement coverage
+                              </h3>
+                              {coreCoverage.length > 0 &&
+                                renderCoverage(coreCoverage)}
+                              {extensionCoverage.length > 0 && (
+                                <details className="border-t border-theme/10 pt-3">
+                                  <summary className="cursor-pointer text-xs font-semibold text-theme focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]">
+                                    Optional extension coverage
+                                  </summary>
+                                  <div className="mt-3">
+                                    {renderCoverage(extensionCoverage, true)}
+                                  </div>
+                                </details>
+                              )}
+                            </section>
+                          )}
+
+                        {!showAiScore &&
+                          Boolean(
+                            assessmentResult.structuralChecks?.length,
+                          ) && (
+                            <section
+                              className="p-4 border rounded-xl bg-[var(--surface)]"
+                              aria-labelledby="structural-checks-heading"
+                            >
+                              <h3
+                                id="structural-checks-heading"
+                                className="text-sm font-semibold text-theme"
+                              >
+                                Observed structure
+                              </h3>
+                              <ul className="mt-3 space-y-3">
+                                {assessmentResult.structuralChecks?.map(
+                                  (check, index) => (
+                                    <li
+                                      key={index}
+                                      className="break-words text-xs leading-relaxed"
+                                    >
+                                      <p className="font-semibold text-theme">
+                                        {check.title}
+                                      </p>
+                                      <p className="text-muted">
+                                        {check.status.replaceAll("_", " ")} ·{" "}
+                                        {check.explanation}
+                                      </p>
+                                    </li>
+                                  ),
+                                )}
+                              </ul>
+                            </section>
+                          )}
 
                         <AssessmentFindings
                           findings={assessmentResult.findings ?? []}
                           addressedFindingIds={addressedFindingIds}
                           onToggleAddressed={onToggleFindingAddressed}
+                          onSelectEvidence={onSelectEvidence}
+                          requirementSpec={reviewSpec}
+                          suggestions={advice}
+                          strengths={
+                            assessmentResult.architectureStrengths ?? []
+                          }
+                          structuralOnly={!showAiScore}
                         />
 
                         {onReviewAgain && (
@@ -1046,256 +1120,171 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                             onClick={onReviewAgain}
                             className="w-full rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-[var(--bg)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]/60"
                           >
-                            Review again after making changes
+                            {showAiScore
+                              ? "Review again after making changes"
+                              : "Retry AI review"}
                           </button>
                         )}
 
-                        {/* ── 4. Where to Improve ── */}
-                        <div className="p-4 border rounded-xl bg-[var(--surface)]">
-                          <div className="font-semibold text-theme text-sm mb-3 flex items-center gap-2">
-                            <MdArrowUpward className="h-4 w-4 text-orange-500" aria-hidden="true" />
-                            <span>Where to Improve</span>
-                          </div>
-                          {assessmentResult.improvements.length > 0 ? (
-                            <ul className="space-y-1.5 mb-3">
-                              {assessmentResult.improvements.map((imp) => (
-                                <li
-                                  key={imp}
-                                  className="flex items-start gap-2 text-sm"
+                        {(detailedAnalysis.length > 0 ||
+                          feedback.length > 0) && (
+                          <details className="p-4 border rounded-xl bg-[var(--surface)]">
+                            <summary className="cursor-pointer text-sm font-semibold text-theme focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]">
+                              Detailed analysis
+                            </summary>
+                            <div className="mt-4 space-y-4">
+                              {detailedAnalysis.map(([dimension, text]) => (
+                                <section
+                                  key={dimension}
+                                  className="space-y-1.5"
                                 >
-                                  <span className="text-orange-500 mt-0.5 flex-shrink-0">
-                                    •
-                                  </span>
-                                  <span className="text-theme">{imp}</span>
-                                </li>
+                                  <h4 className="text-xs font-semibold text-theme">
+                                    {DIM_LABELS[dimension] ??
+                                      dimension.replaceAll("_", " ")}
+                                  </h4>
+                                  <p className="break-words text-xs leading-relaxed text-muted">
+                                    {text}
+                                  </p>
+                                </section>
                               ))}
-                            </ul>
-                          ) : (
-                            <p className="text-sm text-muted mb-3">
-                              No specific improvements suggested.
-                            </p>
-                          )}
-                          {assessmentResult.suggestions &&
-                            assessmentResult.suggestions.length > 0 && (
-                              <>
-                                <div className="text-xs font-semibold text-muted uppercase tracking-widest mb-2">
-                                  Suggestions
+                              {feedback.map((item) => (
+                                <div
+                                  key={`${item.category}:${item.message}`}
+                                  className="flex items-start gap-2"
+                                >
+                                  <FeedbackIcon
+                                    type={item.type}
+                                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted"
+                                  />
+                                  <p className="min-w-0 break-words text-xs leading-relaxed text-muted">
+                                    {item.message}
+                                  </p>
                                 </div>
-                                <ul className="space-y-1.5">
-                                  {assessmentResult.suggestions.map((s) => (
-                                    <li
-                                      key={s}
-                                      className="flex items-start gap-2 text-sm"
-                                    >
-                                      <MdArrowForward
-                                        className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-[var(--brand)]"
-                                        aria-hidden="true"
-                                      />
-                                      <span className="text-muted">{s}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </>
-                            )}
-                        </div>
-
-                        {/* ── 5. Analysis & Feedback ── */}
-                        {((assessmentResult.detailedAnalysis &&
-                          Object.keys(assessmentResult.detailedAnalysis)
-                            .length > 0) ||
-                          assessmentResult.feedback.length > 0) &&
-                          (() => {
-                            // Group feedback items by category for co-location with analysis
-                            const feedbackByCategory: Record<
-                              string,
-                              typeof assessmentResult.feedback
-                            > = {};
-                            const uncategorisedFeedback: typeof assessmentResult.feedback =
-                              [];
-                            for (const fb of assessmentResult.feedback) {
-                              if (
-                                assessmentResult.detailedAnalysis?.[fb.category]
-                              ) {
-                                if (!feedbackByCategory[fb.category])
-                                  feedbackByCategory[fb.category] = [];
-                                feedbackByCategory[fb.category].push(fb);
-                              } else {
-                                uncategorisedFeedback.push(fb);
-                              }
-                            }
-
-                            return (
-                              <div className="p-4 border rounded-xl bg-[var(--surface)] space-y-4">
-                                <div className="font-semibold text-theme text-sm flex items-center gap-2">
-                                  <MdSearch className="h-4 w-4 text-[var(--brand)]" aria-hidden="true" />
-                                  <span>Analysis &amp; Feedback</span>
-                                </div>
-
-                                {/* Per-dimension: analysis prose + its feedback items */}
-                                {assessmentResult.detailedAnalysis &&
-                                  Object.entries(
-                                    assessmentResult.detailedAnalysis,
-                                  ).map(([dim, text]) => {
-                                    if (!text) return null;
-                                    const dimFeedback =
-                                      feedbackByCategory[dim] ?? [];
-                                    return (
-                                      <div key={dim} className="space-y-1.5">
-                                        {/* Dimension heading */}
-                                        <div className="text-[10px] font-bold text-[var(--brand)] uppercase tracking-widest">
-                                          {DIM_LABELS[dim] ?? dim}
-                                        </div>
-                                        {/* Analysis prose */}
-                                        <div className="text-xs text-theme leading-relaxed pl-2 border-l-2 border-[var(--brand)]/30">
-                                          {text}
-                                        </div>
-                                        {/* Feedback items for this dimension */}
-                                        {dimFeedback.map((feedback) => (
-                                          <div
-                                            key={`${dim}:${feedback.type}:${feedback.message}`}
-                                            className={`flex items-start gap-1.5 pl-2 border-l-2 ${FEEDBACK_TYPE_BORDER[feedback.type] ?? "border-[var(--brand)]/50"}`}
-                                          >
-                                            <FeedbackIcon
-                                              type={feedback.type}
-                                              className="h-3.5 w-3.5"
-                                            />
-                                            <span className="text-xs text-theme leading-relaxed">
-                                              {feedback.message}
-                                            </span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    );
-                                  })}
-
-                                {/* Feedback items whose category has no analysis entry (e.g. component_description) */}
-                                {uncategorisedFeedback.length > 0 && (
-                                  <div className="space-y-1.5 pt-1 border-t border-[var(--border)]">
-                                    {uncategorisedFeedback.map((f) => (
-                                      <div
-                                        key={`uncategorised-${f.category}-${f.message.slice(0, 24)}`}
-                                        className={`border-l-2 ${FEEDBACK_TYPE_BORDER[f.type] ?? "border-[var(--brand)]/50"} pl-3 py-0.5`}
-                                      >
-                                        <div className="flex items-center gap-1.5 mb-0.5">
-                                          <FeedbackIcon
-                                            type={f.type}
-                                            className="h-3.5 w-3.5"
-                                          />
-                                          <span className="text-[10px] font-bold text-[var(--brand)] uppercase tracking-widest">
-                                            {f.category.replaceAll("_", " ")}
-                                          </span>
-                                        </div>
-                                        <div className="text-xs text-theme leading-relaxed">
-                                          {f.message}
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })()}
-
-                        {/* ── 7. Missing / Unclear ── */}
-                        {((assessmentResult.missingComponents &&
-                          assessmentResult.missingComponents.length > 0) ||
-                          (assessmentResult.missingDescriptions &&
-                            assessmentResult.missingDescriptions.length > 0) ||
-                          (assessmentResult.unclearConnections &&
-                            assessmentResult.unclearConnections.length >
-                              0)) && (
-                          <div className="p-4 border border-red-500/20 rounded-xl bg-red-500/5">
-                            <div className="font-semibold text-red-400 text-sm mb-1 flex items-center gap-2">
-                              <PiWarningCircle
-                                aria-hidden="true"
-                                className="text-base"
-                              />
-                              <span>Design details to add</span>
+                              ))}
                             </div>
-                            <p className="text-xs text-theme/70 leading-relaxed mb-3">
-                              A little more context will help explain and
-                              evaluate your design.
+                          </details>
+                        )}
+
+                        {showAiScore && (
+                          <details className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs">
+                            <summary className="cursor-pointer font-semibold text-theme focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]">
+                              How this score works
+                            </summary>
+                            <p className="mt-2 leading-relaxed text-muted">
+                              The API combines the applicable architecture
+                              dimensions into one review score. It does not
+                              measure accuracy, completion percentage, or
+                              production readiness. Findings and requirement
+                              evidence explain what to improve next.
                             </p>
-                            {assessmentResult.missingComponents &&
-                              assessmentResult.missingComponents.length > 0 && (
-                                <div className="mb-2">
-                                  <div className="text-[10px] font-bold text-red-400/80 uppercase tracking-widest mb-1">
-                                    Components to add
-                                  </div>
-                                  <ul className="space-y-1">
-                                    {assessmentResult.missingComponents.map(
-                                      (m) => (
-                                        <li
-                                          key={m}
-                                          className="text-xs text-theme flex items-start gap-1.5"
-                                        >
-                                          <span className="text-red-400 flex-shrink-0">
-                                            •
-                                          </span>
-                                          {m}
-                                        </li>
-                                      ),
-                                    )}
-                                  </ul>
-                                </div>
-                              )}
-                            {assessmentResult.missingDescriptions &&
-                              assessmentResult.missingDescriptions.length >
-                                0 && (
-                                <div className="mb-2">
-                                  <div className="text-[10px] font-bold text-red-400/80 uppercase tracking-widest mb-1">
-                                    Add component context
-                                  </div>
-                                  <p className="text-[11px] text-theme/70 leading-relaxed mb-1.5">
-                                    Describe each component’s role and why you
-                                    chose it for this design.
-                                  </p>
-                                  <ul className="space-y-1">
-                                    {assessmentResult.missingDescriptions.map(
-                                      (m) => (
-                                        <li
-                                          key={m}
-                                          className="text-xs text-theme flex items-start gap-1.5"
-                                        >
-                                          <span className="text-red-400 flex-shrink-0">
-                                            •
-                                          </span>
-                                          {m}
-                                        </li>
-                                      ),
-                                    )}
-                                  </ul>
-                                </div>
-                              )}
-                            {assessmentResult.unclearConnections &&
-                              assessmentResult.unclearConnections.length >
-                                0 && (
-                                <div>
-                                  <div className="text-[10px] font-bold text-red-400/80 uppercase tracking-widest mb-1">
-                                    Clarify component connections
-                                  </div>
-                                  <p className="text-[11px] text-theme/70 leading-relaxed mb-1.5">
-                                    Explain how the components communicate or
-                                    what data flows between them.
-                                  </p>
-                                  <ul className="space-y-1">
-                                    {assessmentResult.unclearConnections.map(
-                                      (m) => (
-                                        <li
-                                          key={m}
-                                          className="text-xs text-theme flex items-start gap-1.5"
-                                        >
-                                          <span className="text-red-400 flex-shrink-0">
-                                            •
-                                          </span>
-                                          {m}
-                                        </li>
-                                      ),
-                                    )}
-                                  </ul>
-                                </div>
-                              )}
-                          </div>
+                          </details>
+                        )}
+
+                        {assessmentHistory.length > 1 && (
+                          <details className="rounded-xl border border-theme/10 bg-[var(--surface)] p-4">
+                            <summary className="cursor-pointer text-sm font-semibold text-theme focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]">
+                              Review history ({assessmentHistory.length})
+                            </summary>
+                            <p className="mt-3 text-xs leading-relaxed text-muted">
+                              Score changes are comparable only for AI reviews
+                              using the same rubric, requirement revision, and
+                              model.
+                            </p>
+                            <div className="mt-3 space-y-2">
+                              {assessmentHistory
+                                .slice(-5)
+                                .map((entry, index, entries) => {
+                                  const previous =
+                                    assessmentHistory[
+                                      assessmentHistory.length -
+                                        entries.length +
+                                        index -
+                                        1
+                                    ];
+                                  const currentScore =
+                                    entry.source === "ai" &&
+                                    entry.scoreAvailable !== false &&
+                                    typeof entry.score === "number" &&
+                                    Number.isFinite(entry.score) &&
+                                    entry.score >= 0 &&
+                                    entry.score <= 100
+                                      ? entry.score
+                                      : null;
+                                  const previousScore =
+                                    previous?.source === "ai" &&
+                                    previous.scoreAvailable !== false &&
+                                    typeof previous.score === "number" &&
+                                    Number.isFinite(previous.score) &&
+                                    previous.score >= 0 &&
+                                    previous.score <= 100
+                                      ? previous.score
+                                      : null;
+                                  const comparable =
+                                    currentScore !== null &&
+                                    previousScore !== null &&
+                                    Boolean(entry.rubricVersion?.trim()) &&
+                                    entry.rubricVersion ===
+                                      previous.rubricVersion &&
+                                    Boolean(
+                                      entry.requirementRevision?.trim(),
+                                    ) &&
+                                    entry.requirementRevision ===
+                                      previous.requirementRevision &&
+                                    Boolean(entry.modelVersion?.trim()) &&
+                                    entry.modelVersion ===
+                                      previous.modelVersion;
+                                  const unchangedInput =
+                                    Boolean(entry.inputFingerprint) &&
+                                    entry.inputFingerprint ===
+                                      previous?.inputFingerprint;
+                                  const delta =
+                                    comparable &&
+                                    !unchangedInput &&
+                                    currentScore !== null &&
+                                    previousScore !== null
+                                      ? currentScore - previousScore
+                                      : null;
+                                  return (
+                                    <div
+                                      key={entry.id}
+                                      className="flex flex-wrap items-center justify-between gap-2 border-t border-theme/10 py-2 text-xs"
+                                    >
+                                      <span className="text-muted">
+                                        Review{" "}
+                                        {assessmentHistory.length -
+                                          entries.length +
+                                          index +
+                                          1}
+                                      </span>
+                                      <span className="font-semibold text-theme">
+                                        {currentScore !== null
+                                          ? `${currentScore}/100`
+                                          : entry.source === "rule_based"
+                                            ? "Structure check · unscored"
+                                            : "Unscored"}
+                                      </span>
+                                      <span className="text-muted">
+                                        {delta === null
+                                          ? unchangedInput && comparable
+                                            ? "Same input · —"
+                                            : "Not comparable · —"
+                                          : delta > 0
+                                            ? `+${delta}`
+                                            : String(delta)}
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          </details>
+                        )}
+
+                        {showAiScore && (
+                          <AssessmentFeedbackPrompt
+                            problemId={problemId}
+                            assessmentId={assessmentResult.assessmentId}
+                            traceId={assessmentResult.traceId}
+                          />
                         )}
 
                         {/* ── 8. Follow-up Questions ── */}
@@ -1307,10 +1296,15 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                 onClick={() =>
                                   setShowInterviewQuestions((v) => !v)
                                 }
+                                aria-expanded={showInterviewQuestions}
+                                aria-controls="review-follow-up-questions"
                                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--bg-hover)] transition-colors"
                               >
                                 <div className="flex items-center gap-2">
-                                  <MdTrackChanges className="h-4 w-4 text-indigo-400" aria-hidden="true" />
+                                  <MdTrackChanges
+                                    className="h-4 w-4 text-indigo-400"
+                                    aria-hidden="true"
+                                  />
                                   <span className="font-semibold text-theme text-sm">
                                     Follow-up Questions
                                   </span>
@@ -1324,7 +1318,10 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                 />
                               </button>
                               {showInterviewQuestions && (
-                                <div className="px-4 pb-4 space-y-2.5 border-t border-[var(--border)]">
+                                <div
+                                  id="review-follow-up-questions"
+                                  className="px-4 pb-4 space-y-2.5 border-t border-[var(--border)]"
+                                >
                                   <p className="text-[10px] text-muted pt-3 pb-1">
                                     Questions tailored to your specific design —
                                     use them to guide your next iteration.
@@ -1358,7 +1355,10 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                             onClick={copyAssessment}
                             className="flex-1 px-3 py-2 bg-theme border border-theme rounded-md hover:bg-[var(--bg-hover)] transition-colors text-sm"
                           >
-                            <MdContentCopy className="mr-1.5 inline h-4 w-4" aria-hidden="true" />
+                            <MdContentCopy
+                              className="mr-1.5 inline h-4 w-4"
+                              aria-hidden="true"
+                            />
                             Copy JSON
                           </button>
                           <button
@@ -1366,14 +1366,20 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                             onClick={downloadAssessment}
                             className="flex-1 px-3 py-2 bg-theme border border-theme rounded-md hover:bg-[var(--bg-hover)] transition-colors text-sm"
                           >
-                            <MdDownload className="mr-1.5 inline h-4 w-4" aria-hidden="true" />
+                            <MdDownload
+                              className="mr-1.5 inline h-4 w-4"
+                              aria-hidden="true"
+                            />
                             Download
                           </button>
                         </div>
                       </div>
                     ) : (
                       <div className="text-center py-12">
-                        <MdAssessment className="mx-auto mb-4 h-12 w-12 text-[var(--brand)]" aria-hidden="true" />
+                        <MdAssessment
+                          className="mx-auto mb-4 h-12 w-12 text-[var(--brand)]"
+                          aria-hidden="true"
+                        />
                         <div className="text-lg font-semibold text-theme mb-2">
                           No Assessment Yet
                         </div>

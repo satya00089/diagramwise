@@ -57,4 +57,15 @@ describe("transformApiResponse", () => {
     expect(result.source).toBe("rule_based");
     expect(result.findings).toEqual([]);
   });
+
+  it("retains the grounded deduction metadata in a saved review", () => {
+    const result = transformApiResponse({ source: "ai", score_available: true,
+      overall_score: 87, verdict: "needs_revision", findings: [{
+        title: "Permissions bypassed", explanation: "All edits are accepted", severity: "critical",
+        kind: "defect", criterion: "security", scored_gap: true,
+        evidence_ids: ["auth"], requirement_ids: ["permissions"],
+      }] });
+    expect(result.findings?.[0]).toMatchObject({ criterion: "security", scored_gap: true,
+      evidence_ids: ["auth"], requirement_ids: ["permissions"] });
+  });
 });

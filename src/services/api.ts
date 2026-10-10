@@ -448,6 +448,8 @@ class ApiService {
     edges: unknown[];
     elapsedTime: number;
     lastAssessment?: unknown;
+    lastAssessmentCheck?: unknown;
+    problemRequirementSpec?: import("../types/requirements").RequirementSpec;
     reasoningContext?: DesignReasoningContext;
     interviewSession?: InterviewSession;
     addressedFindingIds?: string[];

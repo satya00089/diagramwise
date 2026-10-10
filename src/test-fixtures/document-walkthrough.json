@@ -1,0 +1,647 @@
+{
+  "problem_id": "6901ef1b9420d83630aca871",
+  "version": "2.0-candidate",
+  "requirementRevision": "requirements-v2-preserved",
+  "steps": [
+    {
+      "phase": "Phase 1: Entry Point & Connection Interface",
+      "component": {
+        "highlightReason": "Single entry point for all REST traffic. Validates JWT tokens before any request touches downstream services.",
+        "componentType": "api-gateway",
+        "label": "API Gateway",
+        "position": {
+          "x": 80,
+          "y": 200
+        },
+        "nodeId": "guided_api_gateway",
+        "properties": {
+          "throttling": true,
+          "rateLimiting": true,
+          "tlsTermination": true,
+          "description": "<p>Routes all REST API calls to downstream services. Handles OAuth 2.0 JWT validation, per-user rate limiting, and TLS termination.</p><p><strong>WebSocket pass-through:</strong> The gateway does not terminate WebSocket connections — it forwards the <code>Upgrade: websocket</code> header to the load balancer, which pins the connection to a specific collaboration server instance via sticky sessions.</p><p><strong>Timeout consideration:</strong> REST document fetches resolve in &lt;100ms. Bulk export endpoints may stream for minutes — those use chunked transfer encoding, not a standard request/response.</p>",
+          "componentName": "API Gateway",
+          "requestsPerSecond": 5000,
+          "inputValidation": true,
+          "deduplication": false,
+          "authentication": "OAuth 2.0"
+        }
+      },
+      "id": "app_001_step_03",
+      "stepNumber": 3,
+      "type": "add_component",
+      "title": "Add the API Gateway",
+      "content": "## API Gateway — REST Entry Point\n\nAll HTTP requests — create document, fetch metadata, list folders, share settings — enter through the API Gateway.\n\n**Authentication**: Every request carries a JWT issued after OAuth 2.0 login. The gateway validates the token signature and rejects unauthenticated calls before they reach downstream services.\n\n**Routing**: `/api/v1/documents/*` → Document Service; `/api/v1/search` → Search Service; `/api/v1/users/*` → Auth Service. WebSocket upgrades (`Upgrade: websocket`) are passed through to the load balancer without buffering.\n\n**Rate limiting**: Per-user limits prevent a script from hammering the document creation endpoint. Bulk export operations get a separate lower limit.",
+      "requirementIds": [
+        "req-8d63a3c104e1ed12"
+      ]
+    },
+    {
+      "phase": "Phase 1: Entry Point & Connection Interface",
+      "component": {
+        "highlightReason": "Routes a document's editing sessions to its current owner; client-IP affinity alone is insufficient.",
+        "componentType": "loadbalancer",
+        "label": "Load Balancer",
+        "position": {
+          "x": 300,
+          "y": 200
+        },
+        "nodeId": "guided_loadbalancer",
+        "properties": {
+          "multiAZ": true,
+          "ddosProtection": true,
+          "sslTermination": false,
+          "stickiness": true,
+          "description": "REST uses stateless routing. WebSocket upgrades resolve document_id through the owner registry; all editors of one document reach its single active OT owner. Ownership terms fence stale owners, and connection draining triggers reconnect/resume rather than silently losing edits.",
+          "type": "Layer 7 (Application)",
+          "healthCheckInterval": 10,
+          "healthCheck": true,
+          "accessLogs": true,
+          "componentName": "Load Balancer",
+          "waf": false,
+          "connectionDraining": true,
+          "algorithm": "document-ID affinity",
+          "routingKey": "document_id"
+        },
+        "description": "REST routing and document-owner WebSocket affinity"
+      },
+      "id": "app_001_step_05",
+      "stepNumber": 5,
+      "type": "add_component",
+      "title": "Add the Load Balancer",
+      "content": "## Load Balancer — Sticky WebSocket Routing\n\nThis load balancer serves two traffic types simultaneously:\n\n1. **REST** (round-robin) — stateless document CRUD hits any backend\n2. **WebSocket** (ip-hash / affinity) — live editing session pinned to one collaboration server\n\nLayer 7 inspection allows the LB to look at the `Upgrade: websocket` header and apply the affinity rule only to WebSocket connections, leaving REST traffic on normal round-robin."
+    },
+    {
+      "phase": "Phase 1: Entry Point & Connection Interface",
+      "connection": {
+        "description": "Gateway forwards REST and WebSocket upgrades over TLS; the load balancer resolves document_id to its fenced collaboration owner, not client-IP affinity.",
+        "edgeId": "guided_edge_gw_lb",
+        "label": "REST + WebSocket Upgrade",
+        "targetNodeId": "guided_loadbalancer",
+        "connectionType": "http",
+        "sourceNodeId": "guided_api_gateway"
+      },
+      "id": "app_001_step_06",
+      "stepNumber": 6,
+      "type": "add_connection",
+      "title": "Connect API Gateway → Load Balancer",
+      "content": "## Wiring the Entry Path\n\nConnect the API Gateway to the Load Balancer. REST requests flow round-robin to backend services; WebSocket upgrade requests carry the `Upgrade: websocket` header so the load balancer can apply ip-hash affinity to pin live editing sessions to a single collaboration server instance.\n\n**What flows through this connection:**\n- All authenticated REST API calls (document CRUD, metadata, permissions, search)\n- WebSocket upgrade requests — the load balancer inspects the Upgrade header and applies ip-hash sticky routing automatically"
+    },
+    {
+      "phase": "Phase 2: Collaboration Core & Document Storage",
+      "component": {
+        "highlightReason": "A single fenced owner orders each document's OT operations and supports durable reconnect/replay.",
+        "componentType": "backend-server",
+        "label": "Collaboration Server (OT Engine)",
+        "position": {
+          "x": 500,
+          "y": 130
+        },
+        "nodeId": "guided_collab_server",
+        "properties": {
+          "instances": 8,
+          "description": "Owns an assigned document shard and runs OT over a canonical sequence. Document-ID routing and fenced ownership keep all editors of a document at one active ordering authority. Acknowledge edits after the operation log is durable, then broadcast the accepted result. Recover from the latest committed snapshot plus subsequent durable operations when an owner fails.",
+          "componentName": "Collaboration Server (OT Engine)",
+          "caching": true,
+          "bulkOps": false,
+          "retry": false,
+          "architecture": "Microservices",
+          "operationIdentity": "document_id + client_id + operation_id; retrying the same operation returns its prior result",
+          "acknowledgement": "After durable operation-log append, before broadcast; unacknowledged edits can be safely retried",
+          "reconnectProtocol": "Client sends last acknowledged document sequence; replay missing operations, deduplicate retries, and transform edits based on the canonical sequence. Use a fresh snapshot if retained replay is unavailable.",
+          "documentOwnership": "Document-ID owner registry with monotonically increasing fencing term; only the active owner accepts writes",
+          "authorization": "Check document ACL version for every accepted edit; revoked sessions cannot publish further operations",
+          "hotDocuments": "Move ownership with fencing and replay; cap active editors per owner and shed excess load with retry guidance",
+          "formats": "Versioned rich-text operation schema and markdown import/export; attachments remain outside the edit stream",
+          "ownerHandoff": "Stop accepting edits at the old owner, commit its watermark, acquire a newer fencing term, replay durable operations, then resume. During handoff clients buffer unacknowledged edits and retry operation IDs; stale terms are rejected.",
+          "importLimits": "Validate rich-text schema, sanitize markdown HTML and bound operation sizes; large imports use multipart object uploads then a serialized versioned replace/import command rather than oversized WebSocket frames."
+        }
+      },
+      "id": "app_001_step_08",
+      "stepNumber": 8,
+      "type": "add_component",
+      "title": "Add the Collaboration Server",
+      "content": "## Collaboration Server — The OT Engine\n\nThis is a stateful backend service. Each instance manages a subset of open document sessions (partitioned by document ID). It:\n\n- Accepts WebSocket connections from authenticated editors\n- Runs the OT transformation algorithm in memory\n- Broadcasts confirmed operations to all connected clients\n- Publishes each operation to Kafka for persistence and search indexing\n\nBecause it is stateful, horizontal scaling requires partitioning — not simple replication.\n\nThe applied design records operation identity, the durable acknowledgement boundary, reconnect replay, per-edit authorization, rich-text/markdown handling, and hot-document ownership transfer. Inspect those decisions before applying.",
+      "requirementIds": [
+        "req-389357945002dbdc",
+        "req-7cd3d07d424e9ab6",
+        "req-e9dd2bb5b6774b1d",
+        "req-21afdfef44c9893e"
+      ]
+    },
+    {
+      "phase": "Phase 2: Collaboration Core & Document Storage",
+      "connection": {
+        "description": "Resolve document_id to the fenced OT owner; reconnect resumes from the last acknowledged sequence.",
+        "edgeId": "guided_edge_lb_collab",
+        "label": "WebSocket (document owner)",
+        "targetNodeId": "guided_collab_server",
+        "connectionType": "websocket",
+        "sourceNodeId": "guided_loadbalancer"
+      },
+      "id": "app_001_step_09",
+      "stepNumber": 9,
+      "type": "add_connection",
+      "title": "Connect Load Balancer → Collaboration Server",
+      "content": "## WebSocket Pinned to the OT Engine\n\nWebSocket connections for live editing sessions are routed from the load balancer to a specific collaboration server instance, pinned via ip-hash on the document ID.\n\n**Why sticky routing is essential:** The collaboration server holds authoritative in-memory OT state — the document snapshot, pending operation queue, and list of connected clients for each open document. Routing to a different server mid-session would lose this context and corrupt the document."
+    },
+    {
+      "phase": "Phase 2: Collaboration Core & Document Storage",
+      "component": {
+        "highlightReason": "Decouples the real-time OT path from persistence. Every applied operation is published here; consumers write to DB and Elasticsearch independently.",
+        "componentType": "message-broker",
+        "label": "Operation Event Bus (Kafka)",
+        "position": {
+          "x": 500,
+          "y": 340
+        },
+        "nodeId": "guided_message_broker",
+        "properties": {
+          "partitions": 24,
+          "replication": 3,
+          "description": "<p>Receives one message per applied OT operation from the Collaboration Server. Consumers read downstream at their own pace — the Document Writer batches ops into snapshots; the Search Indexer updates Elasticsearch; the Version Service records diffs.</p><p><strong>Partitioning:</strong> Partitioned by <code>document_id</code> so all ops for a single document are consumed in order by one consumer instance, preserving the document's revision sequence.</p><p><strong>Retention set to 7 days:</strong> Beyond 7 days, reconstructing history uses periodic snapshots from object storage rather than replaying every individual keystroke.</p>",
+          "durable": true,
+          "componentName": "Operation Event Bus (Kafka)",
+          "retention": 168
+        }
+      },
+      "id": "app_001_step_11",
+      "stepNumber": 11,
+      "type": "add_component",
+      "title": "Add the Message Broker",
+      "content": "## Kafka — Operation Broadcast & Persistence Bus\n\nKafka is the backbone connecting the real-time OT engine to every downstream consumer: the version store writer, the search indexer, and any future integrations (activity feeds, webhooks, analytics).\n\nPartitioning by `document_id` ensures strict ordering per document without sacrificing throughput across documents."
+    },
+    {
+      "phase": "Phase 2: Collaboration Core & Document Storage",
+      "connection": {
+        "description": "Append document-partitioned operations with quorum acknowledgement before acknowledging the edit; independent idempotent consumers materialize snapshots and indexes outside the editing path.",
+        "edgeId": "guided_edge_collab_kafka",
+        "label": "Publish Operations",
+        "targetNodeId": "guided_message_broker",
+        "connectionType": "message-queue",
+        "sourceNodeId": "guided_collab_server"
+      },
+      "id": "app_001_step_12",
+      "stepNumber": 12,
+      "type": "add_connection",
+      "title": "Connect Collaboration Server → Operation Bus",
+      "content": "## Publishing Each Operation to Kafka\n\nAfter the OT server applies a transformation and broadcasts it to all connected clients, it publishes the canonical operation to Kafka as an asynchronous write.\n\n**Each Kafka message contains:** operation type and content, document ID (partition key for ordering), server revision number, and author user ID. Downstream consumers — Document Writer and Search Indexer — subscribe independently and process at their own pace without blocking the real-time editing path."
+    },
+    {
+      "phase": "Phase 2: Collaboration Core & Document Storage",
+      "component": {
+        "highlightReason": "Stores document metadata, folder hierarchy, permissions, and version pointers. Content blobs are in object storage — only the S3 key lives here.",
+        "componentType": "database",
+        "label": "Metadata Store (PostgreSQL)",
+        "position": {
+          "x": 800,
+          "y": 130
+        },
+        "nodeId": "guided_database",
+        "properties": {
+          "replication": 3,
+          "replicationMode": "Async",
+          "pitr": true,
+          "wal": true,
+          "multiAZ": true,
+          "auditLog": true,
+          "crossRegion": false,
+          "rbac": true,
+          "description": "Authoritative document/workspace metadata, folder hierarchy, ACL versions and immutable version manifests. Content lives in object storage. A closure table supports ancestor/subtree queries with indexes; transactions protect folder moves and permission inheritance.",
+          "workload": "OLTP",
+          "connectionPooling": true,
+          "type": "RDBMS",
+          "sharding": "Hash-based",
+          "shards": 4,
+          "encryption": true,
+          "engine": "postgresql",
+          "componentName": "Metadata Store (PostgreSQL)",
+          "queryCache": true,
+          "storageGB": 200,
+          "backups": true,
+          "versionManifest": "Per-document head references only a complete immutable snapshot; compare-and-swap head/version updates",
+          "snapshotRecovery": "Writer uploads immutable snapshot, then commits manifest and outbox in one Postgres transaction; retries are idempotent by document/version. Incomplete uploads are unreferenced and garbage-collected.",
+          "rollback": "Authorized restore creates a new head/version from the selected revision; publish cache/search events via outbox",
+          "documentLifecycle": "Create, edit, soft-delete and restore documents; versioned tombstones propagate to search/caches and invalidate sessions; retain immutable versions according to an explicit retention policy",
+          "folderHierarchy": "Document metadata includes workspace_id, parent_folder_id, title, ownership, ACL version and current head",
+          "versionRetention": "Keep committed history for the workspace retention policy; compact operation logs only after a verified snapshot watermark. Deletion removes active access immediately; purge retained snapshots asynchronously according to that policy."
+        }
+      },
+      "id": "app_001_step_14",
+      "stepNumber": 14,
+      "type": "add_component",
+      "title": "Add the Database",
+      "content": "## PostgreSQL — Metadata, Hierarchy & Permissions\n\nPostgreSQL is the source of truth for everything _about_ documents but not the document content itself.\n\nKey design decisions:\n- **Closure table** for folder hierarchy (O(1) subtree queries vs adjacency list)\n- **RBAC rows** for sharing: one row per `(doc, user, role)` — simple, auditable\n- **Multi-AZ** with async replication — document metadata must survive an AZ failure",
+      "requirementIds": [
+        "req-8d63a3c104e1ed12",
+        "req-0608d3ce91dcaa97",
+        "req-5b3887e4345cda11"
+      ]
+    },
+    {
+      "phase": "Phase 2: Collaboration Core & Document Storage",
+      "connection": {
+        "description": "The Document Writer Kafka consumer batches operations and persists snapshot metadata to PostgreSQL. Runs asynchronously from the real-time editing path at Kafka consumer pace.",
+        "edgeId": "guided_edge_kafka_db",
+        "label": "Document Writer Consumer",
+        "targetNodeId": "guided_database",
+        "connectionType": "message-queue",
+        "sourceNodeId": "guided_message_broker"
+      },
+      "id": "app_001_step_15",
+      "stepNumber": 15,
+      "type": "add_connection",
+      "title": "Connect Kafka → Metadata Store (Document Writer)",
+      "content": "## Document Writer Consumer — Persisting to PostgreSQL\n\nThe Document Writer Kafka consumer bridges the real-time operation stream to durable storage. Every 50 operations it:\n1. Constructs a full document snapshot from the previous snapshot + 50 new ops\n2. Writes the snapshot JSON to S3\n3. Inserts a new `(doc_id, version_number, s3_key, created_at)` row in PostgreSQL\n\nWithout this consumer, operations exist only in Kafka for 7 days with no permanent version history."
+    },
+    {
+      "phase": "Phase 2: Collaboration Core & Document Storage",
+      "component": {
+        "highlightReason": "Stores full document content snapshots as JSON and all binary attachments. Postgres holds only the S3 key — never the content itself.",
+        "componentType": "object-storage",
+        "label": "Document Object Store (S3)",
+        "position": {
+          "x": 800,
+          "y": 380
+        },
+        "nodeId": "guided_file_storage",
+        "properties": {
+          "storageTB": 5,
+          "description": "S3-compatible object storage holds immutable document snapshots and large attachments. Postgres stores committed version manifests and object keys. Multipart presigned uploads keep large bytes out of the OT service.",
+          "componentName": "Document Object Store (S3)",
+          "throughput": 500,
+          "provider": "S3",
+          "versioning": true,
+          "checksumValidation": true,
+          "snapshotPolicy": "Immutable snapshot every 50 accepted operations; replay the durable operation log after its watermark",
+          "attachmentAccess": "Short-lived, scope-bound presigned URLs issued after authorization; private buckets; validate upload size/type"
+        }
+      },
+      "id": "app_001_step_17",
+      "stepNumber": 17,
+      "type": "add_component",
+      "title": "Add File Storage",
+      "content": "## Object Storage — Document Snapshots & Attachments\n\nAll document content and binary attachments live here. PostgreSQL stores only the key (path) that points to each object.\n\nPresigned URL uploads let clients send files directly to S3 — the application server is never a proxy for binary data.",
+      "requirementIds": [
+        "req-0608d3ce91dcaa97",
+        "req-d63022f03d1f77cc",
+        "req-decea5e062125d7b"
+      ]
+    },
+    {
+      "phase": "Phase 3: Search, Session State & Version History",
+      "component": {
+        "highlightReason": "Stores active OT session state for warm restarts, cursor presence via Pub/Sub, and the pending operation buffer for snapshot batching.",
+        "componentType": "cache",
+        "label": "Collaboration Session Cache (Redis)",
+        "position": {
+          "x": 700,
+          "y": 560
+        },
+        "nodeId": "guided_cache_session",
+        "properties": {
+          "replication": true,
+          "eviction": "volatile-lru",
+          "encryption": true,
+          "engine": "redis",
+          "inMemory": true,
+          "description": "Redis holds replaceable session state and best-effort presence. The durable Kafka operation log, not an evictable Redis buffer, is authoritative for acknowledged edits. Recover warm state from a snapshot plus replay.",
+          "cacheStrategy": "cache-aside",
+          "persistence": true,
+          "maxMemoryGB": 16,
+          "componentName": "Collaboration Session Cache (Redis)",
+          "ttl": 60,
+          "clusterMode": true,
+          "durabilityBoundary": "Loss of Redis cannot lose acknowledged operations; durable log is authoritative"
+        }
+      },
+      "id": "app_001_step_19",
+      "stepNumber": 19,
+      "type": "add_component",
+      "title": "Add the Session Cache",
+      "content": "## Redis — Session State, Presence & Op Buffer\n\nThis Redis instance serves the collaboration server cluster: warm session restarts, real-time presence broadcasting via Pub/Sub, and the in-flight operation buffer for snapshot batching."
+    },
+    {
+      "phase": "Phase 3: Search, Session State & Version History",
+      "connection": {
+        "description": "Replaceable presence and session state only; snapshot plus the durable operation log recovers acknowledged edits. Redis Pub/Sub is best-effort and never the durability boundary.",
+        "edgeId": "guided_edge_collab_session",
+        "label": "Session State + Presence Pub/Sub",
+        "targetNodeId": "guided_cache_session",
+        "connectionType": "data-flow",
+        "sourceNodeId": "guided_collab_server"
+      },
+      "id": "app_001_step_20",
+      "stepNumber": 20,
+      "type": "add_connection",
+      "title": "Connect Collaboration Server → Session Cache",
+      "content": "## Wiring Session State and Presence to Redis\n\nThe collaboration server maintains two live flows to Redis:\n\n1. **Session state**: On document load, writes a serialized OT snapshot to Redis (TTL 60s). On restart, reads this key before falling back to Postgres + S3 — warm restart in <50ms vs cold load at ~500ms.\n\n2. **Presence Pub/Sub**: Cursor positions and typing indicators are published to a Redis Pub/Sub channel per workspace. All collaboration server shards subscribe and forward presence events to their WebSocket clients, enabling cross-shard 'User X is typing' visibility."
+    },
+    {
+      "phase": "Phase 3: Search, Session State & Version History",
+      "component": {
+        "highlightReason": "Inverted-index search over document content. Updated asynchronously from Kafka — never in the real-time write path.",
+        "componentType": "search",
+        "label": "Document Search (Elasticsearch)",
+        "position": {
+          "x": 1050,
+          "y": 330
+        },
+        "nodeId": "guided_search",
+        "properties": {
+          "replication": 2,
+          "description": "Asynchronous full-text content index from committed snapshots. Query-time workspace/ACL filtering plus authorization recheck prevents unauthorized snippets. Idempotent versioned updates and tombstones tolerate duplicate events and rebuild from committed documents; freshness is eventual rather than part of the edit acknowledgement.",
+          "fullText": true,
+          "shards": 5,
+          "componentName": "Document Search (Elasticsearch)",
+          "engine": "elasticsearch",
+          "authorization": "Filter search by workspace/document ACL and recheck permission before returning content; apply tombstones and ACL invalidations"
+        }
+      },
+      "id": "app_001_step_23",
+      "stepNumber": 23,
+      "type": "add_component",
+      "title": "Add Full-Text Search",
+      "content": "## Elasticsearch — Content Search\n\nAn Elasticsearch cluster indexes the plain-text content of every document, updated asynchronously by the Search Indexer Kafka consumer after each periodic snapshot.\n\nWith 5 primary shards and 2 replicas, the index can hold hundreds of millions of documents while serving sub-100ms search queries.",
+      "requirementIds": [
+        "req-b087750c8d4a065c"
+      ]
+    },
+    {
+      "phase": "Phase 3: Search, Session State & Version History",
+      "connection": {
+        "description": "The Search Indexer Kafka consumer re-indexes document plain text in Elasticsearch after each snapshot checkpoint. Async from the editing path — search results lag by ~5 seconds.",
+        "edgeId": "guided_edge_kafka_search",
+        "label": "Search Indexer Consumer",
+        "targetNodeId": "guided_search",
+        "connectionType": "message-queue",
+        "sourceNodeId": "guided_message_broker"
+      },
+      "id": "app_001_step_24",
+      "stepNumber": 24,
+      "type": "add_connection",
+      "title": "Connect Kafka → Document Search (Search Indexer)",
+      "content": "## Search Indexer Consumer — Async Index Updates\n\nThe Search Indexer is a separate Kafka consumer that keeps Elasticsearch in sync with document changes. After every snapshot boundary (50 ops), it:\n1. Fetches the new snapshot JSON from S3\n2. Extracts the plain-text `content_text` field\n3. Calls the Elasticsearch Bulk API to update the index\n\n**Search lag:** Indexing happens at snapshot frequency, so search results lag real-time by ~5 seconds. This is acceptable — users do not expect search to reflect the last keystroke."
+    },
+    {
+      "phase": "Phase 4: Permissions, Caching & Observability",
+      "component": {
+        "highlightReason": "Every document access triggers a permission check here. Redis session caching keeps latency under 10ms even at high concurrency.",
+        "componentType": "auth-service",
+        "label": "Auth & Permission Service",
+        "position": {
+          "x": 300,
+          "y": 500
+        },
+        "nodeId": "guided_auth_service",
+        "properties": {
+          "description": "OAuth/JWT identity and document authorization for reads, edits, shares, rollback, exports and attachment URLs. ACL-versioned cached roles fail closed on uncertain permission. Public links carry explicit viewer/editor scope, expiry and revocation; current ACL is checked before content or edit acceptance.",
+          "mfa": false,
+          "sessions": "redis",
+          "componentName": "Auth & Permission Service",
+          "oauth": true,
+          "tokenTTL": 60,
+          "revocation": "Increment ACL version, publish invalidation, close revoked sessions, and check current ACL before accepting edits",
+          "permissionChecks": "Authorize reads, edits, share changes, rollback, exports and attachment URLs; fail closed when ACL cannot be confirmed",
+          "linkSharing": "Scoped expiring/revocable share tokens; never treat possession of an object-storage URL as permanent permission"
+        }
+      },
+      "id": "app_001_step_26",
+      "stepNumber": 26,
+      "type": "add_component",
+      "title": "Add the Auth & Permission Service",
+      "content": "## Auth Service — Identity & Access Control\n\nHandles OAuth 2.0 login flows and is the single source of truth for permission checks. Every document open and API request calls this service to verify the requesting user's role.\n\nRedis session store means token lookups never hit PostgreSQL on the hot path.",
+      "requirementIds": [
+        "req-b9b1d9a7b793399e"
+      ]
+    },
+    {
+      "phase": "Phase 4: Permissions, Caching & Observability",
+      "component": {
+        "highlightReason": "Caches rendered document snapshots for read-heavy inactive documents. 90%+ of read traffic served without touching Postgres or S3.",
+        "componentType": "cache",
+        "label": "Document Response Cache (Redis)",
+        "position": {
+          "x": 1050,
+          "y": 560
+        },
+        "nodeId": "guided_cache_response",
+        "properties": {
+          "replication": true,
+          "eviction": "lru",
+          "encryption": true,
+          "engine": "redis",
+          "inMemory": true,
+          "description": "<p>Caches the full rendered document response (JSON snapshot) for documents not currently in an active editing session. Eliminates Postgres metadata queries and S3 content fetches for the majority of read traffic.</p><p><strong>Invalidation:</strong> The cache invalidation consumer listens on the Kafka <code>doc.published</code> topic and issues a Redis <code>DEL</code> on the affected key within ~1 second of a new snapshot being written. Cache misses fall back to Postgres + S3 and re-populate on next read.</p><p><strong>TTL fallback:</strong> Even without invalidation, a 5-minute TTL ensures stale reads self-heal. For collaborative documents under active edit, the key is never populated — clients always connect via WebSocket.</p>",
+          "cacheStrategy": "cache-aside",
+          "persistence": false,
+          "maxMemoryGB": 32,
+          "componentName": "Document Response Cache (Redis)",
+          "ttl": 300,
+          "clusterMode": false,
+          "invalidation": "Version and ACL-aware cache keys; transactional-outbox events invalidate document updates, deletions and revocations"
+        }
+      },
+      "id": "app_001_step_28",
+      "stepNumber": 28,
+      "type": "add_component",
+      "title": "Add the Document Response Cache",
+      "content": "## Redis — Read Cache for Inactive Documents\n\nFor documents not in an active editing session, this cache serves the rendered JSON snapshot directly — bypassing Postgres and S3 entirely. Cache hit rate target: 90%+ for read-only traffic.",
+      "requirementIds": [
+        "req-36df71cf6e4fc4ed"
+      ]
+    },
+    {
+      "phase": "Phase 4: Permissions, Caching & Observability",
+      "component": {
+        "highlightReason": "Tracks OT pipeline health: transform latency, WebSocket disconnect rate, Kafka consumer lag, and document session count.",
+        "componentType": "monitoring",
+        "label": "Monitoring (Prometheus + Grafana)",
+        "position": {
+          "x": 1050,
+          "y": 720
+        },
+        "nodeId": "guided_monitoring",
+        "properties": {
+          "alerts": true,
+          "description": "<p>Prometheus scrapes all services including custom OT metrics from the Collaboration Server: <code>ops_applied_per_second</code>, <code>transform_latency_p99</code>, <code>websocket_disconnect_rate</code>, and <code>active_document_sessions</code>.</p><p><strong>Kafka consumer lag alert:</strong> The Kafka consumer lag exporter feeds Prometheus. If the <code>document_writer</code> consumer lag exceeds 10,000 messages, PagerDuty fires — version history snapshots are falling behind and data loss risk is elevated.</p><p><strong>Grafana dashboards:</strong> (1) Collaboration health — session count, OT throughput, disconnect rate; (2) Search freshness — indexer lag, query latency; (3) Storage — S3 write rate, snapshot size growth.</p>",
+          "stack": "Prometheus + Grafana",
+          "componentName": "Monitoring (Prometheus + Grafana)",
+          "metrics": true,
+          "retention": 30
+        }
+      },
+      "id": "app_001_step_30",
+      "stepNumber": 30,
+      "type": "add_component",
+      "title": "Add Monitoring",
+      "content": "## Monitoring — OT Pipeline Observability\n\nPrometheus scrapes every service including the Collaboration Server's custom OT metrics, the Kafka consumer lag exporters, and all standard infrastructure metrics. Grafana dashboards surface the dashboards by concern: collaboration health, search freshness, and storage saturation."
+    },
+    {
+      "phase": "Phase 4: Permissions, Caching & Observability",
+      "connection": {
+        "description": "Document Writer consumer reads operations from Kafka and writes periodic JSON snapshots to the object store (S3).",
+        "edgeId": "guided_edge_docwriter_s3",
+        "label": "Write Snapshots",
+        "targetNodeId": "guided_file_storage",
+        "connectionType": "data-flow",
+        "sourceNodeId": "guided_message_broker"
+      },
+      "id": "app_001_step_31",
+      "stepNumber": 31,
+      "type": "add_connection",
+      "title": "Connect Document Writer → Object Store (S3)",
+      "content": "## Document Writer writes periodic snapshots to the object store\n\nThe Document Writer Kafka consumer assembles batches of operations and writes full document snapshots to the object store. This connection represents the async snapshot write path to S3."
+    },
+    {
+      "phase": "Phase 4: Permissions, Caching & Observability",
+      "connection": {
+        "description": "API Gateway calls the Auth & Permission Service to validate tokens and fetch cached (user,document) permission roles.",
+        "edgeId": "guided_edge_gw_auth",
+        "label": "Auth Check",
+        "targetNodeId": "guided_auth_service",
+        "connectionType": "http",
+        "sourceNodeId": "guided_api_gateway"
+      },
+      "id": "app_001_step_32",
+      "stepNumber": 32,
+      "type": "add_connection",
+      "title": "Connect API Gateway → Auth & Permission Service",
+      "content": "## Auth check path\n\nAPI Gateway validates JWTs and delegates permission checks to the Auth & Permission Service. This connection shows the auth verification and session lookup path."
+    },
+    {
+      "phase": "Phase 4: Permissions, Caching & Observability",
+      "connection": {
+        "description": "After snapshot publication, a consumer reads the Kafka event and issues a Redis DEL to invalidate the rendered document cache.",
+        "edgeId": "guided_edge_kafka_cache",
+        "label": "Cache Invalidation Events",
+        "targetNodeId": "guided_cache_response",
+        "connectionType": "message-queue",
+        "sourceNodeId": "guided_message_broker"
+      },
+      "id": "app_001_step_33",
+      "stepNumber": 33,
+      "type": "add_connection",
+      "title": "Connect Kafka → Document Response Cache (Invalidation)",
+      "content": "## Cache invalidation path\n\nWhen the Document Writer publishes a new snapshot, a cache invalidation consumer deletes the Redis key for the affected document. This connection represents that event-driven invalidation flow."
+    },
+    {
+      "phase": "Phase 4: Permissions, Caching & Observability",
+      "connection": {
+        "description": "Prometheus scrapes the Collaboration Server's metrics endpoint; monitoring aggregates OT pipeline observability metrics.",
+        "edgeId": "guided_edge_collab_monitoring",
+        "label": "OT Metrics",
+        "targetNodeId": "guided_monitoring",
+        "connectionType": "data-flow",
+        "sourceNodeId": "guided_collab_server"
+      },
+      "id": "app_001_step_34",
+      "stepNumber": 34,
+      "type": "add_connection",
+      "title": "Connect Collaboration Server → Monitoring",
+      "content": "## Metrics scraping\n\nPrometheus scrapes the Collaboration Server's /metrics endpoint and collects OT-specific metrics (ops_applied_per_second, transform_latency_p99, websocket_disconnect_rate)."
+    },
+    {
+      "phase": "Phase 5: Hardening & Remediation",
+      "id": "app_001_step_35",
+      "stepNumber": 35,
+      "type": "update_component",
+      "title": "PostgreSQL High Availability & Failover",
+      "content": "## PostgreSQL High Availability & Failover\n\nImplement a production HA strategy for PostgreSQL:\n\n- Option A: Managed RDS/Aurora with Multi-AZ and automated failover (recommended fast path).\n- Option B: Self-managed Patroni + etcd/consul with synchronous replicas and automated leader election.\n- Configure WAL archiving to S3 and enable PITR; test point-in-time restores regularly.\n- Define RPO/RTO targets and run failover drills monthly; automate failover runbooks and health checks.\n\nChoose **Use this design decision** to record this strategy on the component. Reading this lesson does not apply it.",
+      "componentUpdate": {
+        "nodeId": "guided_database",
+        "properties": {
+          "highAvailability": "Multi-AZ Postgres with monitored automated failover; writes reconnect with bounded retries"
+        }
+      }
+    },
+    {
+      "phase": "Phase 5: Hardening & Remediation",
+      "id": "app_001_step_36",
+      "stepNumber": 36,
+      "type": "update_component",
+      "title": "Backup & Disaster Recovery",
+      "content": "## Backup & Disaster Recovery\n\n- Define RTO/RPO for critical data and classify backups accordingly.\n- Enable daily cross-region snapshots and S3 replication for snapshots.\n- Automate restore tests (quarterly) and maintain runbooks for full-system recovery.\n- Ensure Kafka topic retention and durable storage for operation logs; plan for catastrophic restores from snapshots.\n\nChoose **Use this design decision** to record this strategy on the component. Reading this lesson does not apply it.",
+      "componentUpdate": {
+        "nodeId": "guided_database",
+        "properties": {
+          "disasterRecovery": "WAL archiving and point-in-time restore plus immutable snapshot backups; test restores and state recovery runbooks"
+        }
+      }
+    },
+    {
+      "phase": "Phase 5: Hardening & Remediation",
+      "id": "app_001_step_37",
+      "stepNumber": 37,
+      "type": "update_component",
+      "title": "Encryption at Rest & Key Management",
+      "content": "## Encryption at Rest & Key Management\n\n- Enable SSE-KMS for S3 and KMS-managed encryption for RDS/EBS.\n- Use envelope encryption for attachments and large blobs; rotate keys on schedule.\n- Use a central secrets manager (HashiCorp Vault or cloud KMS) and automate key rotation and access auditing.\n- Enforce mTLS between backend services for sensitive interactions.\n\nChoose **Use this design decision** to record this strategy on the component. Reading this lesson does not apply it.",
+      "componentUpdate": {
+        "nodeId": "guided_file_storage",
+        "properties": {
+          "encryption": "TLS in transit and managed-key encryption at rest; least-privilege access and secrets rotation"
+        }
+      }
+    },
+    {
+      "phase": "Phase 5: Hardening & Remediation",
+      "id": "app_001_step_38",
+      "stepNumber": 38,
+      "type": "update_component",
+      "title": "Redis Topology & Caching Optimization",
+      "content": "## Redis Topology & Caching Optimization\n\n- Separate Redis clusters by role: session cache, presence/pubsub, response cache, op buffer.\n- Use appropriate eviction policies per role: volatile-lru for session/presence; noeviction or persistent AOF for op buffers.\n- Enable Redis Cluster or sharding for scale; monitor keyspace and tune TTLs and warm caches for hot documents.\n- Add persistence for op buffers where data loss is unacceptable and test failover.\n\nChoose **Use this design decision** to record this strategy on the component. Reading this lesson does not apply it.",
+      "componentUpdate": {
+        "nodeId": "guided_cache_session",
+        "properties": {
+          "topology": "Sharded replaceable sessions/presence; persistent operation log remains separate; monitor hot keys and failover"
+        }
+      }
+    },
+    {
+      "phase": "Phase 5: Hardening & Remediation",
+      "id": "app_001_step_39",
+      "stepNumber": 39,
+      "type": "update_component",
+      "title": "API Gateway Rate-Limiting & Edge Protection",
+      "content": "## API Gateway Rate-Limiting & Edge Protection\n\n- Implement token-bucket per API key and per-IP rate limits at the gateway (Kong/NGINX/cloud gateway).\n- Add abuse detection and automated throttling for noisy clients.\n- Enable WAF rules and DDoS protection at edge; log and alert on throttling events.\n- Provide quotas and backoff guidance to clients.\n\nChoose **Use this design decision** to record this strategy on the component. Reading this lesson does not apply it.",
+      "componentUpdate": {
+        "nodeId": "guided_api_gateway",
+        "properties": {
+          "rateLimiting": "Per-user and per-IP token buckets, edit-size validation and bounded WebSocket ingress; retry/backoff guidance"
+        }
+      }
+    },
+    {
+      "phase": "Phase 5: Hardening & Remediation",
+      "id": "app_001_step_40",
+      "stepNumber": 40,
+      "type": "update_component",
+      "title": "CDN for Static Assets",
+      "content": "## CDN for Static Assets\n\n- Serve static assets from S3 with a CDN (CloudFront/Cloudflare/Fastly) and add long Cache-Control headers with versioned filenames.\n- Monitor cache hit ratios and tune TTLs; invalidate programmatically at deploy time.\n- Offload large exports to pre-signed URLs and edge caching.\n\nChoose **Use this design decision** to record this strategy on the component. Reading this lesson does not apply it.",
+      "componentUpdate": {
+        "nodeId": "guided_file_storage",
+        "properties": {
+          "staticAssetDelivery": "CDN for public static assets only; private documents/attachments keep authorization and short-lived access"
+        }
+      }
+    },
+    {
+      "phase": "Phase 5: Hardening & Remediation",
+      "id": "app_001_step_41",
+      "stepNumber": 41,
+      "type": "update_component",
+      "title": "Observability & SLOs",
+      "content": "## Observability & SLOs\n\n- Instrument services with OpenTelemetry and enable distributed tracing (Jaeger/Tempo).\n- Define SLIs and SLOs for end-to-end document open latency, edit latency, availability, and error-rate.\n- Add synthetic checks and runbooks; configure burn-rate alerting and on-call playbooks.\n- Ensure monitoring integrates with PagerDuty and includes runbook links in alerts.\n\nChoose **Use this design decision** to record this strategy on the component. Reading this lesson does not apply it.",
+      "componentUpdate": {
+        "nodeId": "guided_monitoring",
+        "properties": {
+          "tracing": "Correlate document/session/operation IDs across gateway, OT owner, Kafka and snapshot/search writers",
+          "logging": "Structured failure/replay/revocation logs without document contents",
+          "alerts": "Alert on edit-ack latency, operation-log lag, reconnect failures, snapshot failures and permission-invalidations; attach recovery runbooks"
+        }
+      },
+      "requirementIds": [
+        "req-36df71cf6e4fc4ed"
+      ]
+    }
+  ]
+}

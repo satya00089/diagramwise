@@ -4,6 +4,7 @@ import ThemeSwitcher from "../components/ThemeSwitcher";
 import { useTheme } from "../hooks/useTheme";
 import AnimatedTextarea from "../components/shared/AnimatedTextarea";
 import SEO from "../components/SEO";
+import type { Requirement, RequirementSpec } from "../types/requirements";
 import {
   HiDocumentText,
   HiLightBulb,
@@ -15,20 +16,29 @@ import {
   MdLabel,
   MdAccessTime,
   MdCheckCircle,
+  MdClose,
   MdWarning,
 } from "react-icons/md";
 
-type ArrayField = "requirements" | "constraints" | "hints" | "tags";
+type ArrayField =
+  | "requirements"
+  | "nonFunctionalRequirements"
+  | "assumptions"
+  | "constraints"
+  | "hints"
+  | "tags";
 
 interface ArrayItemWithId {
   id: string;
   value: string;
+  scope?: Requirement["scope"];
 }
 
 const CreateProblem: React.FC = () => {
   useTheme();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const itemIdCounter = useRef(0);
 
   const generateItemId = () => {
@@ -36,17 +46,21 @@ const CreateProblem: React.FC = () => {
     return `item-${Date.now()}-${itemIdCounter.current}`;
   };
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState(() => ({
     title: "",
     description: "",
     difficulty: "Medium" as "Easy" | "Medium" | "Hard",
     category: "Web Application",
     estimatedTime: "30 minutes",
     requirements: [{ id: generateItemId(), value: "" }] as ArrayItemWithId[],
+    nonFunctionalRequirements: [
+      { id: generateItemId(), value: "" },
+    ] as ArrayItemWithId[],
+    assumptions: [{ id: generateItemId(), value: "" }] as ArrayItemWithId[],
     constraints: [{ id: generateItemId(), value: "" }] as ArrayItemWithId[],
     hints: [{ id: generateItemId(), value: "" }] as ArrayItemWithId[],
     tags: [{ id: generateItemId(), value: "" }] as ArrayItemWithId[],
-  });
+  }));
 
   const handleInputChange = (
     field: keyof typeof formData,
@@ -73,6 +87,19 @@ const CreateProblem: React.FC = () => {
     }));
   };
 
+  const handleRequirementScopeChange = (
+    field: "requirements" | "nonFunctionalRequirements",
+    id: string,
+    scope: Requirement["scope"],
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: prev[field].map((item) =>
+        item.id === id ? { ...item, scope } : item,
+      ),
+    }));
+  };
+
   const removeArrayItem = (field: ArrayField, id: string) => {
     const newArray = formData[field].filter((item) => item.id !== id);
     setFormData((prev) => ({
@@ -83,7 +110,44 @@ const CreateProblem: React.FC = () => {
   };
 
   const handleSubmit = () => {
+    if (isSubmitting || !formData.title.trim() || !formData.description.trim())
+      return;
     setIsSubmitting(true);
+    setSaveError(null);
+
+    const plainText = (value: string) => {
+      const document = new DOMParser().parseFromString(value, "text/html");
+      document
+        .querySelectorAll("script, style")
+        .forEach((element) => element.remove());
+      document
+        .querySelectorAll("p, li, div, h1, h2, h3, br")
+        .forEach((element) => element.prepend(" "));
+      return document.body.textContent?.replace(/\s+/g, " ").trim() ?? "";
+    };
+    const toRequirements = (
+      items: ArrayItemWithId[],
+      prefix: string,
+    ): Requirement[] =>
+      items
+        .map((item) => ({
+          id: `${prefix}-${item.id}`,
+          text: plainText(item.value),
+          scope: item.scope ?? "core",
+        }))
+        .filter((item) => item.text.length > 0);
+    const requirementSpec: RequirementSpec = {
+      schemaVersion: 1,
+      revision: `local-${Date.now()}`,
+      functional: toRequirements(formData.requirements, "functional"),
+      nonFunctional: toRequirements(
+        formData.nonFunctionalRequirements,
+        "non-functional",
+      ),
+      assumptions: formData.assumptions
+        .map((item) => item.value.trim())
+        .filter(Boolean),
+    };
 
     // Create a custom problem object
     const customProblem = {
@@ -93,9 +157,13 @@ const CreateProblem: React.FC = () => {
       difficulty: formData.difficulty,
       category: formData.category,
       estimated_time: formData.estimatedTime,
-      requirements: formData.requirements
-        .map((r) => r.value)
-        .filter((v) => v.trim() !== ""),
+      requirementSpec,
+      requirements: [
+        ...formData.requirements,
+        ...formData.nonFunctionalRequirements,
+      ]
+        .filter((item) => plainText(item.value).length > 0)
+        .map((item) => item.value),
       constraints: formData.constraints
         .map((c) => c.value)
         .filter((v) => v.trim() !== ""),
@@ -104,10 +172,18 @@ const CreateProblem: React.FC = () => {
     };
 
     // Store in localStorage for now (you can replace with API call)
-    localStorage.setItem(
-      `custom-problem-${customProblem.id}`,
-      JSON.stringify(customProblem),
-    );
+    try {
+      localStorage.setItem(
+        `custom-problem-${customProblem.id}`,
+        JSON.stringify(customProblem),
+      );
+    } catch {
+      setSaveError(
+        "Could not save this problem in your browser. Your entries are still here; free up browser storage and try again.",
+      );
+      setIsSubmitting(false);
+      return;
+    }
 
     // Small delay for better UX
     setTimeout(() => {
@@ -277,54 +353,119 @@ const CreateProblem: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Requirements */}
-                <div className="rounded-2xl bg-[var(--surface)]/50">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="text-sm font-bold text-theme flex items-center gap-2">
-                      <MdCheckCircle className="w-5 h-5 text-[var(--brand)]" />{" "}
-                      Requirements
+                {(
+                  [
+                    {
+                      field: "requirements",
+                      title: "Functional requirements",
+                      description: "What the system must let users do.",
+                      placeholder: "e.g., Create and share a document",
+                    },
+                    {
+                      field: "nonFunctionalRequirements",
+                      title: "Non-functional requirements",
+                      description:
+                        "The qualities the design must support, such as scale, latency, or availability.",
+                      placeholder: "e.g., Support 100,000 concurrent editors",
+                    },
+                  ] as const
+                ).map(({ field, title, description, placeholder }) => (
+                  <section
+                    key={field}
+                    className="rounded-2xl bg-[var(--surface)]/50"
+                    aria-labelledby={`${field}-heading`}
+                  >
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+                      <h2
+                        id={`${field}-heading`}
+                        className="text-sm font-bold text-theme flex items-center gap-2"
+                      >
+                        <MdCheckCircle
+                          className="w-5 h-5 text-[var(--brand)]"
+                          aria-hidden="true"
+                        />
+                        {title}
+                      </h2>
+                      <button
+                        type="button"
+                        disabled={isSubmitting}
+                        onClick={() => addArrayItem(field)}
+                        aria-label={`Add ${title.toLowerCase().replace(/s$/, "")}`}
+                        className="px-4 py-2 text-sm text-white bg-[var(--brand)] rounded-lg hover:shadow-sm transition-all duration-200 cursor-pointer font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)] disabled:opacity-50"
+                      >
+                        + Add
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => addArrayItem("requirements")}
-                      className="px-4 py-2 text-sm text-white bg-[var(--brand)] rounded-lg hover:shadow-sm transition-all duration-200 cursor-pointer font-semibold"
-                    >
-                      + Add
-                    </button>
-                  </div>
-                  {formData.requirements.map((item, index) => (
-                    <div key={item.id} className="mb-4">
-                      <div className="flex gap-3 items-start">
-                        <div className="flex-1">
-                          <AnimatedTextarea
-                            id={`requirement-${item.id}`}
-                            label={`Requirement ${index + 1}`}
-                            value={item.value}
-                            onChange={(value) =>
-                              handleArrayItemChange(
-                                "requirements",
-                                item.id,
-                                value,
-                              )
-                            }
-                            placeholder="Enter a requirement (supports rich text formatting)"
-                          />
+                    <p className="mb-4 text-sm leading-relaxed text-muted">
+                      {description} Core requirements are evaluated; extensions
+                      add optional scope.
+                    </p>
+                    {formData[field].map((item, index) => (
+                      <div key={item.id} className="mb-4">
+                        <div className="flex gap-3 items-start">
+                          <div className="min-w-0 flex-1">
+                            <AnimatedTextarea
+                              id={`${field}-${item.id}`}
+                              label={`${title.replace(/s$/, "")} ${index + 1}`}
+                              value={item.value}
+                              disabled={isSubmitting}
+                              onChange={(value) =>
+                                handleArrayItemChange(field, item.id, value)
+                              }
+                              placeholder={placeholder}
+                            />
+                            <div className="mt-2 flex flex-wrap items-center gap-3">
+                              <label
+                                htmlFor={`scope-${item.id}`}
+                                className="text-sm font-semibold text-theme"
+                              >
+                                Scope
+                              </label>
+                              <div className="select-field-wrapper">
+                                <select
+                                  id={`scope-${item.id}`}
+                                  value={item.scope ?? "core"}
+                                  disabled={isSubmitting}
+                                  onChange={(event) =>
+                                    handleRequirementScopeChange(
+                                      field,
+                                      item.id,
+                                      event.target.value === "extension"
+                                        ? "extension"
+                                        : "core",
+                                    )
+                                  }
+                                  className="select-field"
+                                  aria-label={`Scope for ${title.toLowerCase().replace(/s$/, "")} ${index + 1}`}
+                                >
+                                  <option value="core">Core requirement</option>
+                                  <option value="extension">
+                                    Optional extension
+                                  </option>
+                                </select>
+                                <HiChevronDown
+                                  aria-hidden="true"
+                                  className="select-field-icon"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          {formData[field].length > 1 && (
+                            <button
+                              type="button"
+                              disabled={isSubmitting}
+                              onClick={() => removeArrayItem(field, item.id)}
+                              aria-label={`Remove ${title.toLowerCase().replace(/s$/, "")} ${index + 1}`}
+                              className="px-4 py-3 text-red-500 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer font-bold text-lg mt-8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]"
+                            >
+                              <MdClose className="h-5 w-5" aria-hidden="true" />
+                            </button>
+                          )}
                         </div>
-                        {formData.requirements.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              removeArrayItem("requirements", item.id)
-                            }
-                            className="px-4 py-3 text-red-500 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer font-bold text-lg mt-8"
-                          >
-                            ✕
-                          </button>
-                        )}
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </section>
+                ))}
 
                 {/* Constraints */}
                 <div className="rounded-2xl bg-[var(--surface)]/50">
@@ -369,6 +510,65 @@ const CreateProblem: React.FC = () => {
                     </div>
                   ))}
                 </div>
+
+                <section
+                  className="rounded-2xl bg-[var(--surface)]/50"
+                  aria-labelledby="assumptions-heading"
+                >
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <h2
+                      id="assumptions-heading"
+                      className="text-sm font-bold text-theme"
+                    >
+                      Assumptions
+                    </h2>
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => addArrayItem("assumptions")}
+                      aria-label="Add assumption"
+                      className="px-4 py-2 text-sm text-white bg-[var(--brand)] rounded-lg hover:shadow-sm transition-all duration-200 cursor-pointer font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)] disabled:opacity-50"
+                    >
+                      + Add
+                    </button>
+                  </div>
+                  <p className="mb-4 text-sm leading-relaxed text-muted">
+                    Reference choices learners may replace with a justified
+                    assumption.
+                  </p>
+                  {formData.assumptions.map((item, index) => (
+                    <div key={item.id} className="flex gap-3 mb-3">
+                      <input
+                        type="text"
+                        value={item.value}
+                        disabled={isSubmitting}
+                        onChange={(event) =>
+                          handleArrayItemChange(
+                            "assumptions",
+                            item.id,
+                            event.target.value,
+                          )
+                        }
+                        aria-label={`Assumption ${index + 1}`}
+                        placeholder="e.g., Most documents are read more often than edited"
+                        className="min-w-0 flex-1 px-4 py-3 border-2 border-[var(--theme)]/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent bg-[var(--bg)] text-theme transition-all duration-300"
+                      />
+                      {formData.assumptions.length > 1 && (
+                        <button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() =>
+                            removeArrayItem("assumptions", item.id)
+                          }
+                          aria-label={`Remove assumption ${index + 1}`}
+                          className="px-4 py-3 text-red-500 hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]"
+                        >
+                          <MdClose className="h-5 w-5" aria-hidden="true" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </section>
 
                 {/* Hints */}
                 <div className="rounded-2xl bg-[var(--surface)]/50">
@@ -491,12 +691,22 @@ const CreateProblem: React.FC = () => {
                 </div>
 
                 {/* Action Buttons */}
+                {saveError && (
+                  <p
+                    role="alert"
+                    className="text-sm leading-relaxed text-red-600 dark:text-red-300"
+                  >
+                    {saveError}
+                  </p>
+                )}
                 <div className="flex flex-col sm:flex-row gap-4 pt-8 border-t-2 border-[var(--theme)]/10">
                   <button
                     type="button"
                     onClick={handleSubmit}
                     disabled={
-                      !formData.title || !formData.description || isSubmitting
+                      !formData.title.trim() ||
+                      !formData.description.trim() ||
+                      isSubmitting
                     }
                     className="flex-1 px-8 py-4 bg-[var(--brand)] text-white font-semibold rounded-lg hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer flex items-center justify-center gap-3"
                   >

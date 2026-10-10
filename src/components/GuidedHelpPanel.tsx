@@ -91,6 +91,20 @@ const STEP_TYPE_CONFIG: Record<
       </svg>
     ),
   },
+  update_component: {
+    label: "Design decision",
+    color: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+    icon: (
+      <svg
+        className="w-3 h-3"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path d="m5 12 4 4L19 6" strokeWidth={2} />
+      </svg>
+    ),
+  },
   scale_trigger: {
     label: "Scale Trigger",
     color: "bg-orange-500/15 text-orange-400 border-orange-500/30",
@@ -118,11 +132,12 @@ export type ApplyStepPayload = GuidedStep;
 
 type GuidedHelpPanelProps = {
   problemId: string | null;
-  onApplyStep: (step: ApplyStepPayload) => void;
+  onApplyStep: (step: ApplyStepPayload) => boolean | void;
   /** Optional controlled current step index (0-based) */
   currentStep?: number;
   /** Called when the user changes the current step */
   onStepChange?: (index: number) => void;
+  appliedGuidedStepIds?: string[];
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -146,6 +161,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
   onApplyStep,
   currentStep: currentStepProp,
   onStepChange,
+  appliedGuidedStepIds,
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const walkthrough = useSelector((state: RootState) =>
@@ -165,6 +181,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
 
   const [currentStep, setCurrentStep] = useState<number>(currentStepProp ?? 0); // 0-indexed
   const [appliedSteps, setAppliedSteps] = useState<Set<string>>(new Set());
+  const [applyError, setApplyError] = useState<string | null>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
   // Sync controlled prop -> local state when provided
@@ -211,19 +228,44 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
 
   const handleApply = useCallback(() => {
     if (!step) return;
+    if (onApplyStep?.(step) === false) {
+      setApplyError(
+        "Add the components from the earlier steps before applying this decision or connection.",
+      );
+      return;
+    }
+    setApplyError(null);
     setAppliedSteps((prev) => new Set(prev).add(step.id));
-    onApplyStep(step);
   }, [step, onApplyStep]);
 
+  useEffect(() => setApplyError(null), [currentStep, problemId]);
+
+  const effectiveAppliedSteps = appliedGuidedStepIds
+    ? new Set(appliedGuidedStepIds)
+    : appliedSteps;
   const canApply =
     step &&
-    (step.type === "add_component" || step.type === "add_connection") &&
-    !appliedSteps.has(step.id);
+    (step.type === "add_component" ||
+      step.type === "add_connection" ||
+      !!step.componentUpdate) &&
+    !effectiveAppliedSteps.has(step.id);
 
   const alreadyApplied =
     step &&
-    (step.type === "add_component" || step.type === "add_connection") &&
-    appliedSteps.has(step.id);
+    (step.type === "add_component" ||
+      step.type === "add_connection" ||
+      !!step.componentUpdate) &&
+    effectiveAppliedSteps.has(step.id);
+  const actionSteps =
+    walkthrough?.steps.filter(
+      (item) =>
+        item.type === "add_component" ||
+        item.type === "add_connection" ||
+        !!item.componentUpdate,
+    ) ?? [];
+  const completedActions = actionSteps.filter((item) =>
+    effectiveAppliedSteps.has(item.id),
+  ).length;
 
   // ── Render states ──────────────────────────────────────────────────────────
 
@@ -342,10 +384,10 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
       <div className="flex-shrink-0 px-3 pb-2">
         <div className="flex items-center justify-between mb-1">
           <span className="text-[10px] text-muted/50">
-            Step {step.stepNumber} of {total}
+            Lesson step {step.stepNumber} of {total}
           </span>
           <span className="text-[10px] text-muted/50">
-            {Math.round((step.stepNumber / total) * 100)}%
+            {completedActions} / {actionSteps.length} design actions applied
           </span>
         </div>
         <div className="h-1 bg-[var(--border)] rounded-full overflow-hidden">
@@ -516,6 +558,35 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
         )}
 
         {/* Decision point card */}
+        {step.componentUpdate && (
+          <section
+            className="space-y-2 border-t border-[var(--border)] pt-3"
+            aria-label="Decision to apply"
+          >
+            <h4 className="text-xs font-semibold text-foreground">
+              What this changes
+            </h4>
+            <p className="text-xs text-muted">
+              These decisions are recorded on the component only when you apply
+              them.
+            </p>
+            {Object.entries(step.componentUpdate.properties).map(
+              ([key, value]) => (
+                <NodePropertyDisplay
+                  key={key}
+                  propertyKey={key}
+                  value={
+                    typeof value === "string" ||
+                    typeof value === "number" ||
+                    typeof value === "boolean"
+                      ? value
+                      : (JSON.stringify(value) ?? "")
+                  }
+                />
+              ),
+            )}
+          </section>
+        )}
         {step.type === "decision_point" && step.decision && (
           <div className="space-y-2">
             {/* Question */}
@@ -623,6 +694,11 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
 
       {/* Footer — Apply + Navigation */}
       <div className="flex-shrink-0 border-t border-[var(--border)] px-3 py-2.5 space-y-2">
+        {applyError && (
+          <p role="status" className="text-xs leading-relaxed text-foreground">
+            {applyError}
+          </p>
+        )}
         {/* Apply button */}
         {(canApply || alreadyApplied) && (
           <button
@@ -667,7 +743,9 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
                 </svg>
                 {step?.type === "add_component"
                   ? "Apply to Canvas"
-                  : "Draw Connection"}
+                  : step?.type === "add_connection"
+                    ? "Draw Connection"
+                    : "Use this design decision"}
               </>
             )}
           </button>

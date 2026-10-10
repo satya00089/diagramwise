@@ -6,6 +6,8 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { useDebouncedSave } from "../hooks/useDebouncedSave";
+import { useCompactViewport } from "../hooks/useCompactViewport";
 
 // State management
 import { useSelector } from "react-redux";
@@ -44,10 +46,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 // Type definitions
 import type {
   SystemDesignProblem,
-  SystemDesignSolution,
   ValidationResult,
-  ComponentType,
-  ConnectionType,
   GuidedStep,
   DesignReasoningContext,
   InterviewExchange,
@@ -55,6 +54,7 @@ import type {
   AssessmentHistoryEntry,
 } from "../types/systemDesign";
 import type { SavedDiagram, Collaborator } from "../types/auth";
+import type { RequirementSpec } from "../types/requirements";
 import type { ComponentProperty, CanvasComponent } from "../types/canvas";
 import type { CanvasContext, UserIntent } from "../types/chatBot";
 
@@ -80,6 +80,8 @@ import {
 // Services and utilities
 import { apiService } from "../services/api";
 import assessSolution, { generateInterviewQuestions } from "../utils/assessor";
+import { buildProvidedReasoningContext, buildSystemDesignSolution } from "../utils/designReviewContext";
+import { applyGuidedStep, getAppliedGuidedSteps } from "../utils/guidedWalkthrough";
 import { getCollaboratorColor } from "../utils/collaborationUtils";
 import {
   exportAsJSON,
@@ -94,7 +96,6 @@ import {
 import { COMPONENTS } from "../config/components";
 import {
   FLOW_PURPOSE_PLACEHOLDER,
-  getPurposeValue,
   normalizeComponentProperties,
   normalizeEdgeDataPurpose,
   normalizeNodeDataPurpose,
@@ -265,62 +266,6 @@ const getCanvasNodeType = (node: Node): string => {
     : node.type || "component";
 };
 
-const buildProvidedReasoningContext = (
-  problem: SystemDesignProblem | null,
-  nodes: Node[],
-  edges: Edge[],
-): DesignReasoningContext => {
-  const problemRequirements = problem
-    ? [
-        problem.description,
-        ...problem.requirements.map((requirement) => `- ${requirement}`),
-        ...problem.constraints.map((constraint) => `Constraint: ${constraint}`),
-      ]
-        .filter(Boolean)
-        .join("\n")
-    : "No problem brief is attached. Use the design title and canvas as the starting context.";
-
-  const typeCounts = new Map<string, number>();
-  nodes.forEach((node) => {
-    const type = getCanvasNodeType(node);
-    typeCounts.set(type, (typeCounts.get(type) ?? 0) + 1);
-  });
-  const componentSummary = Array.from(typeCounts.entries())
-    .map(([type, count]) => `${count} ${type}${count === 1 ? "" : "s"}`)
-    .join(", ");
-
-  const connectedNodeIds = new Set(
-    edges.flatMap((edge) => [edge.source, edge.target]),
-  );
-  const disconnectedCount = nodes.filter(
-    (node) => !connectedNodeIds.has(node.id),
-  ).length;
-
-  const unstatedTarget = (target: string) =>
-    `No explicit ${target} target is specified in the brief. State an assumption when asked during the interview.`;
-
-  const canvasDescription = componentSummary || `${nodes.length} components`;
-  const disconnectedLabel =
-    disconnectedCount === 1 ? "component is" : "components are";
-  return {
-    requirements: problemRequirements,
-    scaleAssumptions: unstatedTarget("scale"),
-    expectedTraffic: unstatedTarget("traffic profile"),
-    readWriteRatio: unstatedTarget("read/write ratio"),
-    latencyGoals: unstatedTarget("latency"),
-    availabilityTarget: unstatedTarget("availability"),
-    consistencyRequirements: unstatedTarget("consistency"),
-    technologyChoices: nodes.length
-      ? `The current canvas contains ${canvasDescription}. Explain why these choices fit the problem.`
-      : "No components are on the canvas yet.",
-    tradeoffs:
-      "Trade-offs are not pre-filled. Explain them during the interview.",
-    unresolvedRisks:
-      disconnectedCount > 0
-        ? `${disconnectedCount} ${disconnectedLabel} currently disconnected. Review its role and failure paths.`
-        : "Review failure paths, security, and operational risks during the interview.",
-  };
-};
 
 function getAssessmentScoreBand(score: number) {
   if (score >= 80) return "strong";
@@ -379,76 +324,6 @@ const getProvidedCanvasStats = (
   };
 };
 
-const buildSystemDesignSolution = (
-  nodes: Node[],
-  edges: Edge[],
-  reasoningContext: DesignReasoningContext,
-): SystemDesignSolution => ({
-  components: nodes.map((n) => {
-    const dataObj = (n.data ?? {}) as unknown;
-    const maybeType = (dataObj as { type?: unknown }).type;
-    let inferredType: ComponentType;
-    if (typeof maybeType === "string")
-      inferredType = maybeType as ComponentType;
-    else if (typeof n.type === "string") inferredType = n.type as ComponentType;
-    else inferredType = "microservice";
-
-    const maybeLabel = (dataObj as { label?: unknown }).label;
-    const label = typeof maybeLabel === "string" ? maybeLabel : String(n.id);
-    const allProperties =
-      dataObj && typeof dataObj === "object"
-        ? ({ ...dataObj } as Record<string, unknown>)
-        : {};
-    // Icons and subtitles are presentation details; the remaining node data
-    // is useful architectural context for the reviewer.
-    const customProperties = { ...allProperties };
-    delete customProperties.icon;
-    delete customProperties.subtitle;
-
-    return {
-      id: n.id,
-      type: inferredType,
-      label,
-      position: { x: n.position?.x ?? 0, y: n.position?.y ?? 0 },
-      properties: {
-        ...customProperties,
-        nodeData: {
-          label,
-          icon: (dataObj as { icon?: unknown }).icon,
-          subtitle: (dataObj as { subtitle?: unknown }).subtitle,
-        },
-      },
-    };
-  }),
-  connections: edges.map((e) => {
-    const dataObj = (e.data ?? {}) as unknown;
-    const maybeType = (dataObj as { type?: unknown }).type;
-    const inferredType: ConnectionType =
-      typeof maybeType === "string"
-        ? (maybeType as ConnectionType)
-        : "api-call";
-    const maybeLabel = (dataObj as { label?: unknown }).label;
-    const maybePurpose = getPurposeValue(dataObj as Record<string, unknown>);
-
-    return {
-      id: e.id ?? `${e.source}-${e.target}`,
-      source: e.source,
-      target: e.target,
-      type: inferredType,
-      label: typeof maybeLabel === "string" ? maybeLabel : undefined,
-      description:
-        typeof maybePurpose === "string" && maybePurpose.trim()
-          ? maybePurpose
-          : undefined,
-      properties: dataObj as Record<string, unknown>,
-    };
-  }),
-  // Generated context is sent separately so the assessor can distinguish
-  // product facts from a candidate's explanation.
-  explanation: "",
-  keyPoints: [],
-  reasoningContext,
-});
 
 // Create a wrapper component for CustomNode with onCopy prop
 const NodeWithCopy = React.memo(
@@ -681,6 +556,12 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   const { isNewToPage, markPageVisited } = useOnboarding();
   const tourPageId =
     idFromUrl === "free" ? "design_studio" : "problem_playground";
+  const compactViewport = useCompactViewport();
+  const [mobileSidebar, setMobileSidebar] = useState<"palette" | "inspector" | null>(
+    idFromUrl === "free" ? null : "inspector",
+  );
+  const toggleMobilePalette = useCallback((open: boolean) => setMobileSidebar(open ? "palette" : null), []);
+  const toggleMobileInspector = useCallback((open: boolean) => setMobileSidebar(open ? "inspector" : null), []);
   const { startTour } = useTour(tourPageId);
 
   // Toast notifications
@@ -702,7 +583,6 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   // Track the last successfully persisted problem attempt content so timer
   // updates can skip redundant requests.
   const lastSavedAttemptContentRef = useRef<string | null>(null);
-  const attemptSaveInFlightRef = useRef(false);
   const firstComponentTrackedRef = useRef(false);
   const firstConnectionTrackedRef = useRef(false);
   const challengeStartedTrackedRef = useRef(false);
@@ -715,6 +595,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
   // State for problem data
   const [problem, setProblem] = useState<SystemDesignProblem | null>(null);
+  const [attemptRequirementContext, setAttemptRequirementContext] = useState<{
+    problemId: string;
+    spec?: RequirementSpec;
+  }>();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -1314,6 +1198,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             edges: Edge[];
             elapsedTime: number;
             lastAssessment?: ValidationResult;
+            lastAssessmentCheck?: ValidationResult;
+            problemRequirementSpec?: RequirementSpec;
             reasoningContext?: DesignReasoningContext;
             interviewSession?: InterviewSession;
             assessmentCount?: number;
@@ -1323,6 +1209,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           } | null;
 
           if (attempt) {
+            setAttemptRequirementContext({ problemId: idFromUrl, spec: attempt.problemRequirementSpec });
             persistedAssessmentCountRef.current = attempt.assessmentCount ?? 0;
             setAssessmentHistory(attempt.assessmentHistory ?? []);
             setAddressedFindingIds(attempt.addressedFindingIds ?? []);
@@ -1357,8 +1244,14 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             // Restore last assessment if available
             if (attempt.lastAssessment) {
               setAssessment(attempt.lastAssessment);
+              if (attempt.lastAssessment.source !== "rule_based" && attempt.lastAssessment.scoreAvailable !== false) {
+                setLastSuccessfulAssessment(attempt.lastAssessment);
+              }
               // Automatically open Assessment tab to show the assessment
               setActiveRightTab("assessment");
+            }
+            if (attempt.lastAssessmentCheck?.scoreAvailable === false || attempt.lastAssessmentCheck?.source === "rule_based") {
+              setAssessment(attempt.lastAssessmentCheck);
             }
 
             if (attempt.interviewSession) {
@@ -1391,9 +1284,18 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     setAutoSaveEnabled(isAuthenticated && idFromUrl !== undefined);
   }, [isAuthenticated, idFromUrl]);
 
-  // Auto-save effect - save canvas state when diagram content changes
-  useEffect(() => {
-    if (!autoSaveEnabled || nodes.length === 0) return;
+  // Persist content changes, not the one-second clock. The save callback reads
+  // the latest elapsed time without repeatedly cancelling the pending debounce.
+  const autoSaveContentKey = useMemo(
+    () => JSON.stringify({
+      nodes, edges, idFromUrl, currentDiagramId, userId: user?.id, problem,
+      userIntent, reasoningContext, interviewSession, addressedFindingIds, remixOrigin,
+    }),
+    [nodes, edges, idFromUrl, currentDiagramId, user?.id, problem, userIntent,
+      reasoningContext, interviewSession, addressedFindingIds, remixOrigin],
+  );
+  useDebouncedSave(autoSaveEnabled, autoSaveContentKey, async () => {
+    if (nodes.length === 0 && lastSavedAttemptContentRef.current === null) return;
 
     const isProblemAttempt = Boolean(idFromUrl && idFromUrl !== "free");
     const attemptContentSnapshot =
@@ -1411,12 +1313,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           })
         : null;
 
-    // Keep elapsedTime as a dependency/trigger, but do not save when the
-    // persisted attempt content has not changed since the last successful save.
+    // Timer ticks alone never enqueue writes of unchanged content.
     if (
       isProblemAttempt &&
-      (attemptSaveInFlightRef.current ||
-        attemptContentSnapshot === lastSavedAttemptContentRef.current)
+      attemptContentSnapshot === lastSavedAttemptContentRef.current
     ) {
       return;
     }
@@ -1483,32 +1383,25 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         } else {
           // For Problem-solving: save progress to database
           if (!idFromUrl || !attemptContentSnapshot) return; // Safety check
-          if (
-            attemptSaveInFlightRef.current ||
-            attemptContentSnapshot === lastSavedAttemptContentRef.current
-          ) {
+          if (attemptContentSnapshot === lastSavedAttemptContentRef.current) {
             return;
           }
 
-          attemptSaveInFlightRef.current = true;
-          try {
-            await apiService.saveAttempt({
-              problemId: idFromUrl,
-              title: problem?.title || "Unknown Problem",
-              difficulty: problem?.difficulty,
-              category: problem?.category,
-              nodes,
-              edges,
-              elapsedTime,
-              reasoningContext,
-              interviewSession,
-              addressedFindingIds,
-              // Don't save assessment in auto-save, only when assessment is explicitly run
-            });
-            lastSavedAttemptContentRef.current = attemptContentSnapshot;
-          } finally {
-            attemptSaveInFlightRef.current = false;
-          }
+          await apiService.saveAttempt({
+            problemId: idFromUrl,
+            title: problem?.title || "Unknown Problem",
+            difficulty: problem?.difficulty,
+            category: problem?.category,
+            nodes,
+            edges,
+            elapsedTime,
+            reasoningContext,
+            interviewSession,
+            addressedFindingIds,
+            problemRequirementSpec: problem?.requirementSpec,
+            // Don't save assessment in auto-save, only when assessment is explicitly run
+          });
+          lastSavedAttemptContentRef.current = attemptContentSnapshot;
         }
 
         setAutoSaveStatus("saved");
@@ -1540,26 +1433,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       }
     };
 
-    // Debounce auto-save to avoid too many requests
-    const timeoutId = setTimeout(autoSave, 3000); // Save after 3 seconds of inactivity
-
-    return () => clearTimeout(timeoutId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    nodes,
-    edges,
-    autoSaveEnabled,
-    idFromUrl,
-    currentDiagramId,
-    user?.id,
-    elapsedTime,
-    problem,
-    userIntent,
-    reasoningContext,
-    interviewSession,
-    addressedFindingIds,
-    remixOrigin,
-  ]);
+    await autoSave();
+  });
 
   // Apply undo/redo state to React Flow
   useEffect(() => {
@@ -1711,6 +1586,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   const [assessment, setAssessment] = React.useState<ValidationResult | null>(
     null,
   );
+  const [lastSuccessfulAssessment, setLastSuccessfulAssessment] = useState<ValidationResult | null>(null);
   const [isAssessing, setIsAssessing] = useState(false);
   const [isPreparingInterview, setIsPreparingInterview] = useState(false);
   const [showAssessmentInterview, setShowAssessmentInterview] = useState(false);
@@ -1728,7 +1604,6 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     if (isAssessing) return;
 
     setIsAssessing(true);
-    setAssessment(null);
     const solution = buildSystemDesignSolution(nodes, edges, reasoningContext);
 
     try {
@@ -1739,14 +1614,16 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         currentQuestionIndex: 0,
       };
       setAssessment(res);
+      if (res.scoreAvailable !== false && res.source === "ai") setLastSuccessfulAssessment(res);
       trackEvent("assessment_completed", {
         problem_id: idFromUrl === "free" ? undefined : idFromUrl,
         assessment_source: res.source ?? "unknown",
-        score_band: getAssessmentScoreBand(res.score),
+        score_band: res.scoreAvailable === false ? "unavailable" : getAssessmentScoreBand(res.score),
         finding_count: res.feedback?.length ?? 0,
       });
       setInterviewSession(followUpSession);
       setActiveRightTab("assessment");
+      if (compactViewport) setMobileSidebar("inspector");
 
       // Save assessment to database for problem-solving mode
       if (idFromUrl && idFromUrl !== "free" && isAuthenticated) {
@@ -1760,6 +1637,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             edges,
             elapsedTime,
             lastAssessment: res,
+            problemRequirementSpec: problem?.requirementSpec,
             reasoningContext,
             interviewSession: followUpSession,
             addressedFindingIds,
@@ -1801,6 +1679,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       setAssessment({
         isValid: false,
         score: 0,
+        scoreAvailable: false,
+        verdict: "unavailable",
         feedback: [
           {
             type: "error",
@@ -2326,24 +2206,18 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           dispatch(fetchFullComponent(comp.componentType));
         }
 
-        setNodes((nds) => [...nds, newNode]);
-      } else if (step.type === "add_connection" && step.connection) {
-        const conn = step.connection;
-        const newEdge = {
-          id: conn.edgeId,
-          source: conn.sourceNodeId,
-          sourceHandle: "right",
-          target: conn.targetNodeId,
-          targetHandle: "left",
-          type: "customEdge",
-          data: {
-            label: conn.label,
-            purpose: conn?.description ?? "",
-            hasLabel: true,
-          },
-        } as Edge;
-        setEdges((eds) => addEdge(newEdge, eds));
+        const next = applyGuidedStep({ nodes: nodesRef.current, edges: edgesRef.current }, step, () => newNode);
+        setNodes(next.nodes);
+        return true;
+      } else if (step.type === "add_connection" || step.componentUpdate) {
+        const canvas = { nodes: nodesRef.current, edges: edgesRef.current };
+        const next = applyGuidedStep(canvas, step);
+        if (next === canvas) return false;
+        setNodes(next.nodes);
+        setEdges(next.edges);
+        return true;
       }
+      return false;
     },
     [setNodes, setEdges, allMinimalComponents, dispatch, fullComponentsCache],
   );
@@ -2352,6 +2226,11 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   const [activeRightTab, setActiveRightTab] = useState<
     "details" | "inspector" | "assessment" | "guide"
   >("details");
+  useEffect(() => {
+    if (compactViewport && (activeRightTab === "assessment" || activeRightTab === "inspector")) {
+      setMobileSidebar("inspector");
+    }
+  }, [compactViewport, activeRightTab]);
   // Preserve guided walkthrough step index across tab switches
   const [guideCurrentStep, setGuideCurrentStep] = useState<number>(0);
   // Clear canvas confirmation state
@@ -4913,7 +4792,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         {/* Header */}
         <header className="bg-[var(--brand)] shadow-md overflow-visible">
           <div className="max-w-full mx-auto px-4 sm:px-6 overflow-visible">
-            <div className="flex items-center justify-between h-14 overflow-visible">
+            <div className="flex flex-wrap items-center justify-between min-h-14 gap-y-2 py-2 md:h-14 md:flex-nowrap md:py-0 overflow-visible">
               {/* Left side - Logo and Title */}
               <div className="flex items-center space-x-4">
                 <Link
@@ -4975,7 +4854,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex w-full flex-wrap items-center justify-between gap-2 md:w-auto md:flex-nowrap md:justify-start">
                 {/* Design Management Buttons (only for free mode and authenticated users) */}
                 {idFromUrl === "free" && (
                   <div className="hidden sm:flex items-center gap-2 border-white/20">
@@ -5447,6 +5326,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           )}
           {!isSharedView && (
             <ComponentPalette
+              compact={compactViewport}
+              compactOpen={mobileSidebar === "palette"}
+              onCompactOpenChange={toggleMobilePalette}
               components={COMPONENTS}
               onAdd={addNodeFromPalette}
             />
@@ -5489,6 +5371,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             })}
           </DiagramCanvas>
           <InspectorPanel
+            compact={compactViewport}
+            compactOpen={mobileSidebar === "inspector"}
+            onCompactOpenChange={toggleMobileInspector}
             problem={problem}
             activeTab={activeRightTab}
             setActiveTab={setActiveRightTab}
@@ -5507,6 +5392,18 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             handleSave={handleSave}
             assessmentResult={assessment}
             assessmentHistory={assessmentHistory}
+            previousAiAssessment={lastSuccessfulAssessment ?? undefined}
+            reviewedRequirementSpec={attemptRequirementContext?.problemId === problem?.id ? attemptRequirementContext.spec : undefined}
+            appliedGuidedStepIds={getAppliedGuidedSteps({ nodes, edges })}
+            onSelectEvidence={(evidenceId) => {
+              const node = nodes.find((item) => item.id === evidenceId);
+              if (node) {
+                setNodes((current) => current.map((item) => ({ ...item, selected: item.id === evidenceId })));
+                fitView({ nodes: [node], padding: 0.5, duration: 200 });
+              } else {
+                setEdges((current) => current.map((item) => ({ ...item, selected: item.id === evidenceId })));
+              }
+            }}
             addressedFindingIds={addressedFindingIds}
             onToggleFindingAddressed={toggleFindingAddressed}
             onReviewAgain={() => {
