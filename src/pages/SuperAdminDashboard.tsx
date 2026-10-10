@@ -6,11 +6,11 @@ import {
   MdKeyboardArrowDown,
   MdFeedback,
   MdInsights,
-  MdLockOutline,
   MdRefresh,
   MdShield,
   MdTrendingUp,
 } from "react-icons/md";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { apiService } from "../services/api";
 import type { AdminAccessUser, AdminFeedbackItem, AdminOverview } from "../types/admin";
@@ -30,23 +30,6 @@ const formatDate = (value: string) =>
 
 const formatFeedbackCategory = (value: string) =>
   value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-
-const AccessDenied = ({ authenticated }: { authenticated: boolean }) => (
-  <main className="admin-page admin-page--centered">
-    <section className="admin-denied" aria-labelledby="admin-denied-title">
-      <div className="admin-denied__icon" aria-hidden="true">
-        <MdLockOutline />
-      </div>
-      <p className="admin-eyebrow">Private workspace</p>
-      <h1 id="admin-denied-title">This console is reserved for super-admins.</h1>
-      <p>
-        {authenticated
-          ? "Your account is signed in, but it has not been granted access to this workspace."
-          : "Sign in with an account that has been granted access to this workspace."}
-      </p>
-    </section>
-  </main>
-);
 
 const LoadingOverview = () => (
   <main className="admin-page" aria-busy="true">
@@ -149,9 +132,9 @@ const SuperAdminDashboard = () => {
     [overview],
   );
 
-  if (authLoading) return <LoadingOverview />;
+  if (authLoading) return null;
   if (!isAuthenticated || !user?.isSuperAdmin) {
-    return <AccessDenied authenticated={isAuthenticated} />;
+    return <Navigate to="/" replace />;
   }
   if (loading && !overview) return <LoadingOverview />;
 
