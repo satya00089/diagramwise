@@ -7,26 +7,44 @@ import {
   MdFeedback,
   MdInsights,
   MdRefresh,
-  MdShield,
   MdTrendingUp,
 } from "react-icons/md";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { apiService } from "../services/api";
 import SelectDropdown from "../components/shared/SelectDropdown";
-import type { AdminAccessUser, AdminFeedbackItem, AdminOverview } from "../types/admin";
+import type {
+  AdminAccessUser,
+  AdminFeedbackItem,
+  AdminOverview,
+} from "../types/admin";
 import "./SuperAdminDashboard.css";
 
 const STATUS_OPTIONS = ["new", "reviewing", "resolved"] as const;
-const STATUS_LABELS = STATUS_OPTIONS.map((status) => status[0].toUpperCase() + status.slice(1));
+const STATUS_LABELS = STATUS_OPTIONS.map(
+  (status) => status[0].toUpperCase() + status.slice(1),
+);
 const DATE_RANGE_OPTIONS = ["Last 7 days", "Last 30 days", "Last 90 days"];
 const SAFE_FEEDBACK_HTML = {
-  ALLOWED_TAGS: ["a", "blockquote", "br", "em", "i", "li", "ol", "p", "strong", "u", "ul"],
+  ALLOWED_TAGS: [
+    "a",
+    "blockquote",
+    "br",
+    "em",
+    "i",
+    "li",
+    "ol",
+    "p",
+    "strong",
+    "u",
+    "ul",
+  ],
   ALLOWED_ATTR: ["href", "title"],
 };
 type FeedbackStatus = (typeof STATUS_OPTIONS)[number];
 
-const formatNumber = (value: number) => new Intl.NumberFormat("en-IN").format(value);
+const formatNumber = (value: number) =>
+  new Intl.NumberFormat("en-IN").format(value);
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat("en-IN", {
@@ -81,7 +99,9 @@ const FeedbackRow = ({
       : item.contactEmail
         ? "Feedback visitor"
         : "Anonymous visitor");
-  const avatarInitials = getFeedbackInitials(item.authorName || authorEmail || authorName);
+  const avatarInitials = getFeedbackInitials(
+    item.authorName || authorEmail || authorName,
+  );
 
   return (
     <article className="admin-feedback-row">
@@ -130,8 +150,9 @@ const FeedbackRow = ({
       <SelectDropdown
         id={`admin-feedback-status-${item.id}`}
         value={
-          STATUS_LABELS[STATUS_OPTIONS.indexOf(item.status as FeedbackStatus)] ??
-          STATUS_LABELS[0]
+          STATUS_LABELS[
+            STATUS_OPTIONS.indexOf(item.status as FeedbackStatus)
+          ] ?? STATUS_LABELS[0]
         }
         options={STATUS_LABELS}
         onChange={(label) =>
@@ -166,7 +187,11 @@ const SuperAdminDashboard = () => {
       setOverview(overviewResponse);
       setAccess(accessResponse);
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "Unable to load the private console.");
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Unable to load the private console.",
+      );
     } finally {
       setLoading(false);
     }
@@ -179,10 +204,17 @@ const SuperAdminDashboard = () => {
   }, [authLoading, isAuthenticated, user?.isSuperAdmin, loadDashboard]);
 
   const maximumDailyEvents = useMemo(
-    () => Math.max(...(overview?.analytics.daily.map((day) => day.events) ?? [1]), 1),
+    () =>
+      Math.max(
+        ...(overview?.analytics.daily.map((day) => day.events) ?? [1]),
+        1,
+      ),
     [overview],
   );
-  const chartLabelInterval = Math.max(1, Math.ceil((overview?.analytics.daily.length ?? 0) / 6));
+  const chartLabelInterval = Math.max(
+    1,
+    Math.ceil((overview?.analytics.daily.length ?? 0) / 6),
+  );
 
   if (authLoading) return null;
   if (!isAuthenticated || !user?.isSuperAdmin) {
@@ -190,9 +222,15 @@ const SuperAdminDashboard = () => {
   }
   if (loading && !overview) return <LoadingOverview />;
 
-  const handleStatusChange = async (item: AdminFeedbackItem, status: FeedbackStatus) => {
+  const handleStatusChange = async (
+    item: AdminFeedbackItem,
+    status: FeedbackStatus,
+  ) => {
     try {
-      const updated = await apiService.updateAdminFeedbackStatus(item.id, status);
+      const updated = await apiService.updateAdminFeedbackStatus(
+        item.id,
+        status,
+      );
       setOverview((current) =>
         current
           ? {
@@ -211,7 +249,11 @@ const SuperAdminDashboard = () => {
           : current,
       );
     } catch (statusError) {
-      setError(statusError instanceof Error ? statusError.message : "Unable to update feedback.");
+      setError(
+        statusError instanceof Error
+          ? statusError.message
+          : "Unable to update feedback.",
+      );
     }
   };
 
@@ -222,10 +264,17 @@ const SuperAdminDashboard = () => {
     setAccessError(null);
     try {
       const granted = await apiService.grantAdminAccess(email.trim());
-      setAccess((current) => [...current.filter((item) => item.id !== granted.id), granted]);
+      setAccess((current) => [
+        ...current.filter((item) => item.id !== granted.id),
+        granted,
+      ]);
       setEmail("");
     } catch (grantError) {
-      setAccessError(grantError instanceof Error ? grantError.message : "Unable to grant access.");
+      setAccessError(
+        grantError instanceof Error
+          ? grantError.message
+          : "Unable to grant access.",
+      );
     } finally {
       setAccessSaving(false);
     }
@@ -237,7 +286,11 @@ const SuperAdminDashboard = () => {
       await apiService.revokeAdminAccess(admin.id);
       setAccess((current) => current.filter((item) => item.id !== admin.id));
     } catch (revokeError) {
-      setAccessError(revokeError instanceof Error ? revokeError.message : "Unable to revoke access.");
+      setAccessError(
+        revokeError instanceof Error
+          ? revokeError.message
+          : "Unable to revoke access.",
+      );
     }
   };
 
@@ -246,10 +299,9 @@ const SuperAdminDashboard = () => {
       <div className="admin-shell">
         <header className="admin-header">
           <div>
-            <p className="admin-eyebrow">Private operations console</p>
-            <h1>Product health, in one view.</h1>
+            <h1>Product health</h1>
             <p className="admin-header__description">
-              See what people are using, where they get stuck, and what needs your attention next.
+              Usage, feedback, and access controls for Diagramwise.
             </p>
           </div>
           <div className="admin-header__actions">
@@ -257,25 +309,41 @@ const SuperAdminDashboard = () => {
               id="admin-analytics-range"
               value={`Last ${days} days`}
               options={DATE_RANGE_OPTIONS}
-              onChange={(range) => setDays(Number(range.match(/\d+/)?.[0] ?? 30))}
+              onChange={(range) =>
+                setDays(Number(range.match(/\d+/)?.[0] ?? 30))
+              }
               aria-label="Analytics date range"
               className="admin-range-select"
             />
-            <button className="admin-icon-button" type="button" onClick={() => void loadDashboard()} aria-label="Refresh dashboard">
+            <button
+              className="admin-icon-button"
+              type="button"
+              onClick={() => void loadDashboard()}
+              aria-label="Refresh dashboard"
+            >
               <MdRefresh aria-hidden="true" />
             </button>
           </div>
         </header>
 
-        {error && <div className="admin-alert" role="alert">{error}</div>}
+        {error && (
+          <div className="admin-alert" role="alert">
+            {error}
+          </div>
+        )}
 
         {overview && (
           <>
-            <section className="admin-stat-strip" aria-label="Product health summary">
+            <section
+              className="admin-stat-strip"
+              aria-label="Product health summary"
+            >
               <div className="admin-stat">
                 <span>Tracked events</span>
                 <strong>{formatNumber(overview.analytics.totalEvents)}</strong>
-                <small>{overview.fromDate} – {overview.toDate}</small>
+                <small>
+                  {overview.fromDate} – {overview.toDate}
+                </small>
               </div>
               <div className="admin-stat">
                 <span>Page views</span>
@@ -289,26 +357,44 @@ const SuperAdminDashboard = () => {
               </div>
               <div className="admin-stat">
                 <span>Average rating</span>
-                <strong>{overview.feedback.averageRating?.toFixed(1) ?? "—"}<small className="admin-stat__suffix"> / 5</small></strong>
+                <strong>
+                  {overview.feedback.averageRating?.toFixed(1) ?? "—"}
+                  <small className="admin-stat__suffix"> / 5</small>
+                </strong>
                 <small>From submitted ratings</small>
               </div>
               <div className="admin-stat">
                 <span>Helpful rate</span>
-                <strong>{overview.feedback.helpfulRate != null ? `${Math.round(overview.feedback.helpfulRate * 100)}%` : "—"}</strong>
+                <strong>
+                  {overview.feedback.helpfulRate != null
+                    ? `${Math.round(overview.feedback.helpfulRate * 100)}%`
+                    : "—"}
+                </strong>
                 <small>Assessment and global feedback</small>
               </div>
             </section>
 
             <div className="admin-overview-grid">
-              <section className="admin-panel admin-panel--chart" aria-labelledby="usage-title">
+              <section
+                className="admin-panel admin-panel--chart"
+                aria-labelledby="usage-title"
+              >
                 <div className="admin-panel__header">
                   <div>
-                    <p className="admin-eyebrow">First-party events</p>
-                    <h2 id="usage-title">Usage is being collected, not guessed.</h2>
+                    <h2 id="usage-title">Product activity</h2>
+                    <p className="admin-panel__description">
+                      First-party events captured across the product.
+                    </p>
                   </div>
-                  <MdInsights className="admin-panel__icon" aria-hidden="true" />
+                  <MdInsights
+                    className="admin-panel__icon"
+                    aria-hidden="true"
+                  />
                 </div>
-                <div className="admin-chart-scroll" aria-label="Scrollable daily usage chart">
+                <div
+                  className="admin-chart-scroll"
+                  aria-label="Scrollable daily usage chart"
+                >
                   {overview.analytics.daily.length ? (
                     <div
                       className="admin-chart"
@@ -320,30 +406,46 @@ const SuperAdminDashboard = () => {
                       }}
                     >
                       {overview.analytics.daily.map((day, index) => {
-                        const dateLabel = new Date(`${day.date}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-                        const showDate = index % chartLabelInterval === 0 || index === overview.analytics.daily.length - 1;
+                        const dateLabel = new Date(
+                          `${day.date}T00:00:00`,
+                        ).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                        });
+                        const showDate =
+                          index % chartLabelInterval === 0 ||
+                          index === overview.analytics.daily.length - 1;
                         return (
                           <div className="admin-chart__column" key={day.date}>
                             <div className="admin-chart__bar-wrap">
                               <div
                                 className="admin-chart__bar"
-                                style={{ height: `${Math.max((day.events / maximumDailyEvents) * 100, day.events ? 7 : 2)}%` }}
+                                style={{
+                                  height: `${Math.max((day.events / maximumDailyEvents) * 100, day.events ? 7 : 2)}%`,
+                                }}
                                 title={`${day.events} events on ${day.date}`}
                               />
                             </div>
-                            <span aria-hidden="true">{showDate ? dateLabel : ""}</span>
+                            <span aria-hidden="true">
+                              {showDate ? dateLabel : ""}
+                            </span>
                           </div>
                         );
                       })}
                     </div>
-                  ) : <p className="admin-empty">No events were recorded in this period.</p>}
+                  ) : (
+                    <p className="admin-empty">
+                      No events were recorded in this period.
+                    </p>
+                  )}
                 </div>
                 <div className="admin-list-split">
                   <div>
                     <h3>Top events</h3>
                     {overview.analytics.topEvents.slice(0, 5).map((event) => (
                       <div className="admin-ranking" key={event.name}>
-                        <span>{event.name}</span><strong>{formatNumber(event.count)}</strong>
+                        <span>{event.name}</span>
+                        <strong>{formatNumber(event.count)}</strong>
                       </div>
                     ))}
                   </div>
@@ -351,30 +453,45 @@ const SuperAdminDashboard = () => {
                     <h3>Top routes</h3>
                     {overview.analytics.topRoutes.slice(0, 5).map((route) => (
                       <div className="admin-ranking" key={route.route}>
-                        <span>{route.route}</span><strong>{formatNumber(route.count)}</strong>
+                        <span>{route.route}</span>
+                        <strong>{formatNumber(route.count)}</strong>
                       </div>
                     ))}
                   </div>
                 </div>
               </section>
 
-              <section className="admin-panel admin-panel--acquisition" aria-labelledby="acquisition-title">
+              <section
+                className="admin-panel admin-panel--acquisition"
+                aria-labelledby="acquisition-title"
+              >
                 <div className="admin-panel__header">
                   <div>
-                    <p className="admin-eyebrow">Acquisition layer</p>
                     <h2 id="acquisition-title">Google Analytics</h2>
+                    <p className="admin-panel__description">
+                      Acquisition and conversion data from GA4.
+                    </p>
                   </div>
-                  <MdTrendingUp className="admin-panel__icon" aria-hidden="true" />
+                  <MdTrendingUp
+                    className="admin-panel__icon"
+                    aria-hidden="true"
+                  />
                 </div>
                 <div className="admin-connection-state">
-                  <div className="admin-connection-state__icon"><MdShield aria-hidden="true" /></div>
+                  <span className="admin-connection-state__badge">
+                    Not connected
+                  </span>
                   <div>
-                    <strong>Connection not configured yet</strong>
-                    <p>When GA4 access is added, acquisition sources and landing-page conversion will appear here without mixing with product events.</p>
+                    <strong>Connect a GA4 property</strong>
+                    <p>
+                      Acquisition sources and landing-page conversions will
+                      appear here, separate from first-party product events.
+                    </p>
                   </div>
                 </div>
                 <div className="admin-source-note">
-                  <MdCheckCircle aria-hidden="true" /> Product usage above comes from Diagramwise’s privacy-preserving first-party pipeline.
+                  <MdCheckCircle aria-hidden="true" /> Product usage above comes
+                  from Diagramwise’s privacy-preserving first-party pipeline.
                 </div>
               </section>
             </div>
@@ -382,37 +499,80 @@ const SuperAdminDashboard = () => {
             <section className="admin-panel" aria-labelledby="feedback-title">
               <div className="admin-panel__header">
                 <div>
-                  <p className="admin-eyebrow">User voice</p>
-                  <h2 id="feedback-title">Feedback that needs a response.</h2>
+                  <h2 id="feedback-title">Recent feedback</h2>
+                  <p className="admin-panel__description">
+                    Review what people shared and update its status.
+                  </p>
                 </div>
-                <MdFeedback className="admin-panel__icon" aria-hidden="true" />
+                <div className="admin-panel__header-actions">
+                  <span className="admin-panel__count">
+                    {overview.feedback.new} new
+                  </span>
+                  <MdFeedback
+                    className="admin-panel__icon"
+                    aria-hidden="true"
+                  />
+                </div>
               </div>
               <div className="admin-feedback-list">
-                {overview.recentFeedback.length ? overview.recentFeedback.map((item) => (
-                  <FeedbackRow item={item} onStatusChange={handleStatusChange} key={item.id} />
-                )) : <p className="admin-empty">No feedback has arrived in this period.</p>}
+                {overview.recentFeedback.length ? (
+                  overview.recentFeedback.map((item) => (
+                    <FeedbackRow
+                      item={item}
+                      onStatusChange={handleStatusChange}
+                      key={item.id}
+                    />
+                  ))
+                ) : (
+                  <p className="admin-empty">
+                    No feedback has arrived in this period.
+                  </p>
+                )}
               </div>
             </section>
 
-            <section className="admin-panel admin-access-panel" aria-labelledby="access-title">
+            <section
+              className="admin-panel admin-access-panel"
+              aria-labelledby="access-title"
+            >
               <div className="admin-panel__header">
                 <div>
-                  <p className="admin-eyebrow">Permission boundary</p>
-                  <h2 id="access-title">Who can see this console?</h2>
+                  <h2 id="access-title">Admin access</h2>
+                  <p className="admin-panel__description">
+                    Choose who can open this private console.
+                  </p>
                 </div>
-                <MdAdminPanelSettings className="admin-panel__icon" aria-hidden="true" />
+                <MdAdminPanelSettings
+                  className="admin-panel__icon"
+                  aria-hidden="true"
+                />
               </div>
               <p className="admin-access-panel__description">
-                Admin access is stored with each user account. Add a verified Diagramwise account when you want someone else to help review product health.
+                Admin access is stored with each user account. Add a verified
+                Diagramwise account when you want someone else to help review
+                product health.
               </p>
               <form className="admin-grant-form" onSubmit={handleGrantAccess}>
                 <label htmlFor="admin-email">Grant super-admin access</label>
                 <div>
-                  <input id="admin-email" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="person@example.com" required />
-                  <button type="submit" disabled={accessSaving}>{accessSaving ? "Granting…" : "Grant access"}</button>
+                  <input
+                    id="admin-email"
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="person@example.com"
+                    required
+                  />
+                  <button type="submit" disabled={accessSaving}>
+                    {accessSaving ? "Granting…" : "Grant access"}
+                  </button>
                 </div>
               </form>
-              {accessError && <p className="admin-inline-error" role="alert">{accessError}</p>}
+              {accessError && (
+                <p className="admin-inline-error" role="alert">
+                  {accessError}
+                </p>
+              )}
               <div className="admin-access-list">
                 {access.map((admin) => (
                   <div className="admin-access-row" key={admin.id}>
@@ -422,7 +582,14 @@ const SuperAdminDashboard = () => {
                     </div>
                     <div className="admin-access-row__actions">
                       <span>Super-admin</span>
-                      {admin.id !== user?.id && <button type="button" onClick={() => void handleRevokeAccess(admin)}>Revoke</button>}
+                      {admin.id !== user?.id && (
+                        <button
+                          type="button"
+                          onClick={() => void handleRevokeAccess(admin)}
+                        >
+                          Revoke
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
