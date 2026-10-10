@@ -38,6 +38,15 @@ const formatDate = (value: string) =>
 const formatFeedbackCategory = (value: string) =>
   value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 
+const getFeedbackInitials = (value: string) =>
+  value
+    .trim()
+    .split(/[\s@._+-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("") || "A";
+
 const LoadingOverview = () => (
   <main className="admin-page" aria-busy="true">
     <div className="admin-shell">
@@ -62,41 +71,78 @@ const FeedbackRow = ({
 }: {
   item: AdminFeedbackItem;
   onStatusChange: (item: AdminFeedbackItem, status: FeedbackStatus) => void;
-}) => (
-  <article className="admin-feedback-row">
-    <div className="admin-feedback-row__main">
-      <div className="admin-feedback-row__meta">
-        <span className={`admin-status admin-status--${item.status}`}>
-          {item.status}
-        </span>
-        <span>{formatFeedbackCategory(item.category)}</span>
-        <span>{formatDate(item.createdAt)}</span>
+}) => {
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const authorEmail = item.authorEmail || item.contactEmail;
+  const authorName =
+    item.authorName?.trim() ||
+    (item.authorEmail
+      ? "Diagramwise user"
+      : item.contactEmail
+        ? "Feedback visitor"
+        : "Anonymous visitor");
+  const avatarInitials = getFeedbackInitials(item.authorName || authorEmail || authorName);
+
+  return (
+    <article className="admin-feedback-row">
+      <div className="admin-feedback-row__main">
+        <div className="admin-feedback-row__author">
+          <div className="admin-feedback-row__avatar" aria-hidden="true">
+            <span>{avatarInitials}</span>
+            {item.authorPicture && !avatarFailed && (
+              <img
+                src={item.authorPicture}
+                alt=""
+                referrerPolicy="no-referrer"
+                onError={() => setAvatarFailed(true)}
+              />
+            )}
+          </div>
+          <div className="admin-feedback-row__identity">
+            <strong>{authorName}</strong>
+            {authorEmail && <span>{authorEmail}</span>}
+          </div>
+        </div>
+        <div className="admin-feedback-row__meta">
+          <span className={`admin-status admin-status--${item.status}`}>
+            {item.status}
+          </span>
+          <span>{formatFeedbackCategory(item.category)}</span>
+          <span>{formatDate(item.createdAt)}</span>
+        </div>
+        <div
+          className="admin-feedback-row__message"
+          dangerouslySetInnerHTML={{
+            __html: item.message
+              ? DOMPurify.sanitize(item.message, SAFE_FEEDBACK_HTML)
+              : "Rating-only feedback",
+          }}
+        />
+        <div className="admin-feedback-row__context">
+          {item.route && <span>{item.route}</span>}
+          {item.rating != null && <span>{"★".repeat(item.rating)}</span>}
+          {item.helpful != null && (
+            <span>{item.helpful ? "Helpful" : "Not helpful"}</span>
+          )}
+          {item.contactEmail && <span>{item.contactEmail}</span>}
+        </div>
       </div>
-      <div
-        className="admin-feedback-row__message"
-        dangerouslySetInnerHTML={{
-          __html: item.message
-            ? DOMPurify.sanitize(item.message, SAFE_FEEDBACK_HTML)
-            : "Rating-only feedback",
-        }}
+      <SelectDropdown
+        id={`admin-feedback-status-${item.id}`}
+        value={
+          STATUS_LABELS[STATUS_OPTIONS.indexOf(item.status as FeedbackStatus)] ??
+          STATUS_LABELS[0]
+        }
+        options={STATUS_LABELS}
+        onChange={(label) =>
+          onStatusChange(item, label.toLowerCase() as FeedbackStatus)
+        }
+        aria-label={`Update status for feedback from ${formatDate(item.createdAt)}`}
+        className="admin-status-select"
       />
-      <div className="admin-feedback-row__context">
-        {item.route && <span>{item.route}</span>}
-        {item.rating != null && <span>{"★".repeat(item.rating)}</span>}
-        {item.helpful != null && <span>{item.helpful ? "Helpful" : "Not helpful"}</span>}
-        {item.contactEmail && <span>{item.contactEmail}</span>}
-      </div>
-    </div>
-    <SelectDropdown
-      id={`admin-feedback-status-${item.id}`}
-      value={STATUS_LABELS[STATUS_OPTIONS.indexOf(item.status as FeedbackStatus)] ?? STATUS_LABELS[0]}
-      options={STATUS_LABELS}
-      onChange={(label) => onStatusChange(item, label.toLowerCase() as FeedbackStatus)}
-      aria-label={`Update status for feedback from ${formatDate(item.createdAt)}`}
-      className="admin-status-select"
-    />
-  </article>
-);
+    </article>
+  );
+};
 
 const SuperAdminDashboard = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();

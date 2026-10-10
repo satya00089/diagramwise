@@ -13,6 +13,9 @@ export interface AdminFeedbackItem {
   route?: string | null;
   appVersion?: string | null;
   userId?: string | null;
+  authorName?: string | null;
+  authorEmail?: string | null;
+  authorPicture?: string | null;
   context: Record<string, unknown>;
 }
 
