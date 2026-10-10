@@ -36,7 +36,10 @@ export const FeedbackProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [launchOptions, setLaunchOptions] = useState<FeedbackLaunchOptions>({});
-  const { trackEvent } = useAnalytics({ isEnabled: true });
+  const { trackEvent } = useAnalytics({
+    isEnabled: true,
+    trackTimeOnUnmount: false,
+  });
 
   const openFeedback = useCallback(
     (options: FeedbackLaunchOptions = {}) => {

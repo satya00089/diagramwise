@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback } from "react";
+import { getApiBaseUrl } from "../services/api";
 
 declare global {
   interface Window {
@@ -6,7 +7,12 @@ declare global {
   }
 }
 
-const API_BASE_URL = import.meta.env.VITE_ASSESSMENT_API_URL || "";
+export const getAnalyticsBatchUrl = (apiUrl?: string, legacyApiUrl?: string) =>
+  `${getApiBaseUrl(apiUrl, legacyApiUrl).replace(/\/$/, "")}/api/v1/analytics/batch`;
+const ANALYTICS_BATCH_URL = getAnalyticsBatchUrl(
+  import.meta.env.VITE_API_URL,
+  import.meta.env.VITE_ASSESSMENT_API_URL,
+);
 
 export interface AnalyticsEvent {
   ts: number;
@@ -45,13 +51,17 @@ interface AnalyticsBatch {
 
 interface UseAnalyticsOptions {
   isEnabled?: boolean;
+  trackTimeOnUnmount?: boolean;
 }
 
 // Cookie-less analytics: do not depend on consent cookie or persistent ids.
 // This hook sends minimal, non-identifying events suitable for aggregated
 // collection (no cookies, no localStorage/IDs are used).
 
-export function useAnalytics({ isEnabled = true }: UseAnalyticsOptions) {
+export function useAnalytics({
+  isEnabled = true,
+  trackTimeOnUnmount = true,
+}: UseAnalyticsOptions) {
   const bufferRef = useRef<AnalyticsEvent[]>([]);
   // Use an ephemeral per-tab session id (not persisted to storage)
   const sessionIdRef = useRef<string>(crypto.randomUUID());
@@ -70,7 +80,7 @@ export function useAnalytics({ isEnabled = true }: UseAnalyticsOptions) {
     };
 
     // Fire-and-forget
-    fetch(`${API_BASE_URL}/api/v1/analytics/batch`, {
+    fetch(ANALYTICS_BATCH_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -169,9 +179,9 @@ export function useAnalytics({ isEnabled = true }: UseAnalyticsOptions) {
   useEffect(() => {
     window.__analytics_page_enter_ts = Date.now();
     return () => {
-      trackTimeOnPage();
+      if (trackTimeOnUnmount) trackTimeOnPage();
     };
-  }, [trackTimeOnPage]);
+  }, [trackTimeOnPage, trackTimeOnUnmount]);
 
   return { trackEvent, trackPageView, flush };
 }

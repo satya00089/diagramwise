@@ -39,7 +39,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     isAuthenticated: false,
     isLoading: true,
   });
-  const { trackEvent } = useAnalytics({ isEnabled: true });
+  const { trackEvent } = useAnalytics({
+    isEnabled: true,
+    trackTimeOnUnmount: false,
+  });
 
   // Check if token is expired
   const isTokenExpired = useCallback((token: string): boolean => {
