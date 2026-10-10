@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import DOMPurify from "dompurify";
 import {
   MdAdminPanelSettings,
   MdCheckCircle,
-  MdKeyboardArrowDown,
   MdFeedback,
   MdInsights,
   MdRefresh,
@@ -13,10 +13,17 @@ import {
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { apiService } from "../services/api";
+import SelectDropdown from "../components/shared/SelectDropdown";
 import type { AdminAccessUser, AdminFeedbackItem, AdminOverview } from "../types/admin";
 import "./SuperAdminDashboard.css";
 
 const STATUS_OPTIONS = ["new", "reviewing", "resolved"] as const;
+const STATUS_LABELS = STATUS_OPTIONS.map((status) => status[0].toUpperCase() + status.slice(1));
+const DATE_RANGE_OPTIONS = ["Last 7 days", "Last 30 days", "Last 90 days"];
+const SAFE_FEEDBACK_HTML = {
+  ALLOWED_TAGS: ["a", "blockquote", "br", "em", "i", "li", "ol", "p", "strong", "u", "ul"],
+  ALLOWED_ATTR: ["href", "title"],
+};
 type FeedbackStatus = (typeof STATUS_OPTIONS)[number];
 
 const formatNumber = (value: number) => new Intl.NumberFormat("en-IN").format(value);
@@ -65,9 +72,14 @@ const FeedbackRow = ({
         <span>{formatFeedbackCategory(item.category)}</span>
         <span>{formatDate(item.createdAt)}</span>
       </div>
-      <p className="admin-feedback-row__message">
-        {item.message || "Rating-only feedback"}
-      </p>
+      <div
+        className="admin-feedback-row__message"
+        dangerouslySetInnerHTML={{
+          __html: item.message
+            ? DOMPurify.sanitize(item.message, SAFE_FEEDBACK_HTML)
+            : "Rating-only feedback",
+        }}
+      />
       <div className="admin-feedback-row__context">
         {item.route && <span>{item.route}</span>}
         {item.rating != null && <span>{"★".repeat(item.rating)}</span>}
@@ -75,21 +87,14 @@ const FeedbackRow = ({
         {item.contactEmail && <span>{item.contactEmail}</span>}
       </div>
     </div>
-    <label className="admin-status-control">
-      <span className="sr-only">Update feedback status</span>
-      <select
-        value={STATUS_OPTIONS.includes(item.status as FeedbackStatus) ? item.status : "new"}
-        onChange={(event) => onStatusChange(item, event.target.value as FeedbackStatus)}
-        aria-label={`Update status for feedback from ${formatDate(item.createdAt)}`}
-      >
-        {STATUS_OPTIONS.map((status) => (
-          <option value={status} key={status}>
-            {status[0].toUpperCase() + status.slice(1)}
-          </option>
-        ))}
-      </select>
-      <MdKeyboardArrowDown aria-hidden="true" />
-    </label>
+    <SelectDropdown
+      id={`admin-feedback-status-${item.id}`}
+      value={STATUS_LABELS[STATUS_OPTIONS.indexOf(item.status as FeedbackStatus)] ?? STATUS_LABELS[0]}
+      options={STATUS_LABELS}
+      onChange={(label) => onStatusChange(item, label.toLowerCase() as FeedbackStatus)}
+      aria-label={`Update status for feedback from ${formatDate(item.createdAt)}`}
+      className="admin-status-select"
+    />
   </article>
 );
 
@@ -131,6 +136,7 @@ const SuperAdminDashboard = () => {
     () => Math.max(...(overview?.analytics.daily.map((day) => day.events) ?? [1]), 1),
     [overview],
   );
+  const chartLabelInterval = Math.max(1, Math.ceil((overview?.analytics.daily.length ?? 0) / 6));
 
   if (authLoading) return null;
   if (!isAuthenticated || !user?.isSuperAdmin) {
@@ -201,15 +207,14 @@ const SuperAdminDashboard = () => {
             </p>
           </div>
           <div className="admin-header__actions">
-            <label className="admin-range-control">
-              <span className="sr-only">Analytics date range</span>
-              <select value={days} onChange={(event) => setDays(Number(event.target.value))}>
-                <option value={7}>Last 7 days</option>
-                <option value={30}>Last 30 days</option>
-                <option value={90}>Last 90 days</option>
-              </select>
-              <MdKeyboardArrowDown aria-hidden="true" />
-            </label>
+            <SelectDropdown
+              id="admin-analytics-range"
+              value={`Last ${days} days`}
+              options={DATE_RANGE_OPTIONS}
+              onChange={(range) => setDays(Number(range.match(/\d+/)?.[0] ?? 30))}
+              aria-label="Analytics date range"
+              className="admin-range-select"
+            />
             <button className="admin-icon-button" type="button" onClick={() => void loadDashboard()} aria-label="Refresh dashboard">
               <MdRefresh aria-hidden="true" />
             </button>
@@ -257,19 +262,35 @@ const SuperAdminDashboard = () => {
                   </div>
                   <MdInsights className="admin-panel__icon" aria-hidden="true" />
                 </div>
-                <div className="admin-chart" aria-label="Daily tracked events">
-                  {overview.analytics.daily.map((day) => (
-                    <div className="admin-chart__column" key={day.date}>
-                      <div className="admin-chart__bar-wrap">
-                        <div
-                          className="admin-chart__bar"
-                          style={{ height: `${Math.max((day.events / maximumDailyEvents) * 100, day.events ? 7 : 2)}%` }}
-                          title={`${day.events} events on ${day.date}`}
-                        />
-                      </div>
-                      <span>{new Date(day.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                <div className="admin-chart-scroll" aria-label="Scrollable daily usage chart">
+                  {overview.analytics.daily.length ? (
+                    <div
+                      className="admin-chart"
+                      role="img"
+                      aria-label={`Daily tracked events over the last ${days} days`}
+                      style={{
+                        gridTemplateColumns: `repeat(${overview.analytics.daily.length}, minmax(0, 1fr))`,
+                        minWidth: `${overview.analytics.daily.length * 12}px`,
+                      }}
+                    >
+                      {overview.analytics.daily.map((day, index) => {
+                        const dateLabel = new Date(`${day.date}T00:00:00`).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+                        const showDate = index % chartLabelInterval === 0 || index === overview.analytics.daily.length - 1;
+                        return (
+                          <div className="admin-chart__column" key={day.date}>
+                            <div className="admin-chart__bar-wrap">
+                              <div
+                                className="admin-chart__bar"
+                                style={{ height: `${Math.max((day.events / maximumDailyEvents) * 100, day.events ? 7 : 2)}%` }}
+                                title={`${day.events} events on ${day.date}`}
+                              />
+                            </div>
+                            <span aria-hidden="true">{showDate ? dateLabel : ""}</span>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ))}
+                  ) : <p className="admin-empty">No events were recorded in this period.</p>}
                 </div>
                 <div className="admin-list-split">
                   <div>
