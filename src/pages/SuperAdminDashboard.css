@@ -27,6 +27,72 @@
   padding: 36px 24px 72px;
 }
 
+.admin-account-control {
+  position: relative;
+}
+
+.admin-account-control .dashboard-account-button {
+  max-width: 220px;
+  outline-offset: 3px;
+}
+
+.admin-account-control .dashboard-account-button:focus-visible {
+  outline: 2px solid var(--brand);
+}
+
+.admin-account-control__name {
+  max-width: 132px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-account-control__chevron {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  transition: transform 180ms ease;
+}
+
+.admin-account-control__chevron--open {
+  transform: rotate(180deg);
+}
+
+.admin-account-menu__identity {
+  display: grid;
+  gap: 3px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-account-menu__identity strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-account-menu__identity span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-account-menu__logout {
+  min-height: 38px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.admin-account-menu__logout:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -3px;
+}
+
 html:has(.admin-theme-root) {
   color-scheme: light;
   scrollbar-width: thin;
@@ -829,6 +895,10 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
 
   .admin-header h1 {
     font-size: 1.75rem;
+  }
+
+  .admin-account-control__name {
+    display: none;
   }
 
   .admin-panel__header-actions {

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import DOMPurify from "dompurify";
+import { HiChevronDown } from "react-icons/hi2";
 import {
   MdAdminPanelSettings,
   MdCheckCircle,
@@ -67,9 +68,114 @@ const getFeedbackInitials = (value: string) =>
     .map((part) => part[0].toUpperCase())
     .join("") || "A";
 
+const AdminProductHeader = () => {
+  const { user, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const accountName = user?.name?.trim() || user?.email || "Account";
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    const closeOnOutsideFocus = (event: FocusEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("keydown", closeOnEscape);
+    document.addEventListener("focusin", closeOnOutsideFocus);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("focusin", closeOnOutsideFocus);
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    setAvatarFailed(false);
+  }, [user?.picture]);
+
+  return (
+    <ProductHeader
+      actions={
+        <>
+          <ThemeSwitcher />
+          <div className="admin-account-control" ref={menuRef}>
+            <button
+              ref={triggerRef}
+              className="dashboard-account-button"
+              type="button"
+              aria-label={`Open account menu for ${accountName}`}
+              aria-expanded={menuOpen}
+              aria-controls="admin-account-menu"
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              {user?.picture && !avatarFailed ? (
+                <img
+                  className="dashboard-avatar dashboard-avatar-image"
+                  src={user.picture}
+                  alt=""
+                  referrerPolicy="no-referrer"
+                  onError={() => setAvatarFailed(true)}
+                />
+              ) : (
+                <span className="dashboard-avatar" aria-hidden="true">
+                  {getFeedbackInitials(accountName)}
+                </span>
+              )}
+              <span className="admin-account-control__name">{accountName}</span>
+              <HiChevronDown
+                className={`admin-account-control__chevron${menuOpen ? " admin-account-control__chevron--open" : ""}`}
+                aria-hidden="true"
+              />
+            </button>
+            <div
+              className="dashboard-user-menu"
+              id="admin-account-menu"
+              role="group"
+              aria-label="Account menu"
+              hidden={!menuOpen}
+            >
+              <div className="admin-account-menu__identity">
+                <strong>{accountName}</strong>
+                {user?.email && <span>{user.email}</span>}
+              </div>
+              <button
+                className="dashboard-user-menu-item admin-account-menu__logout"
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  logout();
+                }}
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </>
+      }
+    />
+  );
+};
+
 const LoadingOverview = () => (
   <div className="admin-theme-root">
-    <ProductHeader actions={<ThemeSwitcher />} />
+    <AdminProductHeader />
     <main className="admin-page" aria-busy="true">
       <div className="admin-shell">
         <div className="admin-skeleton admin-skeleton--title" />
@@ -301,7 +407,7 @@ const SuperAdminDashboard = () => {
 
   return (
     <div className="admin-theme-root">
-      <ProductHeader actions={<ThemeSwitcher />} />
+      <AdminProductHeader />
       <main className="admin-page">
         <div className="admin-shell">
           <header className="admin-header">
