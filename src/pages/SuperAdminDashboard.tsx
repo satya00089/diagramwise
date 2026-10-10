@@ -12,6 +12,8 @@ import {
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { apiService } from "../services/api";
+import ProductHeader from "../components/ProductHeader";
+import ThemeSwitcher from "../components/ThemeSwitcher";
 import SelectDropdown from "../components/shared/SelectDropdown";
 import type {
   AdminAccessUser,
@@ -66,21 +68,24 @@ const getFeedbackInitials = (value: string) =>
     .join("") || "A";
 
 const LoadingOverview = () => (
-  <main className="admin-page" aria-busy="true">
-    <div className="admin-shell">
-      <div className="admin-skeleton admin-skeleton--title" />
-      <div className="admin-skeleton admin-skeleton--toolbar" />
-      <div className="admin-stat-strip">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <div className="admin-stat admin-skeleton-block" key={index} />
-        ))}
+  <div className="admin-theme-root">
+    <ProductHeader actions={<ThemeSwitcher />} />
+    <main className="admin-page" aria-busy="true">
+      <div className="admin-shell">
+        <div className="admin-skeleton admin-skeleton--title" />
+        <div className="admin-skeleton admin-skeleton--toolbar" />
+        <div className="admin-stat-strip">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div className="admin-stat admin-skeleton-block" key={index} />
+          ))}
+        </div>
+        <div className="admin-overview-grid">
+          <div className="admin-panel admin-skeleton-block admin-skeleton-block--large" />
+          <div className="admin-panel admin-skeleton-block admin-skeleton-block--large" />
+        </div>
       </div>
-      <div className="admin-overview-grid">
-        <div className="admin-panel admin-skeleton-block admin-skeleton-block--large" />
-        <div className="admin-panel admin-skeleton-block admin-skeleton-block--large" />
-      </div>
-    </div>
-  </main>
+    </main>
+  </div>
 );
 
 const FeedbackRow = ({
@@ -295,310 +300,316 @@ const SuperAdminDashboard = () => {
   };
 
   return (
-    <main className="admin-page">
-      <div className="admin-shell">
-        <header className="admin-header">
-          <div>
-            <h1>Product health</h1>
-            <p className="admin-header__description">
-              Usage, feedback, and access controls for Diagramwise.
-            </p>
-          </div>
-          <div className="admin-header__actions">
-            <SelectDropdown
-              id="admin-analytics-range"
-              value={`Last ${days} days`}
-              options={DATE_RANGE_OPTIONS}
-              onChange={(range) =>
-                setDays(Number(range.match(/\d+/)?.[0] ?? 30))
-              }
-              aria-label="Analytics date range"
-              className="admin-range-select"
-            />
-            <button
-              className="admin-icon-button"
-              type="button"
-              onClick={() => void loadDashboard()}
-              aria-label="Refresh dashboard"
-            >
-              <MdRefresh aria-hidden="true" />
-            </button>
-          </div>
-        </header>
-
-        {error && (
-          <div className="admin-alert" role="alert">
-            {error}
-          </div>
-        )}
-
-        {overview && (
-          <>
-            <section
-              className="admin-stat-strip"
-              aria-label="Product health summary"
-            >
-              <div className="admin-stat">
-                <span>Tracked events</span>
-                <strong>{formatNumber(overview.analytics.totalEvents)}</strong>
-                <small>
-                  {overview.fromDate} – {overview.toDate}
-                </small>
-              </div>
-              <div className="admin-stat">
-                <span>Page views</span>
-                <strong>{formatNumber(overview.analytics.pageViews)}</strong>
-                <small>First-party analytics</small>
-              </div>
-              <div className="admin-stat">
-                <span>Feedback received</span>
-                <strong>{formatNumber(overview.feedback.total)}</strong>
-                <small>{overview.feedback.new} need review</small>
-              </div>
-              <div className="admin-stat">
-                <span>Average rating</span>
-                <strong>
-                  {overview.feedback.averageRating?.toFixed(1) ?? "—"}
-                  <small className="admin-stat__suffix"> / 5</small>
-                </strong>
-                <small>From submitted ratings</small>
-              </div>
-              <div className="admin-stat">
-                <span>Helpful rate</span>
-                <strong>
-                  {overview.feedback.helpfulRate != null
-                    ? `${Math.round(overview.feedback.helpfulRate * 100)}%`
-                    : "—"}
-                </strong>
-                <small>Assessment and global feedback</small>
-              </div>
-            </section>
-
-            <div className="admin-overview-grid">
-              <section
-                className="admin-panel admin-panel--chart"
-                aria-labelledby="usage-title"
+    <div className="admin-theme-root">
+      <ProductHeader actions={<ThemeSwitcher />} />
+      <main className="admin-page">
+        <div className="admin-shell">
+          <header className="admin-header">
+            <div>
+              <h1>Product health</h1>
+              <p className="admin-header__description">
+                Usage, feedback, and access controls for Diagramwise.
+              </p>
+            </div>
+            <div className="admin-header__actions">
+              <SelectDropdown
+                id="admin-analytics-range"
+                value={`Last ${days} days`}
+                options={DATE_RANGE_OPTIONS}
+                onChange={(range) =>
+                  setDays(Number(range.match(/\d+/)?.[0] ?? 30))
+                }
+                aria-label="Analytics date range"
+                className="admin-range-select"
+              />
+              <button
+                className="admin-icon-button"
+                type="button"
+                onClick={() => void loadDashboard()}
+                aria-label="Refresh dashboard"
               >
+                <MdRefresh aria-hidden="true" />
+              </button>
+            </div>
+          </header>
+
+          {error && (
+            <div className="admin-alert" role="alert">
+              {error}
+            </div>
+          )}
+
+          {overview && (
+            <>
+              <section
+                className="admin-stat-strip"
+                aria-label="Product health summary"
+              >
+                <div className="admin-stat">
+                  <span>Tracked events</span>
+                  <strong>
+                    {formatNumber(overview.analytics.totalEvents)}
+                  </strong>
+                  <small>
+                    {overview.fromDate} – {overview.toDate}
+                  </small>
+                </div>
+                <div className="admin-stat">
+                  <span>Page views</span>
+                  <strong>{formatNumber(overview.analytics.pageViews)}</strong>
+                  <small>First-party analytics</small>
+                </div>
+                <div className="admin-stat">
+                  <span>Feedback received</span>
+                  <strong>{formatNumber(overview.feedback.total)}</strong>
+                  <small>{overview.feedback.new} need review</small>
+                </div>
+                <div className="admin-stat">
+                  <span>Average rating</span>
+                  <strong>
+                    {overview.feedback.averageRating?.toFixed(1) ?? "—"}
+                    <small className="admin-stat__suffix"> / 5</small>
+                  </strong>
+                  <small>From submitted ratings</small>
+                </div>
+                <div className="admin-stat">
+                  <span>Helpful rate</span>
+                  <strong>
+                    {overview.feedback.helpfulRate != null
+                      ? `${Math.round(overview.feedback.helpfulRate * 100)}%`
+                      : "—"}
+                  </strong>
+                  <small>Assessment and global feedback</small>
+                </div>
+              </section>
+
+              <div className="admin-overview-grid">
+                <section
+                  className="admin-panel admin-panel--chart"
+                  aria-labelledby="usage-title"
+                >
+                  <div className="admin-panel__header">
+                    <div>
+                      <h2 id="usage-title">Product activity</h2>
+                      <p className="admin-panel__description">
+                        First-party events captured across the product.
+                      </p>
+                    </div>
+                    <MdInsights
+                      className="admin-panel__icon"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <div
+                    className="admin-chart-scroll"
+                    aria-label="Scrollable daily usage chart"
+                  >
+                    {overview.analytics.daily.length ? (
+                      <div
+                        className="admin-chart"
+                        role="img"
+                        aria-label={`Daily tracked events over the last ${days} days`}
+                        style={{
+                          gridTemplateColumns: `repeat(${overview.analytics.daily.length}, minmax(0, 1fr))`,
+                          minWidth: `${overview.analytics.daily.length * 12}px`,
+                        }}
+                      >
+                        {overview.analytics.daily.map((day, index) => {
+                          const dateLabel = new Date(
+                            `${day.date}T00:00:00`,
+                          ).toLocaleDateString("en-IN", {
+                            day: "numeric",
+                            month: "short",
+                          });
+                          const showDate =
+                            index % chartLabelInterval === 0 ||
+                            index === overview.analytics.daily.length - 1;
+                          return (
+                            <div className="admin-chart__column" key={day.date}>
+                              <div className="admin-chart__bar-wrap">
+                                <div
+                                  className="admin-chart__bar"
+                                  style={{
+                                    height: `${Math.max((day.events / maximumDailyEvents) * 100, day.events ? 7 : 2)}%`,
+                                  }}
+                                  title={`${day.events} events on ${day.date}`}
+                                />
+                              </div>
+                              <span aria-hidden="true">
+                                {showDate ? dateLabel : ""}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="admin-empty">
+                        No events were recorded in this period.
+                      </p>
+                    )}
+                  </div>
+                  <div className="admin-list-split">
+                    <div>
+                      <h3>Top events</h3>
+                      {overview.analytics.topEvents.slice(0, 5).map((event) => (
+                        <div className="admin-ranking" key={event.name}>
+                          <span>{event.name}</span>
+                          <strong>{formatNumber(event.count)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <h3>Top routes</h3>
+                      {overview.analytics.topRoutes.slice(0, 5).map((route) => (
+                        <div className="admin-ranking" key={route.route}>
+                          <span>{route.route}</span>
+                          <strong>{formatNumber(route.count)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                <section
+                  className="admin-panel admin-panel--acquisition"
+                  aria-labelledby="acquisition-title"
+                >
+                  <div className="admin-panel__header">
+                    <div>
+                      <h2 id="acquisition-title">Google Analytics</h2>
+                      <p className="admin-panel__description">
+                        Acquisition and conversion data from GA4.
+                      </p>
+                    </div>
+                    <MdTrendingUp
+                      className="admin-panel__icon"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <div className="admin-connection-state">
+                    <span className="admin-connection-state__badge">
+                      Not connected
+                    </span>
+                    <div>
+                      <strong>Connect a GA4 property</strong>
+                      <p>
+                        Acquisition sources and landing-page conversions will
+                        appear here, separate from first-party product events.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="admin-source-note">
+                    <MdCheckCircle aria-hidden="true" /> Product usage above
+                    comes from Diagramwise’s privacy-preserving first-party
+                    pipeline.
+                  </div>
+                </section>
+              </div>
+
+              <section className="admin-panel" aria-labelledby="feedback-title">
                 <div className="admin-panel__header">
                   <div>
-                    <h2 id="usage-title">Product activity</h2>
+                    <h2 id="feedback-title">Recent feedback</h2>
                     <p className="admin-panel__description">
-                      First-party events captured across the product.
+                      Review what people shared and update its status.
                     </p>
                   </div>
-                  <MdInsights
-                    className="admin-panel__icon"
-                    aria-hidden="true"
-                  />
+                  <div className="admin-panel__header-actions">
+                    <span className="admin-panel__count">
+                      {overview.feedback.new} new
+                    </span>
+                    <MdFeedback
+                      className="admin-panel__icon"
+                      aria-hidden="true"
+                    />
+                  </div>
                 </div>
-                <div
-                  className="admin-chart-scroll"
-                  aria-label="Scrollable daily usage chart"
-                >
-                  {overview.analytics.daily.length ? (
-                    <div
-                      className="admin-chart"
-                      role="img"
-                      aria-label={`Daily tracked events over the last ${days} days`}
-                      style={{
-                        gridTemplateColumns: `repeat(${overview.analytics.daily.length}, minmax(0, 1fr))`,
-                        minWidth: `${overview.analytics.daily.length * 12}px`,
-                      }}
-                    >
-                      {overview.analytics.daily.map((day, index) => {
-                        const dateLabel = new Date(
-                          `${day.date}T00:00:00`,
-                        ).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                        });
-                        const showDate =
-                          index % chartLabelInterval === 0 ||
-                          index === overview.analytics.daily.length - 1;
-                        return (
-                          <div className="admin-chart__column" key={day.date}>
-                            <div className="admin-chart__bar-wrap">
-                              <div
-                                className="admin-chart__bar"
-                                style={{
-                                  height: `${Math.max((day.events / maximumDailyEvents) * 100, day.events ? 7 : 2)}%`,
-                                }}
-                                title={`${day.events} events on ${day.date}`}
-                              />
-                            </div>
-                            <span aria-hidden="true">
-                              {showDate ? dateLabel : ""}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                <div className="admin-feedback-list">
+                  {overview.recentFeedback.length ? (
+                    overview.recentFeedback.map((item) => (
+                      <FeedbackRow
+                        item={item}
+                        onStatusChange={handleStatusChange}
+                        key={item.id}
+                      />
+                    ))
                   ) : (
                     <p className="admin-empty">
-                      No events were recorded in this period.
+                      No feedback has arrived in this period.
                     </p>
                   )}
                 </div>
-                <div className="admin-list-split">
-                  <div>
-                    <h3>Top events</h3>
-                    {overview.analytics.topEvents.slice(0, 5).map((event) => (
-                      <div className="admin-ranking" key={event.name}>
-                        <span>{event.name}</span>
-                        <strong>{formatNumber(event.count)}</strong>
-                      </div>
-                    ))}
-                  </div>
-                  <div>
-                    <h3>Top routes</h3>
-                    {overview.analytics.topRoutes.slice(0, 5).map((route) => (
-                      <div className="admin-ranking" key={route.route}>
-                        <span>{route.route}</span>
-                        <strong>{formatNumber(route.count)}</strong>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </section>
 
               <section
-                className="admin-panel admin-panel--acquisition"
-                aria-labelledby="acquisition-title"
+                className="admin-panel admin-access-panel"
+                aria-labelledby="access-title"
               >
                 <div className="admin-panel__header">
                   <div>
-                    <h2 id="acquisition-title">Google Analytics</h2>
+                    <h2 id="access-title">Admin access</h2>
                     <p className="admin-panel__description">
-                      Acquisition and conversion data from GA4.
+                      Choose who can open this private console.
                     </p>
                   </div>
-                  <MdTrendingUp
+                  <MdAdminPanelSettings
                     className="admin-panel__icon"
                     aria-hidden="true"
                   />
                 </div>
-                <div className="admin-connection-state">
-                  <span className="admin-connection-state__badge">
-                    Not connected
-                  </span>
+                <p className="admin-access-panel__description">
+                  Admin access is stored with each user account. Add a verified
+                  Diagramwise account when you want someone else to help review
+                  product health.
+                </p>
+                <form className="admin-grant-form" onSubmit={handleGrantAccess}>
+                  <label htmlFor="admin-email">Grant super-admin access</label>
                   <div>
-                    <strong>Connect a GA4 property</strong>
-                    <p>
-                      Acquisition sources and landing-page conversions will
-                      appear here, separate from first-party product events.
-                    </p>
-                  </div>
-                </div>
-                <div className="admin-source-note">
-                  <MdCheckCircle aria-hidden="true" /> Product usage above comes
-                  from Diagramwise’s privacy-preserving first-party pipeline.
-                </div>
-              </section>
-            </div>
-
-            <section className="admin-panel" aria-labelledby="feedback-title">
-              <div className="admin-panel__header">
-                <div>
-                  <h2 id="feedback-title">Recent feedback</h2>
-                  <p className="admin-panel__description">
-                    Review what people shared and update its status.
-                  </p>
-                </div>
-                <div className="admin-panel__header-actions">
-                  <span className="admin-panel__count">
-                    {overview.feedback.new} new
-                  </span>
-                  <MdFeedback
-                    className="admin-panel__icon"
-                    aria-hidden="true"
-                  />
-                </div>
-              </div>
-              <div className="admin-feedback-list">
-                {overview.recentFeedback.length ? (
-                  overview.recentFeedback.map((item) => (
-                    <FeedbackRow
-                      item={item}
-                      onStatusChange={handleStatusChange}
-                      key={item.id}
+                    <input
+                      id="admin-email"
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder="person@example.com"
+                      required
                     />
-                  ))
-                ) : (
-                  <p className="admin-empty">
-                    No feedback has arrived in this period.
+                    <button type="submit" disabled={accessSaving}>
+                      {accessSaving ? "Granting…" : "Grant access"}
+                    </button>
+                  </div>
+                </form>
+                {accessError && (
+                  <p className="admin-inline-error" role="alert">
+                    {accessError}
                   </p>
                 )}
-              </div>
-            </section>
-
-            <section
-              className="admin-panel admin-access-panel"
-              aria-labelledby="access-title"
-            >
-              <div className="admin-panel__header">
-                <div>
-                  <h2 id="access-title">Admin access</h2>
-                  <p className="admin-panel__description">
-                    Choose who can open this private console.
-                  </p>
-                </div>
-                <MdAdminPanelSettings
-                  className="admin-panel__icon"
-                  aria-hidden="true"
-                />
-              </div>
-              <p className="admin-access-panel__description">
-                Admin access is stored with each user account. Add a verified
-                Diagramwise account when you want someone else to help review
-                product health.
-              </p>
-              <form className="admin-grant-form" onSubmit={handleGrantAccess}>
-                <label htmlFor="admin-email">Grant super-admin access</label>
-                <div>
-                  <input
-                    id="admin-email"
-                    type="email"
-                    value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    placeholder="person@example.com"
-                    required
-                  />
-                  <button type="submit" disabled={accessSaving}>
-                    {accessSaving ? "Granting…" : "Grant access"}
-                  </button>
-                </div>
-              </form>
-              {accessError && (
-                <p className="admin-inline-error" role="alert">
-                  {accessError}
-                </p>
-              )}
-              <div className="admin-access-list">
-                {access.map((admin) => (
-                  <div className="admin-access-row" key={admin.id}>
-                    <div>
-                      <strong>{admin.name || admin.email}</strong>
-                      {admin.name && <span>{admin.email}</span>}
+                <div className="admin-access-list">
+                  {access.map((admin) => (
+                    <div className="admin-access-row" key={admin.id}>
+                      <div>
+                        <strong>{admin.name || admin.email}</strong>
+                        {admin.name && <span>{admin.email}</span>}
+                      </div>
+                      <div className="admin-access-row__actions">
+                        <span>Super-admin</span>
+                        {admin.id !== user?.id && (
+                          <button
+                            type="button"
+                            onClick={() => void handleRevokeAccess(admin)}
+                          >
+                            Revoke
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="admin-access-row__actions">
-                      <span>Super-admin</span>
-                      {admin.id !== user?.id && (
-                        <button
-                          type="button"
-                          onClick={() => void handleRevokeAccess(admin)}
-                        >
-                          Revoke
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </>
-        )}
-      </div>
-    </main>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+        </div>
+      </main>
+    </div>
   );
 };
 

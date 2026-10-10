@@ -1,4 +1,4 @@
-.admin-page {
+.admin-theme-root {
   --bg: #f4f3ee;
   --surface: #ebeae5;
   --bg-hover: #e4e2db;
@@ -10,10 +10,9 @@
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  padding: 36px 24px 72px;
 }
 
-.dark .admin-page {
+.dark .admin-theme-root {
   --bg: #080808;
   --surface: #131313;
   --bg-hover: #1b1b1b;
@@ -22,6 +21,40 @@
   --border: #292929;
   --brand: #ffffff;
   --elevated-card-bg: var(--surface);
+}
+
+.admin-page {
+  padding: 36px 24px 72px;
+}
+
+html:has(.admin-theme-root) {
+  color-scheme: light;
+  scrollbar-width: thin;
+  scrollbar-color: #aaa89f #f4f3ee;
+}
+
+html.dark:has(.admin-theme-root) {
+  color-scheme: dark;
+  scrollbar-color: #555550 #080808;
+}
+
+html:has(.admin-theme-root)::-webkit-scrollbar-track {
+  background: #f4f3ee;
+}
+
+html:has(.admin-theme-root)::-webkit-scrollbar-thumb {
+  border: 1px solid #f4f3ee;
+  border-radius: 999px;
+  background: #aaa89f;
+}
+
+html.dark:has(.admin-theme-root)::-webkit-scrollbar-track {
+  background: #080808;
+}
+
+html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
+  border-color: #080808;
+  background: #555550;
 }
 
 .admin-page--centered {
@@ -231,8 +264,28 @@
   max-width: 100%;
   overflow-x: auto;
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--text, #151513) 25%, transparent)
-    transparent;
+  scrollbar-color: #aaa89f transparent;
+}
+
+.admin-chart-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+
+.admin-chart-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-chart-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #aaa89f;
+}
+
+.dark .admin-chart-scroll {
+  scrollbar-color: #555550 transparent;
+}
+
+.dark .admin-chart-scroll::-webkit-scrollbar-thumb {
+  background: #555550;
 }
 
 .admin-chart__column {
