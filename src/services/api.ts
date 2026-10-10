@@ -19,6 +19,7 @@ import type {
   FeedbackResponse,
   FeedbackSubmission,
 } from "../types/feedback";
+import type { AdminAccessUser, AdminOverview, AdminFeedbackItem } from "../types/admin";
 import { getGoogleLoginStartUri } from "./googleAuth";
 
 // VITE_API_URL is the application's documented API endpoint. Keep the older
@@ -884,6 +885,68 @@ class ApiService {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+  }
+
+  // Protected super-admin dashboard endpoints.
+  async getAdminOverview(days = 30): Promise<AdminOverview> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/admin/overview?days=${days}`,
+      { headers: this.getAuthHeaders() },
+    );
+    if (!response.ok) {
+      throw await this.createApiError(response, "Unable to load admin overview");
+    }
+    return response.json() as Promise<AdminOverview>;
+  }
+
+  async getAdminAccess(): Promise<AdminAccessUser[]> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/access`, {
+      headers: this.getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw await this.createApiError(response, "Unable to load admin access");
+    }
+    return response.json() as Promise<AdminAccessUser[]>;
+  }
+
+  async grantAdminAccess(email: string): Promise<AdminAccessUser> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/access`, {
+      method: "POST",
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ email }),
+    });
+    if (!response.ok) {
+      throw await this.createApiError(response, "Unable to grant admin access");
+    }
+    return response.json() as Promise<AdminAccessUser>;
+  }
+
+  async revokeAdminAccess(userId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/admin/access/${userId}`, {
+      method: "DELETE",
+      headers: this.getAuthHeaders(),
+    });
+    if (!response.ok) {
+      throw await this.createApiError(response, "Unable to revoke admin access");
+    }
+  }
+
+  async updateAdminFeedbackStatus(
+    feedbackId: string,
+    status: "new" | "reviewing" | "resolved",
+  ): Promise<AdminFeedbackItem> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/admin/feedback/${feedbackId}`,
+      {
+        method: "PATCH",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ status }),
+      },
+    );
+    if (!response.ok) {
+      throw await this.createApiError(response, "Unable to update feedback");
+    }
+    return response.json() as Promise<AdminFeedbackItem>;
   }
 
   // Durable product feedback. Unlike analytics, written feedback is stored

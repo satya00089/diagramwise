@@ -50,6 +50,10 @@ const MyDesigns = lazyWithRetry(
   () => import("./pages/MyDesigns"),
   "my-designs",
 );
+const SuperAdminDashboard = lazyWithRetry(
+  () => import("./pages/SuperAdminDashboard"),
+  "super-admin-dashboard",
+);
 const SystemDesignPlayground = lazyWithRetry(
   () => import("./pages/SystemDesignPlayground"),
   "system-design-playground",
@@ -143,6 +147,7 @@ const GlobalProductChrome: React.FC = () => {
       "/create-problem",
       "/learning-paths",
       "/diagrams",
+      "/admin",
       "/system-design-interview",
       "/system-design-practice",
       "/ai-system-design-interview",
@@ -264,6 +269,7 @@ const AppContent: React.FC = () => {
                       </StoreBoundary>
                     }
                   />
+                  <Route path="/admin" element={<SuperAdminDashboard />} />
                   <Route path="/verify-email" element={<VerifyEmail />} />
                   <Route path="/auth" element={<AuthEntry />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />

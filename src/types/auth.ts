@@ -5,6 +5,8 @@ export interface User {
   picture?: string | null;
   createdAt?: string;
   preferences?: Record<string, unknown> | null;
+  roles?: string[];
+  isSuperAdmin?: boolean;
   emailVerified?: boolean;
 }
 
