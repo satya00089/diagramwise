@@ -643,12 +643,20 @@ const SuperAdminDashboard = () => {
                           }}
                         >
                           {dailyActivity.map((day, index) => {
-                            const dateLabel = new Date(
-                              `${day.date}T00:00:00`,
-                            ).toLocaleDateString("en-IN", {
-                              day: "numeric",
-                              month: "short",
-                            });
+                            const chartDate = new Date(`${day.date}T00:00:00`);
+                            const dateLabel = chartDate.toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "numeric",
+                                month: "short",
+                              },
+                            );
+                            const tooltipDateLabel =
+                              chartDate.toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              });
                             const showDate =
                               index % chartLabelInterval === 0 ||
                               index === dailyActivity.length - 1;
@@ -663,7 +671,8 @@ const SuperAdminDashboard = () => {
                                     style={{
                                       height: `${Math.max((day.events / maximumDailyEvents) * 100, day.events ? 7 : 2)}%`,
                                     }}
-                                    title={`${day.events} events on ${day.date}`}
+                                    data-tooltip={`${day.events} ${day.events === 1 ? "event" : "events"} · ${tooltipDateLabel}`}
+                                    data-tooltip-placement="top"
                                   />
                                 </div>
                                 <span aria-hidden="true">
