@@ -29,3 +29,5 @@ skills-lock.json
 # Local browser verification artifacts
 .playwright-cli/
 .impeccable/review/
+brag-output
+/output/
