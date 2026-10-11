@@ -248,6 +248,88 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
   line-height: 1.4;
 }
 
+.admin-latency-panel {
+  margin-bottom: 20px;
+}
+
+.admin-latency-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.admin-latency-metrics > div {
+  min-width: 0;
+  padding: 12px 20px 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-latency-metrics dt {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.admin-latency-metrics dd {
+  margin: 7px 0 0;
+  font-size: 1.45rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-latency-routes {
+  margin-top: 20px;
+}
+
+.admin-latency-routes__header,
+.admin-latency-route {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(68px, auto) minmax(68px, auto);
+  align-items: center;
+  gap: 16px;
+}
+
+.admin-latency-routes__header {
+  margin-bottom: 6px;
+}
+
+.admin-latency-routes__header h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
+.admin-latency-routes__header span,
+.admin-latency-route > span {
+  color: var(--muted);
+  font-size: 0.73rem;
+  text-align: right;
+}
+
+.admin-latency-route {
+  min-height: 42px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+
+.admin-latency-route code {
+  color: var(--text);
+  font-family: inherit;
+  overflow-wrap: anywhere;
+}
+
+.admin-latency-route strong {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.admin-latency-note,
+.admin-latency-loading {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
 .admin-stat__suffix {
   display: inline !important;
   margin: 0;
@@ -1052,6 +1134,19 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .admin-latency-route {
+    grid-template-columns: minmax(0, 1fr) 68px 72px;
+    gap: 8px;
+  }
+
+  .admin-latency-routes__header {
+    grid-template-columns: 1fr auto;
+  }
+
+  .admin-latency-routes__header span {
+    display: none;
+  }
+
   .admin-ga-breakdowns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1102,6 +1197,14 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
   .admin-ga-breakdowns {
     grid-template-columns: 1fr;
     gap: 24px;
+  }
+
+  .admin-latency-metrics > div {
+    padding-right: 8px;
+  }
+
+  .admin-latency-metrics dd {
+    font-size: 1.15rem;
   }
 
   .admin-ga-breakdown__description {
