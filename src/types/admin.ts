@@ -59,6 +59,23 @@ export interface AdminGoogleAnalyticsReport {
   message?: string | null;
 }
 
+export interface AdminApiLatencyReport {
+  fromDate: string;
+  toDate: string;
+  collectionEnabled: boolean;
+  sampleCount: number;
+  p50Ms?: number | null;
+  p95Ms?: number | null;
+  p99Ms?: number | null;
+  routes: Array<{
+    route: string;
+    sampleCount: number;
+    p50Ms?: number | null;
+    p95Ms?: number | null;
+    p99Ms?: number | null;
+  }>;
+}
+
 export interface AdminAccessUser {
   id: string;
   email: string;

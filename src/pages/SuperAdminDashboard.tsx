@@ -12,6 +12,7 @@ import {
   MdKeyboardArrowDown,
   MdKeyboardArrowUp,
   MdRefresh,
+  MdSpeed,
   MdTrendingUp,
 } from "react-icons/md";
 import { Navigate } from "react-router-dom";
@@ -23,6 +24,7 @@ import ThemeSwitcher from "../components/ThemeSwitcher";
 import SelectDropdown from "../components/shared/SelectDropdown";
 import type {
   AdminAccessUser,
+  AdminApiLatencyReport,
   AdminFeedbackItem,
   AdminGoogleAnalyticsReport,
   AdminOverview,
@@ -66,6 +68,8 @@ type FeedbackStatus = (typeof STATUS_OPTIONS)[number];
 
 const formatNumber = (value: number) =>
   new Intl.NumberFormat("en-IN").format(value);
+const formatLatency = (value: number | null | undefined) =>
+  value == null ? "—" : `${formatNumber(value)} ms`;
 
 const getDateRangeDays = (range: AdminDateRange) =>
   Number(range.match(/\d+/)?.[0] ?? 30);
@@ -309,6 +313,10 @@ const SuperAdminDashboard = () => {
   const [googleAnalytics, setGoogleAnalytics] =
     useState<AdminGoogleAnalyticsReport | null>(null);
   const [googleAnalyticsLoading, setGoogleAnalyticsLoading] = useState(true);
+  const [apiLatency, setApiLatency] =
+    useState<AdminApiLatencyReport | null>(null);
+  const [apiLatencyLoading, setApiLatencyLoading] = useState(true);
+  const [apiLatencyError, setApiLatencyError] = useState<string | null>(null);
   const [access, setAccess] = useState<AdminAccessUser[]>([]);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
@@ -366,6 +374,23 @@ const SuperAdminDashboard = () => {
     }
   }, [days, period]);
 
+  const loadApiLatency = useCallback(async () => {
+    setApiLatencyLoading(true);
+    setApiLatencyError(null);
+    try {
+      setApiLatency(await apiService.getAdminApiLatency(days, period));
+    } catch (loadError) {
+      setApiLatency(null);
+      setApiLatencyError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Unable to load API performance.",
+      );
+    } finally {
+      setApiLatencyLoading(false);
+    }
+  }, [days, period]);
+
   useEffect(() => {
     if (!authLoading && isAuthenticated && user?.isSuperAdmin) {
       void loadDashboard();
@@ -377,6 +402,12 @@ const SuperAdminDashboard = () => {
       void loadGoogleAnalytics();
     }
   }, [authLoading, isAuthenticated, user?.isSuperAdmin, loadGoogleAnalytics]);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user?.isSuperAdmin) {
+      void loadApiLatency();
+    }
+  }, [authLoading, isAuthenticated, user?.isSuperAdmin, loadApiLatency]);
 
   const dailyActivity = useMemo(
     () =>
@@ -569,6 +600,7 @@ const SuperAdminDashboard = () => {
                 onClick={() => {
                   void loadDashboard();
                   void loadGoogleAnalytics();
+                  void loadApiLatency();
                 }}
                 aria-label="Refresh dashboard"
               >
@@ -625,6 +657,87 @@ const SuperAdminDashboard = () => {
                   </strong>
                   <small>Assessment and global feedback</small>
                 </div>
+              </section>
+
+              <section
+                className="admin-panel admin-latency-panel"
+                aria-labelledby="api-latency-title"
+                aria-busy={apiLatencyLoading}
+              >
+                <div className="admin-panel__header">
+                  <div>
+                    <h2 id="api-latency-title">API performance</h2>
+                    <p className="admin-panel__description">
+                      Server response-time estimates for the selected period.
+                    </p>
+                  </div>
+                  <div className="admin-panel__header-actions">
+                    {apiLatency && (
+                      <span className="admin-panel__count">
+                        {formatNumber(apiLatency.sampleCount)} requests
+                      </span>
+                    )}
+                    <MdSpeed
+                      className="admin-panel__icon"
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+                {apiLatencyLoading ? (
+                  <div className="admin-latency-loading" role="status">
+                    Loading API performance…
+                  </div>
+                ) : apiLatencyError ? (
+                  <p className="admin-empty" role="alert">
+                    {apiLatencyError} Use the dashboard refresh button to try
+                    again.
+                  </p>
+                ) : apiLatency ? (
+                  <>
+                    <dl className="admin-latency-metrics">
+                      <div>
+                        <dt>p50 · typical</dt>
+                        <dd>{formatLatency(apiLatency.p50Ms)}</dd>
+                      </div>
+                      <div>
+                        <dt>p95 · slower requests</dt>
+                        <dd>{formatLatency(apiLatency.p95Ms)}</dd>
+                      </div>
+                      <div>
+                        <dt>p99 · slowest tail</dt>
+                        <dd>{formatLatency(apiLatency.p99Ms)}</dd>
+                      </div>
+                    </dl>
+                    {apiLatency.routes.length > 0 && (
+                      <div className="admin-latency-routes">
+                        <div className="admin-latency-routes__header">
+                          <h3>Route breakdown</h3>
+                          <span>Requests / p95 latency</span>
+                        </div>
+                        {apiLatency.routes.map((route) => (
+                          <div className="admin-latency-route" key={route.route}>
+                            <code>{route.route}</code>
+                            <span>{formatNumber(route.sampleCount)} req</span>
+                            <strong>{formatLatency(route.p95Ms)}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {apiLatency.sampleCount === 0 ? (
+                      <p className="admin-empty">
+                        {apiLatency.collectionEnabled
+                          ? "No API requests have been recorded for this period yet."
+                          : "Latency collection is off because REDIS_URI is not configured."}
+                      </p>
+                    ) : (
+                      <p className="admin-latency-note">
+                        Estimates use fixed histogram buckets. p95 needs at
+                        least 20 requests and p99 needs at least 100; no raw
+                        URLs, query strings, or user details are stored.
+                      </p>
+                    )}
+                  </>
+                ) : null}
               </section>
 
               <div className="admin-overview-grid">

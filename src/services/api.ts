@@ -21,6 +21,7 @@ import type {
 } from "../types/feedback";
 import type {
   AdminAccessUser,
+  AdminApiLatencyReport,
   AdminGoogleAnalyticsReport,
   AdminAnalyticsPeriod,
   AdminOverview,
@@ -925,6 +926,24 @@ class ApiService {
       );
     }
     return response.json() as Promise<AdminGoogleAnalyticsReport>;
+  }
+
+  async getAdminApiLatency(
+    days = 30,
+    period?: AdminAnalyticsPeriod,
+  ): Promise<AdminApiLatencyReport> {
+    const dateRange = period ? `period=${period}` : `days=${days}`;
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/admin/api-latency?${dateRange}`,
+      { headers: this.getAuthHeaders() },
+    );
+    if (!response.ok) {
+      throw await this.createApiError(
+        response,
+        "Unable to load API performance",
+      );
+    }
+    return response.json() as Promise<AdminApiLatencyReport>;
   }
 
   async getAdminAccess(): Promise<AdminAccessUser[]> {
