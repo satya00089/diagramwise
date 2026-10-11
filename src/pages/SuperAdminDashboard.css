@@ -558,6 +558,34 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
   align-items: center;
 }
 
+.admin-ga-city-list {
+  max-height: 288px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: color-mix(in srgb, var(--text) 30%, transparent)
+    transparent;
+  scrollbar-width: thin;
+}
+
+.admin-ga-city-list:focus-visible {
+  border-radius: 3px;
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+
+.admin-ga-city-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admin-ga-city-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-ga-city-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 30%, transparent);
+}
+
 .admin-ranking__place {
   display: grid;
   min-width: 0;

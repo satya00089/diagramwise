@@ -780,26 +780,33 @@ const SuperAdminDashboard = () => {
                         <p className="admin-ga-breakdown__description">
                           Approximate locations reported by Google Analytics.
                         </p>
-                        {googleAnalytics.cities?.length ? (
-                          googleAnalytics.cities.map((city) => (
-                            <div
-                              className="admin-ranking admin-ranking--city"
-                              key={`${city.country}-${city.region}-${city.city}`}
-                            >
-                              <span className="admin-ranking__place">
-                                <strong>{city.city}</strong>
-                                <small>
-                                  {city.region} · {city.country}
-                                </small>
-                              </span>
-                              <strong>{formatNumber(city.sessions)}</strong>
-                            </div>
-                          ))
-                        ) : (
-                          <p className="admin-empty">
-                            No city data in this period.
-                          </p>
-                        )}
+                        <div
+                          className="admin-ga-city-list"
+                          role="region"
+                          aria-label="Top cities"
+                          tabIndex={0}
+                        >
+                          {googleAnalytics.cities?.length ? (
+                            googleAnalytics.cities.map((city) => (
+                              <div
+                                className="admin-ranking admin-ranking--city"
+                                key={`${city.country}-${city.region}-${city.city}`}
+                              >
+                                <span className="admin-ranking__place">
+                                  <strong>{city.city}</strong>
+                                  <small>
+                                    {city.region} · {city.country}
+                                  </small>
+                                </span>
+                                <strong>{formatNumber(city.sessions)}</strong>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="admin-empty">
+                              No city data in this period.
+                            </p>
+                          )}
+                        </div>
                       </section>
                     </div>
                   </div>
