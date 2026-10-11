@@ -210,6 +210,7 @@ html:has(.systema-page[data-theme="dark"]) {
 }
 .systema-desktop-nav {
   display: flex;
+  align-items: center;
   gap: 29px;
   justify-self: center;
 }
@@ -220,6 +221,11 @@ html:has(.systema-page[data-theme="dark"]) {
   font-size: 12px;
   color: var(--systema-muted);
   transition: color 180ms;
+}
+.systema-desktop-nav a,
+.systema-desktop-nav button {
+  display: inline-flex;
+  align-items: center;
 }
 .systema-desktop-nav a:hover,
 .systema-desktop-nav button:hover,
