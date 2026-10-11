@@ -184,9 +184,9 @@ html:has(.systema-page[data-theme="dark"]) {
   margin-inline: auto;
 }
 .systema-header {
-  display: grid;
-  grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr);
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 32px;
   min-height: 102px;
   position: relative;
@@ -212,7 +212,10 @@ html:has(.systema-page[data-theme="dark"]) {
   display: flex;
   align-items: center;
   gap: 29px;
-  justify-self: center;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 .systema-desktop-nav a,
 .systema-desktop-nav button,
