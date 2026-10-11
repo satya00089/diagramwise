@@ -44,6 +44,10 @@ const guideRoutes = [
   "/ai-system-design-interview/",
   "/kubernetes-architecture/",
 ];
+check(
+  "Robots disallows the exact private admin path",
+  /^Disallow:\s*\/admin\s*$/m.test(robots),
+);
 const expectedRoutes = [
   "/",
   "/problems/",
@@ -310,6 +314,27 @@ if (fs.existsSync(distDir)) {
     check(
       "Built 404 is noindex",
       /<meta name="robots" content="noindex, follow"\s*\/>/.test(notFoundHtml),
+    );
+  }
+
+  const adminEntryPath = path.join(distDir, "admin", "index.html");
+  check(
+    "Built admin route has a direct SPA entry point",
+    fs.existsSync(adminEntryPath),
+  );
+  if (fs.existsSync(adminEntryPath)) {
+    const adminEntryHtml = fs.readFileSync(adminEntryPath, "utf-8");
+    check(
+      "Built admin entry point has its private page title",
+      adminEntryHtml.includes(
+        "<title>Super Admin Dashboard | Diagramwise</title>",
+      ),
+    );
+    check(
+      "Built admin entry point is noindex with an admin canonical",
+      /<meta name="robots" content="noindex, follow"\s*\/>/.test(
+        adminEntryHtml,
+      ) && adminEntryHtml.includes('href="https://diagramwise.com/admin/"'),
     );
   }
 

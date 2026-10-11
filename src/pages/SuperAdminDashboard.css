@@ -561,10 +561,53 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
 .admin-ga-city-list {
   max-height: 288px;
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   overscroll-behavior: contain;
-  scrollbar-color: color-mix(in srgb, var(--text) 30%, transparent)
-    transparent;
-  scrollbar-width: thin;
+}
+
+.admin-ga-city-list::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-city-navigation {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+.admin-city-navigation__button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    opacity 150ms ease;
+}
+
+.admin-city-navigation__button:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.admin-city-navigation__button:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.admin-city-navigation__button:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+
+.admin-city-navigation__button svg {
+  width: 22px;
+  height: 22px;
 }
 
 .admin-ga-city-list:focus-visible {

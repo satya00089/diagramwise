@@ -408,6 +408,19 @@ const notFoundRoute = {
   indexable: false,
 };
 
+const adminShellRoute = {
+  title: "Super Admin Dashboard | Diagramwise",
+  heading: "Private workspace",
+  description: "Sign in with an authorized super-admin account to continue.",
+  keywords: "",
+  image: `${siteUrl}/og/home.png`,
+  imageAlt: "Diagramwise",
+  sectionTitle: "",
+  actions: [{ label: "Return to Diagramwise", href: "/" }],
+  items: [],
+  indexable: false,
+};
+
 function escapeHtml(value = "") {
   return String(value)
     .replaceAll("&", "&amp;")
@@ -1160,9 +1173,15 @@ fs.writeFileSync(
   "utf-8",
 );
 
-// GitHub Pages serves nested application routes as static files. Keep the
-// authenticated entry points available for OAuth/signup links while React
-// takes over the route and renders the interactive experience.
+// GitHub Pages serves nested application routes as static files. Give the
+// private route its own noindex SPA shell so direct visits do not use the 404
+// or public-home metadata; React and the API still enforce permissions.
+fs.writeFileSync(
+  outputPathFor("/admin"),
+  renderHtml(baseHtml, "/admin", adminShellRoute),
+  "utf-8",
+);
+
 for (const route of ["/auth", "/auth/callback", "/verify-email"]) {
   fs.copyFileSync(indexPath, outputPathFor(route));
 }

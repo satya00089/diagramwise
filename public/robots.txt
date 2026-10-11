@@ -6,7 +6,7 @@ Allow: /
 # Keep private and server-only routes out of the crawl queue.
 Disallow: /api/
 Disallow: /__blobstorage__/
-Disallow: /admin/
+Disallow: /admin
 
 # Sitemap
 Sitemap: https://diagramwise.com/sitemap.xml

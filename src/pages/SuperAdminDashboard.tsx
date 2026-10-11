@@ -9,10 +9,13 @@ import {
   MdChevronRight,
   MdFeedback,
   MdInsights,
+  MdKeyboardArrowDown,
+  MdKeyboardArrowUp,
   MdRefresh,
   MdTrendingUp,
 } from "react-icons/md";
 import { Navigate } from "react-router-dom";
+import Seo from "../components/SEO";
 import { useAuth } from "../hooks/useAuth";
 import { apiService } from "../services/api";
 import ProductHeader from "../components/ProductHeader";
@@ -293,10 +296,15 @@ const SuperAdminDashboard = () => {
   const [accessError, setAccessError] = useState<string | null>(null);
   const [accessSaving, setAccessSaving] = useState(false);
   const chartScrollRef = useRef<HTMLDivElement>(null);
+  const cityScrollRef = useRef<HTMLDivElement>(null);
   const [canScrollToOlderActivity, setCanScrollToOlderActivity] =
     useState(false);
   const [canScrollToNewestActivity, setCanScrollToNewestActivity] =
     useState(false);
+  const [canScrollToEarlierCities, setCanScrollToEarlierCities] =
+    useState(false);
+  const [canScrollToLaterCities, setCanScrollToLaterCities] = useState(false);
+  const [hasScrollableCities, setHasScrollableCities] = useState(false);
 
   const loadDashboard = useCallback(async () => {
     setLoading(true);
@@ -370,6 +378,16 @@ const SuperAdminDashboard = () => {
     setCanScrollToNewestActivity(chart.scrollLeft < maxScrollLeft - 1);
   }, []);
 
+  const syncCityNavigation = useCallback(() => {
+    const cityList = cityScrollRef.current;
+    if (!cityList) return;
+
+    const maxScrollTop = cityList.scrollHeight - cityList.clientHeight;
+    setHasScrollableCities(maxScrollTop > 1);
+    setCanScrollToEarlierCities(cityList.scrollTop > 1);
+    setCanScrollToLaterCities(cityList.scrollTop < maxScrollTop - 1);
+  }, []);
+
   useEffect(() => {
     const chart = chartScrollRef.current;
     if (!chart) return;
@@ -382,6 +400,18 @@ const SuperAdminDashboard = () => {
     return () => resizeObserver.disconnect();
   }, [days, dailyActivity, syncChartNavigation]);
 
+  useEffect(() => {
+    const cityList = cityScrollRef.current;
+    if (!cityList) return;
+
+    cityList.scrollTop = 0;
+    syncCityNavigation();
+
+    const resizeObserver = new ResizeObserver(syncCityNavigation);
+    resizeObserver.observe(cityList);
+    return () => resizeObserver.disconnect();
+  }, [googleAnalytics?.cities, syncCityNavigation]);
+
   const scrollActivity = (direction: "older" | "newest") => {
     const chart = chartScrollRef.current;
     if (!chart) return;
@@ -390,6 +420,18 @@ const SuperAdminDashboard = () => {
       left:
         (direction === "older" ? -1 : 1) *
         Math.max(chart.clientWidth * 0.8, 240),
+      behavior: "smooth",
+    });
+  };
+
+  const scrollCities = (direction: "earlier" | "later") => {
+    const cityList = cityScrollRef.current;
+    if (!cityList) return;
+
+    cityList.scrollBy({
+      top:
+        (direction === "earlier" ? -1 : 1) *
+        Math.max(cityList.clientHeight * 0.8, 120),
       behavior: "smooth",
     });
   };
@@ -474,6 +516,12 @@ const SuperAdminDashboard = () => {
 
   return (
     <div className="admin-theme-root">
+      <Seo
+        title="Super Admin Dashboard | Diagramwise"
+        description="Private product analytics and administrative controls."
+        url="https://diagramwise.com/admin"
+        noIndex
+      />
       <AdminProductHeader />
       <main className="admin-page">
         <div className="admin-shell">
@@ -781,10 +829,13 @@ const SuperAdminDashboard = () => {
                           Approximate locations reported by Google Analytics.
                         </p>
                         <div
+                          id="admin-city-list"
+                          ref={cityScrollRef}
                           className="admin-ga-city-list"
                           role="region"
                           aria-label="Top cities"
                           tabIndex={0}
+                          onScroll={syncCityNavigation}
                         >
                           {googleAnalytics.cities?.length ? (
                             googleAnalytics.cities.map((city) => (
@@ -807,6 +858,34 @@ const SuperAdminDashboard = () => {
                             </p>
                           )}
                         </div>
+                        {hasScrollableCities && (
+                          <div
+                            className="admin-city-navigation"
+                            role="group"
+                            aria-label="City list navigation"
+                          >
+                            <button
+                              className="admin-city-navigation__button"
+                              type="button"
+                              aria-label="Scroll city list up"
+                              aria-controls="admin-city-list"
+                              disabled={!canScrollToEarlierCities}
+                              onClick={() => scrollCities("earlier")}
+                            >
+                              <MdKeyboardArrowUp aria-hidden="true" />
+                            </button>
+                            <button
+                              className="admin-city-navigation__button"
+                              type="button"
+                              aria-label="Scroll city list down"
+                              aria-controls="admin-city-list"
+                              disabled={!canScrollToLaterCities}
+                              onClick={() => scrollCities("later")}
+                            >
+                              <MdKeyboardArrowDown aria-hidden="true" />
+                            </button>
+                          </div>
+                        )}
                       </section>
                     </div>
                   </div>
