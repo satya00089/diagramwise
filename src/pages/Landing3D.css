@@ -217,6 +217,9 @@ html:has(.systema-page[data-theme="dark"]) {
   left: 50%;
   transform: translate(-50%, -50%);
 }
+.systema-desktop-nav--authenticated {
+  transform: translate(calc(-50% - 16px), -50%);
+}
 .systema-desktop-nav a,
 .systema-desktop-nav button,
 .systema-footer a,

@@ -219,7 +219,10 @@ export default function Landing3D() {
       </a>
       <header className="systema-header systema-container">
         <Brand />
-        <nav aria-label="Main navigation" className="systema-desktop-nav">
+        <nav
+          aria-label="Main navigation"
+          className={`systema-desktop-nav${isAuthenticated ? " systema-desktop-nav--authenticated" : ""}`}
+        >
           <Link to="/problems/" aria-label="Practice problems">
             <RollingNavLabel>Practice problems</RollingNavLabel>
           </Link>
