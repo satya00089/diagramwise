@@ -22,6 +22,7 @@ import type {
 import type {
   AdminAccessUser,
   AdminGoogleAnalyticsReport,
+  AdminAnalyticsPeriod,
   AdminOverview,
   AdminFeedbackItem,
 } from "../types/admin";
@@ -893,9 +894,13 @@ class ApiService {
   }
 
   // Protected super-admin dashboard endpoints.
-  async getAdminOverview(days = 30): Promise<AdminOverview> {
+  async getAdminOverview(
+    days = 30,
+    period?: AdminAnalyticsPeriod,
+  ): Promise<AdminOverview> {
+    const dateRange = period ? `period=${period}` : `days=${days}`;
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/admin/overview?days=${days}`,
+      `${API_BASE_URL}/api/v1/admin/overview?${dateRange}`,
       { headers: this.getAuthHeaders() },
     );
     if (!response.ok) {
@@ -906,9 +911,11 @@ class ApiService {
 
   async getAdminGoogleAnalytics(
     days = 30,
+    period?: AdminAnalyticsPeriod,
   ): Promise<AdminGoogleAnalyticsReport> {
+    const dateRange = period ? `period=${period}` : `days=${days}`;
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/admin/google-analytics?days=${days}`,
+      `${API_BASE_URL}/api/v1/admin/google-analytics?${dateRange}`,
       { headers: this.getAuthHeaders() },
     );
     if (!response.ok) {

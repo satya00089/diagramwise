@@ -39,6 +39,8 @@ export interface AdminOverview {
   recentFeedback: AdminFeedbackItem[];
 }
 
+export type AdminAnalyticsPeriod = "today" | "yesterday";
+
 export interface AdminGoogleAnalyticsReport {
   status: "not_configured" | "connected" | "error";
   propertyId?: string | null;

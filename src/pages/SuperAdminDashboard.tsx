@@ -33,7 +33,19 @@ const STATUS_OPTIONS = ["new", "reviewing", "resolved"] as const;
 const STATUS_LABELS = STATUS_OPTIONS.map(
   (status) => status[0].toUpperCase() + status.slice(1),
 );
-const DATE_RANGE_OPTIONS = ["Last 7 days", "Last 30 days", "Last 90 days"];
+type AdminDateRange =
+  | "Today"
+  | "Yesterday"
+  | "Last 7 days"
+  | "Last 30 days"
+  | "Last 90 days";
+const DATE_RANGE_OPTIONS: AdminDateRange[] = [
+  "Today",
+  "Yesterday",
+  "Last 7 days",
+  "Last 30 days",
+  "Last 90 days",
+];
 const SAFE_FEEDBACK_HTML = {
   ALLOWED_TAGS: [
     "a",
@@ -54,6 +66,12 @@ type FeedbackStatus = (typeof STATUS_OPTIONS)[number];
 
 const formatNumber = (value: number) =>
   new Intl.NumberFormat("en-IN").format(value);
+
+const getDateRangeDays = (range: AdminDateRange) =>
+  Number(range.match(/\d+/)?.[0] ?? 30);
+
+const getDateRangePeriod = (range: AdminDateRange) =>
+  range === "Today" ? "today" : range === "Yesterday" ? "yesterday" : undefined;
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat("en-IN", {
@@ -284,7 +302,9 @@ const FeedbackRow = ({
 
 const SuperAdminDashboard = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const [days, setDays] = useState(30);
+  const [dateRange, setDateRange] = useState<AdminDateRange>("Last 30 days");
+  const days = getDateRangeDays(dateRange);
+  const period = getDateRangePeriod(dateRange);
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [googleAnalytics, setGoogleAnalytics] =
     useState<AdminGoogleAnalyticsReport | null>(null);
@@ -311,7 +331,7 @@ const SuperAdminDashboard = () => {
     setError(null);
     try {
       const [overviewResponse, accessResponse] = await Promise.all([
-        apiService.getAdminOverview(days),
+        apiService.getAdminOverview(days, period),
         apiService.getAdminAccess(),
       ]);
       setOverview(overviewResponse);
@@ -325,12 +345,14 @@ const SuperAdminDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [days]);
+  }, [days, period]);
 
   const loadGoogleAnalytics = useCallback(async () => {
     setGoogleAnalyticsLoading(true);
     try {
-      setGoogleAnalytics(await apiService.getAdminGoogleAnalytics(days));
+      setGoogleAnalytics(
+        await apiService.getAdminGoogleAnalytics(days, period),
+      );
     } catch {
       setGoogleAnalytics({
         status: "error",
@@ -342,7 +364,7 @@ const SuperAdminDashboard = () => {
     } finally {
       setGoogleAnalyticsLoading(false);
     }
-  }, [days]);
+  }, [days, period]);
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && user?.isSuperAdmin) {
@@ -535,11 +557,9 @@ const SuperAdminDashboard = () => {
             <div className="admin-header__actions">
               <SelectDropdown
                 id="admin-analytics-range"
-                value={`Last ${days} days`}
+                value={dateRange}
                 options={DATE_RANGE_OPTIONS}
-                onChange={(range) =>
-                  setDays(Number(range.match(/\d+/)?.[0] ?? 30))
-                }
+                onChange={(range) => setDateRange(range as AdminDateRange)}
                 aria-label="Analytics date range"
                 className="admin-range-select"
               />
@@ -636,7 +656,7 @@ const SuperAdminDashboard = () => {
                           className="admin-chart"
                           id="admin-activity-chart"
                           role="img"
-                          aria-label={`Daily tracked events over the last ${days} days`}
+                          aria-label={`Daily tracked events for ${dateRange.toLowerCase()}`}
                           style={{
                             gridTemplateColumns: `repeat(${dailyActivity.length}, minmax(0, 1fr))`,
                             minWidth: `${dailyActivity.length * 12}px`,
