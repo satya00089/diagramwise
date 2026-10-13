@@ -24,7 +24,14 @@ export interface MinimalComponent {
   width?: number;
   height?: number;
   tags?: string[];
-  nodeType?: "custom" | "group" | "tableNode" | "erNode" | "freeform";
+  dataModel?: NonNullable<CanvasComponent["dataModel"]>;
+  nodeType?:
+    | "custom"
+    | "group"
+    | "tableNode"
+    | "erNode"
+    | "dataModelNode"
+    | "freeform";
 }
 
 interface ComponentsState {
@@ -79,6 +86,7 @@ export const fetchMinimalComponents = createAsyncThunk(
         group: item.group,
         iconUrl: item.iconUrl,
         tags: item.tags,
+        dataModel: item.dataModel,
       }));
       return { providers, items: minimalComponents, fromCache: false };
     }
@@ -132,7 +140,9 @@ export const fetchFullComponent = createAsyncThunk(
   "components/fetchFull",
   async (id: string) => {
     const response = await componentProviderService.getComponentById(id);
-    const { mapComponentsToCanvas } = await import("../../utils/componentMapper");
+    const { mapComponentsToCanvas } = await import(
+      "../../utils/componentMapper"
+    );
     return mapComponentsToCanvas([response])[0];
   },
 );

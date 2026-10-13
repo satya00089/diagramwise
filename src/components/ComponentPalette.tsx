@@ -19,6 +19,73 @@ import {
 import { loadSpriteManifest } from "../store/slices/spritesSlice";
 import { shouldUseDirectIcon } from "../utils/iconRendering";
 import SpriteIcon from "./SpriteIcon";
+import {
+  DATA_MODEL_PARADIGM_LABELS,
+  DATA_MODEL_PARADIGM_ORDER,
+} from "../utils/dataModel";
+
+type PaletteComponent = CanvasComponent | MinimalComponent;
+
+const PaletteItems: React.FC<{
+  list: PaletteComponent[];
+  onAdd: (id: string) => void;
+  onDragStart: (event: React.DragEvent, componentId: string) => void;
+  onHover: (
+    event: React.MouseEvent<HTMLButtonElement>,
+    component: PaletteComponent,
+  ) => void;
+  onLeave: () => void;
+}> = ({ list, onAdd, onDragStart, onHover, onLeave }) => (
+  <div className="grid grid-cols-2 gap-1.5">
+    {list.map((c) => (
+      <button
+        key={c.id}
+        type="button"
+        draggable
+        aria-label={`Add ${c.label} to canvas`}
+        onMouseEnter={(event) => onHover(event, c)}
+        onMouseLeave={onLeave}
+        onDragStart={(event) => onDragStart(event, c.id)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onAdd(c.id);
+          }
+        }}
+        className="text-left p-2 border border-theme rounded-md cursor-grab select-none hover:border-[var(--brand)] hover:bg-[var(--bg-hover)] transition-all group/item"
+      >
+        <div className="flex justify-center items-center">
+          {"iconUrl" in c && c.iconUrl ? (
+            <img
+              src={c.iconUrl}
+              alt={c.label}
+              className="w-10 h-10 mb-1 object-contain"
+            />
+          ) : (
+            <div className="w-10 h-10 mb-1 relative flex items-center justify-center">
+              <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand)]/15 to-[var(--brand)]/5 rounded-full" />
+              <span className="z-10 opacity-75 inline-flex items-center justify-center w-full h-full">
+                {"icon" in c && c.icon ? (
+                  React.createElement(
+                    c.icon as React.ComponentType<{ size?: number }>,
+                    {
+                      size: 24,
+                    },
+                  )
+                ) : (
+                  <span className="text-lg">?</span>
+                )}
+              </span>
+            </div>
+          )}
+        </div>
+        <div className="text-xs font-medium text-theme text-center group-hover/item:text-[var(--brand)] transition-colors line-clamp-1">
+          {c.label}
+        </div>
+      </button>
+    ))}
+  </div>
+);
 
 interface Props {
   readonly components: readonly CanvasComponent[];
@@ -214,6 +281,8 @@ export default function ComponentPalette({
         { name: "tags", weight: 0.25 },
         { name: "description", weight: 0.2 },
         { name: "group", weight: 0.15 },
+        { name: "dataModel.paradigm", weight: 0.2 },
+        { name: "dataModel.kind", weight: 0.15 },
       ],
       threshold: 0.3,
       includeScore: true,
@@ -354,11 +423,28 @@ export default function ComponentPalette({
     setSearchQuery(e.target.value);
   };
 
+  const handlePaletteHover = (
+    event: React.MouseEvent<HTMLButtonElement>,
+    component: PaletteComponent,
+  ) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setHoveredComponent({
+      label: component.label,
+      description: component.description || "",
+      rect,
+    });
+  };
+
   return (
-    <div className="relative z-40 max-md:absolute max-md:inset-y-0 max-md:left-0" data-tour="component-palette">
+    <div
+      className="relative z-40 max-md:absolute max-md:inset-y-0 max-md:left-0"
+      data-tour="component-palette"
+    >
       <button
         type="button"
-        onClick={() => compact ? onCompactOpenChange?.(!open) : setOpen(!open)}
+        onClick={() =>
+          compact ? onCompactOpenChange?.(!open) : setOpen(!open)
+        }
         aria-expanded={open}
         aria-label={
           open ? "Collapse component palette" : "Expand component palette"
@@ -578,53 +664,189 @@ export default function ComponentPalette({
                                         id={`group-${groupName}`}
                                         className="mt-1 mb-3 px-1"
                                       >
-                                        <div className="grid grid-cols-2 gap-1.5">
-                                          {list.map((c) => (
-                                            <button
-                                              key={c.id}
-                                              type="button"
-                                              draggable
-                                              aria-label={`Add ${c.label} to canvas`}
-                                              onMouseEnter={(e) => {
-                                                const rect =
-                                                  e.currentTarget.getBoundingClientRect();
-                                                setHoveredComponent({
-                                                  label: c.label,
-                                                  description:
-                                                    c.description || "",
-                                                  rect,
-                                                });
-                                              }}
-                                              onMouseLeave={() =>
-                                                setHoveredComponent(null)
-                                              }
-                                              onDragStart={(e) =>
-                                                handleDragStart(e, c.id)
-                                              }
-                                              onKeyDown={(e) => {
-                                                if (
-                                                  (e as React.KeyboardEvent)
-                                                    .key === "Enter" ||
-                                                  (e as React.KeyboardEvent)
-                                                    .key === " "
-                                                ) {
-                                                  (
-                                                    e as React.KeyboardEvent
-                                                  ).preventDefault();
-                                                  onAdd(c.id);
+                                        {groupName === "Data Models" ? (
+                                          <div className="space-y-1.5 pl-2 border-l border-theme/60">
+                                            {DATA_MODEL_PARADIGM_ORDER.map(
+                                              (paradigm) => {
+                                                const paradigmList =
+                                                  list.filter(
+                                                    (component) =>
+                                                      ("dataModel" in
+                                                        component &&
+                                                        component.dataModel
+                                                          ?.paradigm ===
+                                                          paradigm) ||
+                                                      (paradigm ===
+                                                        "relational" &&
+                                                        !(
+                                                          "dataModel" in
+                                                            component &&
+                                                          component.dataModel
+                                                        )),
+                                                  );
+                                                if (paradigmList.length === 0) {
+                                                  return null;
                                                 }
-                                              }}
-                                              className="text-left p-2 border border-theme rounded-md cursor-grab select-none hover:border-[var(--brand)] hover:bg-[var(--bg-hover)] transition-all group/item"
-                                            >
-                                              <div className="flex justify-center items-center">
-                                                {"iconUrl" in c && c.iconUrl ? (
-                                                  <div className="w-10 h-10 mb-1 relative flex items-center justify-center">
-                                                    {(() => {
-                                                      if (
-                                                        shouldUseDirectIcon(
-                                                          c.id,
+                                                const subgroupKey = `${providerName}-${groupName}-${paradigm}`;
+                                                const subgroupExpanded =
+                                                  expandedGroups.has(
+                                                    subgroupKey,
+                                                  );
+                                                return (
+                                                  <div key={paradigm}>
+                                                    <button
+                                                      type="button"
+                                                      onClick={() =>
+                                                        toggleGroup(subgroupKey)
+                                                      }
+                                                      className="w-full flex items-center justify-between px-2 py-1 text-left hover:bg-[var(--bg-hover)] rounded transition-colors"
+                                                      aria-expanded={
+                                                        subgroupExpanded
+                                                      }
+                                                      aria-controls={`group-${subgroupKey}`}
+                                                    >
+                                                      <div className="flex items-center gap-2">
+                                                        <PiCaretDownBold
+                                                          size={9}
+                                                          className={`text-muted transition-transform duration-150 ${
+                                                            subgroupExpanded
+                                                              ? "rotate-0"
+                                                              : "-rotate-90"
+                                                          }`}
+                                                        />
+                                                        <span className="text-[11px] font-medium uppercase tracking-wide text-muted">
+                                                          {
+                                                            DATA_MODEL_PARADIGM_LABELS[
+                                                              paradigm
+                                                            ]
+                                                          }
+                                                        </span>
+                                                        <span className="text-[10px] text-muted">
+                                                          ({paradigmList.length}
+                                                          )
+                                                        </span>
+                                                      </div>
+                                                    </button>
+                                                    {subgroupExpanded && (
+                                                      <div
+                                                        id={`group-${subgroupKey}`}
+                                                        className="mt-1 mb-2"
+                                                      >
+                                                        <PaletteItems
+                                                          list={paradigmList}
+                                                          onAdd={onAdd}
+                                                          onDragStart={
+                                                            handleDragStart
+                                                          }
+                                                          onHover={
+                                                            handlePaletteHover
+                                                          }
+                                                          onLeave={() =>
+                                                            setHoveredComponent(
+                                                              null,
+                                                            )
+                                                          }
+                                                        />
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                );
+                                              },
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <div className="grid grid-cols-2 gap-1.5">
+                                            {list.map((c) => (
+                                              <button
+                                                key={c.id}
+                                                type="button"
+                                                draggable
+                                                aria-label={`Add ${c.label} to canvas`}
+                                                onMouseEnter={(e) => {
+                                                  const rect =
+                                                    e.currentTarget.getBoundingClientRect();
+                                                  setHoveredComponent({
+                                                    label: c.label,
+                                                    description:
+                                                      c.description || "",
+                                                    rect,
+                                                  });
+                                                }}
+                                                onMouseLeave={() =>
+                                                  setHoveredComponent(null)
+                                                }
+                                                onDragStart={(e) =>
+                                                  handleDragStart(e, c.id)
+                                                }
+                                                onKeyDown={(e) => {
+                                                  if (
+                                                    (e as React.KeyboardEvent)
+                                                      .key === "Enter" ||
+                                                    (e as React.KeyboardEvent)
+                                                      .key === " "
+                                                  ) {
+                                                    (
+                                                      e as React.KeyboardEvent
+                                                    ).preventDefault();
+                                                    onAdd(c.id);
+                                                  }
+                                                }}
+                                                className="text-left p-2 border border-theme rounded-md cursor-grab select-none hover:border-[var(--brand)] hover:bg-[var(--bg-hover)] transition-all group/item"
+                                              >
+                                                <div className="flex justify-center items-center">
+                                                  {"iconUrl" in c &&
+                                                  c.iconUrl ? (
+                                                    <div className="w-10 h-10 mb-1 relative flex items-center justify-center">
+                                                      {(() => {
+                                                        if (
+                                                          shouldUseDirectIcon(
+                                                            c.id,
+                                                          )
+                                                        ) {
+                                                          return (
+                                                            <img
+                                                              src={c.iconUrl}
+                                                              alt={c.label}
+                                                              className="w-10 h-10 object-contain"
+                                                            />
+                                                          );
+                                                        }
+                                                        if (spriteIcons[c.id]) {
+                                                          return (
+                                                            <SpriteIcon
+                                                              sprite={
+                                                                spriteIcons[
+                                                                  c.id
+                                                                ]
+                                                              }
+                                                              displaySize={40}
+                                                              alt={c.label}
+                                                              style={{
+                                                                opacity: 0.9,
+                                                              }}
+                                                            />
+                                                          );
+                                                        }
+                                                        const pfx =
+                                                          c.id.split("-")[0];
+                                                        const isKnownProvider =
+                                                          [
+                                                            "aws",
+                                                            "azure",
+                                                            "gcp",
+                                                            "kubernetes",
+                                                          ].includes(pfx);
+                                                        const st =
+                                                          spriteProviderStatus[
+                                                            pfx
+                                                          ];
+                                                        // For known providers: never fire individual iconUrl requests.
+                                                        // Only fall back on error, or if not a sprite provider.
+                                                        if (
+                                                          isKnownProvider &&
+                                                          st !== "error"
                                                         )
-                                                      ) {
+                                                          return null;
                                                         return (
                                                           <img
                                                             src={c.iconUrl}
@@ -632,78 +854,38 @@ export default function ComponentPalette({
                                                             className="w-10 h-10 object-contain"
                                                           />
                                                         );
-                                                      }
-                                                      if (spriteIcons[c.id]) {
-                                                        return (
-                                                          <SpriteIcon
-                                                            sprite={
-                                                              spriteIcons[c.id]
-                                                            }
-                                                            displaySize={40}
-                                                            alt={c.label}
-                                                            style={{
-                                                              opacity: 0.9,
-                                                            }}
-                                                          />
-                                                        );
-                                                      }
-                                                      const pfx =
-                                                        c.id.split("-")[0];
-                                                      const isKnownProvider = [
-                                                        "aws",
-                                                        "azure",
-                                                        "gcp",
-                                                        "kubernetes",
-                                                      ].includes(pfx);
-                                                      const st =
-                                                        spriteProviderStatus[
-                                                          pfx
-                                                        ];
-                                                      // For known providers: never fire individual iconUrl requests.
-                                                      // Only fall back on error, or if not a sprite provider.
-                                                      if (
-                                                        isKnownProvider &&
-                                                        st !== "error"
-                                                      )
-                                                        return null;
-                                                      return (
-                                                        <img
-                                                          src={c.iconUrl}
-                                                          alt={c.label}
-                                                          className="w-10 h-10 object-contain"
-                                                        />
-                                                      );
-                                                    })()}
-                                                  </div>
-                                                ) : (
-                                                  <div className="w-10 h-10 mb-1 relative">
-                                                    <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand)]/15 to-[var(--brand)]/5 rounded-full"></div>
-                                                    <div className="z-10 opacity-75 w-full h-full flex items-center justify-center">
-                                                      <span className="inline-flex items-center justify-center w-full h-full">
-                                                        {"icon" in c &&
-                                                        c.icon ? (
-                                                          React.createElement(
-                                                            c.icon as React.ComponentType<{
-                                                              size?: number;
-                                                            }>,
-                                                            { size: 24 },
-                                                          )
-                                                        ) : (
-                                                          <span className="text-lg">
-                                                            ?
-                                                          </span>
-                                                        )}
-                                                      </span>
+                                                      })()}
                                                     </div>
-                                                  </div>
-                                                )}
-                                              </div>
-                                              <div className="text-xs font-medium text-theme text-center group-hover/item:text-[var(--brand)] transition-colors line-clamp-1">
-                                                {c.label}
-                                              </div>
-                                            </button>
-                                          ))}
-                                        </div>
+                                                  ) : (
+                                                    <div className="w-10 h-10 mb-1 relative">
+                                                      <div className="absolute inset-0 bg-gradient-to-br from-[var(--brand)]/15 to-[var(--brand)]/5 rounded-full"></div>
+                                                      <div className="z-10 opacity-75 w-full h-full flex items-center justify-center">
+                                                        <span className="inline-flex items-center justify-center w-full h-full">
+                                                          {"icon" in c &&
+                                                          c.icon ? (
+                                                            React.createElement(
+                                                              c.icon as React.ComponentType<{
+                                                                size?: number;
+                                                              }>,
+                                                              { size: 24 },
+                                                            )
+                                                          ) : (
+                                                            <span className="text-lg">
+                                                              ?
+                                                            </span>
+                                                          )}
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                                <div className="text-xs font-medium text-theme text-center group-hover/item:text-[var(--brand)] transition-colors line-clamp-1">
+                                                  {c.label}
+                                                </div>
+                                              </button>
+                                            ))}
+                                          </div>
+                                        )}
                                       </div>
                                     )}
                                   </div>
@@ -745,9 +927,7 @@ export default function ComponentPalette({
               } as React.CSSProperties
             }
           >
-            <div className="font-semibold">
-              {hoveredComponent.label}
-            </div>
+            <div className="font-semibold">{hoveredComponent.label}</div>
             <div className="mt-0.5 opacity-80">
               {hoveredComponent.description}
             </div>

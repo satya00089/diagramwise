@@ -3,6 +3,8 @@
  * Supports cloud providers, design patterns, frameworks, etc.
  */
 
+import type { DataModelMetadata } from "./canvas";
+
 export type ComponentProvider =
   | "aws"
   | "azure"
@@ -65,7 +67,7 @@ export interface ComponentMetadata {
   width?: number;
   height?: number;
   iconSize?: number;
-  nodeType?: "custom" | "group" | "tableNode" | "erNode";
+  nodeType?: "custom" | "group" | "tableNode" | "erNode" | "dataModelNode";
 }
 
 export interface ComponentDB {
@@ -78,7 +80,9 @@ export interface ComponentDB {
   label: string;
   description: string;
 
-  nodeType?: "custom" | "erNode" | "group" | "tableNode"; // Specify which node component to use
+  nodeType?: "custom" | "erNode" | "group" | "tableNode" | "dataModelNode"; // Specify which node component to use
+
+  dataModel?: DataModelMetadata;
 
   // Visual
   icon?: string; // React icon name like "SiAmazons3"

@@ -141,6 +141,7 @@ export const GROUP_PRIORITY: Record<string, number> = {
   Delivery: 12,
   Grouping: 13,
   "DNS & Network": 14,
+  "Data Models": 15,
   "ER Diagram": 15,
   UML: 16,
   Custom: 17,
@@ -159,7 +160,210 @@ export const sortComponentsByUsage = (components: CanvasComponent[]) => {
   });
 };
 
+const createDataModelComponent = (input: {
+  id: string;
+  paradigm: NonNullable<CanvasComponent["dataModel"]>["paradigm"];
+  kind: NonNullable<CanvasComponent["dataModel"]>["kind"];
+  label: string;
+  description: string;
+  icon: CanvasComponent["icon"];
+  fields: NonNullable<CanvasComponent["data"]>[string];
+}): CanvasComponent => ({
+  id: input.id,
+  group: "Data Models",
+  icon: input.icon,
+  label: input.label,
+  description: input.description,
+  nodeType: "dataModelNode",
+  dataModel: { paradigm: input.paradigm, kind: input.kind, version: 1 },
+  tags: ["data model", input.paradigm, input.kind, input.label.toLowerCase()],
+  data: { fields: input.fields },
+});
+
+const DATA_MODEL_COMPONENTS: CanvasComponent[] = [
+  createDataModelComponent({
+    id: "data-collection",
+    paradigm: "document",
+    kind: "collection",
+    label: "Collection",
+    description: "Document collection with nested, flexible fields",
+    icon: FaDatabase,
+    fields: [
+      { id: "field-1", name: "_id", type: "Identifier", required: true },
+      { id: "field-2", name: "name", type: "String", required: true },
+      { id: "field-3", name: "created_at", type: "Date" },
+    ],
+  }),
+  createDataModelComponent({
+    id: "data-document",
+    paradigm: "document",
+    kind: "document",
+    label: "Document",
+    description: "A representative document shape inside a collection",
+    icon: FaFileAlt,
+    fields: [
+      { id: "field-1", name: "id", type: "Identifier", required: true },
+      { id: "field-2", name: "profile", type: "Object" },
+      { id: "field-3", name: "tags[]", type: "Array" },
+    ],
+  }),
+  createDataModelComponent({
+    id: "data-nested-object",
+    paradigm: "document",
+    kind: "nested-object",
+    label: "Nested Object",
+    description: "Nested object or embedded document shape",
+    icon: FaObjectGroup,
+    fields: [
+      { id: "field-1", name: "address.city", type: "String" },
+      { id: "field-2", name: "address.country", type: "String" },
+    ],
+  }),
+  createDataModelComponent({
+    id: "data-aggregation-stage",
+    paradigm: "document",
+    kind: "aggregation-stage",
+    label: "Aggregation Stage",
+    description: "A provider-neutral aggregation or transformation step",
+    icon: FaProjectDiagram,
+    fields: [
+      { id: "field-1", name: "stage", type: "Match", required: true },
+      { id: "field-2", name: "expression", type: "JSON" },
+    ],
+  }),
+  createDataModelComponent({
+    id: "data-schema-validator",
+    paradigm: "document",
+    kind: "schema-validator",
+    label: "Schema Validator",
+    description: "Validation rules for document fields",
+    icon: FaCheckCircle,
+    fields: [
+      { id: "field-1", name: "required", type: "Field list" },
+      { id: "field-2", name: "validation", type: "JSON Schema" },
+    ],
+  }),
+  createDataModelComponent({
+    id: "data-single-table",
+    paradigm: "key-value",
+    kind: "single-table",
+    label: "Single-Table",
+    description: "Key-value table layout for multiple access patterns",
+    icon: FaTable,
+    fields: [
+      {
+        id: "field-1",
+        name: "PK",
+        type: "String",
+        keyRole: "partition",
+        required: true,
+      },
+      { id: "field-2", name: "SK", type: "String", keyRole: "sort" },
+      { id: "field-3", name: "entity_type", type: "String" },
+    ],
+  }),
+  createDataModelComponent({
+    id: "data-access-pattern",
+    paradigm: "key-value",
+    kind: "access-pattern",
+    label: "Access Pattern",
+    description: "A read or write path expressed through key design",
+    icon: FaRoute,
+    fields: [
+      {
+        id: "field-1",
+        name: "partition_key",
+        type: "String",
+        keyRole: "partition",
+        required: true,
+      },
+      { id: "field-2", name: "sort_key", type: "String", keyRole: "sort" },
+      {
+        id: "field-3",
+        name: "secondary_index",
+        type: "Index",
+        keyRole: "secondary",
+        indexed: true,
+      },
+    ],
+  }),
+  createDataModelComponent({
+    id: "data-secondary-index",
+    paradigm: "key-value",
+    kind: "secondary-index",
+    label: "Secondary Index",
+    description: "Alternate lookup path for a data model",
+    icon: FaKey,
+    fields: [
+      { id: "field-1", name: "index_name", type: "String", required: true },
+      { id: "field-2", name: "indexed_field", type: "String", required: true },
+    ],
+  }),
+  createDataModelComponent({
+    id: "data-stream",
+    paradigm: "key-value",
+    kind: "stream",
+    label: "Stream",
+    description: "Change stream or event consumer attached to a model",
+    icon: FaStream,
+    fields: [
+      { id: "field-1", name: "event", type: "Change" },
+      { id: "field-2", name: "consumer", type: "Service" },
+    ],
+  }),
+  createDataModelComponent({
+    id: "data-wide-column-table",
+    paradigm: "wide-column",
+    kind: "wide-column-table",
+    label: "Wide-Column Table",
+    description: "Partitioned table with clustering-aware fields",
+    icon: FaTable,
+    fields: [
+      {
+        id: "field-1",
+        name: "partition_key",
+        type: "String",
+        keyRole: "partition",
+        required: true,
+      },
+      {
+        id: "field-2",
+        name: "clustering_key",
+        type: "Timestamp",
+        keyRole: "sort",
+        required: true,
+      },
+      { id: "field-3", name: "value", type: "Text" },
+    ],
+  }),
+  createDataModelComponent({
+    id: "data-partition-key",
+    paradigm: "wide-column",
+    kind: "partition-key",
+    label: "Partition Key",
+    description: "Partition boundary for a wide-column model",
+    icon: FaKey,
+    fields: [
+      { id: "field-1", name: "field", type: "String", required: true },
+      { id: "field-2", name: "distribution", type: "Cardinality" },
+    ],
+  }),
+  createDataModelComponent({
+    id: "data-clustering-key",
+    paradigm: "wide-column",
+    kind: "clustering-key",
+    label: "Clustering Key",
+    description: "Sort order within a partition",
+    icon: FaList,
+    fields: [
+      { id: "field-1", name: "field", type: "Timestamp", required: true },
+      { id: "field-2", name: "order", type: "Ascending" },
+    ],
+  }),
+];
+
 export const COMPONENTS: CanvasComponent[] = [
+  ...DATA_MODEL_COMPONENTS,
   // ========================================
   // General LAYER
   // ========================================
@@ -5546,7 +5750,7 @@ export const COMPONENTS: CanvasComponent[] = [
   // ========================================
   {
     id: "entity",
-    group: "ER Diagram",
+    group: "Data Models",
     icon: FaTable,
     label: "Entity",
     description: "Database table/entity with attributes",
@@ -5677,7 +5881,7 @@ export const COMPONENTS: CanvasComponent[] = [
   },
   {
     id: "weak-entity",
-    group: "ER Diagram",
+    group: "Data Models",
     icon: FaKey,
     label: "Weak Entity",
     description: "Entity dependent on another entity for identification",
@@ -5811,7 +6015,7 @@ export const COMPONENTS: CanvasComponent[] = [
   },
   {
     id: "er-trigger",
-    group: "ER Diagram",
+    group: "Data Models",
     nodeType: "erNode",
     icon: FaBolt,
     label: "Trigger",
@@ -5888,7 +6092,7 @@ export const COMPONENTS: CanvasComponent[] = [
   },
   {
     id: "er-note",
-    group: "ER Diagram",
+    group: "Data Models",
     nodeType: "erNode",
     icon: FaStickyNote,
     label: "Note/Constraint",
@@ -5982,7 +6186,7 @@ export const COMPONENTS: CanvasComponent[] = [
   },
   {
     id: "er-use-case",
-    group: "ER Diagram",
+    group: "Data Models",
     nodeType: "erNode",
     icon: FaCircle,
     label: "Use Case",
@@ -6036,7 +6240,7 @@ export const COMPONENTS: CanvasComponent[] = [
   },
   {
     id: "er-view",
-    group: "ER Diagram",
+    group: "Data Models",
     nodeType: "tableNode",
     icon: FaEye,
     label: "View",

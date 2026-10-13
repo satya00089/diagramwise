@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  isContentSizedTableNode,
-  isFieldAddressableERTable,
-} from "./erdNode";
+import { isContentSizedTableNode, isFieldAddressableERTable } from "./erdNode";
 
 describe("ER and UML table classification", () => {
   it("keeps ER tables field-addressable and content-sized", () => {
@@ -45,5 +42,18 @@ describe("ER and UML table classification", () => {
     expect(isFieldAddressableERTable({ componentId: "custom-table" })).toBe(
       false,
     );
+  });
+
+  it("keeps data-model cards content-sized without treating them as ER tables", () => {
+    expect(
+      isContentSizedTableNode({
+        dataModel: { paradigm: "document", kind: "collection" },
+      }),
+    ).toBe(true);
+    expect(
+      isFieldAddressableERTable({
+        dataModel: { paradigm: "document", kind: "collection" },
+      }),
+    ).toBe(false);
   });
 });
