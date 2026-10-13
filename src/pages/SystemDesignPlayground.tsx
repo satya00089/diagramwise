@@ -5206,12 +5206,14 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                   {idFromUrl !== "free" && !isSharedView && (
                     <>
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
+                        className={`playground-difficulty px-2 py-1 rounded text-xs font-medium ${
                           problem.difficulty === "Easy"
-                            ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                            ? "playground-difficulty--easy"
                             : problem.difficulty === "Medium"
-                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-                              : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                              ? "playground-difficulty--medium"
+                              : problem.difficulty === "Very Hard"
+                                ? "playground-difficulty--very-hard"
+                                : "playground-difficulty--hard"
                         }`}
                       >
                         {problem.difficulty}

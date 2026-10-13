@@ -1598,6 +1598,52 @@ html.dark:has(.design-studio-page) {
   border-color: var(--border) !important;
 }
 
+/* Difficulty badges sit on the theme-aware playground header, so the generic
+   Tailwind red/yellow/green palette is too faint in light mode. Keep the
+   semantic severity colors, but give each badge its own readable surface and
+   border in both themes. */
+.playground-difficulty {
+  border: 1px solid;
+}
+
+.playground-difficulty--easy {
+  border-color: #82b48d;
+  background: #e7f3e9;
+  color: #2f6840;
+}
+
+.playground-difficulty--medium {
+  border-color: #c49b52;
+  background: #fbf0d8;
+  color: #6a4711;
+}
+
+.playground-difficulty--hard,
+.playground-difficulty--very-hard {
+  border-color: #c47a72;
+  background: #f8e5e2;
+  color: #7f2d27;
+}
+
+.dark .playground-difficulty--easy {
+  border-color: #6a9b79;
+  background: #24432f;
+  color: #b5e7bf;
+}
+
+.dark .playground-difficulty--medium {
+  border-color: #b9914c;
+  background: #4b3a1c;
+  color: #f3cd7d;
+}
+
+.dark .playground-difficulty--hard,
+.dark .playground-difficulty--very-hard {
+  border-color: #bd6d66;
+  background: #4f2927;
+  color: #f2b1ab;
+}
+
 .design-studio-page > header button {
   color: var(--text);
 }
