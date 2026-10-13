@@ -571,7 +571,7 @@ const TableNode: React.FC<Props> = React.memo(
           whileHover={{ y: -1, boxShadow: "0 12px 30px rgba(0,0,0,0.12)" }}
           whileTap={{ scale: 0.985 }}
           transition={{ type: "spring", stiffness: 320, damping: 28 }}
-          className={`min-w-[220px] ${isContentSizedTable ? "w-[360px] min-w-[360px] max-w-[360px]" : "max-h-[500px]"} bg-surface border-2 border-theme text-theme text-sm shadow-lg cursor-grab relative rounded-lg overflow-visible flex flex-col`}
+          className={`min-w-[220px] ${isERTable ? "w-[440px] min-w-[440px] max-w-[440px]" : isContentSizedTable ? "w-[360px] min-w-[360px] max-w-[360px]" : "max-h-[500px]"} bg-surface border-2 border-theme text-theme text-sm shadow-lg cursor-grab relative rounded-lg overflow-visible flex flex-col`}
           style={{
             ...(backgroundColor ? { backgroundColor } : {}),
             ...(borderColor ? { borderColor } : {}),
