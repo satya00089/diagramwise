@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Handle, Position } from "@xyflow/react";
+import { Handle, Position, useUpdateNodeInternals } from "@xyflow/react";
 import { motion } from "framer-motion";
 import { MdAdd, MdDelete, MdExpandMore, MdSettings } from "react-icons/md";
 import { IoDuplicateOutline } from "react-icons/io5";
@@ -28,19 +28,30 @@ const getFieldRole = (field: DataModelField) => {
   return field.indexed ? "Indexed" : "";
 };
 
+const getDataModelFieldHandleId = (
+  fieldId: string,
+  side: "left" | "right",
+) => `field:${fieldId}:${side}`;
+
 const DataModelNode: React.FC<Props> = React.memo(
   ({ id, data, onCopy, isInGroup }) => {
     const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState({ name: "", type: "" });
+    const updateNodeInternals = useUpdateNodeInternals();
     const fields = useMemo(
       () => parseDataModelFields(data.fields),
       [data.fields],
     );
     const isCollapsed = data.isCollapsed === true;
+    const isDocumentModel = data.dataModel.paradigm === "document";
     const Icon = data.icon as React.ComponentType<{
       size?: number;
       "aria-hidden"?: React.AriaAttributes["aria-hidden"];
     }>;
+
+    React.useLayoutEffect(() => {
+      updateNodeInternals(id);
+    }, [fields.length, id, isCollapsed, isDocumentModel, updateNodeInternals]);
 
     const emit = (name: string, detail: Record<string, unknown>) => {
       globalThis.dispatchEvent(new CustomEvent(name, { detail }));
@@ -86,32 +97,36 @@ const DataModelNode: React.FC<Props> = React.memo(
           isInGroup ? "opacity-95" : ""
         }`}
       >
-        <Handle
-          id="top"
-          type="source"
-          position={Position.Top}
-          className="!w-full !h-2 !bg-transparent !border-0 !opacity-0"
-        />
-        <Handle
-          id="right"
-          type="source"
-          position={Position.Right}
-          className="!w-2 !h-full !bg-transparent !border-0 !opacity-0"
-        />
-        <Handle
-          id="bottom"
-          type="source"
-          position={Position.Bottom}
-          className="!w-full !h-2 !bg-transparent !border-0 !opacity-0"
-        />
-        <Handle
-          id="left"
-          type="source"
-          position={Position.Left}
-          className="!w-2 !h-full !bg-transparent !border-0 !opacity-0"
-        />
+        {!isDocumentModel && (
+          <>
+            <Handle
+              id="top"
+              type="source"
+              position={Position.Top}
+              className="!w-full !h-2 !bg-transparent !border-0 !opacity-0"
+            />
+            <Handle
+              id="right"
+              type="source"
+              position={Position.Right}
+              className="!w-2 !h-full !bg-transparent !border-0 !opacity-0"
+            />
+            <Handle
+              id="bottom"
+              type="source"
+              position={Position.Bottom}
+              className="!w-full !h-2 !bg-transparent !border-0 !opacity-0"
+            />
+            <Handle
+              id="left"
+              type="source"
+              position={Position.Left}
+              className="!w-2 !h-full !bg-transparent !border-0 !opacity-0"
+            />
+          </>
+        )}
 
-        <div className="bg-[var(--brand)] text-[var(--bg)] px-3 py-2 font-semibold flex items-center gap-2 nodrag">
+        <div className="bg-[var(--brand)] text-[var(--bg)] px-3 py-2 font-semibold flex items-center gap-2 cursor-grab">
           {Icon && <Icon size={16} aria-hidden="true" />}
           <div className="min-w-0 flex-1">
             <div className="truncate">{data.componentName || data.label}</div>
@@ -176,8 +191,78 @@ const DataModelNode: React.FC<Props> = React.memo(
                 return (
                   <div
                     key={field.id}
-                    className="group grid grid-cols-[minmax(0,1fr)_minmax(90px,0.8fr)_72px] gap-2 items-center px-3 py-1.5 border-b border-theme/70 last:border-b-0"
+                    className="group relative grid grid-cols-[minmax(0,1fr)_minmax(90px,0.8fr)_72px] gap-2 items-center px-3 py-1.5 border-b border-theme/70 last:border-b-0"
                   >
+                    {isDocumentModel && (
+                      <>
+                        <Handle
+                          id={getDataModelFieldHandleId(field.id, "left")}
+                          type="source"
+                          position={Position.Left}
+                          isConnectable={true}
+                          aria-label={`Connect ${field.name} on the left`}
+                          className="!pointer-events-auto opacity-0 transition-opacity group-hover:opacity-100"
+                          style={{
+                            left: "-1px",
+                            width: "10px",
+                            height: "18px",
+                            background: "transparent",
+                            border: "none",
+                            pointerEvents: "all",
+                          }}
+                        >
+                          <svg
+                            aria-hidden="true"
+                            width="10"
+                            height="10"
+                            viewBox="0 0 10 10"
+                            fill="none"
+                            className="pointer-events-none"
+                          >
+                            <path
+                              d="M5 1v8M1 5h8"
+                              transform="rotate(45 5 5)"
+                              stroke="var(--brand)"
+                              strokeWidth="1.8"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </Handle>
+                        <Handle
+                          id={getDataModelFieldHandleId(field.id, "right")}
+                          type="source"
+                          position={Position.Right}
+                          isConnectable={true}
+                          aria-label={`Connect ${field.name} on the right`}
+                          className="!pointer-events-auto opacity-0 transition-opacity group-hover:opacity-100"
+                          style={{
+                            right: "-1px",
+                            width: "10px",
+                            height: "18px",
+                            background: "transparent",
+                            border: "none",
+                            pointerEvents: "all",
+                          }}
+                        >
+                          <svg
+                            aria-hidden="true"
+                            width="10"
+                            height="10"
+                            viewBox="0 0 10 10"
+                            fill="none"
+                            className="pointer-events-none"
+                          >
+                            <path
+                              d="M5 1v8M1 5h8"
+                              transform="rotate(45 5 5)"
+                              stroke="var(--brand)"
+                              strokeWidth="1.8"
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                        </Handle>
+                      </>
+                    )}
                     {isEditing ? (
                       <input
                         className="nodrag min-w-0 w-full px-1 py-0.5 bg-surface border border-theme rounded text-xs"

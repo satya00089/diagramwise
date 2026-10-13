@@ -31,8 +31,14 @@ export type TableAttribute = {
 
 export type TableNodeData = {
   label: string;
-  icon?: string;
+  icon?:
+    | string
+    | React.ComponentType<{
+        size?: number;
+        "aria-hidden"?: React.AriaAttributes["aria-hidden"];
+      }>;
   componentName?: string;
+  subtitle?: string;
   componentId?: string; // Component ID like 'uml-class', 'entity', etc.
   description?: string;
   attributes?: TableAttribute[] | string; // Can be array or JSON string
@@ -103,6 +109,11 @@ const TableNode: React.FC<Props> = React.memo(
     });
 
     const displayLabel = data.componentName || data.label;
+    const subtitle = data.subtitle || data.description;
+    const Icon =
+      typeof data.icon === "function"
+        ? data.icon
+        : undefined;
     const isContentSizedTable = isContentSizedTableNode(data);
     const isERTable = isFieldAddressableERTable(data);
     // ER entities and UML table-shaped nodes all share the same collapsible
@@ -617,31 +628,46 @@ const TableNode: React.FC<Props> = React.memo(
               ...(textColor ? { color: textColor } : { color: "var(--bg)" }),
             }}
           >
+            <div className="min-w-0 flex flex-1 items-center gap-2 px-1 py-0.5">
+              {Icon ? (
+                <Icon size={16} aria-hidden="true" />
+              ) : (
+                typeof data.icon === "string" && (
+                  <span className="text-lg">{data.icon}</span>
+                )
+              )}
+              <div className="min-w-0">
+                <div className="truncate">{displayLabel}</div>
+                {subtitle && (
+                  <div className="text-[11px] font-normal opacity-80 truncate">
+                    {subtitle}
+                  </div>
+                )}
+              </div>
+            </div>
             <button
               type="button"
-              className="nopan min-w-0 flex flex-1 items-center gap-2 rounded px-1 py-0.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
               onClick={handleCollapseToggle}
+              className="nodrag nopan flex-shrink-0 rounded p-1 hover:bg-white/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
               aria-expanded={!isCollapsed}
               aria-controls={tableContentId}
               aria-label={`${isCollapsed ? "Expand" : "Collapse"} ${displayLabel}`}
               data-tooltip={isCollapsed ? "Expand table" : "Collapse table"}
               data-tooltip-placement="top"
             >
-              {data.icon && <span className="text-lg">{data.icon}</span>}
-              <span className="truncate">{displayLabel}</span>
               <MdExpandMore
                 aria-hidden="true"
-                className={`ml-auto h-5 w-5 flex-shrink-0 transition-transform duration-150 ${isCollapsed ? "-rotate-90" : "rotate-0"}`}
+                className={`h-5 w-5 flex-shrink-0 transition-transform duration-150 ${isCollapsed ? "-rotate-90" : "rotate-0"}`}
               />
             </button>
             <button
               type="button"
-              onClick={handleAddAttribute}
+              onClick={onToggle}
               className="nodrag nopan flex-shrink-0 rounded p-1 hover:bg-white/20 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
-              aria-label="Add attribute"
-              data-tooltip="Add attribute"
+              aria-label="Open table properties"
+              data-tooltip="Open table properties"
             >
-              <MdAdd className="w-4 h-4" />
+              <MdSettings className="w-4 h-4" />
             </button>
           </div>
 
@@ -893,6 +919,36 @@ const TableNode: React.FC<Props> = React.memo(
             </div>
           )}
         </motion.div>
+
+        <div className="flex items-center justify-end gap-1 px-2 py-1 bg-[var(--bg-hover)] border-t border-theme nodrag">
+          <button
+            type="button"
+            className="p-1 text-muted hover:text-theme"
+            aria-label="Add attribute"
+            data-tooltip="Add attribute"
+            onClick={handleAddAttribute}
+          >
+            <MdAdd className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            className="p-1 text-muted hover:text-theme"
+            aria-label="Duplicate table"
+            data-tooltip="Duplicate table"
+            onClick={handleCopy}
+          >
+            <IoDuplicateOutline className="w-4 h-4" />
+          </button>
+          <button
+            type="button"
+            className="p-1 text-muted hover:text-red-600"
+            aria-label="Delete table"
+            data-tooltip="Delete table"
+            onClick={onDelete}
+          >
+            <MdDelete className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* Context Menu Portal */}
         {contextMenu.visible &&
