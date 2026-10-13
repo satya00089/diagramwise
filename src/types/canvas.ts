@@ -53,6 +53,60 @@ export type NodeRenderConfig = {
   borderWidth?: number;
 };
 
+export type DataModelParadigm =
+  | "relational"
+  | "document"
+  | "key-value"
+  | "wide-column"
+  | "graph";
+
+export type DataModelKind =
+  | "entity"
+  | "view"
+  | "trigger"
+  | "constraint"
+  | "collection"
+  | "document"
+  | "nested-object"
+  | "aggregation-stage"
+  | "schema-validator"
+  | "single-table"
+  | "access-pattern"
+  | "secondary-index"
+  | "stream"
+  | "wide-column-table"
+  | "partition-key"
+  | "clustering-key";
+
+export type DataModelField = {
+  id: string;
+  name: string;
+  type: string;
+  required?: boolean;
+  indexed?: boolean;
+  keyRole?: "partition" | "sort" | "secondary" | "none";
+  parentId?: string;
+};
+
+export type DataModelMetadata = {
+  paradigm: DataModelParadigm;
+  kind: DataModelKind;
+  version: 1;
+};
+
+export type DataModelNodeData = {
+  label: string;
+  componentId?: string;
+  icon?: React.ComponentType;
+  iconUrl?: string;
+  subtitle?: string;
+  componentName?: string;
+  dataModel: DataModelMetadata;
+  fields?: DataModelField[] | string;
+  isCollapsed?: boolean;
+  [key: string]: unknown;
+};
+
 export type CanvasComponent = {
   id: string;
   icon?: React.ComponentType;
@@ -66,7 +120,14 @@ export type CanvasComponent = {
   width?: number;
   height?: number;
   properties?: ComponentProperty[];
-  nodeType?: "custom" | "erNode" | "group" | "tableNode" | "freeform"; // Specify which node component to use
+  dataModel?: DataModelMetadata;
+  nodeType?:
+    | "custom"
+    | "erNode"
+    | "group"
+    | "tableNode"
+    | "dataModelNode"
+    | "freeform"; // Specify which node component to use
   renderConfig?: NodeRenderConfig; // Visual configuration for the node
   data?: Record<string, unknown>; // Default data for the node (e.g., attributes for table nodes)
 };

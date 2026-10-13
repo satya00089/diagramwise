@@ -56,6 +56,7 @@ import type {
 import type { SavedDiagram, Collaborator } from "../types/auth";
 import type { RequirementSpec } from "../types/requirements";
 import type { ComponentProperty, CanvasComponent } from "../types/canvas";
+import type { DataModelNodeData, DataModelField } from "../types/canvas";
 import type { CanvasContext, UserIntent } from "../types/chatBot";
 
 // Custom hooks
@@ -80,8 +81,14 @@ import {
 // Services and utilities
 import { apiService } from "../services/api";
 import assessSolution, { generateInterviewQuestions } from "../utils/assessor";
-import { buildProvidedReasoningContext, buildSystemDesignSolution } from "../utils/designReviewContext";
-import { applyGuidedStep, getAppliedGuidedSteps } from "../utils/guidedWalkthrough";
+import {
+  buildProvidedReasoningContext,
+  buildSystemDesignSolution,
+} from "../utils/designReviewContext";
+import {
+  applyGuidedStep,
+  getAppliedGuidedSteps,
+} from "../utils/guidedWalkthrough";
 import { getCollaboratorColor } from "../utils/collaborationUtils";
 import {
   exportAsJSON,
@@ -131,6 +138,7 @@ import ERNode from "../components/ERNode";
 import type { ERNodeData } from "../components/ERNode";
 import TableNode from "../components/TableNode";
 import type { TableNodeData, TableAttribute } from "../components/TableNode";
+import DataModelNode from "../components/DataModelNode";
 import {
   isContentSizedTableNode,
   isFieldAddressableERTable,
@@ -162,9 +170,19 @@ import {
   getERDLayoutedNodes,
   getLayoutDirectionForMenu,
 } from "../utils/erdLayout";
+import {
+  getDefaultDataModelFields,
+  isDataModelNodeData,
+  parseDataModelFields,
+} from "../utils/dataModel";
 
 // Type alias for all node data types
-type AnyNodeData = NodeData | ERNodeData | TableNodeData | FreeformNodeData;
+type AnyNodeData =
+  | NodeData
+  | ERNodeData
+  | TableNodeData
+  | DataModelNodeData
+  | FreeformNodeData;
 
 type DiagramAccessState =
   | "loading"
@@ -193,7 +211,9 @@ const isGenericComponentReference = (
 ): boolean =>
   provider === "generic" ||
   (typeof catalogRef === "string" && catalogRef.startsWith("generic.")) ||
-  (typeof componentId === "string" && GENERIC_COMPONENT_IDS.has(componentId));
+  (typeof componentId === "string" &&
+    (GENERIC_COMPONENT_IDS.has(componentId) ||
+      componentId.startsWith("data-")));
 
 const getApiErrorStatus = (error: unknown): number | undefined => {
   if (!error || typeof error !== "object") return undefined;
@@ -266,7 +286,6 @@ const getCanvasNodeType = (node: Node): string => {
     : node.type || "component";
 };
 
-
 function getAssessmentScoreBand(score: number) {
   if (score >= 80) return "strong";
   return score >= 50 ? "needs_work" : "weak";
@@ -323,7 +342,6 @@ const getProvidedCanvasStats = (
       .length,
   };
 };
-
 
 // Create a wrapper component for CustomNode with onCopy prop
 const NodeWithCopy = React.memo(
@@ -423,6 +441,24 @@ const createTableNodeWithCopyHandler = (
   };
 };
 
+const createDataModelNodeWithCopyHandler = (
+  onCopy: (id: string, data: AnyNodeData) => void,
+  nodesRef: React.RefObject<Node[]>,
+) => {
+  return (props: { id: string; data: unknown }) => {
+    const isInGroup =
+      nodesRef.current?.find((n) => n.id === props.id)?.parentId !== undefined;
+    return (
+      <DataModelNode
+        {...props}
+        data={props.data as DataModelNodeData}
+        onCopy={(id, data) => onCopy(id, data)}
+        isInGroup={isInGroup}
+      />
+    );
+  };
+};
+
 // Create a wrapper component for FreeformNode with onCopy prop
 const FreeformNodeWithCopy = React.memo(
   (props: {
@@ -493,9 +529,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           ? COMPONENTS.find((c) => c.id === componentId)
           : null;
         const catalogRef =
-          typeof node.data?.catalogRef === "string"
-            ? node.data.catalogRef
-            : "";
+          typeof node.data?.catalogRef === "string" ? node.data.catalogRef : "";
         const isGenericCatalogComponent = isGenericComponentReference(
           componentId,
           node.data?.provider,
@@ -505,7 +539,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         // Restore icon from local component if available
         const restoredIcon = localComp?.icon || node.data?.icon;
         const componentProperties = normalizeComponentProperties(
-          localComp?.properties || fullComponentsCache[componentId || ""]?.properties || [],
+          localComp?.properties ||
+            fullComponentsCache[componentId || ""]?.properties ||
+            [],
         );
 
         // Fetch full component data if it's a provider component (AWS, Azure, etc.)
@@ -557,11 +593,17 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   const tourPageId =
     idFromUrl === "free" ? "design_studio" : "problem_playground";
   const compactViewport = useCompactViewport();
-  const [mobileSidebar, setMobileSidebar] = useState<"palette" | "inspector" | null>(
-    idFromUrl === "free" ? null : "inspector",
+  const [mobileSidebar, setMobileSidebar] = useState<
+    "palette" | "inspector" | null
+  >(idFromUrl === "free" ? null : "inspector");
+  const toggleMobilePalette = useCallback(
+    (open: boolean) => setMobileSidebar(open ? "palette" : null),
+    [],
   );
-  const toggleMobilePalette = useCallback((open: boolean) => setMobileSidebar(open ? "palette" : null), []);
-  const toggleMobileInspector = useCallback((open: boolean) => setMobileSidebar(open ? "inspector" : null), []);
+  const toggleMobileInspector = useCallback(
+    (open: boolean) => setMobileSidebar(open ? "inspector" : null),
+    [],
+  );
   const { startTour } = useTour(tourPageId);
 
   // Toast notifications
@@ -1026,7 +1068,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           const publicDiagram =
             await apiService.getPublicDiagramData(remixIdFromUrl);
           const restoredNodes = restoreNodeIcons(publicDiagram.nodes as Node[]);
-          const restoredEdges = restoreEdgePurposes(publicDiagram.edges as Edge[]);
+          const restoredEdges = restoreEdgePurposes(
+            publicDiagram.edges as Edge[],
+          );
           const baseTitle = publicDiagram.title.trim() || "Shared design";
 
           setNodes(restoredNodes);
@@ -1113,9 +1157,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             // A signed-in user may still be opening a public editor-shaped
             // link. Keep that compatible by falling back to the public copy.
             try {
-              applyDiagram(
-                await apiService.getPublicDiagram(diagramIdFromUrl),
-              );
+              applyDiagram(await apiService.getPublicDiagram(diagramIdFromUrl));
             } catch (publicError) {
               if (cancelled) return;
               const privateStatus = getApiErrorStatus(privateError);
@@ -1209,7 +1251,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           } | null;
 
           if (attempt) {
-            setAttemptRequirementContext({ problemId: idFromUrl, spec: attempt.problemRequirementSpec });
+            setAttemptRequirementContext({
+              problemId: idFromUrl,
+              spec: attempt.problemRequirementSpec,
+            });
             persistedAssessmentCountRef.current = attempt.assessmentCount ?? 0;
             setAssessmentHistory(attempt.assessmentHistory ?? []);
             setAddressedFindingIds(attempt.addressedFindingIds ?? []);
@@ -1244,13 +1289,19 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             // Restore last assessment if available
             if (attempt.lastAssessment) {
               setAssessment(attempt.lastAssessment);
-              if (attempt.lastAssessment.source !== "rule_based" && attempt.lastAssessment.scoreAvailable !== false) {
+              if (
+                attempt.lastAssessment.source !== "rule_based" &&
+                attempt.lastAssessment.scoreAvailable !== false
+              ) {
                 setLastSuccessfulAssessment(attempt.lastAssessment);
               }
               // Automatically open Assessment tab to show the assessment
               setActiveRightTab("assessment");
             }
-            if (attempt.lastAssessmentCheck?.scoreAvailable === false || attempt.lastAssessmentCheck?.source === "rule_based") {
+            if (
+              attempt.lastAssessmentCheck?.scoreAvailable === false ||
+              attempt.lastAssessmentCheck?.source === "rule_based"
+            ) {
               setAssessment(attempt.lastAssessmentCheck);
             }
 
@@ -1287,15 +1338,37 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   // Persist content changes, not the one-second clock. The save callback reads
   // the latest elapsed time without repeatedly cancelling the pending debounce.
   const autoSaveContentKey = useMemo(
-    () => JSON.stringify({
-      nodes, edges, idFromUrl, currentDiagramId, userId: user?.id, problem,
-      userIntent, reasoningContext, interviewSession, addressedFindingIds, remixOrigin,
-    }),
-    [nodes, edges, idFromUrl, currentDiagramId, user?.id, problem, userIntent,
-      reasoningContext, interviewSession, addressedFindingIds, remixOrigin],
+    () =>
+      JSON.stringify({
+        nodes,
+        edges,
+        idFromUrl,
+        currentDiagramId,
+        userId: user?.id,
+        problem,
+        userIntent,
+        reasoningContext,
+        interviewSession,
+        addressedFindingIds,
+        remixOrigin,
+      }),
+    [
+      nodes,
+      edges,
+      idFromUrl,
+      currentDiagramId,
+      user?.id,
+      problem,
+      userIntent,
+      reasoningContext,
+      interviewSession,
+      addressedFindingIds,
+      remixOrigin,
+    ],
   );
   useDebouncedSave(autoSaveEnabled, autoSaveContentKey, async () => {
-    if (nodes.length === 0 && lastSavedAttemptContentRef.current === null) return;
+    if (nodes.length === 0 && lastSavedAttemptContentRef.current === null)
+      return;
 
     const isProblemAttempt = Boolean(idFromUrl && idFromUrl !== "free");
     const attemptContentSnapshot =
@@ -1586,7 +1659,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   const [assessment, setAssessment] = React.useState<ValidationResult | null>(
     null,
   );
-  const [lastSuccessfulAssessment, setLastSuccessfulAssessment] = useState<ValidationResult | null>(null);
+  const [lastSuccessfulAssessment, setLastSuccessfulAssessment] =
+    useState<ValidationResult | null>(null);
   const [isAssessing, setIsAssessing] = useState(false);
   const [isPreparingInterview, setIsPreparingInterview] = useState(false);
   const [showAssessmentInterview, setShowAssessmentInterview] = useState(false);
@@ -1614,11 +1688,15 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         currentQuestionIndex: 0,
       };
       setAssessment(res);
-      if (res.scoreAvailable !== false && res.source === "ai") setLastSuccessfulAssessment(res);
+      if (res.scoreAvailable !== false && res.source === "ai")
+        setLastSuccessfulAssessment(res);
       trackEvent("assessment_completed", {
         problem_id: idFromUrl === "free" ? undefined : idFromUrl,
         assessment_source: res.source ?? "unknown",
-        score_band: res.scoreAvailable === false ? "unavailable" : getAssessmentScoreBand(res.score),
+        score_band:
+          res.scoreAvailable === false
+            ? "unavailable"
+            : getAssessmentScoreBand(res.score),
         finding_count: res.feedback?.length ?? 0,
       });
       setInterviewSession(followUpSession);
@@ -1953,6 +2031,21 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
               renderConfig: comp?.renderConfig, // Pass the renderConfig from component
             }
           : {}),
+        ...(nodeTypeToUse === "dataModelNode"
+          ? {
+              componentName: comp?.label || label || "Data Model",
+              fields:
+                (comp?.data?.fields as DataModelField[] | undefined) ||
+                (comp?.dataModel
+                  ? getDefaultDataModelFields(comp.dataModel.kind)
+                  : []),
+              dataModel: comp?.dataModel ?? {
+                paradigm: "document" as const,
+                kind: "collection" as const,
+                version: 1 as const,
+              },
+            }
+          : {}),
         // For erNode types, add default property values
         ...(nodeTypeToUse === "erNode"
           ? comp?.properties?.reduce(
@@ -2206,7 +2299,11 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           dispatch(fetchFullComponent(comp.componentType));
         }
 
-        const next = applyGuidedStep({ nodes: nodesRef.current, edges: edgesRef.current }, step, () => newNode);
+        const next = applyGuidedStep(
+          { nodes: nodesRef.current, edges: edgesRef.current },
+          step,
+          () => newNode,
+        );
         setNodes(next.nodes);
         return true;
       } else if (step.type === "add_connection" || step.componentUpdate) {
@@ -2227,7 +2324,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     "details" | "inspector" | "assessment" | "guide"
   >("details");
   useEffect(() => {
-    if (compactViewport && (activeRightTab === "assessment" || activeRightTab === "inspector")) {
+    if (
+      compactViewport &&
+      (activeRightTab === "assessment" || activeRightTab === "inspector")
+    ) {
       setMobileSidebar("inspector");
     }
   }, [compactViewport, activeRightTab]);
@@ -2740,6 +2840,162 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       );
     };
   }, [setEdges, setNodes]);
+
+  // Data-model field event handlers. These intentionally use a separate field
+  // shape from SQL TableAttribute so non-relational nodes never inherit PK/FK
+  // assumptions from the ER editor.
+  React.useEffect(() => {
+    const addFieldListener = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          nodeId: string;
+          field: DataModelField;
+        }>
+      ).detail;
+      setNodes((current) =>
+        current.map((node) => {
+          if (node.id !== detail.nodeId || !isDataModelNodeData(node.data)) {
+            return node;
+          }
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              fields: [...parseDataModelFields(node.data.fields), detail.field],
+            },
+          };
+        }),
+      );
+    };
+
+    const deleteFieldListener = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          nodeId: string;
+          fieldId: string;
+        }>
+      ).detail;
+      setNodes((current) =>
+        current.map((node) => {
+          if (node.id !== detail.nodeId || !isDataModelNodeData(node.data)) {
+            return node;
+          }
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              fields: parseDataModelFields(node.data.fields).filter(
+                (field) => field.id !== detail.fieldId,
+              ),
+            },
+          };
+        }),
+      );
+    };
+
+    const toggleFieldListener = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          nodeId: string;
+          fieldId: string;
+          key: "keyRole" | "indexed";
+        }>
+      ).detail;
+      setNodes((current) =>
+        current.map((node) => {
+          if (node.id !== detail.nodeId || !isDataModelNodeData(node.data)) {
+            return node;
+          }
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              fields: parseDataModelFields(node.data.fields).map((field) => {
+                if (field.id !== detail.fieldId) return field;
+                if (detail.key === "indexed") {
+                  return { ...field, indexed: !field.indexed };
+                }
+                const nextRole =
+                  field.keyRole === "partition"
+                    ? "sort"
+                    : field.keyRole === "sort"
+                      ? "secondary"
+                      : field.keyRole === "secondary"
+                        ? "none"
+                        : "partition";
+                return { ...field, keyRole: nextRole };
+              }),
+            },
+          };
+        }),
+      );
+    };
+
+    const updateFieldListener = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          nodeId: string;
+          fieldId: string;
+          name: string;
+          type: string;
+        }>
+      ).detail;
+      setNodes((current) =>
+        current.map((node) => {
+          if (node.id !== detail.nodeId || !isDataModelNodeData(node.data)) {
+            return node;
+          }
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              fields: parseDataModelFields(node.data.fields).map((field) =>
+                field.id === detail.fieldId
+                  ? { ...field, name: detail.name, type: detail.type }
+                  : field,
+              ),
+            },
+          };
+        }),
+      );
+    };
+
+    globalThis.addEventListener(
+      "diagram:data-model-field-add",
+      addFieldListener as EventListener,
+    );
+    globalThis.addEventListener(
+      "diagram:data-model-field-delete",
+      deleteFieldListener as EventListener,
+    );
+    globalThis.addEventListener(
+      "diagram:data-model-field-toggle",
+      toggleFieldListener as EventListener,
+    );
+    globalThis.addEventListener(
+      "diagram:data-model-field-update",
+      updateFieldListener as EventListener,
+    );
+
+    return () => {
+      globalThis.removeEventListener(
+        "diagram:data-model-field-add",
+        addFieldListener as EventListener,
+      );
+      globalThis.removeEventListener(
+        "diagram:data-model-field-delete",
+        deleteFieldListener as EventListener,
+      );
+      globalThis.removeEventListener(
+        "diagram:data-model-field-toggle",
+        toggleFieldListener as EventListener,
+      );
+      globalThis.removeEventListener(
+        "diagram:data-model-field-update",
+        updateFieldListener as EventListener,
+      );
+    };
+  }, [setNodes]);
 
   React.useEffect(() => {
     if (!inspectedNodeId) return;
@@ -3655,6 +3911,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       erNode: createERNodeWithCopyHandler(handleNodeCopy, nodesRef),
       freeform: createFreeformNodeWithCopyHandler(handleNodeCopy, nodesRef),
       tableNode: createTableNodeWithCopyHandler(handleNodeCopy, nodesRef),
+      dataModelNode: createDataModelNodeWithCopyHandler(
+        handleNodeCopy,
+        nodesRef,
+      ),
       group: GroupNode,
     }),
     [handleNodeCopy],
@@ -4044,6 +4304,21 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         borderColor: isGroupComponent ? "rgba(100, 100, 255, 0.3)" : undefined,
         ...(isFreeformNode
           ? (freeformDefault.data as unknown as AnyNodeData)
+          : {}),
+        ...(nodeTypeToUse === "dataModelNode"
+          ? {
+              componentName: finalLabel,
+              fields:
+                (comp?.data?.fields as DataModelField[] | undefined) ||
+                (comp?.dataModel
+                  ? getDefaultDataModelFields(comp.dataModel.kind)
+                  : []),
+              dataModel: comp?.dataModel ?? {
+                paradigm: "document" as const,
+                kind: "collection" as const,
+                version: 1 as const,
+              },
+            }
           : {}),
       },
     };
@@ -5393,15 +5668,29 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             assessmentResult={assessment}
             assessmentHistory={assessmentHistory}
             previousAiAssessment={lastSuccessfulAssessment ?? undefined}
-            reviewedRequirementSpec={attemptRequirementContext?.problemId === problem?.id ? attemptRequirementContext.spec : undefined}
+            reviewedRequirementSpec={
+              attemptRequirementContext?.problemId === problem?.id
+                ? attemptRequirementContext.spec
+                : undefined
+            }
             appliedGuidedStepIds={getAppliedGuidedSteps({ nodes, edges })}
             onSelectEvidence={(evidenceId) => {
               const node = nodes.find((item) => item.id === evidenceId);
               if (node) {
-                setNodes((current) => current.map((item) => ({ ...item, selected: item.id === evidenceId })));
+                setNodes((current) =>
+                  current.map((item) => ({
+                    ...item,
+                    selected: item.id === evidenceId,
+                  })),
+                );
                 fitView({ nodes: [node], padding: 0.5, duration: 200 });
               } else {
-                setEdges((current) => current.map((item) => ({ ...item, selected: item.id === evidenceId })));
+                setEdges((current) =>
+                  current.map((item) => ({
+                    ...item,
+                    selected: item.id === evidenceId,
+                  })),
+                );
               }
             }}
             addressedFindingIds={addressedFindingIds}
