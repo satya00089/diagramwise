@@ -41,6 +41,7 @@ const DataModelNode: React.FC<Props> = React.memo(
     );
     const isCollapsed = data.isCollapsed === true;
     const isDocumentModel = data.dataModel.paradigm === "document";
+    const actionLabel = data.componentName || data.label || "Data model";
     const Icon = data.icon as React.ComponentType<{
       size?: number;
       "aria-hidden"?: React.AriaAttributes["aria-hidden"];
@@ -312,7 +313,9 @@ const DataModelNode: React.FC<Props> = React.memo(
           <button
             type="button"
             className="p-1 text-muted hover:text-theme"
-            aria-label="Duplicate data model"
+            aria-label={`Duplicate ${actionLabel}`}
+            data-tooltip={`Duplicate ${actionLabel}`}
+            data-tooltip-placement="top"
             onClick={(event) => {
               event.stopPropagation();
               onCopy?.(id, data);
@@ -322,14 +325,17 @@ const DataModelNode: React.FC<Props> = React.memo(
           </button>
           <button
             type="button"
-            className="p-1 text-muted hover:text-red-600"
-            aria-label="Delete data model"
-            onClick={(event) => {
+            className="p-1 text-muted transition-colors hover:!text-red-600 focus-visible:!text-red-600"
+            aria-label={`Double-click to delete ${actionLabel}`}
+            data-tooltip={`Double-click to delete ${actionLabel}`}
+            data-tooltip-placement="top"
+            onClick={(event) => event.stopPropagation()}
+            onDoubleClick={(event) => {
               event.stopPropagation();
               emit("diagram:node-delete", { id });
             }}
           >
-            <MdDelete size={14} />
+            <MdDelete size={14} className="transition-colors" />
           </button>
         </div>
       </motion.div>

@@ -107,6 +107,14 @@ const TableNode: React.FC<Props> = React.memo(
     });
 
     const displayLabel = data.componentName || data.label;
+    const actionLabel =
+      data.componentId === "weak-entity"
+        ? "Weak Entity"
+        : data.componentId === "entity" || data.componentId === "er-entity"
+          ? "Entity"
+          : data.componentId === "er-view"
+            ? "View"
+            : displayLabel || "Table";
     const subtitle = data.subtitle || data.description;
     const Icon = typeof data.icon === "function" ? data.icon : undefined;
     const isContentSizedTable = isContentSizedTableNode(data);
@@ -837,20 +845,23 @@ const TableNode: React.FC<Props> = React.memo(
             <button
               type="button"
               className="p-1 text-muted hover:text-theme"
-              aria-label="Duplicate table"
-              data-tooltip="Duplicate table"
+              aria-label={`Duplicate ${actionLabel}`}
+              data-tooltip={`Duplicate ${actionLabel}`}
+              data-tooltip-placement="top"
               onClick={handleCopy}
             >
               <IoDuplicateOutline className="w-4 h-4" />
             </button>
             <button
               type="button"
-              className="p-1 text-muted hover:text-red-600"
-              aria-label="Delete table"
-              data-tooltip="Delete table"
-              onClick={onDelete}
+              className="p-1 text-muted transition-colors hover:!text-red-600 focus-visible:!text-red-600"
+              aria-label={`Double-click to delete ${actionLabel}`}
+              data-tooltip={`Double-click to delete ${actionLabel}`}
+              data-tooltip-placement="top"
+              onClick={(event) => event.stopPropagation()}
+              onDoubleClick={onDelete}
             >
-              <MdDelete className="w-4 h-4" />
+              <MdDelete className="w-4 h-4 transition-colors" />
             </button>
           </div>
         </motion.div>
@@ -955,13 +966,18 @@ const TableNode: React.FC<Props> = React.memo(
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
+                }}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
                   onDelete(e);
                   closeContextMenu();
                 }}
+                aria-label={`Double-click to delete ${actionLabel}`}
+                title={`Double-click to delete ${actionLabel}`}
                 className="w-full px-3 py-2 text-left hover:bg-[var(--bg-hover)] transition-colors flex items-center gap-2 text-sm text-red-600"
               >
                 <MdDelete className="w-4 h-4" />
-                Delete
+                Double-click to delete {actionLabel}
               </button>
             </motion.div>,
             document.body,
