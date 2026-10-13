@@ -2,13 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import { ControlButton } from "@xyflow/react";
 import {
   MdClose,
+  MdAccountTree,
   MdHistory,
   MdRedo,
   MdSwapHoriz,
   MdSwapVert,
   MdUndo,
 } from "react-icons/md";
-import { FcFlowChart } from "react-icons/fc";
 
 type MenuName = "canvas" | "layout";
 
@@ -125,12 +125,16 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
           {icon}
         </ControlButton>
         <div
-          id={menuId}
-          role="menu"
-          aria-label={label}
-          className={`absolute left-full bottom-0 z-[1000] ml-2 min-w-[176px] flex-col overflow-hidden rounded-md border border-theme bg-[var(--surface)] p-1 text-theme shadow-lg ${isOpen ? "flex" : "hidden"}`}
+          className={`absolute left-full bottom-0 z-[1000] pl-2 ${isOpen ? "block" : "hidden"}`}
         >
-          {options}
+          <div
+            id={menuId}
+            role="menu"
+            aria-label={label}
+            className="flex min-w-[176px] flex-col overflow-hidden rounded-md border border-theme bg-[var(--surface)] p-1 text-theme shadow-lg"
+          >
+            {options}
+          </div>
         </div>
       </div>
     );
@@ -166,7 +170,7 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
       {renderMenu(
         "canvas",
         "Canvas actions",
-        <MdHistory aria-hidden="true" />,
+        <MdHistory className="h-3 w-3 shrink-0" aria-hidden="true" />,
         <>
           {renderMenuItem(
             "Undo",
@@ -193,7 +197,7 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
       {renderMenu(
         "layout",
         "Auto layout",
-        <FcFlowChart aria-hidden="true" />,
+        <MdAccountTree className="h-3 w-3 shrink-0" aria-hidden="true" />,
         <>
           {renderMenuItem(
             "Horizontal layout",

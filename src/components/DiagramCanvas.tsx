@@ -11,6 +11,7 @@ import {
   ConnectionMode,
 } from "@xyflow/react";
 import StyledFlowControls from "./shared/StyledFlowControls";
+import CanvasInteractivityControl from "./CanvasInteractivityControl";
 
 type DiagramCanvasProps = {
   readOnly?: boolean;
@@ -82,7 +83,10 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
           proOptions={{ hideAttribution: true }}
         >
           <MiniMap nodeStrokeWidth={3} />
-          <StyledFlowControls>{canvasActions}</StyledFlowControls>
+          <StyledFlowControls showInteractive={false}>
+            {canvasActions}
+            <CanvasInteractivityControl />
+          </StyledFlowControls>
           <Background gap={16} />
           {children}
         </ReactFlow>
