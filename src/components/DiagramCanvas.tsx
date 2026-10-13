@@ -11,6 +11,7 @@ import {
   ConnectionMode,
 } from "@xyflow/react";
 import StyledFlowControls from "./shared/StyledFlowControls";
+import CanvasInteractivityControl from "./CanvasInteractivityControl";
 
 type DiagramCanvasProps = {
   readOnly?: boolean;
@@ -27,6 +28,7 @@ type DiagramCanvasProps = {
   onNodeDragStop?: (event: React.MouseEvent, node: Node) => void;
   onMouseMove?: (event: React.MouseEvent) => void;
   onEdgeClick?: (event: React.MouseEvent, edge: Edge) => void;
+  canvasActions?: React.ReactNode;
   children?: React.ReactNode;
 };
 
@@ -45,6 +47,7 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   onNodeDragStop,
   onMouseMove,
   onEdgeClick,
+  canvasActions,
   children,
 }) => {
   return (
@@ -80,7 +83,10 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
           proOptions={{ hideAttribution: true }}
         >
           <MiniMap nodeStrokeWidth={3} />
-          <StyledFlowControls />
+          <StyledFlowControls showInteractive={false}>
+            {canvasActions}
+            <CanvasInteractivityControl />
+          </StyledFlowControls>
           <Background gap={16} />
           {children}
         </ReactFlow>
