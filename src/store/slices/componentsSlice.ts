@@ -24,7 +24,7 @@ export interface MinimalComponent {
   width?: number;
   height?: number;
   tags?: string[];
-  dataModel?: CanvasComponent["dataModel"];
+  dataModel?: NonNullable<CanvasComponent["dataModel"]>;
   nodeType?:
     | "custom"
     | "group"

@@ -16,11 +16,10 @@ type Props = {
   isInGroup?: boolean;
 };
 
-const getFieldIndent = (field: DataModelField, fields: DataModelField[]) => {
+const getFieldIndent = (field: DataModelField) => {
   if (field.parentId) return 1;
   const depth = field.name.split(".").length - 1;
-  if (depth > 0) return depth;
-  return fields.some((candidate) => candidate.parentId === field.id) ? 0 : 0;
+  return depth > 0 ? depth : 0;
 };
 
 const getFieldRole = (field: DataModelField) => {
@@ -39,7 +38,10 @@ const DataModelNode: React.FC<Props> = React.memo(
       [data.fields],
     );
     const isCollapsed = data.isCollapsed === true;
-    const Icon = data.icon;
+    const Icon = data.icon as React.ComponentType<{
+      size?: number;
+      "aria-hidden"?: React.AriaAttributes["aria-hidden"];
+    }>;
 
     const emit = (name: string, detail: Record<string, unknown>) => {
       globalThis.dispatchEvent(new CustomEvent(name, { detail }));
@@ -171,7 +173,7 @@ const DataModelNode: React.FC<Props> = React.memo(
             ) : (
               fields.map((field) => {
                 const isEditing = editingFieldId === field.id;
-                const indent = getFieldIndent(field, fields);
+                const indent = getFieldIndent(field);
                 return (
                   <div
                     key={field.id}
@@ -193,7 +195,6 @@ const DataModelNode: React.FC<Props> = React.memo(
                           if (event.key === "Enter") saveField();
                           if (event.key === "Escape") setEditingFieldId(null);
                         }}
-                        autoFocus
                       />
                     ) : (
                       <button

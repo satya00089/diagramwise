@@ -55,8 +55,12 @@ import type {
 } from "../types/systemDesign";
 import type { SavedDiagram, Collaborator } from "../types/auth";
 import type { RequirementSpec } from "../types/requirements";
-import type { ComponentProperty, CanvasComponent } from "../types/canvas";
-import type { DataModelNodeData, DataModelField } from "../types/canvas";
+import type {
+  ComponentProperty,
+  CanvasComponent,
+  DataModelNodeData,
+  DataModelField,
+} from "../types/canvas";
 import type { CanvasContext, UserIntent } from "../types/chatBot";
 
 // Custom hooks
@@ -183,6 +187,39 @@ type AnyNodeData =
   | TableNodeData
   | DataModelNodeData
   | FreeformNodeData;
+
+type DataModelFieldUpdater = (fields: DataModelField[]) => DataModelField[];
+
+const updateDataModelNodeFields = (
+  nodes: Node[],
+  nodeId: string,
+  updateFields: DataModelFieldUpdater,
+): Node[] =>
+  nodes.map((node) => {
+    if (node.id !== nodeId || !isDataModelNodeData(node.data)) return node;
+    return {
+      ...node,
+      data: {
+        ...node.data,
+        fields: updateFields(parseDataModelFields(node.data.fields)),
+      },
+    };
+  });
+
+const getNextDataModelKeyRole = (
+  keyRole: DataModelField["keyRole"],
+): NonNullable<DataModelField["keyRole"]> => {
+  switch (keyRole) {
+    case "partition":
+      return "sort";
+    case "sort":
+      return "secondary";
+    case "secondary":
+      return "none";
+    default:
+      return "partition";
+  }
+};
 
 type DiagramAccessState =
   | "loading"
@@ -2853,18 +2890,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         }>
       ).detail;
       setNodes((current) =>
-        current.map((node) => {
-          if (node.id !== detail.nodeId || !isDataModelNodeData(node.data)) {
-            return node;
-          }
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              fields: [...parseDataModelFields(node.data.fields), detail.field],
-            },
-          };
-        }),
+        updateDataModelNodeFields(current, detail.nodeId, (fields) => [
+          ...fields,
+          detail.field,
+        ]),
       );
     };
 
@@ -2876,20 +2905,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         }>
       ).detail;
       setNodes((current) =>
-        current.map((node) => {
-          if (node.id !== detail.nodeId || !isDataModelNodeData(node.data)) {
-            return node;
-          }
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              fields: parseDataModelFields(node.data.fields).filter(
-                (field) => field.id !== detail.fieldId,
-              ),
-            },
-          };
-        }),
+        updateDataModelNodeFields(current, detail.nodeId, (fields) =>
+          fields.filter((field) => field.id !== detail.fieldId),
+        ),
       );
     };
 
@@ -2902,32 +2920,18 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         }>
       ).detail;
       setNodes((current) =>
-        current.map((node) => {
-          if (node.id !== detail.nodeId || !isDataModelNodeData(node.data)) {
-            return node;
-          }
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              fields: parseDataModelFields(node.data.fields).map((field) => {
-                if (field.id !== detail.fieldId) return field;
-                if (detail.key === "indexed") {
-                  return { ...field, indexed: !field.indexed };
-                }
-                const nextRole =
-                  field.keyRole === "partition"
-                    ? "sort"
-                    : field.keyRole === "sort"
-                      ? "secondary"
-                      : field.keyRole === "secondary"
-                        ? "none"
-                        : "partition";
-                return { ...field, keyRole: nextRole };
-              }),
-            },
-          };
-        }),
+        updateDataModelNodeFields(current, detail.nodeId, (fields) =>
+          fields.map((field) => {
+            if (field.id !== detail.fieldId) return field;
+            if (detail.key === "indexed") {
+              return { ...field, indexed: !field.indexed };
+            }
+            return {
+              ...field,
+              keyRole: getNextDataModelKeyRole(field.keyRole),
+            };
+          }),
+        ),
       );
     };
 
@@ -2941,22 +2945,13 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         }>
       ).detail;
       setNodes((current) =>
-        current.map((node) => {
-          if (node.id !== detail.nodeId || !isDataModelNodeData(node.data)) {
-            return node;
-          }
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              fields: parseDataModelFields(node.data.fields).map((field) =>
-                field.id === detail.fieldId
-                  ? { ...field, name: detail.name, type: detail.type }
-                  : field,
-              ),
-            },
-          };
-        }),
+        updateDataModelNodeFields(current, detail.nodeId, (fields) =>
+          fields.map((field) =>
+            field.id === detail.fieldId
+              ? { ...field, name: detail.name, type: detail.type }
+              : field,
+          ),
+        ),
       );
     };
 
