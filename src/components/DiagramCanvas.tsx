@@ -27,6 +27,7 @@ type DiagramCanvasProps = {
   onNodeDragStop?: (event: React.MouseEvent, node: Node) => void;
   onMouseMove?: (event: React.MouseEvent) => void;
   onEdgeClick?: (event: React.MouseEvent, edge: Edge) => void;
+  canvasActions?: React.ReactNode;
   children?: React.ReactNode;
 };
 
@@ -45,6 +46,7 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   onNodeDragStop,
   onMouseMove,
   onEdgeClick,
+  canvasActions,
   children,
 }) => {
   return (
@@ -80,7 +82,7 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
           proOptions={{ hideAttribution: true }}
         >
           <MiniMap nodeStrokeWidth={3} />
-          <StyledFlowControls />
+          <StyledFlowControls>{canvasActions}</StyledFlowControls>
           <Background gap={16} />
           {children}
         </ReactFlow>

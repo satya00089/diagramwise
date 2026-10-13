@@ -29,8 +29,6 @@ import { toPng, toJpeg, toSvg } from "html-to-image";
 import dagre from "dagre";
 import {
   MdAccessTime,
-  MdUndo,
-  MdRedo,
   MdClose,
   MdExpandMore,
   MdSave,
@@ -38,7 +36,6 @@ import {
   MdPublic,
   MdExtension,
 } from "react-icons/md";
-import { FcFlowChart } from "react-icons/fc";
 
 // Routing
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -134,6 +131,7 @@ import AssessmentInterviewDialog from "../components/AssessmentInterviewDialog";
 import DiagramCanvas from "../components/DiagramCanvas";
 import ComponentPalette from "../components/ComponentPalette";
 import InspectorPanel from "../components/InspectorPanel";
+import CanvasActionControls from "../components/CanvasActionControls";
 
 // UI Components - Nodes
 import CustomNode from "../components/Node";
@@ -1171,8 +1169,6 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     resetChatBot,
   ]);
 
-  // State for layout menu
-  const [showLayoutMenu, setShowLayoutMenu] = useState(false);
   const [showExtensionHub, setShowExtensionHub] = useState(false);
   const [extensionImportStatus, setExtensionImportStatus] = useState<
     string | null
@@ -1714,23 +1710,6 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       return `at ${savedAt.toLocaleTimeString()}`;
     }
   };
-
-  // Close layout menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (showLayoutMenu) {
-        const target = e.target as HTMLElement;
-        if (!target.closest(".relative")) {
-          setShowLayoutMenu(false);
-        }
-      }
-    };
-
-    if (showLayoutMenu) {
-      document.addEventListener("click", handleClickOutside);
-      return () => document.removeEventListener("click", handleClickOutside);
-    }
-  }, [showLayoutMenu]);
 
   const onConnect = (connection: Connection) => {
     if (!firstConnectionTrackedRef.current) {
@@ -5290,42 +5269,6 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                   </div>
                 )}
 
-                {/* Undo/Redo buttons */}
-                <div className="hidden sm:flex items-center gap-1 border-l border-r border-white/20 pl-2 pr-2">
-                  <button
-                    type="button"
-                    onClick={undo}
-                    disabled={!canUndo || extensionImportStatus !== null}
-                    className="p-2 text-white hover:bg-white/20 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                    data-tooltip="Undo (Ctrl+Z)"
-                  >
-                    <MdUndo className="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={redo}
-                    disabled={!canRedo || extensionImportStatus !== null}
-                    className="p-2 text-white hover:bg-white/20 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                    data-tooltip="Redo (Ctrl+Y or Ctrl+Shift+Z)"
-                  >
-                    <MdRedo className="h-5 w-5" />
-                  </button>
-
-                  {/* Clear Canvas button */}
-                  <button
-                    type="button"
-                    onClick={handleClearCanvas}
-                    disabled={
-                      (nodes.length === 0 && edges.length === 0) ||
-                      extensionImportStatus !== null
-                    }
-                    className="p-2 text-white hover:bg-white/20 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                    data-tooltip="Clear Canvas"
-                  >
-                    <MdClose className="h-5 w-5" />
-                  </button>
-                </div>
-
                 <button
                   type="button"
                   onClick={() => setShowExtensionHub(true)}
@@ -5337,51 +5280,6 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                 >
                   <MdExtension className="h-5 w-5" />
                 </button>
-
-                {/* Layout button with dropdown */}
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowLayoutMenu(!showLayoutMenu)}
-                    disabled={
-                      nodes.length === 0 || extensionImportStatus !== null
-                    }
-                    className="p-2 text-white hover:bg-white/20 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                    data-tooltip="Auto Layout"
-                  >
-                    <FcFlowChart className="h-5 w-5" />
-                  </button>
-
-                  {/* Layout direction dropdown */}
-                  {showLayoutMenu && (
-                    <div className="absolute top-full right-0 mt-1 bg-[var(--surface)] shadow-lg rounded-lg border border-theme/10 py-1 z-50 min-w-[160px]">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onLayout(
-                            getLayoutDirectionForMenu(nodes, "horizontal"),
-                          );
-                          setShowLayoutMenu(false);
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm text-theme hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
-                      >
-                        Horizontal Layout
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onLayout(
-                            getLayoutDirectionForMenu(nodes, "vertical"),
-                          );
-                          setShowLayoutMenu(false);
-                        }}
-                        className="w-full px-4 py-2 text-left text-sm text-theme hover:bg-[var(--bg-hover)] transition-colors cursor-pointer"
-                      >
-                        Vertical Layout
-                      </button>
-                    </div>
-                  )}
-                </div>
 
                 {/* Share button - only show for Design Studio and authenticated users with owned diagrams */}
                 {idFromUrl === "free" &&
@@ -5699,6 +5597,30 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             onNodeDragStop={onNodeDragStop}
             onMouseMove={handleCanvasMouseMove}
             onEdgeClick={handleEdgeClick}
+            canvasActions={
+              isSharedView ? null : (
+                <CanvasActionControls
+                  canUndo={canUndo && extensionImportStatus === null}
+                  canRedo={canRedo && extensionImportStatus === null}
+                  clearDisabled={
+                    (nodes.length === 0 && edges.length === 0) ||
+                    extensionImportStatus !== null
+                  }
+                  layoutDisabled={
+                    nodes.length === 0 || extensionImportStatus !== null
+                  }
+                  onUndo={undo}
+                  onRedo={redo}
+                  onClearCanvas={handleClearCanvas}
+                  onHorizontalLayout={() =>
+                    onLayout(getLayoutDirectionForMenu(nodes, "horizontal"))
+                  }
+                  onVerticalLayout={() =>
+                    onLayout(getLayoutDirectionForMenu(nodes, "vertical"))
+                  }
+                />
+              )
+            }
           >
             {/* Render collaborator cursors (always shown when connected) */}
             {cursors.map((cursor) => {
