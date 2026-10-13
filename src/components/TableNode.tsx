@@ -10,10 +10,12 @@ import {
   MdExpandMore,
   MdOutlineVerticalAlignTop,
   MdOutlineVerticalAlignBottom,
+  MdDragIndicator,
 } from "react-icons/md";
 import { IoDuplicateOutline } from "react-icons/io5";
 import { FiUnlock } from "react-icons/fi";
 import { FieldConnectionHandles } from "./FieldConnectionHandles";
+import { useReorderableRows } from "../hooks/useReorderableRows";
 import type { NodeRenderConfig, TableColumn } from "../types/canvas";
 import {
   isContentSizedTableNode,
@@ -155,6 +157,22 @@ const TableNode: React.FC<Props> = React.memo(
       }
       return [];
     }, [data.attributes]);
+
+    const reorderAttributes = useCallback(
+      (sourceId: string, targetId: string, position: "before" | "after") => {
+        globalThis.dispatchEvent(
+          new CustomEvent("diagram:table-attribute-reorder", {
+            detail: { nodeId: id, sourceId, targetId, position },
+          }),
+        );
+      },
+      [id],
+    );
+    const rowReordering = useReorderableRows(
+      attributes,
+      () => "attributes",
+      reorderAttributes,
+    );
 
     const updateAttributePortPositions = useCallback(() => {
       const scrollElement = attributeScrollRef.current;
@@ -705,6 +723,7 @@ const TableNode: React.FC<Props> = React.memo(
                     ...(textColor ? { color: textColor } : {}),
                   }}
                 >
+                  <span className="w-5 flex-shrink-0" aria-hidden="true" />
                   {columns.map((col) => (
                     <span
                       key={col.key}
@@ -732,6 +751,11 @@ const TableNode: React.FC<Props> = React.memo(
                 >
                   {attributes.map((attr) => {
                     const isEditing = editingAttrId === attr.id;
+                    const rowReorderProps = rowReordering.getRowProps(attr.id);
+                    const dragHandleProps = rowReordering.getHandleProps(
+                      attr.id,
+                      attr.name,
+                    );
                     return (
                       <div
                         key={attr.id}
@@ -747,12 +771,17 @@ const TableNode: React.FC<Props> = React.memo(
                             ? "hover:bg-[var(--entity-row-hover)] focus-visible:bg-[var(--entity-row-hover)]"
                             : "hover:bg-[var(--bg-hover)]"
                         }`}
+                        {...rowReorderProps}
                         style={
-                          entityRowHoverBackground
-                            ? ({
-                                "--entity-row-hover": entityRowHoverBackground,
-                              } as React.CSSProperties)
-                            : undefined
+                          {
+                            ...(entityRowHoverBackground
+                              ? {
+                                  "--entity-row-hover":
+                                    entityRowHoverBackground,
+                                }
+                              : {}),
+                            ...rowReorderProps.style,
+                          } as React.CSSProperties
                         }
                         role="group"
                         aria-label={
@@ -787,6 +816,16 @@ const TableNode: React.FC<Props> = React.memo(
                             : undefined
                         }
                       >
+                        <button
+                          {...dragHandleProps}
+                          disabled={isEditing}
+                          className={`${dragHandleProps.className} ${isEditing ? "invisible" : ""}`}
+                        >
+                          <MdDragIndicator
+                            className="h-4 w-4"
+                            aria-hidden="true"
+                          />
+                        </button>
                         {columns.map((col) =>
                           renderColumnCell(col, attr, isEditing),
                         )}

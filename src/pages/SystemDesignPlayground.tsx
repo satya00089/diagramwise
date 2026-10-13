@@ -177,6 +177,7 @@ import {
   isDataModelNodeData,
   parseDataModelFields,
 } from "../utils/dataModel";
+import { moveItemWithinGroup } from "../utils/reorder";
 
 // Type alias for all node data types
 type AnyNodeData =
@@ -2901,6 +2902,34 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       );
     };
 
+    const reorderAttributeListener = (e: Event) => {
+      const evt = e as CustomEvent<{
+        nodeId: string;
+        sourceId: string;
+        targetId: string;
+        position: "before" | "after";
+      }>;
+      setNodes((nds) =>
+        nds.map((n) => {
+          if (n.id !== evt.detail.nodeId) return n;
+          const data = n.data as TableNodeData;
+          return {
+            ...n,
+            data: {
+              ...data,
+              attributes: moveItemWithinGroup(
+                parseAttributes(data.attributes),
+                evt.detail.sourceId,
+                evt.detail.targetId,
+                evt.detail.position,
+                () => "attributes",
+              ),
+            },
+          };
+        }),
+      );
+    };
+
     globalThis.addEventListener(
       "diagram:table-attribute-add",
       addAttributeListener as EventListener,
@@ -2916,6 +2945,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     globalThis.addEventListener(
       "diagram:table-attribute-update",
       updateAttributeListener as EventListener,
+    );
+    globalThis.addEventListener(
+      "diagram:table-attribute-reorder",
+      reorderAttributeListener as EventListener,
     );
 
     return () => {
@@ -2934,6 +2967,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       globalThis.removeEventListener(
         "diagram:table-attribute-update",
         updateAttributeListener as EventListener,
+      );
+      globalThis.removeEventListener(
+        "diagram:table-attribute-reorder",
+        reorderAttributeListener as EventListener,
       );
     };
   }, [setEdges, setNodes]);
@@ -3009,6 +3046,28 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       );
     };
 
+    const reorderFieldListener = (event: Event) => {
+      const detail = (
+        event as CustomEvent<{
+          nodeId: string;
+          sourceId: string;
+          targetId: string;
+          position: "before" | "after";
+        }>
+      ).detail;
+      setNodes((current) =>
+        updateDataModelNodeFields(current, detail.nodeId, (fields) =>
+          moveItemWithinGroup(
+            fields,
+            detail.sourceId,
+            detail.targetId,
+            detail.position,
+            (field) => field.parentId ?? null,
+          ),
+        ),
+      );
+    };
+
     globalThis.addEventListener(
       "diagram:data-model-field-add",
       addFieldListener as EventListener,
@@ -3024,6 +3083,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     globalThis.addEventListener(
       "diagram:data-model-field-update",
       updateFieldListener as EventListener,
+    );
+    globalThis.addEventListener(
+      "diagram:data-model-field-reorder",
+      reorderFieldListener as EventListener,
     );
 
     return () => {
@@ -3042,6 +3105,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       globalThis.removeEventListener(
         "diagram:data-model-field-update",
         updateFieldListener as EventListener,
+      );
+      globalThis.removeEventListener(
+        "diagram:data-model-field-reorder",
+        reorderFieldListener as EventListener,
       );
     };
   }, [setEdges, setNodes]);

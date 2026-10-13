@@ -1,9 +1,16 @@
 import React, { useMemo, useState } from "react";
 import { Handle, Position, useUpdateNodeInternals } from "@xyflow/react";
 import { motion } from "framer-motion";
-import { MdAdd, MdDelete, MdExpandMore, MdSettings } from "react-icons/md";
+import {
+  MdAdd,
+  MdDelete,
+  MdDragIndicator,
+  MdExpandMore,
+  MdSettings,
+} from "react-icons/md";
 import { IoDuplicateOutline } from "react-icons/io5";
 import { FieldConnectionHandles } from "./FieldConnectionHandles";
+import { useReorderableRows } from "../hooks/useReorderableRows";
 import type { DataModelField, DataModelNodeData } from "../types/canvas";
 import {
   getDefaultDataModelFields,
@@ -38,6 +45,21 @@ const DataModelNode: React.FC<Props> = React.memo(
     const fields = useMemo(
       () => parseDataModelFields(data.fields),
       [data.fields],
+    );
+    const reorderFields = React.useCallback(
+      (sourceId: string, targetId: string, position: "before" | "after") => {
+        globalThis.dispatchEvent(
+          new CustomEvent("diagram:data-model-field-reorder", {
+            detail: { nodeId: id, sourceId, targetId, position },
+          }),
+        );
+      },
+      [id],
+    );
+    const rowReordering = useReorderableRows(
+      fields,
+      (field) => field.parentId ?? null,
+      reorderFields,
     );
     const isCollapsed = data.isCollapsed === true;
     const isDocumentModel = data.dataModel.paradigm === "document";
@@ -183,7 +205,8 @@ const DataModelNode: React.FC<Props> = React.memo(
 
         {!isCollapsed && (
           <div className="bg-surface overflow-visible">
-            <div className="grid grid-cols-[minmax(0,1fr)_minmax(90px,0.8fr)_72px] gap-2 px-3 py-1.5 bg-[var(--bg-hover)] border-b border-theme text-[11px] font-semibold text-muted">
+            <div className="grid grid-cols-[22px_minmax(0,1fr)_minmax(90px,0.8fr)_72px] gap-2 px-3 py-1.5 bg-[var(--bg-hover)] border-b border-theme text-[11px] font-semibold text-muted">
+              <span aria-hidden="true" />
               <span>Field</span>
               <span>Type</span>
               <span>Role</span>
@@ -199,8 +222,14 @@ const DataModelNode: React.FC<Props> = React.memo(
                 return (
                   <div
                     key={field.id}
-                    className="group relative grid grid-cols-[minmax(0,1fr)_minmax(90px,0.8fr)_72px] gap-2 items-center px-3 py-1.5 border-b border-theme/70 last:border-b-0"
+                    className="group relative grid grid-cols-[22px_minmax(0,1fr)_minmax(90px,0.8fr)_72px] gap-2 items-center px-3 py-1.5 border-b border-theme/70 last:border-b-0"
+                    {...rowReordering.getRowProps(field.id)}
                   >
+                    <button
+                      {...rowReordering.getHandleProps(field.id, field.name)}
+                    >
+                      <MdDragIndicator className="h-4 w-4" aria-hidden="true" />
+                    </button>
                     {isDocumentModel && (
                       <FieldConnectionHandles
                         fieldId={field.id}
