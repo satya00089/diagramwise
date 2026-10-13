@@ -3,6 +3,7 @@ import { Handle, Position, useUpdateNodeInternals } from "@xyflow/react";
 import { motion } from "framer-motion";
 import { MdAdd, MdDelete, MdExpandMore, MdSettings } from "react-icons/md";
 import { IoDuplicateOutline } from "react-icons/io5";
+import { FieldConnectionHandles } from "./FieldConnectionHandles";
 import type { DataModelField, DataModelNodeData } from "../types/canvas";
 import {
   getDefaultDataModelFields,
@@ -28,15 +29,11 @@ const getFieldRole = (field: DataModelField) => {
   return field.indexed ? "Indexed" : "";
 };
 
-const getDataModelFieldHandleId = (
-  fieldId: string,
-  side: "left" | "right",
-) => `field:${fieldId}:${side}`;
-
 const DataModelNode: React.FC<Props> = React.memo(
   ({ id, data, onCopy, isInGroup }) => {
     const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState({ name: "", type: "" });
+    const [isHovered, setIsHovered] = useState(false);
     const updateNodeInternals = useUpdateNodeInternals();
     const fields = useMemo(
       () => parseDataModelFields(data.fields),
@@ -96,6 +93,8 @@ const DataModelNode: React.FC<Props> = React.memo(
         className={`min-w-[270px] max-w-[430px] bg-surface border-2 border-theme text-theme text-sm shadow-lg cursor-grab relative rounded-lg overflow-visible flex flex-col ${
           isInGroup ? "opacity-95" : ""
         }`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         {!isDocumentModel && (
           <>
@@ -126,7 +125,7 @@ const DataModelNode: React.FC<Props> = React.memo(
           </>
         )}
 
-        <div className="bg-[var(--brand)] text-[var(--bg)] px-3 py-2 font-semibold flex items-center gap-2 cursor-grab">
+        <div className="relative bg-[var(--brand)] text-[var(--bg)] px-3 py-2 font-semibold flex items-center gap-2 cursor-grab">
           {Icon && <Icon size={16} aria-hidden="true" />}
           <div className="min-w-0 flex-1">
             <div className="truncate">{data.componentName || data.label}</div>
@@ -155,14 +154,6 @@ const DataModelNode: React.FC<Props> = React.memo(
           <button
             type="button"
             className="nodrag p-1 rounded hover:bg-white/10"
-            aria-label="Add data model field"
-            onClick={handleAddField}
-          >
-            <MdAdd size={18} />
-          </button>
-          <button
-            type="button"
-            className="nodrag p-1 rounded hover:bg-white/10"
             aria-label="Open data model properties"
             onClick={(event) => {
               event.stopPropagation();
@@ -171,10 +162,26 @@ const DataModelNode: React.FC<Props> = React.memo(
           >
             <MdSettings size={16} />
           </button>
+          {isCollapsed && isDocumentModel && fields.length > 0 && (
+            <div
+              className="pointer-events-none absolute inset-0 z-20"
+              aria-label="Collapsed document field connection ports"
+            >
+              {fields.map((field) => (
+                <FieldConnectionHandles
+                  key={field.id}
+                  fieldId={field.id}
+                  label={field.name}
+                  top="50%"
+                  showIcon={isHovered}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {!isCollapsed && (
-          <div className="bg-surface overflow-hidden">
+          <div className="bg-surface overflow-visible">
             <div className="grid grid-cols-[minmax(0,1fr)_minmax(90px,0.8fr)_72px] gap-2 px-3 py-1.5 bg-[var(--bg-hover)] border-b border-theme text-[11px] font-semibold text-muted">
               <span>Field</span>
               <span>Type</span>
@@ -194,74 +201,12 @@ const DataModelNode: React.FC<Props> = React.memo(
                     className="group relative grid grid-cols-[minmax(0,1fr)_minmax(90px,0.8fr)_72px] gap-2 items-center px-3 py-1.5 border-b border-theme/70 last:border-b-0"
                   >
                     {isDocumentModel && (
-                      <>
-                        <Handle
-                          id={getDataModelFieldHandleId(field.id, "left")}
-                          type="source"
-                          position={Position.Left}
-                          isConnectable={true}
-                          aria-label={`Connect ${field.name} on the left`}
-                          className="!pointer-events-auto opacity-0 transition-opacity group-hover:opacity-100"
-                          style={{
-                            left: "-1px",
-                            width: "10px",
-                            height: "18px",
-                            background: "transparent",
-                            border: "none",
-                            pointerEvents: "all",
-                          }}
-                        >
-                          <svg
-                            aria-hidden="true"
-                            width="10"
-                            height="10"
-                            viewBox="0 0 10 10"
-                            fill="none"
-                            className="pointer-events-none"
-                          >
-                            <path
-                              d="M5 1v8M1 5h8"
-                              transform="rotate(45 5 5)"
-                              stroke="var(--brand)"
-                              strokeWidth="1.8"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </Handle>
-                        <Handle
-                          id={getDataModelFieldHandleId(field.id, "right")}
-                          type="source"
-                          position={Position.Right}
-                          isConnectable={true}
-                          aria-label={`Connect ${field.name} on the right`}
-                          className="!pointer-events-auto opacity-0 transition-opacity group-hover:opacity-100"
-                          style={{
-                            right: "-1px",
-                            width: "10px",
-                            height: "18px",
-                            background: "transparent",
-                            border: "none",
-                            pointerEvents: "all",
-                          }}
-                        >
-                          <svg
-                            aria-hidden="true"
-                            width="10"
-                            height="10"
-                            viewBox="0 0 10 10"
-                            fill="none"
-                            className="pointer-events-none"
-                          >
-                            <path
-                              d="M5 1v8M1 5h8"
-                              transform="rotate(45 5 5)"
-                              stroke="var(--brand)"
-                              strokeWidth="1.8"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </Handle>
-                      </>
+                      <FieldConnectionHandles
+                        fieldId={field.id}
+                        label={field.name}
+                        top="50%"
+                        showIcon={isHovered}
+                      />
                     )}
                     {isEditing ? (
                       <input
@@ -355,6 +300,15 @@ const DataModelNode: React.FC<Props> = React.memo(
         )}
 
         <div className="flex items-center justify-end gap-1 px-2 py-1 bg-[var(--bg-hover)] border-t border-theme nodrag">
+          <button
+            type="button"
+            className="p-1 text-muted hover:text-theme"
+            aria-label="Add data model field"
+            data-tooltip="Add field"
+            onClick={handleAddField}
+          >
+            <MdAdd size={14} />
+          </button>
           <button
             type="button"
             className="p-1 text-muted hover:text-theme"

@@ -13,6 +13,7 @@ import {
 } from "react-icons/md";
 import { IoDuplicateOutline } from "react-icons/io5";
 import { FiUnlock } from "react-icons/fi";
+import { FieldConnectionHandles } from "./FieldConnectionHandles";
 import type { NodeRenderConfig, TableColumn } from "../types/canvas";
 import {
   isContentSizedTableNode,
@@ -46,9 +47,6 @@ export type TableNodeData = {
   isCollapsed?: boolean;
   [key: string]: unknown;
 };
-
-const getAttributeHandleId = (attributeId: string, side: "left" | "right") =>
-  `field:${attributeId}:${side}`;
 
 const getEntityRowHoverBackground = (
   backgroundColor: string,
@@ -110,10 +108,7 @@ const TableNode: React.FC<Props> = React.memo(
 
     const displayLabel = data.componentName || data.label;
     const subtitle = data.subtitle || data.description;
-    const Icon =
-      typeof data.icon === "function"
-        ? data.icon
-        : undefined;
+    const Icon = typeof data.icon === "function" ? data.icon : undefined;
     const isContentSizedTable = isContentSizedTableNode(data);
     const isERTable = isFieldAddressableERTable(data);
     // ER entities and UML table-shaped nodes all share the same collapsible
@@ -550,7 +545,7 @@ const TableNode: React.FC<Props> = React.memo(
           whileHover={{ y: -1, boxShadow: "0 12px 30px rgba(0,0,0,0.12)" }}
           whileTap={{ scale: 0.985 }}
           transition={{ type: "spring", stiffness: 320, damping: 28 }}
-          className={`min-w-[220px] ${isContentSizedTable ? "" : "max-h-[500px]"} bg-surface border-2 border-theme text-theme text-sm shadow-lg cursor-grab relative rounded-lg overflow-visible flex flex-col`}
+          className={`min-w-[220px] ${isContentSizedTable ? "w-[360px] min-w-[360px] max-w-[360px]" : "max-h-[500px]"} bg-surface border-2 border-theme text-theme text-sm shadow-lg cursor-grab relative rounded-lg overflow-visible flex flex-col`}
           style={{
             ...(backgroundColor ? { backgroundColor } : {}),
             ...(borderColor ? { borderColor } : {}),
@@ -620,7 +615,7 @@ const TableNode: React.FC<Props> = React.memo(
 
           {/* Table Header */}
           <div
-            className="bg-[var(--brand)] text-[var(--bg)] px-3 py-2 font-semibold flex items-center justify-between flex-shrink-0 rounded-t-md"
+            className="relative bg-[var(--brand)] text-[var(--bg)] px-3 py-2 font-semibold flex items-center justify-between flex-shrink-0 rounded-t-md"
             style={{
               ...(backgroundColor
                 ? { backgroundColor: borderColor || backgroundColor }
@@ -669,6 +664,22 @@ const TableNode: React.FC<Props> = React.memo(
             >
               <MdSettings className="w-4 h-4" />
             </button>
+            {isCollapsed && isERTable && attributes.length > 0 && (
+              <div
+                className="pointer-events-none absolute inset-0 z-20"
+                aria-label="Collapsed entity attribute connection ports"
+              >
+                {attributes.map((attribute) => (
+                  <FieldConnectionHandles
+                    key={attribute.id}
+                    fieldId={attribute.id}
+                    label={attribute.name || "attribute"}
+                    top="50%"
+                    showIcon={isHovered}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           <div
@@ -789,73 +800,15 @@ const TableNode: React.FC<Props> = React.memo(
                       const attribute = attributes.find(
                         (attr) => attr.id === position.id,
                       );
-                      const label = attribute?.name || "attribute";
-                      const visibility = position.visible
-                        ? "visible"
-                        : "hidden";
-                      const handleStyle = {
-                        top: `${position.top}px`,
-                        width: "10px",
-                        height: "18px",
-                        background: "transparent",
-                        border: "none",
-                        borderRadius: 0,
-                        zIndex: 10,
-                        pointerEvents: "all" as const,
-                        visibility: visibility as "visible" | "hidden",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      };
-
-                      const connectionCross = (side: "left" | "right") => (
-                        <svg
-                          aria-hidden="true"
-                          width="10"
-                          height="10"
-                          viewBox="0 0 10 10"
-                          fill="none"
-                          className="pointer-events-none transition-opacity duration-100"
-                          style={{
-                            opacity: isHovered ? 1 : 0,
-                            transform: `translateX(${side === "left" ? -0.6 : 0.6}px)`,
-                          }}
-                        >
-                          <path
-                            d="M5 1v8M1 5h8"
-                            transform="rotate(45 5 5)"
-                            stroke="var(--brand)"
-                            strokeWidth="1.8"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                      );
-
                       return (
-                        <React.Fragment key={position.id}>
-                          <Handle
-                            id={getAttributeHandleId(position.id, "left")}
-                            type="source"
-                            position={Position.Left}
-                            isConnectable={true}
-                            aria-label={`Connect ${label} on the left`}
-                            className="opacity-100 transition-opacity"
-                            style={{ left: "-1px", ...handleStyle }}
-                          >
-                            {connectionCross("left")}
-                          </Handle>
-                          <Handle
-                            id={getAttributeHandleId(position.id, "right")}
-                            type="source"
-                            position={Position.Right}
-                            isConnectable={true}
-                            aria-label={`Connect ${label} on the right`}
-                            className="opacity-100 transition-opacity"
-                            style={{ right: "-1px", ...handleStyle }}
-                          >
-                            {connectionCross("right")}
-                          </Handle>
-                        </React.Fragment>
+                        <FieldConnectionHandles
+                          key={position.id}
+                          fieldId={position.id}
+                          label={attribute?.name || "attribute"}
+                          top={position.top}
+                          visible={position.visible}
+                          showIcon={isHovered}
+                        />
                       );
                     })}
                   </div>
@@ -871,84 +824,36 @@ const TableNode: React.FC<Props> = React.memo(
             )}
           </div>
 
-          {isCollapsed && isERTable && attributes.length > 0 && (
-            <div
-              className="pointer-events-none absolute inset-0 z-20"
-              aria-label="Collapsed entity attribute connection ports"
+          <div className="flex items-center justify-end gap-1 px-2 py-1 bg-[var(--bg-hover)] border-t border-theme nodrag rounded-b-md">
+            <button
+              type="button"
+              className="p-1 text-muted hover:text-theme"
+              aria-label="Add attribute"
+              data-tooltip="Add attribute"
+              onClick={handleAddAttribute}
             >
-              {attributes.map((attribute) => (
-                <React.Fragment key={attribute.id}>
-                  <Handle
-                    id={getAttributeHandleId(attribute.id, "left")}
-                    type="source"
-                    position={Position.Left}
-                    isConnectable={true}
-                    aria-label={`Connect ${attribute.name || "attribute"} on the left`}
-                    style={{
-                      top: "50%",
-                      left: "-1px",
-                      width: "10px",
-                      height: "18px",
-                      transform: "translateY(-50%)",
-                      background: "transparent",
-                      border: "none",
-                      opacity: 0,
-                      pointerEvents: "all",
-                    }}
-                  />
-                  <Handle
-                    id={getAttributeHandleId(attribute.id, "right")}
-                    type="source"
-                    position={Position.Right}
-                    isConnectable={true}
-                    aria-label={`Connect ${attribute.name || "attribute"} on the right`}
-                    style={{
-                      top: "50%",
-                      right: "-1px",
-                      width: "10px",
-                      height: "18px",
-                      transform: "translateY(-50%)",
-                      background: "transparent",
-                      border: "none",
-                      opacity: 0,
-                      pointerEvents: "all",
-                    }}
-                  />
-                </React.Fragment>
-              ))}
-            </div>
-          )}
+              <MdAdd className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              className="p-1 text-muted hover:text-theme"
+              aria-label="Duplicate table"
+              data-tooltip="Duplicate table"
+              onClick={handleCopy}
+            >
+              <IoDuplicateOutline className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              className="p-1 text-muted hover:text-red-600"
+              aria-label="Delete table"
+              data-tooltip="Delete table"
+              onClick={onDelete}
+            >
+              <MdDelete className="w-4 h-4" />
+            </button>
+          </div>
         </motion.div>
-
-        <div className="flex items-center justify-end gap-1 px-2 py-1 bg-[var(--bg-hover)] border-t border-theme nodrag">
-          <button
-            type="button"
-            className="p-1 text-muted hover:text-theme"
-            aria-label="Add attribute"
-            data-tooltip="Add attribute"
-            onClick={handleAddAttribute}
-          >
-            <MdAdd className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            className="p-1 text-muted hover:text-theme"
-            aria-label="Duplicate table"
-            data-tooltip="Duplicate table"
-            onClick={handleCopy}
-          >
-            <IoDuplicateOutline className="w-4 h-4" />
-          </button>
-          <button
-            type="button"
-            className="p-1 text-muted hover:text-red-600"
-            aria-label="Delete table"
-            data-tooltip="Delete table"
-            onClick={onDelete}
-          >
-            <MdDelete className="w-4 h-4" />
-          </button>
-        </div>
 
         {/* Context Menu Portal */}
         {contextMenu.visible &&
