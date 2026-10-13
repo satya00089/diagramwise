@@ -221,6 +221,55 @@ const getNextDataModelKeyRole = (
   }
 };
 
+const addDataModelFieldToNodes = (
+  nodes: Node[],
+  nodeId: string,
+  field: DataModelField,
+): Node[] =>
+  updateDataModelNodeFields(nodes, nodeId, (fields) => [...fields, field]);
+
+const deleteDataModelFieldFromNodes = (
+  nodes: Node[],
+  nodeId: string,
+  fieldId: string,
+): Node[] =>
+  updateDataModelNodeFields(nodes, nodeId, (fields) =>
+    fields.filter((field) => field.id !== fieldId),
+  );
+
+const toggleDataModelField = (
+  field: DataModelField,
+  key: "keyRole" | "indexed",
+): DataModelField => {
+  if (key === "indexed") return { ...field, indexed: !field.indexed };
+  return { ...field, keyRole: getNextDataModelKeyRole(field.keyRole) };
+};
+
+const toggleDataModelFieldOnNodes = (
+  nodes: Node[],
+  nodeId: string,
+  fieldId: string,
+  key: "keyRole" | "indexed",
+): Node[] =>
+  updateDataModelNodeFields(nodes, nodeId, (fields) =>
+    fields.map((field) =>
+      field.id === fieldId ? toggleDataModelField(field, key) : field,
+    ),
+  );
+
+const updateDataModelFieldOnNodes = (
+  nodes: Node[],
+  nodeId: string,
+  fieldId: string,
+  name: string,
+  type: string,
+): Node[] =>
+  updateDataModelNodeFields(nodes, nodeId, (fields) =>
+    fields.map((field) =>
+      field.id === fieldId ? { ...field, name, type } : field,
+    ),
+  );
+
 type DiagramAccessState =
   | "loading"
   | "requires-auth"
@@ -2890,10 +2939,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         }>
       ).detail;
       setNodes((current) =>
-        updateDataModelNodeFields(current, detail.nodeId, (fields) => [
-          ...fields,
-          detail.field,
-        ]),
+        addDataModelFieldToNodes(current, detail.nodeId, detail.field),
       );
     };
 
@@ -2905,9 +2951,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         }>
       ).detail;
       setNodes((current) =>
-        updateDataModelNodeFields(current, detail.nodeId, (fields) =>
-          fields.filter((field) => field.id !== detail.fieldId),
-        ),
+        deleteDataModelFieldFromNodes(current, detail.nodeId, detail.fieldId),
       );
     };
 
@@ -2920,17 +2964,11 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         }>
       ).detail;
       setNodes((current) =>
-        updateDataModelNodeFields(current, detail.nodeId, (fields) =>
-          fields.map((field) => {
-            if (field.id !== detail.fieldId) return field;
-            if (detail.key === "indexed") {
-              return { ...field, indexed: !field.indexed };
-            }
-            return {
-              ...field,
-              keyRole: getNextDataModelKeyRole(field.keyRole),
-            };
-          }),
+        toggleDataModelFieldOnNodes(
+          current,
+          detail.nodeId,
+          detail.fieldId,
+          detail.key,
         ),
       );
     };
@@ -2945,12 +2983,12 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         }>
       ).detail;
       setNodes((current) =>
-        updateDataModelNodeFields(current, detail.nodeId, (fields) =>
-          fields.map((field) =>
-            field.id === detail.fieldId
-              ? { ...field, name: detail.name, type: detail.type }
-              : field,
-          ),
+        updateDataModelFieldOnNodes(
+          current,
+          detail.nodeId,
+          detail.fieldId,
+          detail.name,
+          detail.type,
         ),
       );
     };

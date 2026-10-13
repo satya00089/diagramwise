@@ -18,8 +18,7 @@ type Props = {
 
 const getFieldIndent = (field: DataModelField) => {
   if (field.parentId) return 1;
-  const depth = field.name.split(".").length - 1;
-  return depth > 0 ? depth : 0;
+  return Math.max(0, field.name.split(".").length - 1);
 };
 
 const getFieldRole = (field: DataModelField) => {
