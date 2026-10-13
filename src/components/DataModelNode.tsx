@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from "react";
-import { Handle, Position } from "@xyflow/react";
+import { Handle, Position, useUpdateNodeInternals } from "@xyflow/react";
 import { motion } from "framer-motion";
 import { MdAdd, MdDelete, MdExpandMore, MdSettings } from "react-icons/md";
 import { IoDuplicateOutline } from "react-icons/io5";
+import { FieldConnectionHandles } from "./FieldConnectionHandles";
 import type { DataModelField, DataModelNodeData } from "../types/canvas";
 import {
   getDefaultDataModelFields,
@@ -32,15 +33,23 @@ const DataModelNode: React.FC<Props> = React.memo(
   ({ id, data, onCopy, isInGroup }) => {
     const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState({ name: "", type: "" });
+    const [isHovered, setIsHovered] = useState(false);
+    const updateNodeInternals = useUpdateNodeInternals();
     const fields = useMemo(
       () => parseDataModelFields(data.fields),
       [data.fields],
     );
     const isCollapsed = data.isCollapsed === true;
+    const isDocumentModel = data.dataModel.paradigm === "document";
+    const actionLabel = data.componentName || data.label || "Data model";
     const Icon = data.icon as React.ComponentType<{
       size?: number;
       "aria-hidden"?: React.AriaAttributes["aria-hidden"];
     }>;
+
+    React.useLayoutEffect(() => {
+      updateNodeInternals(id);
+    }, [fields.length, id, isCollapsed, isDocumentModel, updateNodeInternals]);
 
     const emit = (name: string, detail: Record<string, unknown>) => {
       globalThis.dispatchEvent(new CustomEvent(name, { detail }));
@@ -85,33 +94,39 @@ const DataModelNode: React.FC<Props> = React.memo(
         className={`min-w-[270px] max-w-[430px] bg-surface border-2 border-theme text-theme text-sm shadow-lg cursor-grab relative rounded-lg overflow-visible flex flex-col ${
           isInGroup ? "opacity-95" : ""
         }`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        <Handle
-          id="top"
-          type="source"
-          position={Position.Top}
-          className="!w-full !h-2 !bg-transparent !border-0 !opacity-0"
-        />
-        <Handle
-          id="right"
-          type="source"
-          position={Position.Right}
-          className="!w-2 !h-full !bg-transparent !border-0 !opacity-0"
-        />
-        <Handle
-          id="bottom"
-          type="source"
-          position={Position.Bottom}
-          className="!w-full !h-2 !bg-transparent !border-0 !opacity-0"
-        />
-        <Handle
-          id="left"
-          type="source"
-          position={Position.Left}
-          className="!w-2 !h-full !bg-transparent !border-0 !opacity-0"
-        />
+        {!isDocumentModel && (
+          <>
+            <Handle
+              id="top"
+              type="source"
+              position={Position.Top}
+              className="!w-full !h-2 !bg-transparent !border-0 !opacity-0"
+            />
+            <Handle
+              id="right"
+              type="source"
+              position={Position.Right}
+              className="!w-2 !h-full !bg-transparent !border-0 !opacity-0"
+            />
+            <Handle
+              id="bottom"
+              type="source"
+              position={Position.Bottom}
+              className="!w-full !h-2 !bg-transparent !border-0 !opacity-0"
+            />
+            <Handle
+              id="left"
+              type="source"
+              position={Position.Left}
+              className="!w-2 !h-full !bg-transparent !border-0 !opacity-0"
+            />
+          </>
+        )}
 
-        <div className="bg-[var(--brand)] text-[var(--bg)] px-3 py-2 font-semibold flex items-center gap-2 nodrag">
+        <div className="relative bg-[var(--brand)] text-[var(--bg)] px-3 py-2 font-semibold flex items-center gap-2 cursor-grab">
           {Icon && <Icon size={16} aria-hidden="true" />}
           <div className="min-w-0 flex-1">
             <div className="truncate">{data.componentName || data.label}</div>
@@ -140,14 +155,6 @@ const DataModelNode: React.FC<Props> = React.memo(
           <button
             type="button"
             className="nodrag p-1 rounded hover:bg-white/10"
-            aria-label="Add data model field"
-            onClick={handleAddField}
-          >
-            <MdAdd size={18} />
-          </button>
-          <button
-            type="button"
-            className="nodrag p-1 rounded hover:bg-white/10"
             aria-label="Open data model properties"
             onClick={(event) => {
               event.stopPropagation();
@@ -156,10 +163,26 @@ const DataModelNode: React.FC<Props> = React.memo(
           >
             <MdSettings size={16} />
           </button>
+          {isCollapsed && isDocumentModel && fields.length > 0 && (
+            <div
+              className="pointer-events-none absolute inset-0 z-20"
+              aria-label="Collapsed document field connection ports"
+            >
+              {fields.map((field) => (
+                <FieldConnectionHandles
+                  key={field.id}
+                  fieldId={field.id}
+                  label={field.name}
+                  top="50%"
+                  showIcon={isHovered}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {!isCollapsed && (
-          <div className="bg-surface overflow-hidden">
+          <div className="bg-surface overflow-visible">
             <div className="grid grid-cols-[minmax(0,1fr)_minmax(90px,0.8fr)_72px] gap-2 px-3 py-1.5 bg-[var(--bg-hover)] border-b border-theme text-[11px] font-semibold text-muted">
               <span>Field</span>
               <span>Type</span>
@@ -176,8 +199,16 @@ const DataModelNode: React.FC<Props> = React.memo(
                 return (
                   <div
                     key={field.id}
-                    className="group grid grid-cols-[minmax(0,1fr)_minmax(90px,0.8fr)_72px] gap-2 items-center px-3 py-1.5 border-b border-theme/70 last:border-b-0"
+                    className="group relative grid grid-cols-[minmax(0,1fr)_minmax(90px,0.8fr)_72px] gap-2 items-center px-3 py-1.5 border-b border-theme/70 last:border-b-0"
                   >
+                    {isDocumentModel && (
+                      <FieldConnectionHandles
+                        fieldId={field.id}
+                        label={field.name}
+                        top="50%"
+                        showIcon={isHovered}
+                      />
+                    )}
                     {isEditing ? (
                       <input
                         className="nodrag min-w-0 w-full px-1 py-0.5 bg-surface border border-theme rounded text-xs"
@@ -273,7 +304,18 @@ const DataModelNode: React.FC<Props> = React.memo(
           <button
             type="button"
             className="p-1 text-muted hover:text-theme"
-            aria-label="Duplicate data model"
+            aria-label="Add data model field"
+            data-tooltip="Add field"
+            onClick={handleAddField}
+          >
+            <MdAdd size={14} />
+          </button>
+          <button
+            type="button"
+            className="p-1 text-muted hover:text-theme"
+            aria-label={`Duplicate ${actionLabel}`}
+            data-tooltip={`Duplicate ${actionLabel}`}
+            data-tooltip-placement="top"
             onClick={(event) => {
               event.stopPropagation();
               onCopy?.(id, data);
@@ -283,14 +325,17 @@ const DataModelNode: React.FC<Props> = React.memo(
           </button>
           <button
             type="button"
-            className="p-1 text-muted hover:text-red-600"
-            aria-label="Delete data model"
-            onClick={(event) => {
+            className="p-1 text-muted transition-colors hover:!text-red-600 focus-visible:!text-red-600"
+            aria-label={`Double-click to delete ${actionLabel}`}
+            data-tooltip={`Double-click to delete ${actionLabel}`}
+            data-tooltip-placement="top"
+            onClick={(event) => event.stopPropagation()}
+            onDoubleClick={(event) => {
               event.stopPropagation();
               emit("diagram:node-delete", { id });
             }}
           >
-            <MdDelete size={14} />
+            <MdDelete size={14} className="transition-colors" />
           </button>
         </div>
       </motion.div>

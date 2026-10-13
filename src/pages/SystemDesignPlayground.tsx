@@ -270,6 +270,46 @@ const updateDataModelFieldOnNodes = (
     ),
   );
 
+const getFieldIdFromHandle = (handle: string | null | undefined) => {
+  if (!handle?.startsWith("field:")) return undefined;
+  const lastSeparator = handle.lastIndexOf(":");
+  if (lastSeparator <= "field:".length) return undefined;
+  const side = handle.slice(lastSeparator + 1);
+  return side === "left" || side === "right"
+    ? handle.slice("field:".length, lastSeparator)
+    : undefined;
+};
+
+const isDocumentDataModelNode = (node: Node | undefined) =>
+  Boolean(
+    node &&
+      isDataModelNodeData(node.data) &&
+      node.data.dataModel.paradigm === "document",
+  );
+
+const edgeReferencesField = (
+  edge: Edge,
+  nodeId: string,
+  fieldId: string,
+): boolean => {
+  const fieldHandlePrefix = `field:${fieldId}:`;
+  const data = (edge.data ?? {}) as {
+    sourceFieldId?: unknown;
+    targetFieldId?: unknown;
+  };
+  const sourceMatches =
+    edge.source === nodeId &&
+    ((typeof edge.sourceHandle === "string" &&
+      edge.sourceHandle.startsWith(fieldHandlePrefix)) ||
+      data.sourceFieldId === fieldId);
+  const targetMatches =
+    edge.target === nodeId &&
+    ((typeof edge.targetHandle === "string" &&
+      edge.targetHandle.startsWith(fieldHandlePrefix)) ||
+      data.targetFieldId === fieldId);
+  return sourceMatches || targetMatches;
+};
+
 type DiagramAccessState =
   | "loading"
   | "requires-auth"
@@ -1711,18 +1751,18 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       isFieldAddressableERTable(node?.data);
 
     const isERConnection = isEntityNode(sourceNode) && isEntityNode(targetNode);
-    const getFieldIdFromHandle = (handle: string | null | undefined) => {
-      if (!handle?.startsWith("field:")) return undefined;
-      const lastSeparator = handle.lastIndexOf(":");
-      if (lastSeparator <= "field:".length) return undefined;
-      const side = handle.slice(lastSeparator + 1);
-      return side === "left" || side === "right"
-        ? handle.slice("field:".length, lastSeparator)
-        : undefined;
-    };
-
     const sourceFieldId = getFieldIdFromHandle(connection.sourceHandle);
     const targetFieldId = getFieldIdFromHandle(connection.targetHandle);
+    const isDocumentConnection =
+      (sourceFieldId || targetFieldId) &&
+      (isDocumentDataModelNode(sourceNode) ||
+        isDocumentDataModelNode(targetNode));
+    const fieldConnectionData = {
+      label: "",
+      hasLabel: false,
+      ...(sourceFieldId ? { sourceFieldId } : {}),
+      ...(targetFieldId ? { targetFieldId } : {}),
+    };
 
     // Use ER relationship edge for ER diagrams, custom edge for others
     const newEdge = {
@@ -1736,7 +1776,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             ...(sourceFieldId ? { sourceFieldId } : {}),
             ...(targetFieldId ? { targetFieldId } : {}),
           }
-        : { label: "", hasLabel: false },
+        : isDocumentConnection
+          ? fieldConnectionData
+          : { label: "", hasLabel: false },
     } as unknown as Edge;
     setEdges((eds) => addEdge(newEdge, eds));
   };
@@ -2789,7 +2831,6 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
     const deleteAttributeListener = (e: Event) => {
       const evt = e as CustomEvent<{ nodeId: string; attributeId: string }>;
-      const fieldHandlePrefix = `field:${evt.detail.attributeId}:`;
       setNodes((nds) =>
         nds.map((n) => {
           if (n.id === evt.detail.nodeId) {
@@ -2809,23 +2850,14 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         }),
       );
       setEdges((eds) =>
-        eds.filter((edge) => {
-          const data = (edge.data ?? {}) as {
-            sourceFieldId?: unknown;
-            targetFieldId?: unknown;
-          };
-          const sourceMatches =
-            edge.source === evt.detail.nodeId &&
-            ((typeof edge.sourceHandle === "string" &&
-              edge.sourceHandle.startsWith(fieldHandlePrefix)) ||
-              data.sourceFieldId === evt.detail.attributeId);
-          const targetMatches =
-            edge.target === evt.detail.nodeId &&
-            ((typeof edge.targetHandle === "string" &&
-              edge.targetHandle.startsWith(fieldHandlePrefix)) ||
-              data.targetFieldId === evt.detail.attributeId);
-          return !sourceMatches && !targetMatches;
-        }),
+        eds.filter(
+          (edge) =>
+            !edgeReferencesField(
+              edge,
+              evt.detail.nodeId,
+              evt.detail.attributeId,
+            ),
+        ),
       );
     };
 
@@ -2953,6 +2985,11 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       setNodes((current) =>
         deleteDataModelFieldFromNodes(current, detail.nodeId, detail.fieldId),
       );
+      setEdges((edges) =>
+        edges.filter(
+          (edge) => !edgeReferencesField(edge, detail.nodeId, detail.fieldId),
+        ),
+      );
     };
 
     const toggleFieldListener = (event: Event) => {
@@ -3028,7 +3065,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         updateFieldListener as EventListener,
       );
     };
-  }, [setNodes]);
+  }, [setEdges, setNodes]);
 
   React.useEffect(() => {
     if (!inspectedNodeId) return;
