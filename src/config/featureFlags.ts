@@ -17,6 +17,7 @@ export const FeatureFlags = {
   OFFLINE_MODE: "offline-mode",
   SHARE_TO_WORLD: "share-to-world",
   LEARNING_PATH_WEEKLY_MODULES: "learning-path-weekly-modules",
+  MULTI_CANVAS: "multi-canvas",
 } as const;
 
 export type FeatureFlag = (typeof FeatureFlags)[keyof typeof FeatureFlags];
@@ -31,6 +32,7 @@ const DEFAULT_FLAGS: Record<string, Record<FeatureFlag, boolean>> = {
     [FeatureFlags.OFFLINE_MODE]: false,
     [FeatureFlags.SHARE_TO_WORLD]: true,
     [FeatureFlags.LEARNING_PATH_WEEKLY_MODULES]: true,
+    [FeatureFlags.MULTI_CANVAS]: true,
   },
   staging: {
     [FeatureFlags.YJS_COLLABORATION]: false, // Gradual rollout
@@ -38,6 +40,7 @@ const DEFAULT_FLAGS: Record<string, Record<FeatureFlag, boolean>> = {
     [FeatureFlags.OFFLINE_MODE]: false,
     [FeatureFlags.SHARE_TO_WORLD]: true,
     [FeatureFlags.LEARNING_PATH_WEEKLY_MODULES]: true,
+    [FeatureFlags.MULTI_CANVAS]: false,
   },
   production: {
     [FeatureFlags.YJS_COLLABORATION]: false, // Not ready yet
@@ -45,6 +48,7 @@ const DEFAULT_FLAGS: Record<string, Record<FeatureFlag, boolean>> = {
     [FeatureFlags.OFFLINE_MODE]: false,
     [FeatureFlags.SHARE_TO_WORLD]: true,
     [FeatureFlags.LEARNING_PATH_WEEKLY_MODULES]: true,
+    [FeatureFlags.MULTI_CANVAS]: false,
   },
 };
 

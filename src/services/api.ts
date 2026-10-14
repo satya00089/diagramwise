@@ -1,4 +1,10 @@
 import type {
+  CanvasDetail,
+  CanvasKind,
+  CanvasListResponse,
+} from "../types/multiCanvas";
+import { CanvasVersionConflictError } from "../types/multiCanvas";
+import type {
   User,
   AuthResponse,
   SignupPendingResponse,
@@ -15,10 +21,7 @@ import type {
   DesignReasoningContext,
   InterviewSession,
 } from "../types/systemDesign";
-import type {
-  FeedbackResponse,
-  FeedbackSubmission,
-} from "../types/feedback";
+import type { FeedbackResponse, FeedbackSubmission } from "../types/feedback";
 import type {
   AdminAccessUser,
   AdminApiLatencyReport,
@@ -42,7 +45,8 @@ const API_BASE_URL = getApiBaseUrl(
   import.meta.env.VITE_ASSESSMENT_API_URL,
 );
 
-export const GOOGLE_LOGIN_REDIRECT_URI = getGoogleLoginRedirectUri(API_BASE_URL);
+export const GOOGLE_LOGIN_REDIRECT_URI =
+  getGoogleLoginRedirectUri(API_BASE_URL);
 export const GOOGLE_LOGIN_START_URI = getGoogleLoginStartUri(API_BASE_URL);
 
 class ApiService {
@@ -50,7 +54,9 @@ class ApiService {
     response: Response,
     fallback: string,
   ): Promise<Error & { status: number }> {
-    const error = new Error(await this.getErrorMessage(response, fallback)) as Error & {
+    const error = new Error(
+      await this.getErrorMessage(response, fallback),
+    ) as Error & {
       status: number;
     };
     error.status = response.status;
@@ -293,6 +299,28 @@ class ApiService {
     return response.json();
   }
 
+  /** Updates title, description and reasoning context without touching nodes or edges. */
+  async updateDiagramMetadata(
+    id: string,
+    payload: {
+      title?: string;
+      description?: string;
+      reasoningContext: SaveDiagramPayload["reasoningContext"];
+    },
+  ): Promise<SavedDiagram> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/diagrams/${id}`, {
+      method: "PUT",
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw await this.createApiError(response, "Failed to update design");
+    }
+
+    return response.json();
+  }
+
   async getUserDiagramPage(
     cursor?: string | null,
     limit = 24,
@@ -354,6 +382,136 @@ class ApiService {
 
     if (!response.ok) {
       throw new Error("Failed to delete diagram");
+    }
+  }
+
+  // Canvas (tab) endpoints for multi-canvas workspaces
+  async listCanvases(workspaceId: string): Promise<CanvasListResponse> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases`,
+      { headers: this.getAuthHeaders() },
+    );
+    if (!response.ok) {
+      throw await this.createApiError(response, "Failed to load canvases");
+    }
+    return response.json();
+  }
+
+  async getCanvas(
+    workspaceId: string,
+    canvasId: string,
+  ): Promise<CanvasDetail> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases/${canvasId}`,
+      { headers: this.getAuthHeaders() },
+    );
+    if (!response.ok) {
+      throw await this.createApiError(response, "Failed to load canvas");
+    }
+    return response.json();
+  }
+
+  async createCanvas(
+    workspaceId: string,
+    body: { name: string; kind: CanvasKind },
+  ): Promise<CanvasDetail> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases`,
+      {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(body),
+      },
+    );
+    if (!response.ok) {
+      throw await this.createApiError(response, "Failed to create canvas");
+    }
+    return response.json();
+  }
+
+  /** Saves nodes and edges. Throws CanvasVersionConflictError on a stale version. */
+  async saveCanvasContent(
+    workspaceId: string,
+    canvasId: string,
+    body: { nodes: unknown[]; edges: unknown[]; version: number },
+  ): Promise<CanvasDetail> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases/${canvasId}`,
+      {
+        method: "PUT",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(body),
+      },
+    );
+    if (response.status === 409) {
+      const payload = await response.json().catch(() => null);
+      const detail = payload?.detail as { currentVersion?: number };
+      throw new CanvasVersionConflictError(detail?.currentVersion ?? null);
+    }
+    if (!response.ok) {
+      throw await this.createApiError(response, "Failed to save canvas");
+    }
+    return response.json();
+  }
+
+  async updateCanvas(
+    workspaceId: string,
+    canvasId: string,
+    body: { name?: string; kind?: CanvasKind },
+  ): Promise<CanvasDetail> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases/${canvasId}`,
+      {
+        method: "PATCH",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(body),
+      },
+    );
+    if (!response.ok) {
+      throw await this.createApiError(response, "Failed to update canvas");
+    }
+    return response.json();
+  }
+
+  async reorderCanvases(
+    workspaceId: string,
+    orderedIds: string[],
+  ): Promise<CanvasListResponse> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases/reorder`,
+      {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify({ orderedIds }),
+      },
+    );
+    if (!response.ok) {
+      throw await this.createApiError(response, "Failed to reorder canvases");
+    }
+    return response.json();
+  }
+
+  async duplicateCanvas(
+    workspaceId: string,
+    canvasId: string,
+  ): Promise<CanvasDetail> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases/${canvasId}/duplicate`,
+      { method: "POST", headers: this.getAuthHeaders() },
+    );
+    if (!response.ok) {
+      throw await this.createApiError(response, "Failed to duplicate canvas");
+    }
+    return response.json();
+  }
+
+  async deleteCanvas(workspaceId: string, canvasId: string): Promise<void> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases/${canvasId}`,
+      { method: "DELETE", headers: this.getAuthHeaders() },
+    );
+    if (!response.ok) {
+      throw await this.createApiError(response, "Failed to delete canvas");
     }
   }
 
@@ -751,9 +909,7 @@ class ApiService {
   // Free-design diagram public sharing
   // ---------------------------------------------------------------------------
 
-  async publishDiagram(
-    diagramId: string,
-  ): Promise<{
+  async publishDiagram(diagramId: string): Promise<{
     diagramId: string;
     publicUrl: string;
     publishedAt: string;
@@ -905,7 +1061,10 @@ class ApiService {
       { headers: this.getAuthHeaders() },
     );
     if (!response.ok) {
-      throw await this.createApiError(response, "Unable to load admin overview");
+      throw await this.createApiError(
+        response,
+        "Unable to load admin overview",
+      );
     }
     return response.json() as Promise<AdminOverview>;
   }
@@ -969,12 +1128,18 @@ class ApiService {
   }
 
   async revokeAdminAccess(userId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/admin/access/${userId}`, {
-      method: "DELETE",
-      headers: this.getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/admin/access/${userId}`,
+      {
+        method: "DELETE",
+        headers: this.getAuthHeaders(),
+      },
+    );
     if (!response.ok) {
-      throw await this.createApiError(response, "Unable to revoke admin access");
+      throw await this.createApiError(
+        response,
+        "Unable to revoke admin access",
+      );
     }
   }
 
@@ -998,9 +1163,7 @@ class ApiService {
 
   // Durable product feedback. Unlike analytics, written feedback is stored
   // as an individual item so it can be triaged and acted on later.
-  async submitFeedback(
-    payload: FeedbackSubmission,
-  ): Promise<FeedbackResponse> {
+  async submitFeedback(payload: FeedbackSubmission): Promise<FeedbackResponse> {
     const response = await fetch(`${API_BASE_URL}/api/v1/feedback`, {
       method: "POST",
       headers: this.getAuthHeaders(),
