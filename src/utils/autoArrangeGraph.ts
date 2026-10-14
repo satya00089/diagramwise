@@ -104,6 +104,27 @@ function assignPipelineStages(
   return stages;
 }
 
+function placePipelineColumn(
+  column: LayoutBox[],
+  primary: number,
+  direction: "LR" | "TB",
+) {
+  const horizontal = direction === "LR";
+  let secondary = 0;
+  let primarySize = 0;
+  const placements: LayoutPlacement[] = [];
+  for (const node of column) {
+    placements.push({
+      ...node,
+      x: horizontal ? primary : secondary,
+      y: horizontal ? secondary : primary,
+    });
+    secondary += (horizontal ? node.height : node.width) + GAP;
+    primarySize = Math.max(primarySize, horizontal ? node.width : node.height);
+  }
+  return { placements, primarySize };
+}
+
 function placePipelineStages(
   nodes: LayoutBox[],
   cycleFor: Map<string, number>,
@@ -118,18 +139,9 @@ function placePipelineStages(
   let primary = 0;
   const result: LayoutPlacement[] = [];
   for (const [, column] of [...columns].sort(([a], [b]) => a - b)) {
-    let secondary = 0;
-    let size = 0;
-    for (const node of column) {
-      result.push({
-        ...node,
-        x: direction === "LR" ? primary : secondary,
-        y: direction === "LR" ? secondary : primary,
-      });
-      secondary += (direction === "LR" ? node.height : node.width) + GAP;
-      size = Math.max(size, direction === "LR" ? node.width : node.height);
-    }
-    primary += size + LAYER_GAP;
+    const placedColumn = placePipelineColumn(column, primary, direction);
+    result.push(...placedColumn.placements);
+    primary += placedColumn.primarySize + LAYER_GAP;
   }
   return result;
 }
