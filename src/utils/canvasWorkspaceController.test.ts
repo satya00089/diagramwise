@@ -325,7 +325,7 @@ describe("CanvasWorkspaceController subscriptions", () => {
     const count = listener.mock.calls.length;
     unsubscribe();
     await controller.saveActive([{ id: "x" }], []);
-    expect(listener.mock.calls.length).toBe(count);
+    expect(listener.mock.calls).toHaveLength(count);
   });
 });
 

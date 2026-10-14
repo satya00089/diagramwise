@@ -1091,12 +1091,13 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   const collaborationPaused =
     isMultiCanvasEnabled && canvasWorkspaceState.canvases.length > 1;
   // Lowest-order canvas is the primary one (same rule as the backend).
-  const primaryCanvasId =
-    canvasWorkspaceState.canvases.length > 0
-      ? canvasWorkspaceState.canvases.reduce((first, canvas) =>
-          canvas.order < first.order ? canvas : first,
-        ).id
-      : null;
+  const firstCanvas = canvasWorkspaceState.canvases[0];
+  const primaryCanvasId = firstCanvas
+    ? canvasWorkspaceState.canvases.reduce(
+        (first, canvas) => (canvas.order < first.order ? canvas : first),
+        firstCanvas,
+      ).id
+    : null;
 
   // Show a canvas's content and drop undo history so Ctrl+Z cannot cross tabs.
   const applyCanvasContent = useCallback(

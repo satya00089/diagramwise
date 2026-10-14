@@ -445,7 +445,7 @@ class ApiService {
     );
     if (response.status === 409) {
       const payload = await response.json().catch(() => null);
-      const detail = payload?.detail as { currentVersion?: number } | undefined;
+      const detail = payload?.detail as { currentVersion?: number };
       throw new CanvasVersionConflictError(detail?.currentVersion ?? null);
     }
     if (!response.ok) {
