@@ -1,16 +1,16 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import AutoArrangeChooser from "./AutoArrangeChooser";
+import type { AutoArrangeOptions } from "../utils/autoArrange";
 import { ControlButton } from "@xyflow/react";
 import {
   MdClose,
   MdAccountTree,
   MdHistory,
   MdRedo,
-  MdSwapHoriz,
-  MdSwapVert,
   MdUndo,
 } from "react-icons/md";
 
-type MenuName = "canvas" | "layout";
+type MenuName = "canvas";
 
 type CanvasActionControlsProps = {
   canUndo: boolean;
@@ -20,8 +20,9 @@ type CanvasActionControlsProps = {
   onUndo: () => void;
   onRedo: () => void;
   onClearCanvas: () => void;
-  onHorizontalLayout: () => void;
-  onVerticalLayout: () => void;
+  onArrange: (options: AutoArrangeOptions) => void;
+  arranging: boolean;
+  onCancelArrange: () => void;
 };
 
 const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
@@ -32,13 +33,31 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
   onUndo,
   onRedo,
   onClearCanvas,
-  onHorizontalLayout,
-  onVerticalLayout,
+  onArrange,
+  arranging,
+  onCancelArrange,
 }) => {
   const controlsRef = useRef<HTMLDivElement>(null);
   const [hoveredMenu, setHoveredMenu] = useState<MenuName | null>(null);
   const [focusedMenu, setFocusedMenu] = useState<MenuName | null>(null);
   const [clickedMenu, setClickedMenu] = useState<MenuName | null>(null);
+  const [arrangeAnchor, setArrangeAnchor] = useState<HTMLButtonElement | null>(
+    null,
+  );
+  const closeArrange = useCallback(() => setArrangeAnchor(null), []);
+  const wasArranging = useRef(false);
+  useEffect(() => {
+    if (
+      wasArranging.current &&
+      !arranging &&
+      document.activeElement === document.body
+    ) {
+      controlsRef.current
+        ?.querySelector<HTMLButtonElement>('button[aria-label="Auto layout"]')
+        ?.focus();
+    }
+    wasArranging.current = arranging;
+  }, [arranging]);
 
   useEffect(() => {
     const handleOutsidePointerDown = (event: PointerEvent) => {
@@ -194,24 +213,35 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
           )}
         </>,
       )}
-      {renderMenu(
-        "layout",
-        "Auto layout",
-        <MdAccountTree className="h-3 w-3 shrink-0" aria-hidden="true" />,
-        <>
-          {renderMenuItem(
-            "Horizontal layout",
-            <MdSwapHoriz aria-hidden="true" />,
-            onHorizontalLayout,
-            layoutDisabled,
-          )}
-          {renderMenuItem(
-            "Vertical layout",
-            <MdSwapVert aria-hidden="true" />,
-            onVerticalLayout,
-            layoutDisabled,
-          )}
-        </>,
+      <ControlButton
+        type="button"
+        aria-label="Auto layout"
+        aria-haspopup="dialog"
+        aria-expanded={Boolean(arrangeAnchor)}
+        disabled={layoutDisabled || arranging}
+        onClick={(event) => {
+          setClickedMenu(null);
+          setHoveredMenu(null);
+          setFocusedMenu(null);
+          setArrangeAnchor(arrangeAnchor ? null : event.currentTarget);
+        }}
+      >
+        <MdAccountTree className="h-3 w-3" aria-hidden="true" />
+      </ControlButton>
+      {arrangeAnchor && (
+        <AutoArrangeChooser
+          anchor={arrangeAnchor}
+          onClose={closeArrange}
+          onArrange={onArrange}
+        />
+      )}
+      {arranging && (
+        <div className="auto-arrange-status" role="status" aria-live="polite">
+          Arranging diagram…{" "}
+          <button type="button" onClick={onCancelArrange}>
+            Cancel
+          </button>
+        </div>
       )}
     </div>
   );

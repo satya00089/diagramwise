@@ -18,6 +18,10 @@ import * as Y from "yjs";
 import { WebsocketProvider } from "y-websocket";
 import type { Node, Edge } from "@xyflow/react";
 import { getYjsUrl } from "../config/environment";
+import {
+  getCanvasNodesRevision,
+  getCanvasEdgesRevision,
+} from "../utils/canvasRevision";
 
 export interface CollaboratorUser {
   id: string;
@@ -205,20 +209,8 @@ export const useYjsCollaboration = ({
           });
 
           // Update hash refs to prevent re-sync
-          lastSyncedNodesRef.current = JSON.stringify(
-            nodesRef.current.map((n: Node) => ({
-              id: n.id,
-              position: n.position,
-              data: n.data,
-            })),
-          );
-          lastSyncedEdgesRef.current = JSON.stringify(
-            edgesRef.current.map((e: Edge) => ({
-              id: e.id,
-              source: e.source,
-              target: e.target,
-            })),
-          );
+          lastSyncedNodesRef.current = getCanvasNodesRevision(nodesRef.current);
+          lastSyncedEdgesRef.current = getCanvasEdgesRevision(edgesRef.current);
 
           isLocalChangeRef.current = false;
         } else if (isSynced && (yNodes.length > 0 || yEdges.length > 0)) {
@@ -248,20 +240,8 @@ export const useYjsCollaboration = ({
           onEdgesChangeRef.current(uniqueEdges);
 
           // Update hash refs
-          lastSyncedNodesRef.current = JSON.stringify(
-            uniqueNodes.map((n: Node) => ({
-              id: n.id,
-              position: n.position,
-              data: n.data,
-            })),
-          );
-          lastSyncedEdgesRef.current = JSON.stringify(
-            uniqueEdges.map((e: Edge) => ({
-              id: e.id,
-              source: e.source,
-              target: e.target,
-            })),
-          );
+          lastSyncedNodesRef.current = getCanvasNodesRevision(uniqueNodes);
+          lastSyncedEdgesRef.current = getCanvasEdgesRevision(uniqueEdges);
 
           isLocalChangeRef.current = false;
         }
@@ -364,13 +344,7 @@ export const useYjsCollaboration = ({
             return acc;
           }, []);
 
-          const updatedNodesHash = JSON.stringify(
-            uniqueNodes.map((n: Node) => ({
-              id: n.id,
-              position: n.position,
-              data: n.data,
-            })),
-          );
+          const updatedNodesHash = getCanvasNodesRevision(uniqueNodes);
 
           // Only update if different from last synced state
           if (updatedNodesHash !== lastSyncedNodesRef.current) {
@@ -396,13 +370,7 @@ export const useYjsCollaboration = ({
             return acc;
           }, []);
 
-          const updatedEdgesHash = JSON.stringify(
-            uniqueEdges.map((e: Edge) => ({
-              id: e.id,
-              source: e.source,
-              target: e.target,
-            })),
-          );
+          const updatedEdgesHash = getCanvasEdgesRevision(uniqueEdges);
 
           // Only update if different from last synced state
           if (updatedEdgesHash !== lastSyncedEdgesRef.current) {
@@ -452,12 +420,8 @@ export const useYjsCollaboration = ({
     const yEdges = ydoc.getArray<Edge>("edges");
 
     // Serialize current state for comparison
-    const currentNodesHash = JSON.stringify(
-      nodes.map((n) => ({ id: n.id, position: n.position, data: n.data })),
-    );
-    const currentEdgesHash = JSON.stringify(
-      edges.map((e) => ({ id: e.id, source: e.source, target: e.target })),
-    );
+    const currentNodesHash = getCanvasNodesRevision(nodes);
+    const currentEdgesHash = getCanvasEdgesRevision(edges);
 
     // Skip sync if nothing changed (prevent infinite loops)
     if (
