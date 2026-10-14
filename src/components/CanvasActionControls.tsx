@@ -252,7 +252,7 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
             onRedo,
             !canRedo,
           )}
-          <div role="separator" className="my-1 border-t border-theme/70" />
+          <hr className="my-1 border-theme/70" />
           {renderMenuItem(
             "Clear canvas",
             <MdClose aria-hidden="true" />,
@@ -456,7 +456,7 @@ function CanvasesMenuBody({
         );
       })}
 
-      <div role="separator" className="my-1 border-t border-theme/70" />
+      <hr className="my-1 border-theme/70" />
 
       {adding ? (
         <form
@@ -467,7 +467,6 @@ function CanvasesMenuBody({
           }}
         >
           <input
-            autoFocus
             aria-label="New canvas name"
             value={newName}
             maxLength={60}
@@ -520,13 +519,12 @@ function CanvasesMenuBody({
 
       {active && (
         <>
-          <div role="separator" className="my-1 border-t border-theme/70" />
+          <hr className="my-1 border-theme/70" />
           <p className="px-2.5 pt-1 text-xs text-theme/60">
             Current: {active.name}
           </p>
           {renaming ? (
             <input
-              autoFocus
               aria-label="Canvas name"
               value={renameValue}
               maxLength={60}
