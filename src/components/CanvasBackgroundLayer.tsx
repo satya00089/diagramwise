@@ -13,7 +13,9 @@ const PATTERN_COLOR = { light: "#dcdce1", dark: "#34343c" } as const;
  * look heavier when zoomed out. Dividing by the zoom level keeps them the same width
  * on screen.
  */
-const CanvasBackgroundLayer: React.FC<{ variant: BackgroundVariant }> = ({ variant }) => {
+const CanvasBackgroundLayer: React.FC<{ variant: BackgroundVariant }> = ({
+  variant,
+}) => {
   const zoom = useStore((state) => state.transform[2]);
   const { flowColorMode } = useTheme();
   const lineWidth = LINE_WIDTH_PX / Math.max(zoom, 0.05);

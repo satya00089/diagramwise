@@ -37,7 +37,8 @@ export function useCanvasBackground(): [
   CanvasBackground,
   (next: CanvasBackground) => void,
 ] {
-  const [background, setBackground] = useState<CanvasBackground>(readStoredBackground);
+  const [background, setBackground] =
+    useState<CanvasBackground>(readStoredBackground);
 
   const update = useCallback((next: CanvasBackground) => {
     setBackground(next);

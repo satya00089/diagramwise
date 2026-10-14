@@ -24,12 +24,20 @@ export interface CanvasWorkspaceApi {
     canvasId: string,
     body: { name?: string; kind?: CanvasKind },
   ): Promise<CanvasDetail>;
-  reorderCanvases(workspaceId: string, orderedIds: string[]): Promise<CanvasListResponse>;
+  reorderCanvases(
+    workspaceId: string,
+    orderedIds: string[],
+  ): Promise<CanvasListResponse>;
   duplicateCanvas(workspaceId: string, canvasId: string): Promise<CanvasDetail>;
   deleteCanvas(workspaceId: string, canvasId: string): Promise<void>;
 }
 
-export type CanvasSaveStatus = "idle" | "saving" | "saved" | "conflict" | "error";
+export type CanvasSaveStatus =
+  | "idle"
+  | "saving"
+  | "saved"
+  | "conflict"
+  | "error";
 
 /** Outcome of persisting the active canvas. */
 export type CanvasPersistResult = "saved" | "unchanged" | "conflict" | "error";
@@ -58,7 +66,10 @@ function stableStringify(value: unknown): string {
   if (value && typeof value === "object") {
     const entries = Object.keys(value as Record<string, unknown>)
       .sort()
-      .map((k) => `${JSON.stringify(k)}:${stableStringify((value as Record<string, unknown>)[k])}`);
+      .map(
+        (k) =>
+          `${JSON.stringify(k)}:${stableStringify((value as Record<string, unknown>)[k])}`,
+      );
     return `{${entries.join(",")}}`;
   }
   return JSON.stringify(value) ?? "null";
@@ -68,7 +79,8 @@ function contentKey(nodes: unknown[], edges: unknown[]): string {
   return stableStringify({ nodes, edges });
 }
 
-const CONFLICT_MESSAGE = "This canvas changed in another session. Reload to see the latest version.";
+const CONFLICT_MESSAGE =
+  "This canvas changed in another session. Reload to see the latest version.";
 
 /**
  * Owns the multi-canvas state for one workspace: which tab is active, the version
@@ -125,7 +137,10 @@ export class CanvasWorkspaceController {
    * Load a workspace and open one canvas. Prefers `preferredCanvasId`, then the
    * primary canvas, then the first tab.
    */
-  async load(workspaceId: string, preferredCanvasId?: string | null): Promise<CanvasDetail> {
+  async load(
+    workspaceId: string,
+    preferredCanvasId?: string | null,
+  ): Promise<CanvasDetail> {
     const list = await this.api.listCanvases(workspaceId);
     this.acceptList(workspaceId, list);
     const target =
@@ -137,7 +152,11 @@ export class CanvasWorkspaceController {
     }
     const detail = await this.api.getCanvas(workspaceId, target.id);
     this.openCanvas(detail);
-    this.update({ activeCanvasId: detail.id, saveStatus: "idle", message: null });
+    this.update({
+      activeCanvasId: detail.id,
+      saveStatus: "idle",
+      message: null,
+    });
     return detail;
   }
 
@@ -161,7 +180,12 @@ export class CanvasWorkspaceController {
     if (!workspaceId || targetId === activeCanvasId) return null;
 
     if (activeCanvasId) {
-      const outcome = await this.persist(workspaceId, activeCanvasId, nodes, edges);
+      const outcome = await this.persist(
+        workspaceId,
+        activeCanvasId,
+        nodes,
+        edges,
+      );
       if (outcome === "conflict" || outcome === "error") return null;
     }
 
@@ -181,7 +205,12 @@ export class CanvasWorkspaceController {
     const { workspaceId, activeCanvasId } = this.snapshot;
     if (!workspaceId) return null;
     if (activeCanvasId) {
-      const outcome = await this.persist(workspaceId, activeCanvasId, nodes, edges);
+      const outcome = await this.persist(
+        workspaceId,
+        activeCanvasId,
+        nodes,
+        edges,
+      );
       if (outcome === "conflict" || outcome === "error") return null;
     }
     const created = await this.api.createCanvas(workspaceId, { name, kind });
@@ -191,18 +220,34 @@ export class CanvasWorkspaceController {
     return created;
   }
 
-  async rename(canvasId: string, name: string, kind?: CanvasKind): Promise<void> {
+  async rename(
+    canvasId: string,
+    name: string,
+    kind?: CanvasKind,
+  ): Promise<void> {
     const { workspaceId } = this.snapshot;
     if (!workspaceId) return;
-    await this.api.updateCanvas(workspaceId, canvasId, { name, ...(kind ? { kind } : {}) });
+    await this.api.updateCanvas(workspaceId, canvasId, {
+      name,
+      ...(kind ? { kind } : {}),
+    });
     await this.refreshList(workspaceId);
   }
 
-  async duplicate(canvasId: string, nodes: unknown[], edges: unknown[]): Promise<void> {
+  async duplicate(
+    canvasId: string,
+    nodes: unknown[],
+    edges: unknown[],
+  ): Promise<void> {
     const { workspaceId, activeCanvasId } = this.snapshot;
     if (!workspaceId) return;
     if (activeCanvasId) {
-      const outcome = await this.persist(workspaceId, activeCanvasId, nodes, edges);
+      const outcome = await this.persist(
+        workspaceId,
+        activeCanvasId,
+        nodes,
+        edges,
+      );
       if (outcome === "conflict" || outcome === "error") return;
     }
     await this.api.duplicateCanvas(workspaceId, canvasId);
@@ -258,7 +303,14 @@ export class CanvasWorkspaceController {
 
       this.update({ saveStatus: "saving" });
       try {
-        return await this.sendSave(workspaceId, canvasId, nodes, edges, key, true);
+        return await this.sendSave(
+          workspaceId,
+          canvasId,
+          nodes,
+          edges,
+          key,
+          true,
+        );
       } catch (error) {
         const message = error instanceof Error ? error.message : "Save failed";
         this.update({ saveStatus: "error", message });
@@ -295,7 +347,11 @@ export class CanvasWorkspaceController {
       if (this.snapshot.activeCanvasId === canvasId) {
         this.activeContent = { nodes, edges };
       }
-      this.update({ saveStatus: "saved", lastSavedAt: Date.now(), message: null });
+      this.update({
+        saveStatus: "saved",
+        lastSavedAt: Date.now(),
+        message: null,
+      });
       return "saved";
     } catch (error) {
       if (!(error instanceof CanvasVersionConflictError)) throw error;
@@ -303,7 +359,10 @@ export class CanvasWorkspaceController {
       if (canRecover) {
         const stored = await this.api.getCanvas(workspaceId, canvasId);
         const storedKey = contentKey(stored.nodes, stored.edges);
-        if (storedKey === key || storedKey === this.lastSavedKey.get(canvasId)) {
+        if (
+          storedKey === key ||
+          storedKey === this.lastSavedKey.get(canvasId)
+        ) {
           this.versions.set(canvasId, stored.version);
           return this.sendSave(workspaceId, canvasId, nodes, edges, key, false);
         }
@@ -329,7 +388,10 @@ export class CanvasWorkspaceController {
   private acceptList(workspaceId: string, list: CanvasListResponse): void {
     for (const canvas of list.canvases) {
       // Never overwrite the active canvas's version: it reflects saves we made locally.
-      if (canvas.id !== this.snapshot.activeCanvasId || !this.versions.has(canvas.id)) {
+      if (
+        canvas.id !== this.snapshot.activeCanvasId ||
+        !this.versions.has(canvas.id)
+      ) {
         this.versions.set(canvas.id, canvas.version);
       }
     }

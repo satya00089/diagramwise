@@ -13,7 +13,10 @@ export function useCanvasWorkspace(): {
   controller: CanvasWorkspaceController;
   snapshot: CanvasWorkspaceSnapshot;
 } {
-  const controller = useMemo(() => new CanvasWorkspaceController(apiService), []);
+  const controller = useMemo(
+    () => new CanvasWorkspaceController(apiService),
+    [],
+  );
   const [snapshot, setSnapshot] = useState(() => controller.getSnapshot());
 
   useEffect(

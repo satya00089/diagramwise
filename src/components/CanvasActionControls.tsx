@@ -297,10 +297,7 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
           "canvases",
           "Canvases",
           <MdLayers className="h-3 w-3 shrink-0" aria-hidden="true" />,
-          <CanvasesMenuBody
-            {...canvasList}
-            onDone={closeMenus}
-          />,
+          <CanvasesMenuBody {...canvasList} onDone={closeMenus} />,
           "min-w-[260px]",
         )}
       {onBackgroundChange &&
@@ -374,7 +371,11 @@ function CanvasesMenuBody({
   ) : null;
 
   if (!signedIn) {
-    return <p className="px-2.5 py-2 text-sm text-theme/70">Sign in to use canvases.</p>;
+    return (
+      <p className="px-2.5 py-2 text-sm text-theme/70">
+        Sign in to use canvases.
+      </p>
+    );
   }
   if (loading) {
     return (
@@ -395,7 +396,8 @@ function CanvasesMenuBody({
     );
   }
 
-  const active = canvases.find((canvas) => canvas.id === activeCanvasId) ?? null;
+  const active =
+    canvases.find((canvas) => canvas.id === activeCanvasId) ?? null;
   const activeIndex = active ? canvases.indexOf(active) : -1;
   const atLimit = canvases.length >= maxCanvases;
 
@@ -447,7 +449,9 @@ function CanvasesMenuBody({
             {canvas.id === primaryCanvasId && (
               <span className="text-xs text-theme/60">Primary</span>
             )}
-            <span className="text-xs text-theme/60">{CANVAS_KIND_LABELS[canvas.kind]}</span>
+            <span className="text-xs text-theme/60">
+              {CANVAS_KIND_LABELS[canvas.kind]}
+            </span>
           </button>
         );
       })}
@@ -487,10 +491,17 @@ function CanvasesMenuBody({
                 </option>
               ))}
             </select>
-            <button type="submit" className="rounded bg-accent px-2 py-1 text-sm text-white">
+            <button
+              type="submit"
+              className="rounded bg-accent px-2 py-1 text-sm text-white"
+            >
               Add
             </button>
-            <button type="button" onClick={() => setAdding(false)} className="px-2 py-1 text-sm">
+            <button
+              type="button"
+              onClick={() => setAdding(false)}
+              className="px-2 py-1 text-sm"
+            >
               Cancel
             </button>
           </div>
@@ -510,7 +521,9 @@ function CanvasesMenuBody({
       {active && (
         <>
           <div role="separator" className="my-1 border-t border-theme/70" />
-          <p className="px-2.5 pt-1 text-xs text-theme/60">Current: {active.name}</p>
+          <p className="px-2.5 pt-1 text-xs text-theme/60">
+            Current: {active.name}
+          </p>
           {renaming ? (
             <input
               autoFocus

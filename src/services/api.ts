@@ -21,10 +21,7 @@ import type {
   DesignReasoningContext,
   InterviewSession,
 } from "../types/systemDesign";
-import type {
-  FeedbackResponse,
-  FeedbackSubmission,
-} from "../types/feedback";
+import type { FeedbackResponse, FeedbackSubmission } from "../types/feedback";
 import type {
   AdminAccessUser,
   AdminApiLatencyReport,
@@ -48,7 +45,8 @@ const API_BASE_URL = getApiBaseUrl(
   import.meta.env.VITE_ASSESSMENT_API_URL,
 );
 
-export const GOOGLE_LOGIN_REDIRECT_URI = getGoogleLoginRedirectUri(API_BASE_URL);
+export const GOOGLE_LOGIN_REDIRECT_URI =
+  getGoogleLoginRedirectUri(API_BASE_URL);
 export const GOOGLE_LOGIN_START_URI = getGoogleLoginStartUri(API_BASE_URL);
 
 class ApiService {
@@ -56,7 +54,9 @@ class ApiService {
     response: Response,
     fallback: string,
   ): Promise<Error & { status: number }> {
-    const error = new Error(await this.getErrorMessage(response, fallback)) as Error & {
+    const error = new Error(
+      await this.getErrorMessage(response, fallback),
+    ) as Error & {
       status: number;
     };
     error.status = response.status;
@@ -397,7 +397,10 @@ class ApiService {
     return response.json();
   }
 
-  async getCanvas(workspaceId: string, canvasId: string): Promise<CanvasDetail> {
+  async getCanvas(
+    workspaceId: string,
+    canvasId: string,
+  ): Promise<CanvasDetail> {
     const response = await fetch(
       `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases/${canvasId}`,
       { headers: this.getAuthHeaders() },
@@ -906,9 +909,7 @@ class ApiService {
   // Free-design diagram public sharing
   // ---------------------------------------------------------------------------
 
-  async publishDiagram(
-    diagramId: string,
-  ): Promise<{
+  async publishDiagram(diagramId: string): Promise<{
     diagramId: string;
     publicUrl: string;
     publishedAt: string;
@@ -1060,7 +1061,10 @@ class ApiService {
       { headers: this.getAuthHeaders() },
     );
     if (!response.ok) {
-      throw await this.createApiError(response, "Unable to load admin overview");
+      throw await this.createApiError(
+        response,
+        "Unable to load admin overview",
+      );
     }
     return response.json() as Promise<AdminOverview>;
   }
@@ -1124,12 +1128,18 @@ class ApiService {
   }
 
   async revokeAdminAccess(userId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/admin/access/${userId}`, {
-      method: "DELETE",
-      headers: this.getAuthHeaders(),
-    });
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/admin/access/${userId}`,
+      {
+        method: "DELETE",
+        headers: this.getAuthHeaders(),
+      },
+    );
     if (!response.ok) {
-      throw await this.createApiError(response, "Unable to revoke admin access");
+      throw await this.createApiError(
+        response,
+        "Unable to revoke admin access",
+      );
     }
   }
 
@@ -1153,9 +1163,7 @@ class ApiService {
 
   // Durable product feedback. Unlike analytics, written feedback is stored
   // as an individual item so it can be triaged and acted on later.
-  async submitFeedback(
-    payload: FeedbackSubmission,
-  ): Promise<FeedbackResponse> {
+  async submitFeedback(payload: FeedbackSubmission): Promise<FeedbackResponse> {
     const response = await fetch(`${API_BASE_URL}/api/v1/feedback`, {
       method: "POST",
       headers: this.getAuthHeaders(),

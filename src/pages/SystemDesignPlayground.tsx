@@ -26,7 +26,13 @@ import type { Node, Edge, Connection } from "@xyflow/react";
 
 // External libraries - Other
 import { toPng, toJpeg, toSvg } from "html-to-image";
-import { arrangeCanvas, applyArrangePlacements, getArrangeRevision, routeArrangedEdges, type AutoArrangeOptions } from "../utils/autoArrange";
+import {
+  arrangeCanvas,
+  applyArrangePlacements,
+  getArrangeRevision,
+  routeArrangedEdges,
+  type AutoArrangeOptions,
+} from "../utils/autoArrange";
 import {
   MdAccessTime,
   MdClose,
@@ -67,10 +73,7 @@ import { useCanvasWorkspace } from "../hooks/useCanvasWorkspace";
 import { useCanvasBackground } from "../hooks/useCanvasBackground";
 import { FeatureFlags, isFeatureEnabled } from "../config/featureFlags";
 import { canvasRoomId } from "../utils/canvasRoom";
-import {
-  MAX_CANVASES_PER_DESIGN,
-  type CanvasKind,
-} from "../types/multiCanvas";
+import { MAX_CANVASES_PER_DESIGN, type CanvasKind } from "../types/multiCanvas";
 import { useAuth } from "../hooks/useAuth";
 import { useCanvasEventLogger } from "../hooks/useCanvasEventLogger";
 import { useToast } from "../hooks/useToast";
@@ -1131,7 +1134,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         applyCanvasContent(detail);
       } catch (canvasError) {
         console.warn("Canvas tabs unavailable for this design", canvasError);
-        canvasWorkspace.markUnavailable("Canvases are unavailable right now. Try again later.");
+        canvasWorkspace.markUnavailable(
+          "Canvases are unavailable right now. Try again later.",
+        );
       }
     },
     [isMultiCanvasEnabled, canvasWorkspace, applyCanvasContent],
@@ -1319,7 +1324,12 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   >(null);
   const [arranging, setArranging] = useState(false);
   const arrangeController = useRef<AbortController | null>(null);
-  useEffect(() => () => { arrangeController.current?.abort(); }, [idFromUrl, diagramIdFromUrl]);
+  useEffect(
+    () => () => {
+      arrangeController.current?.abort();
+    },
+    [idFromUrl, diagramIdFromUrl],
+  );
 
   // File input ref for import
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1495,7 +1505,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                 );
                 applyCanvasContent(detail);
               } catch (canvasError) {
-                console.warn("Canvas tabs unavailable, using design content", canvasError);
+                console.warn(
+                  "Canvas tabs unavailable, using design content",
+                  canvasError,
+                );
               }
             }
             toast.success("Design restored from previous session");
@@ -1701,7 +1714,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         if (idFromUrl === "free") {
           // For Design Studio: save to API as diagrams
           if (currentDiagramId) {
-            if (isMultiCanvasEnabled && canvasWorkspace.getSnapshot().activeCanvasId) {
+            if (
+              isMultiCanvasEnabled &&
+              canvasWorkspace.getSnapshot().activeCanvasId
+            ) {
               // Content goes to the active tab. The diagram itself gets metadata only,
               // so a non-primary tab never overwrites the diagram's own nodes and edges.
               await apiService.updateDiagramMetadata(currentDiagramId, {
@@ -1746,7 +1762,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                 // Opens the design's first canvas. It is the legacy diagram content until the first tab save.
                 await canvasWorkspace.load(newDiagram.id);
               } catch (canvasError) {
-                console.warn("Canvas tabs unavailable, saving on the legacy path", canvasError);
+                console.warn(
+                  "Canvas tabs unavailable, saving on the legacy path",
+                  canvasError,
+                );
               }
             }
 
@@ -4268,13 +4287,16 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     enabled: !!currentDiagramId && isAuthenticated && !collaborationPaused,
     // Multi-canvas: each canvas has its own live room, seeded from the canvas being opened.
     roomId:
-      isMultiCanvasEnabled && currentDiagramId && canvasWorkspaceState.activeCanvasId
+      isMultiCanvasEnabled &&
+      currentDiagramId &&
+      canvasWorkspaceState.activeCanvasId
         ? canvasRoomId(currentDiagramId, canvasWorkspaceState.activeCanvasId)
         : undefined,
-    getSeed: () => canvasWorkspace.getActiveContent() as {
-      nodes: Node[];
-      edges: Edge[];
-    } | null,
+    getSeed: () =>
+      canvasWorkspace.getActiveContent() as {
+        nodes: Node[];
+        edges: Edge[];
+      } | null,
   });
 
   // Extract collaboration state for backward compatibility
@@ -4325,7 +4347,11 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
     // Update canvas state for undo/redo tracking
     // Measurement and selection updates after arrangement are not new edits.
-    if (getArrangeRevision(nodes, edges) === getArrangeRevision(canvasState.nodes, canvasState.edges)) return;
+    if (
+      getArrangeRevision(nodes, edges) ===
+      getArrangeRevision(canvasState.nodes, canvasState.edges)
+    )
+      return;
     setCanvasState({ nodes, edges });
   }, [nodes, edges, canvasState, setCanvasState, isCollaborationConnected]);
 
@@ -5102,14 +5128,27 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     edgesToLayout: Edge[],
     direction: "TB" | "LR",
   ): Promise<Node[]> => {
-    if (canUseERDLayout(nodesToLayout) && !nodesToLayout.some((node) => node.parentId || node.type === "group")) {
+    if (
+      canUseERDLayout(nodesToLayout) &&
+      !nodesToLayout.some((node) => node.parentId || node.type === "group")
+    ) {
       try {
-        return await getERDLayoutedNodes(nodesToLayout, edgesToLayout, direction);
+        return await getERDLayoutedNodes(
+          nodesToLayout,
+          edgesToLayout,
+          direction,
+        );
       } catch (error) {
-        console.error("ELK import layout failed; using shared layered layout:", error);
+        console.error(
+          "ELK import layout failed; using shared layered layout:",
+          error,
+        );
       }
     }
-    const placements = await arrangeCanvas(nodesToLayout, edgesToLayout, { algorithm: "layered", direction });
+    const placements = await arrangeCanvas(nodesToLayout, edgesToLayout, {
+      algorithm: "layered",
+      direction,
+    });
     return applyArrangePlacements(nodesToLayout, placements);
   };
 
@@ -5136,16 +5175,29 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   };
 
   const onArrange = async (options: AutoArrangeOptions) => {
-    if (isSharedView || extensionImportStatus || arrangeController.current || nodes.length === 0) return;
+    if (
+      isSharedView ||
+      extensionImportStatus ||
+      arrangeController.current ||
+      nodes.length === 0
+    )
+      return;
     const controller = new AbortController();
     arrangeController.current = controller;
     const before = getArrangeRevision(nodes, edges);
     setArranging(true);
     try {
-      const placements = await arrangeCanvas(nodes, edges, options, controller.signal);
+      const placements = await arrangeCanvas(
+        nodes,
+        edges,
+        options,
+        controller.signal,
+      );
       if (controller.signal.aborted) return;
       if (before !== getArrangeRevision(nodesRef.current, edgesRef.current)) {
-        toast.info("The diagram changed while arranging. Run auto layout again to include your latest edits.");
+        toast.info(
+          "The diagram changed while arranging. Run auto layout again to include your latest edits.",
+        );
         return;
       }
       const arranged = applyArrangePlacements(nodesRef.current, placements);
@@ -5153,15 +5205,28 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       setNodes(arranged);
       setEdges(routedEdges);
       requestAnimationFrame(() => {
-        if (!controller.signal.aborted) fitView({ ...getAdaptiveFitViewOptions(arranged, edgesRef.current, options.direction), duration: 400 });
+        if (!controller.signal.aborted)
+          fitView({
+            ...getAdaptiveFitViewOptions(
+              arranged,
+              edgesRef.current,
+              options.direction,
+            ),
+            duration: 400,
+          });
       });
     } catch (error) {
       if (!controller.signal.aborted) {
         console.error("Failed to arrange diagram:", error);
-        toast.error("Automatic layout failed. Your current layout was kept. Try again or choose Compact.");
+        toast.error(
+          "Automatic layout failed. Your current layout was kept. Try again or choose Compact.",
+        );
       }
     } finally {
-      if (arrangeController.current === controller) { arrangeController.current = null; setArranging(false); }
+      if (arrangeController.current === controller) {
+        arrangeController.current = null;
+        setArranging(false);
+      }
     }
   };
 
@@ -5578,7 +5643,6 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           </div>
         </header>
 
-
         {/* Main Content */}
         <div className="relative flex-1 flex min-h-0 min-w-0 overflow-hidden">
           {diagramAccessState && (
@@ -5721,8 +5785,18 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             canvasActions={
               isSharedView ? null : (
                 <CanvasActionControls
-                  canUndo={canUndo && extensionImportStatus === null && !arranging && !isCollaborationConnected}
-                  canRedo={canRedo && extensionImportStatus === null && !arranging && !isCollaborationConnected}
+                  canUndo={
+                    canUndo &&
+                    extensionImportStatus === null &&
+                    !arranging &&
+                    !isCollaborationConnected
+                  }
+                  canRedo={
+                    canRedo &&
+                    extensionImportStatus === null &&
+                    !arranging &&
+                    !isCollaborationConnected
+                  }
                   clearDisabled={
                     (nodes.length === 0 && edges.length === 0) ||
                     extensionImportStatus !== null
@@ -5733,7 +5807,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                   onUndo={undo}
                   onRedo={redo}
                   onClearCanvas={handleClearCanvas}
-                  onArrange={(options) => { void onArrange(options); }}
+                  onArrange={(options) => {
+                    void onArrange(options);
+                  }}
                   arranging={arranging}
                   onCancelArrange={() => arrangeController.current?.abort()}
                   canvasList={

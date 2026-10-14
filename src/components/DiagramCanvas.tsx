@@ -104,7 +104,9 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
               <CanvasInteractivityControl />
             </StyledFlowControls>
             {canvasActions && (
-              <div className="react-flow__controls flex flex-col">{canvasActions}</div>
+              <div className="react-flow__controls flex flex-col">
+                {canvasActions}
+              </div>
             )}
           </Panel>
           {backgroundVariant !== "none" && (

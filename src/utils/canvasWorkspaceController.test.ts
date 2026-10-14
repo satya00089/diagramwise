@@ -12,7 +12,12 @@ import {
 
 const WS = "design-1";
 
-function summary(id: string, order: number, version = 1, name = id): CanvasSummary {
+function summary(
+  id: string,
+  order: number,
+  version = 1,
+  name = id,
+): CanvasSummary {
   return {
     id,
     name,
@@ -25,7 +30,12 @@ function summary(id: string, order: number, version = 1, name = id): CanvasSumma
   };
 }
 
-function detail(id: string, version: number, nodes: unknown[] = [], edges: unknown[] = []): CanvasDetail {
+function detail(
+  id: string,
+  version: number,
+  nodes: unknown[] = [],
+  edges: unknown[] = [],
+): CanvasDetail {
   return {
     ...summary(id, 0, version),
     workspaceId: WS,
@@ -60,24 +70,45 @@ function fakeApi(initial: FakeState) {
       if (!found) throw new Error("not found");
       return structuredClone(found);
     }),
-    createCanvas: vi.fn(async (_ws: string, body: { name: string; kind: CanvasSummary["kind"] }) => {
-      const id = `new-${state.canvases.length}`;
-      const created = { ...summary(id, state.canvases.length, 1, body.name), kind: body.kind };
-      state.canvases.push(created);
-      state.content[id] = detail(id, 1);
-      return structuredClone(state.content[id]);
-    }),
-    saveCanvasContent: vi.fn(async (_ws: string, id: string, body: { nodes: unknown[]; edges: unknown[]; version: number }) => {
-      calls.saves.push({ canvasId: id, version: body.version });
-      const current = state.content[id];
-      if (current.version !== body.version) {
-        throw new CanvasVersionConflictError(current.version);
-      }
-      const next = { ...current, nodes: body.nodes, edges: body.edges, version: current.version + 1 };
-      state.content[id] = next;
-      state.canvases = state.canvases.map((c) => (c.id === id ? { ...c, version: next.version } : c));
-      return structuredClone(next);
-    }),
+    createCanvas: vi.fn(
+      async (
+        _ws: string,
+        body: { name: string; kind: CanvasSummary["kind"] },
+      ) => {
+        const id = `new-${state.canvases.length}`;
+        const created = {
+          ...summary(id, state.canvases.length, 1, body.name),
+          kind: body.kind,
+        };
+        state.canvases.push(created);
+        state.content[id] = detail(id, 1);
+        return structuredClone(state.content[id]);
+      },
+    ),
+    saveCanvasContent: vi.fn(
+      async (
+        _ws: string,
+        id: string,
+        body: { nodes: unknown[]; edges: unknown[]; version: number },
+      ) => {
+        calls.saves.push({ canvasId: id, version: body.version });
+        const current = state.content[id];
+        if (current.version !== body.version) {
+          throw new CanvasVersionConflictError(current.version);
+        }
+        const next = {
+          ...current,
+          nodes: body.nodes,
+          edges: body.edges,
+          version: current.version + 1,
+        };
+        state.content[id] = next;
+        state.canvases = state.canvases.map((c) =>
+          c.id === id ? { ...c, version: next.version } : c,
+        );
+        return structuredClone(next);
+      },
+    ),
     updateCanvas: vi.fn(async () => {
       throw new Error("unused");
     }),
@@ -159,7 +190,11 @@ describe("CanvasWorkspaceController.saveActive", () => {
     const controller = new CanvasWorkspaceController(api);
     await controller.load(WS, "main");
     // Another device saves first.
-    state.content.main = { ...state.content.main, version: 2, nodes: [{ id: "other" }] };
+    state.content.main = {
+      ...state.content.main,
+      version: 2,
+      nodes: [{ id: "other" }],
+    };
 
     expect(await controller.saveActive([{ id: "mine" }], [])).toBe("conflict");
     expect(controller.getSnapshot().saveStatus).toBe("conflict");
@@ -187,7 +222,11 @@ describe("CanvasWorkspaceController.switchTo", () => {
     const controller = new CanvasWorkspaceController(api);
     await controller.load(WS, "main");
 
-    const opened = await controller.switchTo("flow", [{ id: "unsaved-edit" }], []);
+    const opened = await controller.switchTo(
+      "flow",
+      [{ id: "unsaved-edit" }],
+      [],
+    );
     expect(opened?.id).toBe("flow");
     expect(calls.saves).toEqual([{ canvasId: "main", version: 1 }]);
     expect(controller.getSnapshot().activeCanvasId).toBe("flow");
@@ -198,7 +237,11 @@ describe("CanvasWorkspaceController.switchTo", () => {
     const controller = new CanvasWorkspaceController(api);
     await controller.load(WS, "main");
     // Another session changed the content, not just the version.
-    state.content.main = { ...state.content.main, version: 9, nodes: [{ id: "other" }] };
+    state.content.main = {
+      ...state.content.main,
+      version: 9,
+      nodes: [{ id: "other" }],
+    };
 
     const opened = await controller.switchTo("flow", [{ id: "mine" }], []);
     expect(opened).toBeNull();
@@ -220,11 +263,18 @@ describe("CanvasWorkspaceController create, delete and reorder", () => {
     const controller = new CanvasWorkspaceController(api);
     await controller.load(WS, "main");
 
-    const created = await controller.create("ER", "er", [{ id: "pending" }], []);
+    const created = await controller.create(
+      "ER",
+      "er",
+      [{ id: "pending" }],
+      [],
+    );
     expect(created?.nodes).toEqual([]);
     expect(calls.saves).toEqual([{ canvasId: "main", version: 1 }]);
     expect(controller.getSnapshot().activeCanvasId).toBe(created?.id);
-    expect(controller.getSnapshot().canvases.map((c) => c.name)).toContain("ER");
+    expect(controller.getSnapshot().canvases.map((c) => c.name)).toContain(
+      "ER",
+    );
   });
 
   it("deleting the active canvas opens the first remaining tab and returns its content", async () => {
@@ -245,7 +295,9 @@ describe("CanvasWorkspaceController create, delete and reorder", () => {
 
     expect(await controller.remove("flow")).toBeNull();
     expect(controller.getSnapshot().activeCanvasId).toBe("main");
-    expect(controller.getSnapshot().canvases.map((c) => c.id)).toEqual(["main"]);
+    expect(controller.getSnapshot().canvases.map((c) => c.id)).toEqual([
+      "main",
+    ]);
   });
 
   it("reorder replaces the tab list with the server's order", async () => {
@@ -253,7 +305,10 @@ describe("CanvasWorkspaceController create, delete and reorder", () => {
     const controller = new CanvasWorkspaceController(api);
     await controller.load(WS, "main");
     await controller.reorder(["flow", "main"]);
-    expect(controller.getSnapshot().canvases.map((c) => c.id)).toEqual(["flow", "main"]);
+    expect(controller.getSnapshot().canvases.map((c) => c.id)).toEqual([
+      "flow",
+      "main",
+    ]);
   });
 });
 
@@ -317,7 +372,9 @@ describe("CanvasWorkspaceController stale versions", () => {
     const { api, state } = fakeApi(TWO_TABS);
     const controller = new CanvasWorkspaceController(api);
     await controller.load(WS, "main");
-    expect(await controller.saveActive([{ id: "a", label: "x", kind: "box" }], [])).toBe("saved");
+    expect(
+      await controller.saveActive([{ id: "a", label: "x", kind: "box" }], []),
+    ).toBe("saved");
 
     // Same content, keys stored in another order, and the version moved on.
     state.content.main = {

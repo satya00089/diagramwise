@@ -8,6 +8,8 @@ describe("canvasRoomId", () => {
 
   it("gives every other canvas its own room", () => {
     expect(canvasRoomId("design-1", "flow-9")).toBe("design-1~flow-9");
-    expect(canvasRoomId("design-1", "flow-9")).not.toBe(canvasRoomId("design-1", "er-3"));
+    expect(canvasRoomId("design-1", "flow-9")).not.toBe(
+      canvasRoomId("design-1", "er-3"),
+    );
   });
 });

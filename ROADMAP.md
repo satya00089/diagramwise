@@ -39,17 +39,17 @@ A design or problem attempt is a **workspace**. Its tabs are **canvases** (up to
    - The leaderboard does not mix scores from different scopes.
 6. **Publishing:** the publish dialog chooses between the whole workspace (read-only, with tabs) and a single canvas. Public pages render tabs for workspace publications.
 7. **MCP:** MCP-created designs become single-canvas workspaces. Decide whether MCP can also write to a named canvas.
-9. **Live tab-list sync.** Collaborators currently see a new or deleted tab only after reloading. Needs a workspace-level sync channel.
-10. **Per-canvas rooms for the non-Yjs fallback.** The socket fallback still uses one room per design, which is unsafe for multi-canvas. Until fixed, multi-canvas should stay off wherever Yjs is off.
-11. **Yjs server review.** Check the room access rules for per-canvas room names before enabling collaboration broadly.
-12. **Deleting a tab another user is editing.** Currently the other user gets a save error. Show a clearer message, and decide whether editors may delete tabs at all.
-13. **Undo for deleted tabs.** Deletes are soft. Add a restore action and a purge job for old deleted canvases.
-14. **Canvas switching shortcut,** for example Ctrl+PageUp and Ctrl+PageDown.
-15. **Drag to reorder tabs.** Move left and move right work today.
-16. **First-visit hint** pointing to the toolbar's Canvases menu.
-17. **Analytics events** for canvas create, switch, delete, and duplicate.
-18. **Accessibility review** of the Canvases and Background menus with a screen reader.
-19. **Browser end-to-end tests** for the canvas workflow.
+8. **Live tab-list sync.** Collaborators currently see a new or deleted tab only after reloading. Needs a workspace-level sync channel.
+9. **Per-canvas rooms for the non-Yjs fallback.** The socket fallback still uses one room per design, which is unsafe for multi-canvas. Until fixed, multi-canvas should stay off wherever Yjs is off.
+10. **Yjs server review.** Check the room access rules for per-canvas room names before enabling collaboration broadly.
+11. **Deleting a tab another user is editing.** Currently the other user gets a save error. Show a clearer message, and decide whether editors may delete tabs at all.
+12. **Undo for deleted tabs.** Deletes are soft. Add a restore action and a purge job for old deleted canvases.
+13. **Canvas switching shortcut,** for example Ctrl+PageUp and Ctrl+PageDown.
+14. **Drag to reorder tabs.** Move left and move right work today.
+15. **First-visit hint** pointing to the toolbar's Canvases menu.
+16. **Analytics events** for canvas create, switch, delete, and duplicate.
+17. **Accessibility review** of the Canvases and Background menus with a screen reader.
+18. **Browser end-to-end tests** for the canvas workflow.
 
 ## Access
 
