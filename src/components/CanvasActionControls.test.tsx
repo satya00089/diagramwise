@@ -39,8 +39,9 @@ const baseProps = {
   onUndo: noop,
   onRedo: noop,
   onClearCanvas: noop,
-  onHorizontalLayout: noop,
-  onVerticalLayout: noop,
+  onArrange: noop,
+  arranging: false,
+  onCancelArrange: noop,
 };
 
 const canvasList = (
