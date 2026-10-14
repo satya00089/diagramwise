@@ -53,6 +53,12 @@ export interface UseYjsCollaborationParams {
   enabled?: boolean;
   onUserJoined?: (user: CollaboratorUser) => void;
   onUserLeft?: (user: CollaboratorUser) => void;
+  /**
+   * Content to seed an empty room with. Multi-canvas passes the canvas being opened,
+   * so a new room never receives another tab's nodes. Falls back to the current
+   * nodes and edges when omitted or when it returns null.
+   */
+  getSeed?: () => { nodes: Node[]; edges: Edge[] } | null;
 }
 
 export interface UseYjsCollaborationReturn {
@@ -82,7 +88,12 @@ export const useYjsCollaboration = ({
   enabled = true,
   onUserJoined,
   onUserLeft,
+  getSeed,
 }: UseYjsCollaborationParams): UseYjsCollaborationReturn => {
+  // Read through a ref so a new getter does not re-initialize the room.
+  const getSeedRef = useRef(getSeed);
+  getSeedRef.current = getSeed;
+
   // Yjs document (CRDT state container)
   const ydocRef = useRef<Y.Doc | null>(null);
   const providerRef = useRef<WebsocketProvider | null>(null);
@@ -194,26 +205,30 @@ export const useYjsCollaboration = ({
         // Initial sync: push local state to Yjs (only for first client or empty state)
         if (isSynced && yNodes.length === 0 && yEdges.length === 0) {
           isLocalChangeRef.current = true;
+          const seed = getSeedRef.current?.() ?? {
+            nodes: nodesRef.current,
+            edges: edgesRef.current,
+          };
           ydoc.transact(() => {
             // Only push if we have local data
-            if (nodesRef.current.length > 0) {
-              yNodes.push(nodesRef.current);
+            if (seed.nodes.length > 0) {
+              yNodes.push(seed.nodes);
             }
-            if (edgesRef.current.length > 0) {
-              yEdges.push(edgesRef.current);
+            if (seed.edges.length > 0) {
+              yEdges.push(seed.edges);
             }
           });
 
           // Update hash refs to prevent re-sync
           lastSyncedNodesRef.current = JSON.stringify(
-            nodesRef.current.map((n: Node) => ({
+            seed.nodes.map((n: Node) => ({
               id: n.id,
               position: n.position,
               data: n.data,
             })),
           );
           lastSyncedEdgesRef.current = JSON.stringify(
-            edgesRef.current.map((e: Edge) => ({
+            seed.edges.map((e: Edge) => ({
               id: e.id,
               source: e.source,
               target: e.target,

@@ -38,6 +38,10 @@ export interface UnifiedCollaborationOptions {
   onNodesChange: (nodes: Node[]) => void;
   onEdgesChange: (edges: Edge[]) => void;
   enabled: boolean;
+  /** Yjs room to join when it differs from the design (per-canvas rooms). */
+  roomId?: string;
+  /** Content to seed an empty Yjs room with. See UseYjsCollaborationParams.getSeed. */
+  getSeed?: () => { nodes: Node[]; edges: Edge[] } | null;
 }
 
 export interface UnifiedCollaborationReturn {
@@ -60,6 +64,8 @@ export const useUnifiedCollaboration = ({
   onNodesChange,
   onEdgesChange,
   enabled,
+  roomId,
+  getSeed,
 }: UnifiedCollaborationOptions): UnifiedCollaborationReturn => {
   const { user, token } = useAuth();
 
@@ -70,9 +76,10 @@ export const useUnifiedCollaboration = ({
 
   // Yjs collaboration
   const yjsCollaboration = useYjsCollaboration({
-    diagramId,
+    diagramId: roomId ?? diagramId,
     nodes,
     edges,
+    getSeed,
     onNodesChange,
     onEdgesChange,
     userId: user?.id || "anonymous",

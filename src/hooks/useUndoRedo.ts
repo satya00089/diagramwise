@@ -14,6 +14,8 @@ interface UseUndoRedoReturn<T> {
   canUndo: boolean;
   canRedo: boolean;
   clearHistory: () => void;
+  /** Replace the current state and drop all history, e.g. when switching canvases. */
+  resetState: (newState: T) => void;
 }
 
 export function useUndoRedo<T>(
@@ -116,6 +118,11 @@ export function useUndoRedo<T>(
     });
   }, [history.present]);
 
+  const resetState = useCallback((newState: T) => {
+    isUndoRedoAction.current = false;
+    setHistory({ past: [], present: newState, future: [] });
+  }, []);
+
   return {
     state: history.present,
     setState,
@@ -124,5 +131,6 @@ export function useUndoRedo<T>(
     canUndo: history.past.length > 0,
     canRedo: history.future.length > 0,
     clearHistory,
+    resetState,
   };
 }
