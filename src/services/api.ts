@@ -305,7 +305,7 @@ class ApiService {
     payload: {
       title?: string;
       description?: string;
-      reasoningContext?: SaveDiagramPayload["reasoningContext"];
+      reasoningContext: SaveDiagramPayload["reasoningContext"];
     },
   ): Promise<SavedDiagram> {
     const response = await fetch(`${API_BASE_URL}/api/v1/diagrams/${id}`, {
