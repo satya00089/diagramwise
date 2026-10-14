@@ -590,7 +590,7 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 type="button"
                 role="tab"
                 aria-selected={activeTab === "details"}
-                className={`flex items-center gap-2 rounded-md px-3 py-2 transition-colors ${activeTab === "details" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
+                className={`flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "details" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
                 data-tour="problem-brief"
                 onClick={() => setActiveTab("details")}
               >
@@ -606,7 +606,7 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   type="button"
                   role="tab"
                   aria-selected={activeTab === "assessment"}
-                  className={`flex items-center gap-2 rounded-md px-3 py-2 transition-colors ${activeTab === "assessment" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
+                  className={`flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "assessment" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
                   onClick={() => setActiveTab("assessment")}
                 >
                   <MdAssessment
@@ -628,7 +628,7 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   type="button"
                   role="tab"
                   aria-selected={activeTab === "guide"}
-                  className={`flex items-center gap-2 rounded-md px-3 py-2 transition-colors ${activeTab === "guide" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
+                  className={`flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "guide" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
                   data-tour="guide"
                   onClick={() => setActiveTab("guide")}
                 >
@@ -641,7 +641,7 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 type="button"
                 role="tab"
                 aria-selected={activeTab === "inspector"}
-                className={`flex items-center gap-2 rounded-md px-3 py-2 transition-colors ${activeTab === "inspector" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
+                className={`flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "inspector" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
                 onClick={() => setActiveTab("inspector")}
               >
                 <MdSettings className="h-4 w-4 shrink-0" aria-hidden="true" />
