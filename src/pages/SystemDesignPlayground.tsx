@@ -26,7 +26,7 @@ import type { Node, Edge, Connection } from "@xyflow/react";
 
 // External libraries - Other
 import { toPng, toJpeg, toSvg } from "html-to-image";
-import dagre from "dagre";
+import { arrangeCanvas, applyArrangePlacements, getArrangeRevision, routeArrangedEdges, type AutoArrangeOptions } from "../utils/autoArrange";
 import {
   MdAccessTime,
   MdClose,
@@ -1174,6 +1174,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   const [extensionImportStatus, setExtensionImportStatus] = useState<
     string | null
   >(null);
+  const [arranging, setArranging] = useState(false);
+  const arrangeController = useRef<AbortController | null>(null);
+  useEffect(() => () => { arrangeController.current?.abort(); }, [idFromUrl, diagramIdFromUrl]);
 
   // File input ref for import
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -4137,8 +4140,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     if (isCollaborationConnected) return;
 
     // Update canvas state for undo/redo tracking
+    // Measurement and selection updates after arrangement are not new edits.
+    if (getArrangeRevision(nodes, edges) === getArrangeRevision(canvasState.nodes, canvasState.edges)) return;
     setCanvasState({ nodes, edges });
-  }, [nodes, edges, setCanvasState, isCollaborationConnected]);
+  }, [nodes, edges, canvasState, setCanvasState, isCollaborationConnected]);
 
   // Keyboard shortcuts for undo/redo
   // Disable during collaboration to prevent conflicts with Yjs
@@ -4907,192 +4912,21 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     setShowTitleDialog(true);
   };
 
-  // Calculate a Dagre layout while keeping group positioning intact.
-  const getLayoutedNodes = (
-    nodesToLayout: Node[],
-    edgesToLayout: Edge[],
-    direction: "TB" | "LR" = "TB",
-  ): Node[] => {
-    // Separate groups and regular nodes
-    const groupNodes = nodesToLayout.filter((node) => node.type === "group");
-    const regularNodes = nodesToLayout.filter(
-      (node) => node.type !== "group" && !node.parentId,
-    );
-
-    // Function to get node dimensions based on type
-    const getNodeDimensions = (node: Node) => {
-      // ER diagram nodes (tableNode, erNode) are larger
-      if (node.type === "tableNode") {
-        // Table nodes vary based on number of attributes, use max size
-        return { width: 400, height: 400 };
-      } else if (node.type === "erNode") {
-        // ER nodes (View, Trigger, Note) have max dimensions
-        return { width: 400, height: 300 };
-      }
-      // Default system design nodes
-      return { width: 200, height: 80 };
-    };
-
-    // Store dimensions for later use
-    const nodeDimensions = new Map<string, { width: number; height: number }>();
-
-    // Layout children within each group (keep groups in their current positions)
-    const childLayouts = new Map<
-      string,
-      Map<string, { x: number; y: number }>
-    >();
-
-    const layoutGroupChildren = (children: Node[]) => {
-      const childGraph = new dagre.graphlib.Graph();
-      childGraph.setDefaultEdgeLabel(() => ({}));
-      childGraph.setGraph({
-        rankdir: direction,
-        nodesep: direction === "LR" ? 80 : 60,
-        ranksep: direction === "LR" ? 100 : 80,
-        marginx: 20,
-        marginy: 20,
-      });
-
-      // Add children to the graph
-      for (const child of children) {
-        const dims = getNodeDimensions(child);
-        nodeDimensions.set(child.id, dims);
-        childGraph.setNode(child.id, dims);
-      }
-
-      // Add edges between children
-      const childEdges = edgesToLayout.filter(
-        (edge) =>
-          children.some((c) => c.id === edge.source) &&
-          children.some((c) => c.id === edge.target),
-      );
-      for (const edge of childEdges) {
-        childGraph.setEdge(edge.source, edge.target);
-      }
-
-      // Layout children
-      dagre.layout(childGraph);
-
-      // Calculate offset to center children within the group
-      // Add padding from group edges
-      const paddingX = 30;
-      const paddingY = 50; // More padding at top for group header
-
-      // Store child positions (relative to parent group)
-      const positions = new Map<string, { x: number; y: number }>();
-      for (const child of children) {
-        const nodeWithPosition = childGraph.node(child.id);
-        if (nodeWithPosition) {
-          const dims = nodeDimensions.get(child.id) || {
-            width: 200,
-            height: 80,
-          };
-          // Position relative to parent, with padding
-          positions.set(child.id, {
-            x: nodeWithPosition.x - dims.width / 2 + paddingX,
-            y: nodeWithPosition.y - dims.height / 2 + paddingY,
-          });
-        }
-      }
-
-      return positions;
-    };
-
-    for (const groupNode of groupNodes) {
-      const children = nodesToLayout.filter((n) => n.parentId === groupNode.id);
-      if (children.length === 0) continue;
-
-      const positions = layoutGroupChildren(children);
-
-      childLayouts.set(groupNode.id, positions);
-    }
-
-    // Only layout regular nodes (non-grouped nodes without parents)
-    const regularGraph = new dagre.graphlib.Graph();
-    regularGraph.setDefaultEdgeLabel(() => ({}));
-    regularGraph.setGraph({
-      rankdir: direction,
-      nodesep: direction === "LR" ? 150 : 80, // More horizontal space for LR layout
-      ranksep: direction === "LR" ? 200 : 100, // More vertical space for LR layout
-    });
-
-    for (const node of regularNodes) {
-      const dims = getNodeDimensions(node);
-      nodeDimensions.set(node.id, dims);
-      regularGraph.setNode(node.id, dims);
-    }
-
-    // Add edges between regular nodes
-    const regularEdges = edgesToLayout.filter(
-      (edge) =>
-        regularNodes.some((n) => n.id === edge.source) &&
-        regularNodes.some((n) => n.id === edge.target),
-    );
-    for (const edge of regularEdges) {
-      regularGraph.setEdge(edge.source, edge.target);
-    }
-    if (regularNodes.length > 0) {
-      dagre.layout(regularGraph);
-    }
-
-    // Apply positions
-    return nodesToLayout.map((node) => {
-      if (node.type === "group") {
-        // Keep group nodes in their current positions - DO NOT MOVE
-        return node;
-      } else if (node.parentId) {
-        // Layout child nodes within their parent group
-        const childLayout = childLayouts.get(node.parentId);
-        if (childLayout) {
-          const position = childLayout.get(node.id);
-          if (position) {
-            return {
-              ...node,
-              position: {
-                x: position.x,
-                y: position.y,
-              },
-            };
-          }
-        }
-        // Fallback: keep existing position if layout failed
-        return node;
-      } else {
-        // Position regular nodes
-        const nodeWithPosition = regularGraph.node(node.id);
-        if (nodeWithPosition) {
-          const dims = nodeDimensions.get(node.id) || {
-            width: 200,
-            height: 80,
-          };
-          return {
-            ...node,
-            position: {
-              x: nodeWithPosition.x - dims.width / 2,
-              y: nodeWithPosition.y - dims.height / 2,
-            },
-          };
-        }
-      }
-      return node;
-    });
-  };
-
+  // Imports keep their established ERD presentation; all other graphs use the shared engine.
   const layoutCanvasNodes = async (
     nodesToLayout: Node[],
     edgesToLayout: Edge[],
     direction: "TB" | "LR",
   ): Promise<Node[]> => {
-    if (!canUseERDLayout(nodesToLayout)) {
-      return getLayoutedNodes(nodesToLayout, edgesToLayout, direction);
+    if (canUseERDLayout(nodesToLayout) && !nodesToLayout.some((node) => node.parentId || node.type === "group")) {
+      try {
+        return await getERDLayoutedNodes(nodesToLayout, edgesToLayout, direction);
+      } catch (error) {
+        console.error("ELK import layout failed; using shared layered layout:", error);
+      }
     }
-
-    try {
-      return await getERDLayoutedNodes(nodesToLayout, edgesToLayout, direction);
-    } catch (error) {
-      console.error("ELK ERD layout failed; falling back to Dagre:", error);
-      return getLayoutedNodes(nodesToLayout, edgesToLayout, direction);
-    }
+    const placements = await arrangeCanvas(nodesToLayout, edgesToLayout, { algorithm: "layered", direction });
+    return applyArrangePlacements(nodesToLayout, placements);
   };
 
   const layoutAndFitCanvas = async (
@@ -5117,12 +4951,34 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     return layoutedNodes;
   };
 
-  // Auto-layout the existing canvas with the appropriate graph layout engine.
-  const onLayout = (direction: "TB" | "LR" = "TB") => {
-    void layoutAndFitCanvas(nodes, edges, direction).catch((error) => {
-      console.error("Failed to auto-layout diagram:", error);
-      toast.error("Automatic layout failed. Your current layout was kept.");
-    });
+  const onArrange = async (options: AutoArrangeOptions) => {
+    if (isSharedView || extensionImportStatus || arrangeController.current || nodes.length === 0) return;
+    const controller = new AbortController();
+    arrangeController.current = controller;
+    const before = getArrangeRevision(nodes, edges);
+    setArranging(true);
+    try {
+      const placements = await arrangeCanvas(nodes, edges, options, controller.signal);
+      if (controller.signal.aborted) return;
+      if (before !== getArrangeRevision(nodesRef.current, edgesRef.current)) {
+        toast.info("The diagram changed while arranging. Run auto layout again to include your latest edits.");
+        return;
+      }
+      const arranged = applyArrangePlacements(nodesRef.current, placements);
+      const routedEdges = routeArrangedEdges(arranged, edgesRef.current);
+      setNodes(arranged);
+      setEdges(routedEdges);
+      requestAnimationFrame(() => {
+        if (!controller.signal.aborted) fitView({ ...getAdaptiveFitViewOptions(arranged, edgesRef.current, options.direction), duration: 400 });
+      });
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        console.error("Failed to arrange diagram:", error);
+        toast.error("Automatic layout failed. Your current layout was kept. Try again or choose Compact.");
+      }
+    } finally {
+      if (arrangeController.current === controller) { arrangeController.current = null; setArranging(false); }
+    }
   };
 
   // Persist nodeProps back into node data.
@@ -5669,8 +5525,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             canvasActions={
               isSharedView ? null : (
                 <CanvasActionControls
-                  canUndo={canUndo && extensionImportStatus === null}
-                  canRedo={canRedo && extensionImportStatus === null}
+                  canUndo={canUndo && extensionImportStatus === null && !arranging && !isCollaborationConnected}
+                  canRedo={canRedo && extensionImportStatus === null && !arranging && !isCollaborationConnected}
                   clearDisabled={
                     (nodes.length === 0 && edges.length === 0) ||
                     extensionImportStatus !== null
@@ -5681,12 +5537,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                   onUndo={undo}
                   onRedo={redo}
                   onClearCanvas={handleClearCanvas}
-                  onHorizontalLayout={() =>
-                    onLayout(getLayoutDirectionForMenu(nodes, "horizontal"))
-                  }
-                  onVerticalLayout={() =>
-                    onLayout(getLayoutDirectionForMenu(nodes, "vertical"))
-                  }
+                  onArrange={(options) => { void onArrange(options); }}
+                  arranging={arranging}
+                  onCancelArrange={() => arrangeController.current?.abort()}
                 />
               )
             }

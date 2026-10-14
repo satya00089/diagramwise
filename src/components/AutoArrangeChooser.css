@@ -1,0 +1,137 @@
+.auto-arrange-chooser {
+  position: fixed;
+  inset: auto;
+  z-index: 1100;
+  margin: 0;
+  padding: 0;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: inherit;
+  scrollbar-color: var(--muted) var(--surface);
+}
+.auto-arrange-chooser::backdrop {
+  background: rgb(0 0 0 / 35%);
+}
+.auto-arrange-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.auto-arrange-heading h2 {
+  margin: 0;
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.auto-arrange-heading button {
+  padding: 8px;
+  border-radius: 6px;
+}
+.auto-arrange-options {
+  padding: 6px;
+}
+.auto-arrange-options > button {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 22px;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 10px;
+  border-radius: 7px;
+  text-align: left;
+}
+.auto-arrange-options > button:hover,
+.auto-arrange-heading button:hover {
+  background: var(--bg-hover);
+}
+.auto-arrange-chooser button,
+.auto-arrange-chooser select {
+  cursor: pointer;
+}
+.auto-arrange-chooser button:focus-visible,
+.auto-arrange-chooser select:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+.auto-arrange-icon {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+}
+.auto-arrange-label {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.auto-arrange-description {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--text) 78%, var(--surface));
+}
+.auto-arrange-options kbd {
+  height: 22px;
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font: inherit;
+  font-size: 12px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.auto-arrange-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+.auto-arrange-footer select {
+  padding: 6px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font: inherit;
+}
+.auto-arrange-footer p {
+  flex-basis: 100%;
+  margin: 0;
+  color: color-mix(in srgb, var(--text) 78%, var(--surface));
+  line-height: 1.5;
+}
+.auto-arrange-status {
+  position: absolute;
+  bottom: 0;
+  left: calc(100% + 12px);
+  min-width: 210px;
+  padding: 12px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+}
+.auto-arrange-status button {
+  margin-left: 8px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 639px) {
+  .auto-arrange-chooser {
+    left: 12px !important;
+  }
+}
