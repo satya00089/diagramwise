@@ -28,15 +28,19 @@ function rowCount(value: unknown): number {
 
 export function getArrangeDimensions(node: Node) {
   const table = node.type === "tableNode" || node.type === "dataModelNode";
-  const fallbackWidth = table ? 440 : node.type === "group" ? 400 : 240;
-  const fallbackHeight = table
-    ? node.data.isCollapsed === true
-      ? 56
-      : 100 +
-        36 * Math.max(1, rowCount(node.data.attributes ?? node.data.fields))
-    : node.type === "group"
-      ? 300
-      : 140;
+  let fallbackWidth = 240;
+  let fallbackHeight = 140;
+  if (table) {
+    fallbackWidth = 440;
+    fallbackHeight =
+      node.data.isCollapsed === true
+        ? 56
+        : 100 +
+          36 * Math.max(1, rowCount(node.data.attributes ?? node.data.fields));
+  } else if (node.type === "group") {
+    fallbackWidth = 400;
+    fallbackHeight = 300;
+  }
   const shape = node.data.shape as
     | { width?: unknown; height?: unknown }
     | undefined;
@@ -143,22 +147,27 @@ export function routeArrangedEdges(nodes: Node[], edges: Edge[]): Edge[] {
     const dx = end.x - start.x;
     const dy = end.y - start.y;
     const horizontal = Math.abs(dx) >= Math.abs(dy);
+    let sourceHandle: string;
+    let targetHandle: string;
+    if (horizontal) {
+      if (dx >= 0) {
+        sourceHandle = "right";
+        targetHandle = "left";
+      } else {
+        sourceHandle = "left";
+        targetHandle = "right";
+      }
+    } else if (dy >= 0) {
+      sourceHandle = "bottom";
+      targetHandle = "top";
+    } else {
+      sourceHandle = "top";
+      targetHandle = "bottom";
+    }
     return {
       ...edge,
-      sourceHandle: horizontal
-        ? dx >= 0
-          ? "right"
-          : "left"
-        : dy >= 0
-          ? "bottom"
-          : "top",
-      targetHandle: horizontal
-        ? dx >= 0
-          ? "left"
-          : "right"
-        : dy >= 0
-          ? "top"
-          : "bottom",
+      sourceHandle,
+      targetHandle,
     };
   });
 }

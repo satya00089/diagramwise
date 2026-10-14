@@ -58,24 +58,28 @@ function layered(
   });
 }
 
-/** Collapse cycles before assigning stages; every cycle occupies one stage. */
-function pipeline(
-  nodes: LayoutBox[],
-  edges: LayoutLink[],
-  direction: "LR" | "TB",
-) {
-  const graph = makeGraph(nodes, edges);
+function findCycles(graph: dagre.graphlib.Graph): string[][] {
   // @types/dagre 0.7 spells this export "tarjam"; graphlib exports "tarjan".
   const graphAlgorithms = dagre.graphlib.alg as typeof dagre.graphlib.alg & {
     tarjan: (input: dagre.graphlib.Graph) => string[][];
   };
-  const cycles = graphAlgorithms
+  return graphAlgorithms
     .tarjan(graph)
     .map((ids) => ids.sort(compareIds))
     .sort((a, b) => compareIds(a[0], b[0]));
-  const cycleFor = new Map(
+}
+
+function indexCycles(cycles: string[][]): Map<string, number> {
+  return new Map(
     cycles.flatMap((ids, index) => ids.map((id) => [id, index] as const)),
   );
+}
+
+function assignPipelineStages(
+  cycles: string[][],
+  cycleFor: Map<string, number>,
+  edges: LayoutLink[],
+): number[] {
   const successors = cycles.map(() => new Set<number>());
   const indegree = cycles.map(() => 0);
   for (const edge of edges) {
@@ -90,14 +94,43 @@ function pipeline(
   const ready = indegree.flatMap((degree, index) =>
     degree === 0 ? [index] : [],
   );
-  for (let cursor = 0; cursor < ready.length; cursor++) {
-    const source = ready[cursor];
+  for (const source of ready) {
     for (const target of successors[source]) {
       stages[target] = Math.max(stages[target], stages[source] + 1);
       indegree[target]--;
       if (indegree[target] === 0) ready.push(target);
     }
   }
+  return stages;
+}
+
+function placePipelineColumn(
+  column: LayoutBox[],
+  primary: number,
+  direction: "LR" | "TB",
+) {
+  const horizontal = direction === "LR";
+  let secondary = 0;
+  let primarySize = 0;
+  const placements: LayoutPlacement[] = [];
+  for (const node of column) {
+    placements.push({
+      ...node,
+      x: horizontal ? primary : secondary,
+      y: horizontal ? secondary : primary,
+    });
+    secondary += (horizontal ? node.height : node.width) + GAP;
+    primarySize = Math.max(primarySize, horizontal ? node.width : node.height);
+  }
+  return { placements, primarySize };
+}
+
+function placePipelineStages(
+  nodes: LayoutBox[],
+  cycleFor: Map<string, number>,
+  stages: number[],
+  direction: "LR" | "TB",
+): LayoutPlacement[] {
   const columns = new Map<number, LayoutBox[]>();
   for (const node of nodes) {
     const stage = stages[cycleFor.get(node.id)!];
@@ -106,20 +139,23 @@ function pipeline(
   let primary = 0;
   const result: LayoutPlacement[] = [];
   for (const [, column] of [...columns].sort(([a], [b]) => a - b)) {
-    let secondary = 0;
-    let size = 0;
-    for (const node of column) {
-      result.push({
-        ...node,
-        x: direction === "LR" ? primary : secondary,
-        y: direction === "LR" ? secondary : primary,
-      });
-      secondary += (direction === "LR" ? node.height : node.width) + GAP;
-      size = Math.max(size, direction === "LR" ? node.width : node.height);
-    }
-    primary += size + LAYER_GAP;
+    const placedColumn = placePipelineColumn(column, primary, direction);
+    result.push(...placedColumn.placements);
+    primary += placedColumn.primarySize + LAYER_GAP;
   }
   return result;
+}
+
+/** Collapse cycles before assigning stages; every cycle occupies one stage. */
+function pipeline(
+  nodes: LayoutBox[],
+  edges: LayoutLink[],
+  direction: "LR" | "TB",
+) {
+  const cycles = findCycles(makeGraph(nodes, edges));
+  const cycleFor = indexCycles(cycles);
+  const stages = assignPipelineStages(cycles, cycleFor, edges);
+  return placePipelineStages(nodes, cycleFor, stages, direction);
 }
 
 /** Dimension-aware shelf packing, shared by compact and disconnected sections. */
@@ -167,8 +203,7 @@ function connectedOrder(nodes: LayoutBox[], edges: LayoutLink[]) {
     if (seen.has(node.id)) continue;
     seen.add(node.id);
     const queue = [node.id];
-    for (let i = 0; i < queue.length; i++) {
-      const id = queue[i];
+    for (const id of queue) {
       ordered.push(byId.get(id)!);
       for (const next of [...neighbors.get(id)!].sort(compareIds)) {
         if (!seen.has(next)) {
@@ -190,8 +225,7 @@ function snowflake(nodes: LayoutBox[], edges: LayoutLink[]) {
   )[0];
   const depths = new Map([[root.id, 0]]);
   const queue = [root.id];
-  for (let i = 0; i < queue.length; i++) {
-    const id = queue[i];
+  for (const id of queue) {
     for (const next of [...neighbors.get(id)!].sort(compareIds)) {
       if (!depths.has(next)) {
         depths.set(next, depths.get(id)! + 1);
