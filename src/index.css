@@ -1941,6 +1941,44 @@ h6 {
   background: var(--bg) !important;
 }
 
+/* Keep both control columns connected as one glass toolbar. */
+.diagram-canvas-toolbar {
+  gap: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 76%, transparent) !important;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 12%);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.diagram-canvas-toolbar .react-flow__controls {
+  overflow: visible;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.diagram-canvas-toolbar .diagram-canvas-toolbar-actions {
+  border-left: 1px solid color-mix(in srgb, var(--border) 78%, transparent) !important;
+}
+
+.diagram-canvas-toolbar .react-flow__controls .react-flow__controls-button {
+  width: 30px;
+  height: 30px;
+  background: transparent !important;
+}
+
+.diagram-canvas-toolbar .react-flow__controls .react-flow__controls-button > svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.diagram-canvas-toolbar .react-flow__controls .react-flow__controls-button:hover {
+  background: color-mix(in srgb, var(--surface) 80%, var(--text) 20%) !important;
+}
+
 /* Semantic utility classes that reference theme variables */
 .text-theme {
   color: var(--text, var(--color-text));

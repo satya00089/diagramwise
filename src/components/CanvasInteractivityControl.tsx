@@ -29,9 +29,9 @@ const CanvasInteractivityControl: React.FC = () => {
       onClick={toggleInteractivity}
     >
       {isInteractive ? (
-        <MdLockOpen className="h-3 w-3 shrink-0" aria-hidden="true" />
+        <MdLockOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
       ) : (
-        <MdLock className="h-3 w-3 shrink-0" aria-hidden="true" />
+        <MdLock className="h-4 w-4 shrink-0" aria-hidden="true" />
       )}
     </ControlButton>
   );
