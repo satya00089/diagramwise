@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { AuthModal } from "../components/AuthModal";
 import { MdHelpOutline } from "react-icons/md";
@@ -138,6 +138,12 @@ const LearningPathAccountControl: React.FC<LearningPathAccountControlProps> = ({
             </p>
             <p className="text-xs text-muted truncate">{user?.email}</p>
           </div>
+          <Link
+            to="/profile"
+            className="block w-full px-4 py-2 text-left text-sm text-theme hover:bg-[var(--bg-hover,var(--bg))] transition-colors border-b border-theme/10"
+          >
+            Your profile
+          </Link>
           <button
             type="button"
             onClick={onEditPreferences}

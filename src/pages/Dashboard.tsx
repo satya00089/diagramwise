@@ -432,6 +432,13 @@ const Dashboard: React.FC = () => {
                             {user?.email}
                           </p>
                         </div>
+                        <Link
+                          to="/profile"
+                          onClick={() => setShowUserMenu(false)}
+                          className="dashboard-user-menu-item border-b border-theme/10"
+                        >
+                          Your profile
+                        </Link>
                         <button
                           type="button"
                           onClick={() => {
