@@ -11,6 +11,7 @@ const noop = () => undefined;
 const canvases: CanvasSummary[] = [
   {
     id: "main",
+    title: "System Design",
     name: "Main",
     kind: "other",
     order: 0,
@@ -21,6 +22,7 @@ const canvases: CanvasSummary[] = [
   },
   {
     id: "flow",
+    title: "System Design",
     name: "Flow",
     kind: "flow",
     order: 1,
@@ -52,6 +54,7 @@ const canvasList = (
   primaryCanvasId: "main",
   maxCanvases: 10,
   signedIn: true,
+  onSignIn: noop,
   loading: false,
   ready: true,
   saveStatus: "saved",
@@ -65,7 +68,7 @@ const canvasList = (
   ...overrides,
 });
 
-const render = (list: CanvasListMenuProps | null) =>
+const render = (list: CanvasListMenuProps) =>
   renderToStaticMarkup(
     <CanvasActionControls
       {...baseProps}
@@ -101,7 +104,7 @@ describe("CanvasActionControls Canvases menu", () => {
       }),
     );
     expect(html).toContain('aria-label="Canvases"');
-    expect(html).toContain("Sign in to use canvases.");
+    expect(html).toContain("Sign in to create and manage canvases.");
     expect(html).not.toContain("+ New canvas");
   });
 
@@ -132,8 +135,31 @@ describe("CanvasActionControls Canvases menu", () => {
     expect(html).not.toContain("Save your design to add canvases.");
   });
 
-  it("does not offer the Canvases menu when multi-canvas is off", () => {
-    expect(render(null)).not.toContain('aria-label="Canvases"');
+  it("shows a sign-in action for signed-out users", () => {
+    const html = render(
+      canvasList({
+        signedIn: false,
+        ready: false,
+        canvases: [],
+        activeCanvasId: null,
+        primaryCanvasId: null,
+      }),
+    );
+    expect(html).toContain('aria-label="Canvases"');
+    expect(html).toContain("Sign in to create and manage canvases.");
+    expect(html).toContain(">Sign in</button>");
+  });
+
+  it("uses context-specific copy when a workspace is not ready", () => {
+    const html = render(
+      canvasList({
+        ready: false,
+        emptyStateMessage: "Save your problem attempt to start another canvas.",
+      }),
+    );
+    expect(html).toContain(
+      "Save your problem attempt to start another canvas.",
+    );
   });
 
   it("keeps canvases usable: nothing is disabled because of collaboration", () => {

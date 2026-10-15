@@ -1,5 +1,7 @@
 /** Multi-canvas (tab) types. Mirrors diagrammatic-api canvas_models. */
 
+import type { DiagramOwner, SavedDiagramSummary } from "./auth";
+
 export const CANVAS_KINDS = [
   "high_level",
   "flow",
@@ -25,6 +27,8 @@ export const MAX_CANVASES_PER_DESIGN = 10;
 
 export interface CanvasSummary {
   id: string;
+  /** Overall title of the parent design or problem workspace. */
+  title: string;
   name: string;
   kind: CanvasKind;
   order: number;
@@ -39,6 +43,13 @@ export interface CanvasListResponse {
   primaryCanvasId: string | null;
   maxCanvases: number;
   canvases: CanvasSummary[];
+}
+
+export interface CanvasWorkspaceBootstrapResponse extends CanvasListResponse {
+  /** Design metadata only; graph data is fetched from the selected canvas. */
+  design: Omit<SavedDiagramSummary, "owner"> & {
+    owner?: DiagramOwner | null;
+  };
 }
 
 export interface CanvasDetail extends CanvasSummary {

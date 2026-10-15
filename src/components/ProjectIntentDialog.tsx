@@ -10,6 +10,8 @@ interface ProjectIntentDialogProps {
   heading?: string;
   subheading?: string;
   submitLabel?: string;
+  titleLabel?: string;
+  titleRequired?: boolean;
 }
 
 export const ProjectIntentDialog: React.FC<ProjectIntentDialogProps> = ({
@@ -20,12 +22,15 @@ export const ProjectIntentDialog: React.FC<ProjectIntentDialogProps> = ({
   heading = "🎨 What are you designing today?",
   subheading = "Help us provide better suggestions by sharing what you're building",
   submitLabel = "Continue",
+  titleLabel = "Project Title",
+  titleRequired = false,
 }) => {
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (titleRequired && !title.trim()) return;
     if (title.trim() || description.trim()) {
       const intent: UserIntent = {
         title: title.trim(),
@@ -58,11 +63,12 @@ export const ProjectIntentDialog: React.FC<ProjectIntentDialogProps> = ({
                 htmlFor="project-title"
                 className="block text-sm font-medium text-theme mb-2"
               >
-                Project Title
+                {titleLabel}{titleRequired ? " *" : ""}
               </label>
               <input
                 id="project-title"
                 type="text"
+                required={titleRequired}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g., E-commerce System, Blog Database, Microservices Architecture..."
