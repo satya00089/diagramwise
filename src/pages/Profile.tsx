@@ -1,0 +1,405 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { HiArrowUpRight } from "react-icons/hi2";
+import { MdCheckCircle, MdOutlineAccountCircle } from "react-icons/md";
+import { useAuth } from "../hooks/useAuth";
+import { useTheme } from "../hooks/useTheme";
+import ThemeSwitcher from "../components/ThemeSwitcher";
+import ProductHeader from "../components/ProductHeader";
+import SEO from "../components/SEO";
+import { apiService } from "../services/api";
+import {
+  fetchLearningPaths,
+  getEmbeddedLearningPaths,
+} from "../services/contentLoader";
+import type { LearningPath } from "../services/contentLoader";
+import "./Profile.css";
+
+type PathProgress = {
+  completed: string[];
+  error: boolean;
+};
+
+const preferenceLabels: Array<[string, string]> = [
+  ["role", "Role"],
+  ["experience_level", "Experience"],
+  ["primary_interest", "Main interest"],
+  ["preferred_cloud", "Preferred cloud"],
+  ["preferred_content_type", "Preferred content"],
+];
+
+const formatPreference = (value: unknown): string | undefined => {
+  if (typeof value === "string") return value.trim() || undefined;
+  if (typeof value === "number") return String(value);
+  if (Array.isArray(value)) {
+    const values = value.map((item) => String(item).trim()).filter(Boolean);
+    return values.length ? values.join(", ") : undefined;
+  }
+  if (value && typeof value === "object") {
+    const item = value as Record<string, unknown>;
+    const label = item.label ?? item.value ?? item.name;
+    return typeof label === "string" ? label : undefined;
+  }
+  return undefined;
+};
+
+const formatMemberDate = (value?: string): string | undefined => {
+  if (!value) return undefined;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return undefined;
+  return new Intl.DateTimeFormat(undefined, {
+    month: "long",
+    year: "numeric",
+  }).format(date);
+};
+
+const Profile: React.FC = () => {
+  useTheme();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const [paths, setPaths] = useState<LearningPath[]>([]);
+  const [progress, setProgress] = useState<Record<string, PathProgress>>({});
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+
+  const loadProgress = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    setLoadError(false);
+
+    try {
+      let catalog: LearningPath[];
+      try {
+        catalog = await fetchLearningPaths();
+        if (catalog.length === 0) catalog = getEmbeddedLearningPaths();
+      } catch {
+        catalog = getEmbeddedLearningPaths();
+        if (catalog.length === 0) throw new Error("Learning paths unavailable");
+      }
+
+      const results = await Promise.all(
+        catalog.map(async (path) => {
+          try {
+            const completed = await apiService.getLearningProgress(path.slug);
+            return [path.slug, { completed, error: false }] as const;
+          } catch {
+            return [path.slug, { completed: [], error: true }] as const;
+          }
+        }),
+      );
+
+      setPaths(catalog);
+      setProgress(Object.fromEntries(results));
+      setLoadError(results.some(([, result]) => result.error));
+    } catch {
+      setLoadError(true);
+      setPaths([]);
+      setProgress({});
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      navigate("/auth?returnTo=%2Fprofile", { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
+  useEffect(() => {
+    if (isAuthenticated && user) void loadProgress();
+  }, [isAuthenticated, user, loadProgress]);
+
+  const pathSummaries = useMemo(
+    () =>
+      paths.map((path) => {
+        const total = path.modules.reduce(
+          (count, module) => count + (module.lessons?.length ?? 0),
+          0,
+        );
+        const lessonIds = new Set(
+          path.modules.flatMap((module) =>
+            (module.lessons ?? []).map((lesson) => lesson.id),
+          ),
+        );
+        const saved = progress[path.slug]?.completed ?? [];
+        const completed = saved.filter((id) => lessonIds.has(id)).length;
+        return {
+          ...path,
+          completed,
+          total,
+          percent:
+            total > 0
+              ? Math.min(100, Math.round((completed / total) * 100))
+              : 0,
+        };
+      }),
+    [paths, progress],
+  );
+
+  const completedLessonCount = pathSummaries.reduce(
+    (count, path) => count + path.completed,
+    0,
+  );
+  const startedPathCount = pathSummaries.filter(
+    (path) => path.completed > 0,
+  ).length;
+  const preferences = user?.preferences ?? {};
+  const visiblePreferences = preferenceLabels
+    .map(([key, label]) => ({
+      label,
+      value: formatPreference(preferences[key]),
+    }))
+    .filter((item): item is { label: string; value: string } =>
+      Boolean(item.value),
+    );
+
+  if (isLoading || !isAuthenticated || !user) {
+    return (
+      <main className="profile-page" aria-busy="true" aria-live="polite">
+        <p className="profile-loading">Loading your profile…</p>
+      </main>
+    );
+  }
+
+  const memberSince = formatMemberDate(user.createdAt);
+
+  return (
+    <>
+      <SEO
+        title="Your profile | Diagramwise"
+        description="Review your learning progress and update your Diagramwise preferences."
+        url="https://diagramwise.com/profile"
+        noIndex
+      />
+      <div className="profile-page min-h-screen bg-[var(--bg)] text-theme">
+        <ProductHeader
+          actions={
+            <>
+              <Link
+                to="/diagrams"
+                className="profile-header-link hidden sm:inline-flex"
+              >
+                My designs
+              </Link>
+              <ThemeSwitcher />
+            </>
+          }
+        />
+
+        <main className="profile-content">
+          <header className="profile-heading">
+            <div className="profile-avatar" aria-hidden="true">
+              {user.picture ? (
+                <img src={user.picture} alt="" />
+              ) : (
+                <MdOutlineAccountCircle />
+              )}
+            </div>
+            <div>
+              <h1>Your profile</h1>
+              <p>
+                Keep track of what you’re learning and shape what comes next.
+              </p>
+            </div>
+          </header>
+
+          <div className="profile-layout">
+            <div className="profile-primary">
+              <section
+                className="profile-section"
+                aria-labelledby="progress-title"
+              >
+                <div className="profile-section-heading">
+                  <div>
+                    <h2 id="progress-title">Learning progress</h2>
+                    <p>
+                      {completedLessonCount} lesson
+                      {completedLessonCount === 1 ? "" : "s"} completed
+                      {startedPathCount > 0
+                        ? ` across ${startedPathCount} learning path${startedPathCount === 1 ? "" : "s"}`
+                        : ". Start a path to see your progress here."}
+                    </p>
+                  </div>
+                  <Link to="/learning-paths/" className="profile-text-link">
+                    Explore paths <HiArrowUpRight aria-hidden="true" />
+                  </Link>
+                </div>
+
+                {loading ? (
+                  <div className="profile-progress-message" aria-live="polite">
+                    <span className="profile-spinner" aria-hidden="true" />
+                    Loading your learning progress…
+                  </div>
+                ) : pathSummaries.length === 0 ? (
+                  <div className="profile-empty">
+                    <p>
+                      {loadError
+                        ? "Learning progress is unavailable right now."
+                        : "Learning paths will appear here when they’re available."}
+                    </p>
+                    {loadError && (
+                      <button type="button" onClick={() => void loadProgress()}>
+                        Try again
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="profile-path-list">
+                    {pathSummaries.map((path) => {
+                      const pathError = progress[path.slug]?.error;
+                      const isComplete =
+                        path.total > 0 && path.completed >= path.total;
+                      return (
+                        <Link
+                          className="profile-path-row"
+                          key={path.slug}
+                          to={`/learning-paths/${path.slug}`}
+                        >
+                          <span className="profile-path-copy">
+                            <strong>{path.title}</strong>
+                            <span>
+                              {pathError
+                                ? "Progress couldn’t be loaded"
+                                : isComplete
+                                  ? "Path complete"
+                                  : path.completed > 0
+                                    ? `${path.completed} of ${path.total} lessons complete`
+                                    : "Not started yet"}
+                            </span>
+                          </span>
+                          <span className="profile-path-progress">
+                            <span
+                              className="profile-progress-track"
+                              role="progressbar"
+                              aria-label={`${path.title} progress`}
+                              aria-valuemin={0}
+                              aria-valuemax={Math.max(1, path.total)}
+                              aria-valuenow={Math.min(
+                                path.completed,
+                                Math.max(1, path.total),
+                              )}
+                            >
+                              <span style={{ width: `${path.percent}%` }} />
+                            </span>
+                            <span className="profile-path-count">
+                              {pathError ? "—" : `${path.percent}%`}
+                            </span>
+                          </span>
+                          {isComplete && (
+                            <MdCheckCircle
+                              className="profile-complete-icon"
+                              aria-hidden="true"
+                            />
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+                {!loading && pathSummaries.length > 0 && loadError && (
+                  <p className="profile-inline-note" role="status">
+                    Some progress could not be loaded. You can still open each
+                    path and continue learning.
+                  </p>
+                )}
+              </section>
+
+              <section
+                className="profile-section"
+                aria-labelledby="preferences-title"
+              >
+                <div className="profile-section-heading">
+                  <div>
+                    <h2 id="preferences-title">Learning preferences</h2>
+                    <p>Used to tailor problem and learning recommendations.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="profile-text-link"
+                    onClick={() =>
+                      globalThis.dispatchEvent(new Event("open-quick-setup"))
+                    }
+                  >
+                    Edit preferences
+                  </button>
+                </div>
+
+                {visiblePreferences.length ? (
+                  <dl className="profile-preference-list">
+                    {visiblePreferences.map(({ label, value }) => (
+                      <div key={label}>
+                        <dt>{label}</dt>
+                        <dd>{value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                ) : (
+                  <div className="profile-empty">
+                    <p>You haven’t added learning preferences yet.</p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        globalThis.dispatchEvent(new Event("open-quick-setup"))
+                      }
+                    >
+                      Add preferences
+                    </button>
+                  </div>
+                )}
+              </section>
+            </div>
+
+            <aside className="profile-aside">
+              <section
+                className="profile-section"
+                aria-labelledby="account-title"
+              >
+                <h2 id="account-title">Account details</h2>
+                <dl className="profile-account-list">
+                  <div>
+                    <dt>Name</dt>
+                    <dd>{user.name?.trim() || "Not set"}</dd>
+                  </div>
+                  <div>
+                    <dt>Email</dt>
+                    <dd>{user.email}</dd>
+                  </div>
+                  {memberSince && (
+                    <div>
+                      <dt>Member since</dt>
+                      <dd>{memberSince}</dd>
+                    </div>
+                  )}
+                </dl>
+                <p className="profile-inline-note">
+                  Name and email changes, account deactivation, and account
+                  deletion aren’t available here yet.
+                </p>
+              </section>
+
+              <section
+                className="profile-account-action"
+                aria-labelledby="account-action-title"
+              >
+                <h2 id="account-action-title">Account access</h2>
+                <p>Sign out of Diagramwise on this device.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    logout();
+                    navigate("/");
+                  }}
+                >
+                  Sign out
+                </button>
+              </section>
+            </aside>
+          </div>
+        </main>
+      </div>
+    </>
+  );
+};
+
+export default Profile;

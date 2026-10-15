@@ -305,6 +305,12 @@ export default function Landing3D() {
                       <strong>{user?.name || "User"}</strong>
                       <span>{user?.email}</span>
                     </div>
+                    <Link
+                      to="/profile"
+                      className="systema-account-menu__profile"
+                    >
+                      Your profile
+                    </Link>
                     <button
                       type="button"
                       onClick={() => {

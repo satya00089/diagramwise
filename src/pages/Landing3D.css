@@ -452,6 +452,17 @@ html:has(.systema-page[data-theme="dark"]) {
   font-size: 12px;
   text-align: left;
 }
+.systema-account-menu__profile {
+  display: block;
+  padding: 11px 15px;
+  border-bottom: 1px solid var(--systema-line);
+  color: var(--systema-text);
+  font-size: 12px;
+  text-decoration: none;
+}
+.systema-account-menu__profile:hover {
+  background: color-mix(in srgb, var(--systema-primary-bg) 10%, transparent);
+}
 .systema-account-menu > button:hover {
   background: color-mix(in srgb, #a33d3d 10%, transparent);
 }

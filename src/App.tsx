@@ -70,6 +70,7 @@ const LearningPath = lazyWithRetry(
   () => import("./pages/LearningPath"),
   "learning-path",
 );
+const Profile = lazyWithRetry(() => import("./pages/Profile"), "profile");
 const VerifyEmail = lazyWithRetry(
   () => import("./pages/VerifyEmail"),
   "verify-email",
@@ -147,6 +148,8 @@ const GlobalProductChrome: React.FC = () => {
       "/create-problem",
       "/learning-paths",
       "/diagrams",
+      "/profile",
+      "/profile/",
       "/admin",
       "/system-design-interview",
       "/system-design-practice",
@@ -159,7 +162,7 @@ const GlobalProductChrome: React.FC = () => {
   const isSystemaLanding = pathname === "/" || pathname === "/landing-3d";
 
   if (
-    !isReady ||
+    (!isReady && pathname !== "/profile") ||
     isSystemaLanding ||
     pathname.startsWith("/public/") ||
     pathname === "/verify-email" ||
@@ -270,6 +273,7 @@ const AppContent: React.FC = () => {
                     }
                   />
                   <Route path="/admin" element={<SuperAdminDashboard />} />
+                  <Route path="/profile" element={<Profile />} />
                   <Route path="/verify-email" element={<VerifyEmail />} />
                   <Route path="/auth" element={<AuthEntry />} />
                   <Route path="/auth/callback" element={<AuthCallback />} />
