@@ -205,6 +205,43 @@ describe("CanvasWorkspaceController.saveActive", () => {
     expect(api.saveCanvasContent).not.toHaveBeenCalled();
   });
 
+  it("does not save renderer-only changes made while opening a page", async () => {
+    const initialState: FakeState = {
+      ...TWO_TABS,
+      content: {
+        ...TWO_TABS.content,
+        main: detail("main", 1, [{ id: "m", position: { x: 20, y: 30 } }]),
+      },
+    };
+    const { api, state } = fakeApi(initialState);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    // A renderer can measure/select a node on mount; neither is a user edit.
+    state.content.main = {
+      ...state.content.main,
+      version: 2,
+      nodes: [{ id: "remote" }],
+    };
+
+    expect(
+      await controller.saveActive(
+        [
+          {
+            id: "m",
+            position: { x: 20, y: 30 },
+            measured: { width: 200, height: 80 },
+            selected: true,
+            dragging: false,
+          },
+        ],
+        [],
+      ),
+    ).toBe("unchanged");
+    expect(api.saveCanvasContent).not.toHaveBeenCalled();
+    expect(controller.getSnapshot().saveStatus).not.toBe("conflict");
+    expect(state.content.main.nodes).toEqual([{ id: "remote" }]);
+  });
+
   it("keeps load-time edge normalization from triggering an autosave", async () => {
     const legacyEdge = {
       id: "edge-a-b",
@@ -408,6 +445,21 @@ describe("CanvasWorkspaceController.getActiveContent", () => {
 });
 
 describe("CanvasWorkspaceController stale versions", () => {
+  it("adopts the latest version without writing when the server already has this content", async () => {
+    const { api, state, calls } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    state.content.main = {
+      ...state.content.main,
+      version: 2,
+      nodes: [{ id: "mine" }],
+    };
+
+    expect(await controller.saveActive([{ id: "mine" }], [])).toBe("saved");
+    expect(calls.saves).toEqual([{ canvasId: "main", version: 1 }]);
+    expect(controller.getSnapshot().message).toBeNull();
+    expect(await controller.saveActive([{ id: "mine" }], [])).toBe("unchanged");
+  });
   it("recovers silently when the version moved but the stored content is what this tab last saved", async () => {
     const { api, state, calls } = fakeApi(TWO_TABS);
     const controller = new CanvasWorkspaceController(api);
