@@ -6,6 +6,7 @@
   --muted: #686863;
   --border: #d4d2ca;
   --brand: #151513;
+  --accent: var(--product-accent);
   --theme: var(--text);
   --elevated-card-bg: var(--surface);
   min-height: 100vh;
@@ -21,6 +22,7 @@
   --muted: #9a9a98;
   --border: #292929;
   --brand: #ffffff;
+  --accent: var(--product-accent);
   --theme: var(--text);
   --elevated-card-bg: var(--surface);
 }
@@ -130,9 +132,9 @@
 }
 
 .my-designs-tab--active {
-  border-color: var(--text);
-  background: var(--text);
-  color: var(--bg);
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--product-accent-contrast);
 }
 
 .my-designs-filters {

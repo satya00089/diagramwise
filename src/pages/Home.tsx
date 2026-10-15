@@ -652,10 +652,10 @@ const Home: React.FC = () => {
         }
         noIndex={isBackupLanding}
       />
-      <div className="min-h-screen bg-[var(--bg)] text-theme relative grid-pattern-overlay">
+      <div className="home-page min-h-screen bg-[var(--bg)] text-theme relative grid-pattern-overlay">
         {/* Header */}
         <header
-          className={`fixed left-0 right-0 z-50 transition-all duration-300 ${
+          className={`landing-header fixed left-0 right-0 z-50 transition-all duration-300 ${
             isScrolled
               ? "shadow-lg backdrop-blur-md bg-[var(--brand)]/90"
               : "bg-[var(--brand)]"
@@ -691,14 +691,14 @@ const Home: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => handleNavigate("/problems", false)}
-                  className="hidden md:block px-4 py-2 text-sm font-medium text-white hover:text-white/80 transition-colors cursor-pointer"
+                  className="landing-header-link hidden md:block px-4 py-2 text-sm font-medium text-white hover:text-white/80 transition-colors cursor-pointer"
                 >
                   <RollingNavLabel>Problems</RollingNavLabel>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleNavigate("/learning-paths/", false)}
-                  className="hidden lg:block px-4 py-2 text-sm font-medium text-white hover:text-white/80 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brand)]"
+                  className="landing-header-link hidden lg:block px-4 py-2 text-sm font-medium text-white hover:text-white/80 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--brand)]"
                 >
                   <RollingNavLabel>Learning Paths</RollingNavLabel>
                 </button>
@@ -706,7 +706,7 @@ const Home: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleNavigate("/diagrams")}
-                    className="hidden md:block px-4 py-2 text-sm font-medium text-white hover:text-white/80 transition-colors cursor-pointer"
+                    className="landing-header-link hidden md:block px-4 py-2 text-sm font-medium text-white hover:text-white/80 transition-colors cursor-pointer"
                   >
                     <RollingNavLabel>My Designs</RollingNavLabel>
                   </button>
@@ -938,7 +938,7 @@ const Home: React.FC = () => {
         <section className="landing-deferred-section relative px-4 py-16 sm:px-6 sm:py-24 lg:px-8">
           <div className="relative z-10 mx-auto max-w-7xl">
             <div className="mb-10">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
+              <p className="landing-accent-copy mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--brand)]">
                 The learning loop
               </p>
               <span
@@ -1243,7 +1243,7 @@ const Home: React.FC = () => {
             <div className="max-w-7xl mx-auto relative z-10">
               <div className="flex items-center justify-between mb-8">
                 <div>
-                  <h2 className="text-2xl text-[var(--brand)] font-bold mb-1">
+                  <h2 className="landing-accent-copy text-2xl text-[var(--brand)] font-bold mb-1">
                     My Designs
                   </h2>
                   <p className="text-muted">
@@ -1455,7 +1455,7 @@ const Home: React.FC = () => {
         <section className="landing-deferred-section py-12 sm:py-20 px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-7xl mx-auto relative z-10">
             <h2
-              className="text-2xl md:text-3xl text-[var(--brand)] font-bold tracking-tight text-center mb-3"
+              className="landing-accent-copy text-2xl md:text-3xl text-[var(--brand)] font-bold tracking-tight text-center mb-3"
               data-reveal
             >
               Choose Your Path
@@ -1506,7 +1506,7 @@ const Home: React.FC = () => {
         <section className="landing-deferred-section py-12 sm:py-20 px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-7xl mx-auto relative z-10">
             <h2
-              className="text-2xl md:text-3xl text-[var(--brand)] font-bold tracking-tight text-center mb-3"
+              className="landing-accent-copy text-2xl md:text-3xl text-[var(--brand)] font-bold tracking-tight text-center mb-3"
               data-reveal
             >
               Powerful Features
@@ -1546,7 +1546,7 @@ const Home: React.FC = () => {
         <section className="landing-deferred-section py-12 sm:py-20 px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-7xl mx-auto relative z-10">
             <h2
-              className="text-2xl md:text-3xl text-[var(--brand)] font-bold tracking-tight text-center mb-10"
+              className="landing-accent-copy text-2xl md:text-3xl text-[var(--brand)] font-bold tracking-tight text-center mb-10"
               data-reveal
             >
               Built for learners and builders

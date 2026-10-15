@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { AuthModal } from "../components/AuthModal";
 import ThemeSwitcher from "../components/ThemeSwitcher";
@@ -160,6 +160,13 @@ const LearningPath: React.FC = () => {
                             {user?.email}
                           </p>
                         </div>
+                        <Link
+                          to="/profile"
+                          onClick={() => setShowUserMenu(false)}
+                          className="detail-user-menu-item border-b border-theme/10"
+                        >
+                          Your profile
+                        </Link>
                         <button
                           type="button"
                           onClick={() => {

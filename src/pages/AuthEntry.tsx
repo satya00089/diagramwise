@@ -1,4 +1,4 @@
-import React, { Suspense } from "react";
+import React, { Suspense, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
 import { useAuth } from "../hooks/useAuth";
@@ -28,13 +28,27 @@ const getMcpContinuationUrl = (token: string | null): string | undefined => {
   }
 };
 
+const getSafeReturnTo = (value: string | null): string => {
+  if (
+    !value ||
+    !value.startsWith("/") ||
+    value.startsWith("//") ||
+    value.includes("\\")
+  ) {
+    return "/";
+  }
+  return value;
+};
+
 const AuthEntry: React.FC = () => {
   const navigate = useNavigate();
+  const returnAfterLogin = useRef(false);
   const [params] = useSearchParams();
   const { login, signup, googleLogin } = useAuth();
   const continuationUrl = getMcpContinuationUrl(
     params.get("mcp_continuation"),
   );
+  const returnTo = getSafeReturnTo(params.get("returnTo"));
   const initialMode = params.get("mode") === "signup" ? "signup" : "login";
 
   return (
@@ -44,12 +58,15 @@ const AuthEntry: React.FC = () => {
           isOpen
           initialMode={initialMode}
           signupContext={{ verificationReturnUrl: continuationUrl }}
-          onClose={() => navigate("/")}
-          googleReturnTo={continuationUrl || "/"}
+          onClose={() => {
+            if (returnAfterLogin.current && continuationUrl) return;
+            navigate(returnAfterLogin.current ? returnTo : "/");
+          }}
+          googleReturnTo={continuationUrl || returnTo}
           onLogin={async (email, password) => {
             await login({ email, password });
+            returnAfterLogin.current = true;
             if (continuationUrl) window.location.assign(continuationUrl);
-            else navigate("/");
           }}
           onSignup={async (email, password, name, context) => {
             await signup({
@@ -61,8 +78,8 @@ const AuthEntry: React.FC = () => {
           }}
           onGoogleLogin={async (credential) => {
             await googleLogin(credential);
+            returnAfterLogin.current = true;
             if (continuationUrl) window.location.assign(continuationUrl);
-            else navigate("/");
           }}
         />
       </Suspense>
