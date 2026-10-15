@@ -83,7 +83,11 @@ function fakeApi(initial: FakeState) {
           kind: body.kind,
         };
         state.canvases.push(created);
-        state.content[id] = detail(id, 1);
+        state.content[id] = {
+          ...detail(id, 1),
+          name: body.name,
+          kind: body.kind,
+        };
         return structuredClone(state.content[id]);
       },
     ),
@@ -111,9 +115,15 @@ function fakeApi(initial: FakeState) {
         return structuredClone(next);
       },
     ),
-    updateCanvas: vi.fn(async () => {
-      throw new Error("unused");
-    }),
+    updateCanvas: vi.fn(
+      async (_ws: string, id: string, body: { name?: string }) => {
+        state.content[id] = {
+          ...state.content[id],
+          name: body.name ?? state.content[id].name,
+        };
+        return structuredClone(state.content[id]);
+      },
+    ),
     reorderCanvases: vi.fn(async (_ws: string, orderedIds: string[]) => {
       state.canvases = orderedIds.map((id, index) => ({
         ...state.canvases.find((c) => c.id === id)!,
@@ -121,8 +131,21 @@ function fakeApi(initial: FakeState) {
       }));
       return list();
     }),
-    duplicateCanvas: vi.fn(async () => {
-      throw new Error("unused");
+    duplicateCanvas: vi.fn(async (_ws: string, id: string) => {
+      const source = state.content[id];
+      const copyId = `copy-${state.canvases.length}`;
+      const copy = {
+        ...source,
+        id: copyId,
+        name: `${source.name} copy`,
+        order: state.canvases.length,
+      };
+      state.content[copyId] = copy;
+      state.canvases.push({
+        ...summary(copyId, copy.order, copy.version, copy.name),
+        kind: copy.kind,
+      });
+      return structuredClone(copy);
     }),
     deleteCanvas: vi.fn(async (_ws: string, id: string) => {
       state.canvases = state.canvases.filter((c) => c.id !== id);
@@ -205,6 +228,41 @@ describe("CanvasWorkspaceController.saveActive", () => {
     expect(api.saveCanvasContent).not.toHaveBeenCalled();
   });
 
+  it("does not save renderer-only changes made while opening a page", async () => {
+    const initialState: FakeState = {
+      ...TWO_TABS,
+      content: {
+        ...TWO_TABS.content,
+        main: detail("main", 1, [{ id: "m", position: { x: 20, y: 30 } }]),
+      },
+    };
+    const { api, state } = fakeApi(initialState);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    // A renderer can measure/select a node on mount; neither is a user edit.
+    state.content.main = {
+      ...state.content.main,
+      version: 2,
+      nodes: [{ id: "remote" }],
+    };
+
+    expect(
+      await controller.saveActive(
+        [{
+          id: "m",
+          position: { x: 20, y: 30 },
+          measured: { width: 200, height: 80 },
+          selected: true,
+          dragging: false,
+        }],
+        [],
+      ),
+    ).toBe("unchanged");
+    expect(api.saveCanvasContent).not.toHaveBeenCalled();
+    expect(controller.getSnapshot().saveStatus).not.toBe("conflict");
+    expect(state.content.main.nodes).toEqual([{ id: "remote" }]);
+  });
+
   it("keeps load-time edge normalization from triggering an autosave", async () => {
     const legacyEdge = {
       id: "edge-a-b",
@@ -254,7 +312,7 @@ describe("CanvasWorkspaceController.saveActive", () => {
 
     expect(await controller.saveActive([{ id: "mine" }], [])).toBe("conflict");
     expect(controller.getSnapshot().saveStatus).toBe("conflict");
-    expect(controller.getSnapshot().message).toMatch(/another session/);
+    expect(controller.getSnapshot().message).toMatch(/saved page changed/);
     expect(state.content.main.nodes).toEqual([{ id: "other" }]);
   });
 
@@ -333,6 +391,61 @@ describe("CanvasWorkspaceController create, delete and reorder", () => {
     );
   });
 
+  it("does not post a new page when the current page cannot be saved", async () => {
+    const { api, state } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    state.content.main = {
+      ...state.content.main,
+      version: 2,
+      nodes: [{ id: "elsewhere" }],
+    };
+
+    const created = await controller.create(
+      "ER",
+      "other",
+      [{ id: "pending" }],
+      [],
+    );
+
+    expect(created).toBeNull();
+    expect(api.createCanvas).not.toHaveBeenCalled();
+    expect(controller.getSnapshot().message).toContain(
+      "saved page changed while this page was open",
+    );
+    expect(controller.getSnapshot().canvases).toHaveLength(2);
+  });
+
+  it("shows a created page without a potentially stale follow-up list request", async () => {
+    const { api } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+
+    const created = await controller.create("ER", "other", [{ id: "m" }], []);
+
+    expect(created?.name).toBe("ER");
+    expect(controller.getSnapshot().activeCanvasId).toBe(created?.id);
+    expect(
+      controller.getSnapshot().canvases.map((canvas) => canvas.name),
+    ).toContain("ER");
+    expect(controller.getSnapshot().message).toBeNull();
+    expect(api.listCanvases).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows renamed and duplicated pages from mutation responses", async () => {
+    const { api } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+
+    await controller.rename("main", "Overview");
+    await controller.duplicate("main", [{ id: "m" }], []);
+
+    expect(
+      controller.getSnapshot().canvases.map((canvas) => canvas.name),
+    ).toEqual(["Overview", "Flow", "Overview copy"]);
+    expect(api.listCanvases).toHaveBeenCalledTimes(1);
+  });
+
   it("deleting the active canvas opens the first remaining tab and returns its content", async () => {
     const { api } = fakeApi(TWO_TABS);
     const controller = new CanvasWorkspaceController(api);
@@ -408,6 +521,21 @@ describe("CanvasWorkspaceController.getActiveContent", () => {
 });
 
 describe("CanvasWorkspaceController stale versions", () => {
+  it("adopts the latest version without writing when the server already has this content", async () => {
+    const { api, state, calls } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    state.content.main = {
+      ...state.content.main,
+      version: 2,
+      nodes: [{ id: "mine" }],
+    };
+
+    expect(await controller.saveActive([{ id: "mine" }], [])).toBe("saved");
+    expect(calls.saves).toEqual([{ canvasId: "main", version: 1 }]);
+    expect(controller.getSnapshot().message).toBeNull();
+    expect(await controller.saveActive([{ id: "mine" }], [])).toBe("unchanged");
+  });
   it("recovers silently when the version moved but the stored content is what this tab last saved", async () => {
     const { api, state, calls } = fakeApi(TWO_TABS);
     const controller = new CanvasWorkspaceController(api);

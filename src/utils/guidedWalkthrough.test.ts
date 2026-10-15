@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { COMPONENTS } from "../config/components";
 import { applyGuidedStep, getAppliedGuidedSteps } from "./guidedWalkthrough";
 import {
   buildProvidedReasoningContext,
@@ -194,5 +195,28 @@ describe("walkthrough application and review serialization", () => {
     expect(context.availabilityTarget).toContain("99.9%");
     expect(context.latencyGoals).toContain("<100ms");
     expect(context.expectedTraffic).toContain("No explicit");
+  });
+});
+
+describe("cloud provider choices on existing components", () => {
+  const optionsFor = (componentId: string, propertyKey: string) => {
+    const component = COMPONENTS.find((candidate) => candidate.id === componentId);
+    return component?.properties?.find((property) => property.key === propertyKey)
+      ?.options;
+  };
+
+  it.each([
+    ["cdn", "provider", "Google Cloud CDN"],
+    ["search", "engine", "Azure Cognitive Search"],
+    ["search-engine", "engine", "Azure Cognitive Search"],
+    ["service-mesh", "provider", "Google Cloud Anthos Service Mesh"],
+    ["stream-processor", "engine", "Google Cloud Dataflow"],
+    ["monitoring", "stack", "Google Cloud Monitoring"],
+    ["monitoring", "stack", "Azure Monitor"],
+    ["monitoring", "stack", "Azure Application Insights"],
+    ["configuration-management", "tool", "Google Config Sync"],
+    ["configuration-management", "tool", "Anthos Config Management"],
+  ])("%s.%s supports %s", (componentId, propertyKey, option) => {
+    expect(optionsFor(componentId, propertyKey)).toContain(option);
   });
 });

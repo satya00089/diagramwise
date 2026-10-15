@@ -9,22 +9,19 @@ import {
   MdGridOn,
   MdHistory,
   MdLayers,
+  MdDragIndicator,
+  MdMoreHoriz,
   MdRedo,
   MdUndo,
 } from "react-icons/md";
-import {
-  CANVAS_KIND_LABELS,
-  CANVAS_KINDS,
-  type CanvasKind,
-  type CanvasSummary,
-} from "../types/multiCanvas";
+import type { CanvasSummary } from "../types/multiCanvas";
 import type { CanvasSaveStatus } from "../utils/canvasWorkspaceController";
 import {
   CANVAS_BACKGROUND_OPTIONS,
   type CanvasBackground,
 } from "../hooks/useCanvasBackground";
 
-type MenuName = "canvas" | "canvases" | "background";
+type MenuName = "canvas" | "arrange" | "canvases" | "background";
 
 /** Canvas management shown in the toolbar's Canvases menu. */
 export type CanvasListMenuProps = {
@@ -43,10 +40,13 @@ export type CanvasListMenuProps = {
   saveStatus: CanvasSaveStatus;
   message: string | null;
   onSelect: (canvasId: string) => void;
-  onCreate: (name: string, kind: CanvasKind) => void;
-  onRename: (canvasId: string, name: string) => void;
+  onCreate: (name: string) => Promise<{ ok: boolean; message?: string }>;
+  onRename: (
+    canvasId: string,
+    name: string,
+  ) => Promise<{ ok: boolean; message?: string }>;
   onDuplicate: (canvasId: string) => void;
-  onMove: (canvasId: string, direction: -1 | 1) => void;
+  onReorder: (orderedIds: string[]) => void;
   onDelete: (canvasId: string) => void;
 };
 
@@ -85,10 +85,6 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
   const [hoveredMenu, setHoveredMenu] = useState<MenuName | null>(null);
   const [focusedMenu, setFocusedMenu] = useState<MenuName | null>(null);
   const [clickedMenu, setClickedMenu] = useState<MenuName | null>(null);
-  const [arrangeAnchor, setArrangeAnchor] = useState<HTMLButtonElement | null>(
-    null,
-  );
-  const closeArrange = useCallback(() => setArrangeAnchor(null), []);
   const wasArranging = useRef(false);
   useEffect(() => {
     if (
@@ -154,6 +150,7 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
     icon: React.ReactNode,
     options: React.ReactNode,
     widthClass = "min-w-[176px]",
+    disabled = false,
   ) => {
     const isOpen =
       hoveredMenu === name || focusedMenu === name || clickedMenu === name;
@@ -181,9 +178,12 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
         <ControlButton
           type="button"
           aria-label={label}
-          aria-haspopup="menu"
+          aria-haspopup={
+            name === "canvases" || name === "arrange" ? "dialog" : "menu"
+          }
           aria-expanded={isOpen}
           aria-controls={menuId}
+          disabled={disabled}
           className="border-t border-theme focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
           onClick={(event) => {
             event.stopPropagation();
@@ -199,7 +199,9 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
         >
           <div
             id={menuId}
-            role="menu"
+            role={
+              name === "canvases" || name === "arrange" ? "dialog" : "menu"
+            }
             aria-label={label}
             className={`flex ${widthClass} flex-col overflow-hidden rounded-md border border-theme bg-[var(--surface)] p-1 text-theme shadow-lg`}
           >
@@ -264,27 +266,13 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
           )}
         </>,
       )}
-      <ControlButton
-        type="button"
-        aria-label="Auto layout"
-        aria-haspopup="dialog"
-        aria-expanded={Boolean(arrangeAnchor)}
-        disabled={layoutDisabled || arranging}
-        onClick={(event) => {
-          setClickedMenu(null);
-          setHoveredMenu(null);
-          setFocusedMenu(null);
-          setArrangeAnchor(arrangeAnchor ? null : event.currentTarget);
-        }}
-      >
-        <MdAccountTree className="h-3 w-3" aria-hidden="true" />
-      </ControlButton>
-      {arrangeAnchor && (
-        <AutoArrangeChooser
-          anchor={arrangeAnchor}
-          onClose={closeArrange}
-          onArrange={onArrange}
-        />
+      {renderMenu(
+        "arrange",
+        "Auto layout",
+        <MdAccountTree className="h-3 w-3 shrink-0" aria-hidden="true" />,
+        <AutoArrangeChooser onArrange={onArrange} onDone={closeMenus} />,
+        "min-w-[304px]",
+        layoutDisabled || arranging,
       )}
       {arranging && (
         <div className="auto-arrange-status" role="status" aria-live="polite">
@@ -296,10 +284,10 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
       )}
       {renderMenu(
         "canvases",
-        "Canvases",
+        "Pages",
         <MdLayers className="h-3 w-3 shrink-0" aria-hidden="true" />,
         <CanvasesMenuBody {...canvasList} onDone={closeMenus} />,
-        "min-w-[260px]",
+        "min-w-[290px]",
       )}
       {onBackgroundChange &&
         renderMenu(
@@ -357,27 +345,42 @@ function CanvasesMenuBody({
   onCreate,
   onRename,
   onDuplicate,
-  onMove,
+  onReorder,
   onDelete,
   onDone,
 }: CanvasesMenuBodyProps) {
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newKind, setNewKind] = useState<CanvasKind>("other");
-  const [renaming, setRenaming] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [renameError, setRenameError] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const skipRenameBlur = useRef(false);
+  const [actionsId, setActionsId] = useState<string | null>(null);
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dropId, setDropId] = useState<string | null>(null);
 
   const notice = message ? (
-    <p role="alert" className="px-2.5 pt-1 pb-2 text-xs text-red-600">
-      {message}
-    </p>
+    <div
+      role="alert"
+      className="mx-2 my-1 rounded-md bg-[var(--bg-hover)] px-2.5 py-2 text-xs text-theme"
+    >
+      <p className="mb-1 font-semibold">
+        {saveStatus === "conflict"
+          ? "Page not saved"
+          : "Action needs attention"}
+      </p>
+      <p>{message}</p>
+    </div>
   ) : null;
 
   if (!signedIn) {
     return (
       <div className="flex flex-col gap-2 px-2.5 py-2">
         <p className="text-sm text-theme/70">
-          Sign in to create and manage canvases.
+          Sign in to create and manage pages.
         </p>
         <button
           type="button"
@@ -396,7 +399,7 @@ function CanvasesMenuBody({
   if (loading) {
     return (
       <>
-        <p className="px-2.5 py-2 text-sm text-theme/70">Loading canvases…</p>
+        <p className="px-2.5 py-2 text-sm text-theme/70">Loading pages…</p>
         {notice}
       </>
     );
@@ -407,218 +410,307 @@ function CanvasesMenuBody({
         <p className="px-2.5 py-2 text-sm text-theme/70">
           {message
             ? null
-            : (emptyStateMessage ?? "Save your design to add canvases.")}
+            : (emptyStateMessage ?? "Save your design to add pages.")}
         </p>
         {notice}
       </>
     );
   }
 
-  const active =
-    canvases.find((canvas) => canvas.id === activeCanvasId) ?? null;
-  const activeIndex = active ? canvases.indexOf(active) : -1;
   const atLimit = canvases.length >= maxCanvases;
 
-  const submitCreate = () => {
+  const submitCreate = async () => {
     const trimmed = newName.trim();
-    if (!trimmed || atLimit) return;
-    onCreate(trimmed, newKind);
-    setAdding(false);
-    setNewName("");
-    setNewKind("other");
-    onDone();
+    if (!trimmed || atLimit || creating) return;
+    setCreating(true);
+    setCreateError(null);
+    try {
+      const result = await onCreate(trimmed);
+      if (result.ok) {
+        setAdding(false);
+        setNewName("");
+      } else {
+        setCreateError(result.message ?? "Could not create page. Try again.");
+      }
+    } catch (error) {
+      setCreateError(
+        error instanceof Error
+          ? error.message
+          : "Could not create page. Try again.",
+      );
+    } finally {
+      setCreating(false);
+    }
   };
 
-  const submitRename = () => {
-    if (!active) return;
+  const submitRename = async (canvas: CanvasSummary) => {
     const trimmed = renameValue.trim();
-    if (trimmed && trimmed !== active.name) onRename(active.id, trimmed);
-    setRenaming(false);
-    onDone();
+    if (!trimmed) {
+      setRenameError("Enter a page name.");
+      return;
+    }
+    if (trimmed === canvas.name) {
+      setEditingId(null);
+      return;
+    }
+    if (renaming) return;
+    setRenaming(true);
+    try {
+      const result = await onRename(canvas.id, trimmed);
+      if (result.ok) {
+        setEditingId(null);
+        setRenameError(null);
+      } else {
+        setRenameError(result.message ?? "Could not rename page. Try again.");
+      }
+    } catch (error) {
+      setRenameError(
+        error instanceof Error
+          ? error.message
+          : "Could not rename page. Try again.",
+      );
+    } finally {
+      setRenaming(false);
+    }
+  };
+
+  const reorder = (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) return;
+    const ids = canvases.map((canvas) => canvas.id);
+    const from = ids.indexOf(sourceId);
+    const to = ids.indexOf(targetId);
+    if (from < 0 || to < 0) return;
+    ids.splice(from, 1);
+    ids.splice(to, 0, sourceId);
+    onReorder(ids);
   };
 
   return (
     <>
       <div className="flex items-center justify-between px-2.5 pt-2 pb-1 text-xs text-theme/70">
         <span>
-          {canvases.length}/{maxCanvases} canvases
+          Pages · {canvases.length} of {maxCanvases}
         </span>
         <span aria-live="polite">{SAVE_TEXT[saveStatus]}</span>
       </div>
 
-      {canvases.map((canvas) => {
-        const isActive = canvas.id === activeCanvasId;
-        return (
-          <button
-            key={canvas.id}
-            type="button"
-            role="menuitemradio"
-            aria-checked={isActive}
-            className={rowClass}
-            onClick={() => {
-              onSelect(canvas.id);
-              onDone();
-            }}
-          >
-            <span className="inline-flex w-4 justify-center" aria-hidden="true">
-              {isActive ? <MdCheck /> : null}
-            </span>
-            <span className="min-w-0 flex-1 truncate">{canvas.name}</span>
-            {canvas.id === primaryCanvasId && (
-              <span className="text-xs text-theme/60">Primary</span>
-            )}
-            <span className="text-xs text-theme/60">
-              {CANVAS_KIND_LABELS[canvas.kind]}
-            </span>
-          </button>
-        );
-      })}
+      <div className="max-h-72 overflow-y-auto">
+        {canvases.map((canvas, index) => {
+          const isActive = canvas.id === activeCanvasId;
+          return (
+            <div
+              key={canvas.id}
+              className={`group flex flex-wrap items-center gap-1 rounded px-1 py-0.5 ${isActive ? "bg-[var(--bg-hover)]" : ""} ${dropId === canvas.id ? "ring-1 ring-accent" : ""}`}
+              onDragOver={(event) => {
+                event.preventDefault();
+                setDropId(canvas.id);
+              }}
+              onDragLeave={() => setDropId(null)}
+              onDrop={(event) => {
+                event.preventDefault();
+                const sourceId =
+                  event.dataTransfer.getData("text/plain") || draggedId;
+                if (sourceId) reorder(sourceId, canvas.id);
+                setDraggedId(null);
+                setDropId(null);
+              }}
+            >
+              <button
+                type="button"
+                draggable
+                aria-label={`Reorder ${canvas.name}. Use Alt+Arrow keys to move it.`}
+                className="cursor-grab rounded p-1.5 text-theme/60 hover:text-theme focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 active:cursor-grabbing"
+                onDragStart={(event) => {
+                  setDraggedId(canvas.id);
+                  event.dataTransfer.setData("text/plain", canvas.id);
+                  event.dataTransfer.effectAllowed = "move";
+                }}
+                onDragEnd={() => {
+                  setDraggedId(null);
+                  setDropId(null);
+                }}
+                onKeyDown={(event) => {
+                  if (
+                    !event.altKey ||
+                    !["ArrowUp", "ArrowDown"].includes(event.key)
+                  )
+                    return;
+                  event.preventDefault();
+                  const target =
+                    canvases[index + (event.key === "ArrowUp" ? -1 : 1)];
+                  if (target) reorder(canvas.id, target.id);
+                }}
+              >
+                <MdDragIndicator aria-hidden="true" />
+              </button>
+              {editingId === canvas.id ? (
+                <input
+                  autoFocus
+                  aria-label={`Rename ${canvas.name}`}
+                  value={renameValue}
+                  maxLength={60}
+                  disabled={renaming}
+                  onChange={(event) => setRenameValue(event.target.value)}
+                  onBlur={() => {
+                    if (skipRenameBlur.current) {
+                      skipRenameBlur.current = false;
+                      return;
+                    }
+                    void submitRename(canvas);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      event.currentTarget.blur();
+                    }
+                    if (event.key === "Escape") {
+                      event.stopPropagation();
+                      skipRenameBlur.current = true;
+                      setEditingId(null);
+                      setRenameError(null);
+                    }
+                  }}
+                  className="min-w-0 flex-1 rounded border border-theme bg-transparent px-2 py-1 text-sm text-theme focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+                />
+              ) : (
+                <button
+                  type="button"
+                  aria-current={isActive ? "page" : undefined}
+                  className="flex min-w-0 flex-1 items-center gap-2 rounded px-1 py-2 text-left text-sm text-theme focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+                  onClick={() => onSelect(canvas.id)}
+                  onKeyDown={(event) => {
+                    if (event.key !== "F2") return;
+                    event.preventDefault();
+                    setEditingId(canvas.id);
+                    setRenameValue(canvas.name);
+                    setRenameError(null);
+                  }}
+                  onDoubleClick={() => {
+                    setEditingId(canvas.id);
+                    setRenameValue(canvas.name);
+                    setRenameError(null);
+                  }}
+                >
+                  <span
+                    className="inline-flex w-4 justify-center"
+                    aria-hidden="true"
+                  >
+                    {isActive ? <MdCheck /> : null}
+                  </span>
+                  <span className="truncate">{canvas.name}</span>
+                </button>
+              )}
+              {canvas.id === primaryCanvasId && (
+                <span className="text-[11px] text-theme/60">Default</span>
+              )}
+              <button
+                type="button"
+                aria-label={`More options for ${canvas.name}`}
+                aria-expanded={actionsId === canvas.id}
+                className="rounded p-1.5 text-theme/70 hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+                onClick={() =>
+                  setActionsId(actionsId === canvas.id ? null : canvas.id)
+                }
+              >
+                <MdMoreHoriz aria-hidden="true" />
+              </button>
+              {actionsId === canvas.id && (
+                <div className="flex w-full justify-end gap-1 pb-1">
+                  <button
+                    type="button"
+                    className="rounded px-2 py-1 text-xs text-theme hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 disabled:opacity-40"
+                    disabled={atLimit}
+                    onClick={() => {
+                      onDuplicate(canvas.id);
+                      setActionsId(null);
+                    }}
+                  >
+                    Duplicate
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded px-2 py-1 text-xs text-red-600 hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70 disabled:opacity-40 dark:text-red-400"
+                    disabled={canvases.length <= 1}
+                    onClick={() => {
+                      if (window.confirm(`Delete the page "${canvas.name}"?`))
+                        onDelete(canvas.id);
+                      setActionsId(null);
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+              {editingId === canvas.id && renameError && (
+                <p role="alert" className="w-full text-xs text-red-600">
+                  {renameError}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <p className="px-2.5 py-1 text-[11px] text-theme/60">
+        Drag to reorder · Double-click a name to rename
+      </p>
 
       <hr className="my-1 border-theme/70" />
 
       {adding ? (
         <form
-          className="flex flex-col gap-2 px-2.5 py-2"
+          className="flex flex-col gap-1 px-2.5 py-2"
           onSubmit={(event) => {
             event.preventDefault();
-            submitCreate();
+            void submitCreate();
           }}
         >
           <input
-            aria-label="New canvas title"
+            autoFocus
+            aria-label="New page name"
             value={newName}
             maxLength={60}
-            placeholder="e.g. HLD, LLD, ER diagram"
-            onChange={(event) => setNewName(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") setAdding(false);
+            disabled={creating}
+            placeholder="Page name · press Enter"
+            onChange={(event) => {
+              setNewName(event.target.value);
+              setCreateError(null);
             }}
-            className="rounded border border-theme bg-transparent px-2 py-1 text-sm"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.stopPropagation();
+                setAdding(false);
+                setCreateError(null);
+              }
+            }}
+            className="rounded border border-theme bg-transparent px-2 py-1.5 text-sm text-theme focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
           />
-          <div className="flex items-center gap-2">
-            <select
-              aria-label="Canvas type"
-              value={newKind}
-              onChange={(event) => setNewKind(event.target.value as CanvasKind)}
-              className="flex-1 rounded border border-theme bg-transparent px-1 py-1 text-sm"
-            >
-              {CANVAS_KINDS.map((kind) => (
-                <option key={kind} value={kind}>
-                  {CANVAS_KIND_LABELS[kind]}
-                </option>
-              ))}
-            </select>
-            <button
-              type="submit"
-              className="rounded bg-accent px-2 py-1 text-sm text-white"
-            >
-              Add
-            </button>
-            <button
-              type="button"
-              onClick={() => setAdding(false)}
-              className="px-2 py-1 text-sm"
-            >
-              Cancel
-            </button>
-          </div>
+          {creating && (
+            <span role="status" className="text-xs text-theme/70">
+              Creating page…
+            </span>
+          )}
+          {createError && (
+            <p role="alert" className="text-xs text-red-600">
+              {createError}
+            </p>
+          )}
         </form>
       ) : (
         <button
           type="button"
-          role="menuitem"
           disabled={atLimit}
           className={rowClass}
-          onClick={() => setAdding(true)}
+          onClick={() => {
+            setAdding(true);
+            setCreateError(null);
+          }}
         >
-          + New canvas
+          + New page
         </button>
       )}
 
-      {active && (
-        <>
-          <hr className="my-1 border-theme/70" />
-          <p className="px-2.5 pt-1 text-xs text-theme/60">
-            Current: {active.name}
-          </p>
-          {renaming ? (
-            <input
-              aria-label="Canvas title"
-              value={renameValue}
-              maxLength={60}
-              onChange={(event) => setRenameValue(event.target.value)}
-              onBlur={submitRename}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") submitRename();
-                if (event.key === "Escape") setRenaming(false);
-              }}
-              className="mx-2.5 my-1 rounded border border-theme bg-transparent px-2 py-1 text-sm"
-            />
-          ) : (
-            <button
-              type="button"
-              role="menuitem"
-              className={rowClass}
-              onClick={() => {
-                setRenameValue(active.name);
-                setRenaming(true);
-              }}
-            >
-              Rename
-            </button>
-          )}
-          <button
-            type="button"
-            role="menuitem"
-            disabled={atLimit}
-            className={rowClass}
-            onClick={() => {
-              onDuplicate(active.id);
-              onDone();
-            }}
-          >
-            Duplicate
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            disabled={activeIndex <= 0}
-            className={rowClass}
-            onClick={() => onMove(active.id, -1)}
-          >
-            Move left
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            disabled={activeIndex < 0 || activeIndex >= canvases.length - 1}
-            className={rowClass}
-            onClick={() => onMove(active.id, 1)}
-          >
-            Move right
-          </button>
-          <button
-            type="button"
-            role="menuitem"
-            disabled={canvases.length <= 1}
-            className={`${rowClass} text-red-600 dark:text-red-400`}
-            onClick={() => {
-              if (window.confirm(`Delete the canvas "${active.name}"?`)) {
-                onDelete(active.id);
-                onDone();
-              }
-            }}
-          >
-            Delete
-          </button>
-        </>
-      )}
-
-      {message && (
-        <p role="alert" className="px-2.5 pt-1 pb-2 text-xs text-red-600">
-          {message}
-        </p>
-      )}
+      {(!adding || !createError) && notice}
     </>
   );
 }

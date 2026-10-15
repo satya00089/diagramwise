@@ -45,6 +45,7 @@ export type CanvasPersistResult = "saved" | "unchanged" | "conflict" | "error";
 export interface CanvasWorkspaceSnapshot {
   workspaceId: string | null;
   canvases: CanvasSummary[];
+  primaryCanvasId: string | null;
   activeCanvasId: string | null;
   saveStatus: CanvasSaveStatus;
   lastSavedAt: number | null;
@@ -54,6 +55,7 @@ export interface CanvasWorkspaceSnapshot {
 const INITIAL_SNAPSHOT: CanvasWorkspaceSnapshot = {
   workspaceId: null,
   canvases: [],
+  primaryCanvasId: null,
   activeCanvasId: null,
   saveStatus: "idle",
   lastSavedAt: null,
@@ -76,11 +78,45 @@ function stableStringify(value: unknown): string {
 }
 
 function contentKey(nodes: unknown[], edges: unknown[]): string {
-  return stableStringify({ nodes, edges });
+  // React Flow adds these view-only fields while mounting/selecting a graph.
+  // They must not turn an unchanged page into a write (or a version conflict).
+  const viewOnlyFields = new Set([
+    "selected",
+    "dragging",
+    "resizing",
+    "measured",
+    "internals",
+    "positionAbsolute",
+  ]);
+  const persistentPart = (item: unknown): unknown => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return item;
+    return Object.fromEntries(
+      Object.entries(item).filter(([field]) => !viewOnlyFields.has(field)),
+    );
+  };
+  return stableStringify({
+    nodes: nodes.map(persistentPart),
+    edges: edges.map(persistentPart),
+  });
+}
+
+function summaryFromDetail(detail: CanvasDetail): CanvasSummary {
+  return {
+    id: detail.id,
+    title: detail.title,
+    name: detail.name,
+    kind: detail.kind,
+    order: detail.order,
+    nodeCount: detail.nodeCount,
+    edgeCount: detail.edgeCount,
+    version: detail.version,
+    createdAt: detail.createdAt,
+    updatedAt: detail.updatedAt,
+  };
 }
 
 const CONFLICT_MESSAGE =
-  "This canvas changed in another session. Reload to see the latest version.";
+  "The saved page changed while this page was open. Your edits were not overwritten; copy anything you need before reloading.";
 
 /**
  * Owns the multi-canvas state for one workspace: which tab is active, the version
@@ -155,7 +191,9 @@ export class CanvasWorkspaceController {
   ): Promise<CanvasDetail> {
     const list = bootstrap ?? (await this.api.listCanvases(workspaceId));
     if (list.workspaceId !== workspaceId) {
-      throw new Error("Canvas workspace response does not match the requested design");
+      throw new Error(
+        "Canvas workspace response does not match the requested design",
+      );
     }
     this.acceptList(workspaceId, list);
     const target =
@@ -229,7 +267,13 @@ export class CanvasWorkspaceController {
       if (outcome === "conflict" || outcome === "error") return null;
     }
     const created = await this.api.createCanvas(workspaceId, { name, kind });
-    await this.refreshList(workspaceId);
+    // The POST is authoritative. A follow-up query could briefly omit this new page.
+    const createdSummary = summaryFromDetail(created);
+    this.update({
+      canvases: [...this.snapshot.canvases, createdSummary].sort(
+        (a, b) => a.order - b.order,
+      ),
+    });
     this.openCanvas(created);
     this.update({ activeCanvasId: created.id, message: null });
     return created;
@@ -242,11 +286,22 @@ export class CanvasWorkspaceController {
   ): Promise<void> {
     const { workspaceId } = this.snapshot;
     if (!workspaceId) return;
-    await this.api.updateCanvas(workspaceId, canvasId, {
+    const updated = await this.api.updateCanvas(workspaceId, canvasId, {
       name,
       ...(kind ? { kind } : {}),
     });
-    await this.refreshList(workspaceId);
+    this.update({
+      canvases: this.snapshot.canvases.map((canvas) =>
+        canvas.id === canvasId
+          ? {
+              ...canvas,
+              name: updated.name,
+              kind: updated.kind,
+              updatedAt: updated.updatedAt,
+            }
+          : canvas,
+      ),
+    });
   }
 
   async duplicate(
@@ -265,8 +320,12 @@ export class CanvasWorkspaceController {
       );
       if (outcome === "conflict" || outcome === "error") return;
     }
-    await this.api.duplicateCanvas(workspaceId, canvasId);
-    await this.refreshList(workspaceId);
+    const copy = await this.api.duplicateCanvas(workspaceId, canvasId);
+    this.update({
+      canvases: [...this.snapshot.canvases, summaryFromDetail(copy)].sort(
+        (a, b) => a.order - b.order,
+      ),
+    });
   }
 
   /**
@@ -374,10 +433,18 @@ export class CanvasWorkspaceController {
       if (canRecover) {
         const stored = await this.api.getCanvas(workspaceId, canvasId);
         const storedKey = contentKey(stored.nodes, stored.edges);
-        if (
-          storedKey === key ||
-          storedKey === this.lastSavedKey.get(canvasId)
-        ) {
+        if (storedKey === key) {
+          // The requested content is already saved. A second PUT would only
+          // advance its version and make other open tabs stale again.
+          this.versions.set(canvasId, stored.version);
+          this.lastSavedKey.set(canvasId, key);
+          if (this.snapshot.activeCanvasId === canvasId) {
+            this.activeContent = { nodes, edges };
+          }
+          this.update({ saveStatus: "saved", lastSavedAt: Date.now(), message: null });
+          return "saved";
+        }
+        if (storedKey === this.lastSavedKey.get(canvasId)) {
           this.versions.set(canvasId, stored.version);
           return this.sendSave(workspaceId, canvasId, nodes, edges, key, false);
         }
@@ -417,7 +484,11 @@ export class CanvasWorkspaceController {
         this.lastSavedKey.delete(id);
       }
     }
-    this.update({ workspaceId, canvases: list.canvases });
+    this.update({
+      workspaceId,
+      canvases: list.canvases,
+      primaryCanvasId: list.primaryCanvasId,
+    });
   }
 
   private async refreshList(workspaceId: string): Promise<void> {

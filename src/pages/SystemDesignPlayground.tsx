@@ -74,7 +74,6 @@ import { useCanvasBackground } from "../hooks/useCanvasBackground";
 import { canvasRoomId } from "../utils/canvasRoom";
 import {
   MAX_CANVASES_PER_DESIGN,
-  type CanvasKind,
   type CanvasWorkspaceBootstrapResponse,
 } from "../types/multiCanvas";
 import { useAuth } from "../hooks/useAuth";
@@ -1100,14 +1099,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   const canUseCanvases = Boolean(isAuthenticated);
   // Live collaboration is paused while a design has more than one canvas. Canvases stay usable.
   const collaborationPaused = canvasWorkspaceState.canvases.length > 1;
-  // Lowest-order canvas is the primary one (same rule as the backend).
-  const firstCanvas = canvasWorkspaceState.canvases[0];
-  const primaryCanvasId = firstCanvas
-    ? canvasWorkspaceState.canvases.reduce(
-        (first, canvas) => (canvas.order < first.order ? canvas : first),
-        firstCanvas,
-      ).id
-    : null;
+  const primaryCanvasId = canvasWorkspaceState.primaryCanvasId;
 
   // Show a canvas's content and drop undo history so Ctrl+Z cannot cross tabs.
   const applyCanvasContent = useCallback(
@@ -1140,10 +1132,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   // Open the canvas workspace for a design that was loaded directly (for example from a ?diagramId= link).
   // Without this, an existing design shows the "save first" state. A failure keeps the design usable.
   const openCanvasWorkspaceFor = useCallback(
-    async (
-      designId: string,
-      bootstrap?: CanvasWorkspaceBootstrapResponse,
-    ) => {
+    async (designId: string, bootstrap?: CanvasWorkspaceBootstrapResponse) => {
       try {
         const detail = await canvasWorkspace.load(
           designId,
@@ -1166,7 +1155,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             setEdges(restoredEdges);
             resetCanvasState({ nodes: restoredNodes, edges: restoredEdges });
           } catch (legacyError) {
-            console.warn("Legacy design content is also unavailable", legacyError);
+            console.warn(
+              "Legacy design content is also unavailable",
+              legacyError,
+            );
           }
         }
       }
@@ -1214,21 +1206,53 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   );
 
   const handleCanvasCreate = useCallback(
-    (name: string, kind: CanvasKind) =>
-      runCanvasAction(async () => {
-        const detail = await canvasWorkspace.create(name, kind, nodes, edges);
-        if (detail) applyCanvasContent(detail);
-      }, "Could not create canvas"),
-    [runCanvasAction, canvasWorkspace, nodes, edges, applyCanvasContent],
+    async (name: string) => {
+      try {
+        const detail = await canvasWorkspace.create(
+          name,
+          "other",
+          nodes,
+          edges,
+        );
+        if (!detail) {
+          return {
+            ok: false,
+            message:
+              canvasWorkspace.getSnapshot().message ??
+              "Save the current page before creating another.",
+          };
+        }
+        applyCanvasContent(detail);
+        return { ok: true };
+      } catch (error) {
+        return {
+          ok: false,
+          message:
+            error instanceof Error
+              ? error.message
+              : "Could not create page. Try again.",
+        };
+      }
+    },
+    [canvasWorkspace, nodes, edges, applyCanvasContent],
   );
 
   const handleCanvasRename = useCallback(
-    (canvasId: string, name: string) =>
-      runCanvasAction(
-        () => canvasWorkspace.rename(canvasId, name),
-        "Could not rename canvas",
-      ),
-    [runCanvasAction, canvasWorkspace],
+    async (canvasId: string, name: string) => {
+      try {
+        await canvasWorkspace.rename(canvasId, name);
+        return { ok: true };
+      } catch (error) {
+        return {
+          ok: false,
+          message:
+            error instanceof Error
+              ? error.message
+              : "Could not rename page. Try again.",
+        };
+      }
+    },
+    [canvasWorkspace],
   );
 
   const handleCanvasDuplicate = useCallback(
@@ -1249,16 +1273,12 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     [runCanvasAction, canvasWorkspace, applyCanvasContent],
   );
 
-  const handleCanvasMove = useCallback(
-    (canvasId: string, direction: -1 | 1) =>
-      runCanvasAction(async () => {
-        const ids = canvasWorkspace.getSnapshot().canvases.map((c) => c.id);
-        const from = ids.indexOf(canvasId);
-        const to = from + direction;
-        if (from < 0 || to < 0 || to >= ids.length) return;
-        [ids[from], ids[to]] = [ids[to], ids[from]];
-        await canvasWorkspace.reorder(ids);
-      }, "Could not move canvas"),
+  const handleCanvasReorder = useCallback(
+    (orderedIds: string[]) =>
+      runCanvasAction(
+        () => canvasWorkspace.reorder(orderedIds),
+        "Could not reorder pages",
+      ),
     [runCanvasAction, canvasWorkspace],
   );
 
@@ -1498,9 +1518,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           }
 
           try {
-            const workspace = await apiService.getDiagramWorkspace(
-              diagramIdFromUrl,
-            );
+            const workspace =
+              await apiService.getDiagramWorkspace(diagramIdFromUrl);
             const design: SavedDiagram = {
               ...workspace.design,
               nodes: [],
@@ -1616,7 +1635,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
               if (bootstrap) {
                 const legacy = await apiService.getDiagram(lastDiagramId);
                 const fallbackNodes = restoreNodeIcons(legacy.nodes as Node[]);
-                const fallbackEdges = restoreEdgePurposes(legacy.edges as Edge[]);
+                const fallbackEdges = restoreEdgePurposes(
+                  legacy.edges as Edge[],
+                );
                 setNodes(fallbackNodes);
                 setEdges(fallbackEdges);
                 setCurrentDiagram(legacy);
@@ -5958,7 +5979,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                       Boolean(canvasWorkspaceState.activeCanvasId),
                     emptyStateMessage:
                       idFromUrl === "free" && !currentDiagramId
-                        ? "Save your design to add canvases."
+                        ? "Save your design to add pages."
                         : undefined,
                     saveStatus: canvasWorkspaceState.saveStatus,
                     message: canvasWorkspaceState.message,
@@ -5967,7 +5988,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                     onCreate: handleCanvasCreate,
                     onRename: handleCanvasRename,
                     onDuplicate: handleCanvasDuplicate,
-                    onMove: handleCanvasMove,
+                    onReorder: handleCanvasReorder,
                     onDelete: handleCanvasDelete,
                   }}
                   background={canvasBackground}

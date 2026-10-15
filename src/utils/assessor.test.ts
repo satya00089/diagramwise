@@ -1,5 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { transformApiResponse } from "./assessor";
+import { normalizeComponentType, transformApiResponse } from "./assessor";
+
+describe("normalizeComponentType", () => {
+  it("maps first-party canvas catalog IDs to their assessor semantics", () => {
+    expect(normalizeComponentType("web-app")).toBe("frontend");
+    expect(normalizeComponentType("mobile-app")).toBe("frontend");
+    expect(normalizeComponentType("processing-worker")).toBe("backend");
+    expect(normalizeComponentType("recommendation-service")).toBe("backend");
+    expect(normalizeComponentType("payment-service")).toBe("backend");
+    expect(normalizeComponentType("stream-processor")).toBe("analytics");
+    expect(normalizeComponentType("auth-service")).toBe("security");
+    expect(normalizeComponentType("loadbalancer")).toBe("load-balancer");
+    expect(normalizeComponentType("object-storage")).toBe("storage");
+    expect(normalizeComponentType("not-in-the-catalog")).toBe("custom");
+  });
+});
 
 describe("transformApiResponse", () => {
   it("preserves structured findings and ignores malformed persisted findings", () => {
