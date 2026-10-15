@@ -114,6 +114,17 @@ export class CanvasWorkspaceController {
     return this.activeContent;
   }
 
+  /** Treat client-only hydration/normalization of the open canvas as its clean baseline. */
+  markActiveContentClean(
+    canvasId: string,
+    nodes: unknown[],
+    edges: unknown[],
+  ): void {
+    if (this.snapshot.activeCanvasId !== canvasId) return;
+    this.lastSavedKey.set(canvasId, contentKey(nodes, edges));
+    this.activeContent = { nodes, edges };
+  }
+
   subscribe(listener: () => void): () => void {
     this.listeners.add(listener);
     return () => {
@@ -140,8 +151,12 @@ export class CanvasWorkspaceController {
   async load(
     workspaceId: string,
     preferredCanvasId?: string | null,
+    bootstrap?: CanvasListResponse,
   ): Promise<CanvasDetail> {
-    const list = await this.api.listCanvases(workspaceId);
+    const list = bootstrap ?? (await this.api.listCanvases(workspaceId));
+    if (list.workspaceId !== workspaceId) {
+      throw new Error("Canvas workspace response does not match the requested design");
+    }
     this.acceptList(workspaceId, list);
     const target =
       list.canvases.find((c) => c.id === preferredCanvasId) ??

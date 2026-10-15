@@ -9,6 +9,7 @@ import {
   CanvasWorkspaceController,
   type CanvasWorkspaceApi,
 } from "./canvasWorkspaceController";
+import { normalizeEdgeDataPurpose } from "./purposeMigration";
 
 const WS = "design-1";
 
@@ -20,6 +21,7 @@ function summary(
 ): CanvasSummary {
   return {
     id,
+    title: "System Design",
     name,
     kind: "other",
     order,
@@ -148,6 +150,24 @@ describe("CanvasWorkspaceController.load", () => {
     expect(controller.getSnapshot().activeCanvasId).toBe("flow");
   });
 
+  it("uses bootstrap summaries and fetches only the selected canvas content", async () => {
+    const { api } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    const bootstrap: CanvasListResponse = {
+      workspaceId: WS,
+      primaryCanvasId: "main",
+      maxCanvases: 10,
+      canvases: TWO_TABS.canvases,
+    };
+
+    const opened = await controller.load(WS, "flow", bootstrap);
+
+    expect(opened.id).toBe("flow");
+    expect(api.listCanvases).not.toHaveBeenCalled();
+    expect(api.getCanvas).toHaveBeenCalledTimes(1);
+    expect(api.getCanvas).toHaveBeenCalledWith(WS, "flow");
+  });
+
   it("falls back to the primary canvas when the preference is gone", async () => {
     const { api } = fakeApi(TWO_TABS);
     const controller = new CanvasWorkspaceController(api);
@@ -182,6 +202,42 @@ describe("CanvasWorkspaceController.saveActive", () => {
     const controller = new CanvasWorkspaceController(api);
     await controller.load(WS, "main");
     expect(await controller.saveActive([{ id: "m" }], [])).toBe("unchanged");
+    expect(api.saveCanvasContent).not.toHaveBeenCalled();
+  });
+
+  it("keeps load-time edge normalization from triggering an autosave", async () => {
+    const legacyEdge = {
+      id: "edge-a-b",
+      source: "a",
+      target: "b",
+      data: { description: "Carries the request" },
+    };
+    const initialState: FakeState = {
+      ...TWO_TABS,
+      content: {
+        ...TWO_TABS.content,
+        main: detail("main", 1, [{ id: "a" }, { id: "b" }], [legacyEdge]),
+      },
+    };
+    const { api } = fakeApi(initialState);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+
+    const hydratedEdges = [
+      {
+        ...legacyEdge,
+        data: normalizeEdgeDataPurpose(legacyEdge.data),
+      },
+    ];
+    controller.markActiveContentClean(
+      "main",
+      [{ id: "a" }, { id: "b" }],
+      hydratedEdges,
+    );
+
+    expect(
+      await controller.saveActive([{ id: "a" }, { id: "b" }], hydratedEdges),
+    ).toBe("unchanged");
     expect(api.saveCanvasContent).not.toHaveBeenCalled();
   });
 

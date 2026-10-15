@@ -26,7 +26,7 @@ import {
 
 type MenuName = "canvas" | "canvases" | "background";
 
-/** Canvas management shown in the toolbar's Canvases menu. Omit it when multi-canvas is off. */
+/** Canvas management shown in the toolbar's Canvases menu. */
 export type CanvasListMenuProps = {
   canvases: CanvasSummary[];
   activeCanvasId: string | null;
@@ -34,10 +34,12 @@ export type CanvasListMenuProps = {
   maxCanvases: number;
   /** False for signed-out users. Visible to everyone, usable only when signed in. */
   signedIn: boolean;
+  onSignIn: () => void;
   /** True while an existing design's canvases are being loaded. */
   loading: boolean;
   /** False until the design is saved and has a canvas workspace. */
   ready: boolean;
+  emptyStateMessage?: string;
   saveStatus: CanvasSaveStatus;
   message: string | null;
   onSelect: (canvasId: string) => void;
@@ -59,7 +61,7 @@ type CanvasActionControlsProps = {
   onArrange: (options: AutoArrangeOptions) => void;
   arranging: boolean;
   onCancelArrange: () => void;
-  canvasList?: CanvasListMenuProps | null;
+  canvasList: CanvasListMenuProps;
   background?: CanvasBackground;
   onBackgroundChange?: (background: CanvasBackground) => void;
 };
@@ -292,14 +294,13 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
           </button>
         </div>
       )}
-      {canvasList &&
-        renderMenu(
-          "canvases",
-          "Canvases",
-          <MdLayers className="h-3 w-3 shrink-0" aria-hidden="true" />,
-          <CanvasesMenuBody {...canvasList} onDone={closeMenus} />,
-          "min-w-[260px]",
-        )}
+      {renderMenu(
+        "canvases",
+        "Canvases",
+        <MdLayers className="h-3 w-3 shrink-0" aria-hidden="true" />,
+        <CanvasesMenuBody {...canvasList} onDone={closeMenus} />,
+        "min-w-[260px]",
+      )}
       {onBackgroundChange &&
         renderMenu(
           "background",
@@ -346,8 +347,10 @@ function CanvasesMenuBody({
   primaryCanvasId,
   maxCanvases,
   signedIn,
+  onSignIn,
   loading,
   ready,
+  emptyStateMessage,
   saveStatus,
   message,
   onSelect,
@@ -372,9 +375,22 @@ function CanvasesMenuBody({
 
   if (!signedIn) {
     return (
-      <p className="px-2.5 py-2 text-sm text-theme/70">
-        Sign in to use canvases.
-      </p>
+      <div className="flex flex-col gap-2 px-2.5 py-2">
+        <p className="text-sm text-theme/70">
+          Sign in to create and manage canvases.
+        </p>
+        <button
+          type="button"
+          role="menuitem"
+          className="rounded bg-accent px-2.5 py-1.5 text-sm font-medium text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/70"
+          onClick={() => {
+            onDone();
+            onSignIn();
+          }}
+        >
+          Sign in
+        </button>
+      </div>
     );
   }
   if (loading) {
@@ -389,7 +405,9 @@ function CanvasesMenuBody({
     return (
       <>
         <p className="px-2.5 py-2 text-sm text-theme/70">
-          {message ? null : "Save your design to add canvases."}
+          {message
+            ? null
+            : (emptyStateMessage ?? "Save your design to add canvases.")}
         </p>
         {notice}
       </>
@@ -467,10 +485,10 @@ function CanvasesMenuBody({
           }}
         >
           <input
-            aria-label="New canvas name"
+            aria-label="New canvas title"
             value={newName}
             maxLength={60}
-            placeholder="Canvas name"
+            placeholder="e.g. HLD, LLD, ER diagram"
             onChange={(event) => setNewName(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Escape") setAdding(false);
@@ -525,7 +543,7 @@ function CanvasesMenuBody({
           </p>
           {renaming ? (
             <input
-              aria-label="Canvas name"
+              aria-label="Canvas title"
               value={renameValue}
               maxLength={60}
               onChange={(event) => setRenameValue(event.target.value)}

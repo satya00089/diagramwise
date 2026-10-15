@@ -2,6 +2,7 @@ import type {
   CanvasDetail,
   CanvasKind,
   CanvasListResponse,
+  CanvasWorkspaceBootstrapResponse,
 } from "../types/multiCanvas";
 import { CanvasVersionConflictError } from "../types/multiCanvas";
 import type {
@@ -50,6 +51,15 @@ export const GOOGLE_LOGIN_REDIRECT_URI =
 export const GOOGLE_LOGIN_START_URI = getGoogleLoginStartUri(API_BASE_URL);
 
 class ApiService {
+  private canvasCollectionUrl(workspaceId: string): string {
+    const attemptPrefix = "attempt:";
+    if (workspaceId.startsWith(attemptPrefix)) {
+      const problemId = workspaceId.slice(attemptPrefix.length);
+      return `${API_BASE_URL}/api/v1/attempts/problem/${encodeURIComponent(problemId)}/canvases`;
+    }
+    return `${API_BASE_URL}/api/v1/diagrams/${encodeURIComponent(workspaceId)}/canvases`;
+  }
+
   private async createApiError(
     response: Response,
     fallback: string,
@@ -359,6 +369,19 @@ class ApiService {
     return response.json();
   }
 
+  async getDiagramWorkspace(
+    id: string,
+  ): Promise<CanvasWorkspaceBootstrapResponse> {
+    const response = await fetch(
+      `${API_BASE_URL}/api/v1/diagrams/${encodeURIComponent(id)}/workspace`,
+      { headers: this.getAuthHeaders() },
+    );
+    if (!response.ok) {
+      throw await this.createApiError(response, "Failed to load design workspace");
+    }
+    return response.json();
+  }
+
   async getPublicDiagram(id: string): Promise<SavedDiagram> {
     const response = await fetch(
       `${API_BASE_URL}/api/v1/diagrams/${id}/public`,
@@ -387,10 +410,9 @@ class ApiService {
 
   // Canvas (tab) endpoints for multi-canvas workspaces
   async listCanvases(workspaceId: string): Promise<CanvasListResponse> {
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases`,
-      { headers: this.getAuthHeaders() },
-    );
+    const response = await fetch(this.canvasCollectionUrl(workspaceId), {
+      headers: this.getAuthHeaders(),
+    });
     if (!response.ok) {
       throw await this.createApiError(response, "Failed to load canvases");
     }
@@ -402,7 +424,7 @@ class ApiService {
     canvasId: string,
   ): Promise<CanvasDetail> {
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases/${canvasId}`,
+      `${this.canvasCollectionUrl(workspaceId)}/${encodeURIComponent(canvasId)}`,
       { headers: this.getAuthHeaders() },
     );
     if (!response.ok) {
@@ -415,14 +437,11 @@ class ApiService {
     workspaceId: string,
     body: { name: string; kind: CanvasKind },
   ): Promise<CanvasDetail> {
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases`,
-      {
-        method: "POST",
-        headers: this.getAuthHeaders(),
-        body: JSON.stringify(body),
-      },
-    );
+    const response = await fetch(this.canvasCollectionUrl(workspaceId), {
+      method: "POST",
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(body),
+    });
     if (!response.ok) {
       throw await this.createApiError(response, "Failed to create canvas");
     }
@@ -436,7 +455,7 @@ class ApiService {
     body: { nodes: unknown[]; edges: unknown[]; version: number },
   ): Promise<CanvasDetail> {
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases/${canvasId}`,
+      `${this.canvasCollectionUrl(workspaceId)}/${encodeURIComponent(canvasId)}`,
       {
         method: "PUT",
         headers: this.getAuthHeaders(),
@@ -460,7 +479,7 @@ class ApiService {
     body: { name?: string; kind?: CanvasKind },
   ): Promise<CanvasDetail> {
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases/${canvasId}`,
+      `${this.canvasCollectionUrl(workspaceId)}/${encodeURIComponent(canvasId)}`,
       {
         method: "PATCH",
         headers: this.getAuthHeaders(),
@@ -478,7 +497,7 @@ class ApiService {
     orderedIds: string[],
   ): Promise<CanvasListResponse> {
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases/reorder`,
+      `${this.canvasCollectionUrl(workspaceId)}/reorder`,
       {
         method: "POST",
         headers: this.getAuthHeaders(),
@@ -496,7 +515,7 @@ class ApiService {
     canvasId: string,
   ): Promise<CanvasDetail> {
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases/${canvasId}/duplicate`,
+      `${this.canvasCollectionUrl(workspaceId)}/${encodeURIComponent(canvasId)}/duplicate`,
       { method: "POST", headers: this.getAuthHeaders() },
     );
     if (!response.ok) {
@@ -507,7 +526,7 @@ class ApiService {
 
   async deleteCanvas(workspaceId: string, canvasId: string): Promise<void> {
     const response = await fetch(
-      `${API_BASE_URL}/api/v1/diagrams/${workspaceId}/canvases/${canvasId}`,
+      `${this.canvasCollectionUrl(workspaceId)}/${encodeURIComponent(canvasId)}`,
       { method: "DELETE", headers: this.getAuthHeaders() },
     );
     if (!response.ok) {
