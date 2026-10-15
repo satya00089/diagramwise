@@ -242,7 +242,7 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
       {renderMenu(
         "canvas",
         "Canvas actions",
-        <MdHistory className="h-3 w-3 shrink-0" aria-hidden="true" />,
+        <MdHistory className="h-4 w-4 shrink-0" aria-hidden="true" />,
         <>
           {renderMenuItem(
             "Undo",
@@ -269,7 +269,7 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
       {renderMenu(
         "arrange",
         "Auto layout",
-        <MdAccountTree className="h-3 w-3 shrink-0" aria-hidden="true" />,
+        <MdAccountTree className="h-4 w-4 shrink-0" aria-hidden="true" />,
         <AutoArrangeChooser onArrange={onArrange} onDone={closeMenus} />,
         "min-w-[304px]",
         layoutDisabled || arranging,
@@ -285,7 +285,7 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
       {renderMenu(
         "canvases",
         "Pages",
-        <MdLayers className="h-3 w-3 shrink-0" aria-hidden="true" />,
+        <MdLayers className="h-4 w-4 shrink-0" aria-hidden="true" />,
         <CanvasesMenuBody {...canvasList} onDone={closeMenus} />,
         "min-w-[290px]",
       )}
@@ -293,7 +293,7 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
         renderMenu(
           "background",
           "Background",
-          <MdGridOn className="h-3 w-3 shrink-0" aria-hidden="true" />,
+          <MdGridOn className="h-4 w-4 shrink-0" aria-hidden="true" />,
           <>
             {CANVAS_BACKGROUND_OPTIONS.map((option) =>
               renderMenuItem(
