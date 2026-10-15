@@ -66,9 +66,24 @@ const VALID_BACKEND_TYPES = new Set([
   "custom",
 ]);
 
+// The canvas palette uses more specific catalog IDs than the assessor's
+// deliberately smaller semantic taxonomy. Normalize known first-party
+// components to their semantic role instead of silently grading them as
+// custom components.
+const CATALOG_TYPE_ALIASES: Record<string, string> = {
+  "web-app": "frontend",
+  "mobile-app": "frontend",
+  "desktop-app": "frontend",
+  "processing-worker": "backend",
+  "recommendation-service": "backend",
+  "payment-service": "backend",
+  "stream-processor": "analytics",
+};
+
 export const normalizeComponentType = (type: string): string => {
   const t = type.toLowerCase();
   if (VALID_BACKEND_TYPES.has(t)) return t;
+  if (CATALOG_TYPE_ALIASES[t]) return CATALOG_TYPE_ALIASES[t];
   if (t === "client" || t === "web-server" || t === "web_server")
     return "frontend";
   if (

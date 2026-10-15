@@ -1402,7 +1402,7 @@ export const COMPONENTS: CanvasComponent[] = [
         label: "Provider",
         type: "select",
         default: "Cloudflare",
-        options: ["Cloudflare", "Akamai", "Fastly", "AWS CloudFront"],
+        options: ["Cloudflare", "Akamai", "Fastly", "AWS CloudFront", "Google Cloud CDN"],
       },
       {
         key: "ttl",
@@ -1452,7 +1452,7 @@ export const COMPONENTS: CanvasComponent[] = [
         label: "Engine",
         type: "select",
         default: "elasticsearch",
-        options: ["elasticsearch", "opensearch", "meilisearch"],
+        options: ["elasticsearch", "opensearch", "meilisearch", "Azure Cognitive Search"],
       },
       { key: "replicas", label: "Replicas", type: "number", default: 2 },
       {
@@ -1499,7 +1499,7 @@ export const COMPONENTS: CanvasComponent[] = [
         label: "Engine",
         type: "select",
         default: "elasticsearch",
-        options: ["elasticsearch", "opensearch", "meilisearch"],
+        options: ["elasticsearch", "opensearch", "meilisearch", "Azure Cognitive Search"],
       },
       { key: "replicas", label: "Replicas", type: "number", default: 2 },
       { key: "shards", label: "Shards", type: "number", default: 5 },
@@ -2614,7 +2614,7 @@ export const COMPONENTS: CanvasComponent[] = [
         label: "Provider",
         type: "select",
         default: "Istio",
-        options: ["Istio", "Linkerd", "Consul", "AWS App Mesh"],
+        options: ["Istio", "Linkerd", "Consul", "AWS App Mesh", "Google Cloud Anthos Service Mesh"],
       },
       {
         key: "mtls",
@@ -2876,6 +2876,7 @@ export const COMPONENTS: CanvasComponent[] = [
           "Apache Flink",
           "Spark Streaming",
           "AWS Kinesis",
+          "Google Cloud Dataflow",
         ],
       },
       {
@@ -2993,7 +2994,15 @@ export const COMPONENTS: CanvasComponent[] = [
         label: "Stack",
         type: "select",
         default: "Prometheus + Grafana",
-        options: ["Prometheus + Grafana", "Datadog", "New Relic", "CloudWatch"],
+        options: [
+          "Prometheus + Grafana",
+          "Datadog",
+          "New Relic",
+          "CloudWatch",
+          "Google Cloud Monitoring",
+          "Azure Monitor",
+          "Azure Application Insights",
+        ],
       },
       {
         key: "metrics",
@@ -3365,7 +3374,7 @@ export const COMPONENTS: CanvasComponent[] = [
         label: "Tool",
         type: "select",
         default: "Ansible",
-        options: ["Ansible", "Chef", "Puppet", "SaltStack", "Custom"],
+        options: ["Ansible", "Chef", "Puppet", "SaltStack", "Google Config Sync", "Anthos Config Management", "Custom"],
       },
       {
         key: "secretsManagement",

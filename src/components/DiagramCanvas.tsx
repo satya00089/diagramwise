@@ -93,7 +93,7 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
               dropdown actions (canvas, layout, canvases, background) on the right. */}
           <Panel
             position="bottom-left"
-            className="flex items-start gap-1.5 nodrag nopan"
+            className="diagram-canvas-toolbar flex items-start nodrag nopan"
             style={{ margin: 10 }}
           >
             <StyledFlowControls
@@ -104,7 +104,7 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
               <CanvasInteractivityControl />
             </StyledFlowControls>
             {canvasActions && (
-              <div className="react-flow__controls flex flex-col">
+              <div className="react-flow__controls diagram-canvas-toolbar-actions flex flex-col">
                 {canvasActions}
               </div>
             )}

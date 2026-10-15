@@ -35,6 +35,8 @@ export interface CanvasSummary {
   nodeCount: number;
   edgeCount: number;
   version: number;
+  /** Present in new metadata responses; older cached summaries may omit it. */
+  createdAt?: string;
   updatedAt: string;
 }
 

@@ -60,10 +60,10 @@ const canvasList = (
   saveStatus: "saved",
   message: null,
   onSelect: noop,
-  onCreate: noop,
-  onRename: noop,
+  onCreate: async () => ({ ok: true }),
+  onRename: async () => ({ ok: true }),
   onDuplicate: noop,
-  onMove: noop,
+  onReorder: noop,
   onDelete: noop,
   ...overrides,
 });
@@ -79,18 +79,21 @@ const render = (list: CanvasListMenuProps) =>
   );
 
 describe("CanvasActionControls Canvases menu", () => {
-  it("lists canvases, marks the primary one, and offers management actions", () => {
+  it("lists pages with inline controls and no type selector or separate move actions", () => {
     const html = render(canvasList());
-    expect(html).toContain('aria-label="Canvases"');
+    expect(html).toContain('aria-label="Pages"');
     expect(html).toContain("Main");
-    expect(html).toContain("Primary");
+    expect(html).toContain("Default");
     expect(html).toContain("Flow");
-    expect(html).toContain("+ New canvas");
-    expect(html).toContain("Rename");
-    expect(html).toContain("Duplicate");
-    expect(html).toContain("Move left");
-    expect(html).toContain("Delete");
-    expect(html).toContain("2/10 canvases");
+    expect(html).toContain("+ New page");
+    expect(html).toContain(
+      'aria-label="Reorder Main. Use Alt+Arrow keys to move it."',
+    );
+    expect(html).toContain("Drag to reorder · Double-click a name to rename");
+    expect(html).toContain('aria-label="More options for Main"');
+    expect(html).toContain("Pages · 2 of 10");
+    expect(html).not.toContain("Canvas type");
+    expect(html).not.toContain("Move left");
   });
 
   it("tells signed-out users to sign in, with no canvas actions", () => {
@@ -103,9 +106,9 @@ describe("CanvasActionControls Canvases menu", () => {
         primaryCanvasId: null,
       }),
     );
-    expect(html).toContain('aria-label="Canvases"');
-    expect(html).toContain("Sign in to create and manage canvases.");
-    expect(html).not.toContain("+ New canvas");
+    expect(html).toContain('aria-label="Pages"');
+    expect(html).toContain("Sign in to create and manage pages.");
+    expect(html).not.toContain("+ New page");
   });
 
   it("asks a signed-in user to save first when the design has no canvas workspace yet", () => {
@@ -117,8 +120,8 @@ describe("CanvasActionControls Canvases menu", () => {
         primaryCanvasId: null,
       }),
     );
-    expect(html).toContain("Save your design to add canvases.");
-    expect(html).not.toContain("+ New canvas");
+    expect(html).toContain("Save your design to add pages.");
+    expect(html).not.toContain("+ New page");
   });
 
   it("shows a loading message for an existing design whose canvases are still opening", () => {
@@ -131,8 +134,8 @@ describe("CanvasActionControls Canvases menu", () => {
         primaryCanvasId: null,
       }),
     );
-    expect(html).toContain("Loading canvases…");
-    expect(html).not.toContain("Save your design to add canvases.");
+    expect(html).toContain("Loading pages…");
+    expect(html).not.toContain("Save your design to add pages.");
   });
 
   it("shows a sign-in action for signed-out users", () => {
@@ -145,8 +148,8 @@ describe("CanvasActionControls Canvases menu", () => {
         primaryCanvasId: null,
       }),
     );
-    expect(html).toContain('aria-label="Canvases"');
-    expect(html).toContain("Sign in to create and manage canvases.");
+    expect(html).toContain('aria-label="Pages"');
+    expect(html).toContain("Sign in to create and manage pages.");
     expect(html).toContain(">Sign in</button>");
   });
 

@@ -42,6 +42,9 @@ export const useWebSocket = ({
   const reconnectAttemptsRef = useRef<number>(0);
   const shouldReconnectRef = useRef<boolean>(true);
   const attemptReconnectRef = useRef<(() => void) | null>(null);
+  const callbacksRef = useRef({ onMessage, onOpen, onClose, onError });
+
+  callbacksRef.current = { onMessage, onOpen, onClose, onError };
 
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -86,13 +89,13 @@ export const useWebSocket = ({
         setIsConnecting(false);
         reconnectAttemptsRef.current = 0;
         setReconnectAttempts(0);
-        onOpen?.();
+        callbacksRef.current.onOpen?.();
       };
 
       wsRef.current.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data) as WebSocketMessage;
-          onMessage?.(message);
+          callbacksRef.current.onMessage?.(message);
         } catch (error) {
           console.error("Failed to parse WebSocket message:", error);
         }
@@ -102,7 +105,7 @@ export const useWebSocket = ({
         setIsConnected(false);
         setIsConnecting(false);
         wsRef.current = null;
-        onClose?.();
+        callbacksRef.current.onClose?.();
 
         if (
           shouldReconnectRef.current &&
@@ -115,7 +118,7 @@ export const useWebSocket = ({
 
       wsRef.current.onerror = (error) => {
         console.error("WebSocket error:", error);
-        onError?.(error);
+        callbacksRef.current.onError?.(error);
       };
     } catch (error) {
       console.error("Failed to create WebSocket connection:", error);
@@ -129,7 +132,7 @@ export const useWebSocket = ({
         attemptReconnectRef.current();
       }
     }
-  }, [url, onMessage, onOpen, onClose, onError, reconnect]);
+  }, [url, reconnect]);
 
   const attemptReconnect = useCallback(() => {
     if (!reconnect || !shouldReconnectRef.current) return;
