@@ -137,6 +137,11 @@ const Profile: React.FC = () => {
     [paths, progress],
   );
 
+  const activePathSummaries = useMemo(
+    () => pathSummaries.filter((path) => path.completed > 0),
+    [pathSummaries],
+  );
+
   const completedLessonCount = pathSummaries.reduce(
     (count, path) => count + path.completed,
     0,
@@ -176,10 +181,7 @@ const Profile: React.FC = () => {
         <ProductHeader
           actions={
             <>
-              <Link
-                to="/diagrams"
-                className="profile-header-link hidden sm:inline-flex"
-              >
+              <Link to="/diagrams" className="profile-header-link">
                 My designs
               </Link>
               <ThemeSwitcher />
@@ -218,7 +220,7 @@ const Profile: React.FC = () => {
                       {completedLessonCount === 1 ? "" : "s"} completed
                       {startedPathCount > 0
                         ? ` across ${startedPathCount} learning path${startedPathCount === 1 ? "" : "s"}`
-                        : ". Start a path to see your progress here."}
+                        : ""}
                     </p>
                   </div>
                   <Link to="/learning-paths/" className="profile-text-link">
@@ -227,9 +229,20 @@ const Profile: React.FC = () => {
                 </div>
 
                 {loading ? (
-                  <div className="profile-progress-message" aria-live="polite">
-                    <span className="profile-spinner" aria-hidden="true" />
-                    Loading your learning progress…
+                  <div
+                    className="profile-progress-skeleton"
+                    aria-label="Loading your learning progress"
+                    aria-busy="true"
+                  >
+                    {Array.from({ length: 3 }, (_, index) => (
+                      <div
+                        className="profile-progress-skeleton-row"
+                        key={index}
+                      >
+                        <span />
+                        <span />
+                      </div>
+                    ))}
                   </div>
                 ) : pathSummaries.length === 0 ? (
                   <div className="profile-empty">
@@ -239,14 +252,43 @@ const Profile: React.FC = () => {
                         : "Learning paths will appear here when they’re available."}
                     </p>
                     {loadError && (
-                      <button type="button" onClick={() => void loadProgress()}>
+                      <button
+                        className="profile-secondary-button"
+                        type="button"
+                        onClick={() => void loadProgress()}
+                      >
                         Try again
                       </button>
                     )}
                   </div>
+                ) : activePathSummaries.length === 0 ? (
+                  <div className="profile-empty profile-progress-empty">
+                    <p>
+                      {loadError
+                        ? "Your progress couldn’t be loaded just now."
+                        : "Complete your first lesson and your learning progress will appear here."}
+                    </p>
+                    {loadError ? (
+                      <button
+                        className="profile-secondary-button"
+                        type="button"
+                        onClick={() => void loadProgress()}
+                      >
+                        Try again
+                      </button>
+                    ) : (
+                      <Link
+                        className="profile-secondary-button"
+                        to="/learning-paths/"
+                      >
+                        Browse learning paths
+                        <HiArrowUpRight aria-hidden="true" />
+                      </Link>
+                    )}
+                  </div>
                 ) : (
                   <div className="profile-path-list">
-                    {pathSummaries.map((path) => {
+                    {activePathSummaries.map((path) => {
                       const pathError = progress[path.slug]?.error;
                       const isComplete =
                         path.total > 0 && path.completed >= path.total;
@@ -338,6 +380,7 @@ const Profile: React.FC = () => {
                   <div className="profile-empty">
                     <p>You haven’t added learning preferences yet.</p>
                     <button
+                      className="profile-secondary-button"
                       type="button"
                       onClick={() =>
                         globalThis.dispatchEvent(new Event("open-quick-setup"))
