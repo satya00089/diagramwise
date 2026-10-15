@@ -248,13 +248,15 @@ describe("CanvasWorkspaceController.saveActive", () => {
 
     expect(
       await controller.saveActive(
-        [{
-          id: "m",
-          position: { x: 20, y: 30 },
-          measured: { width: 200, height: 80 },
-          selected: true,
-          dragging: false,
-        }],
+        [
+          {
+            id: "m",
+            position: { x: 20, y: 30 },
+            measured: { width: 200, height: 80 },
+            selected: true,
+            dragging: false,
+          },
+        ],
         [],
       ),
     ).toBe("unchanged");
