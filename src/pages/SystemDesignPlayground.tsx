@@ -1163,7 +1163,15 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         }
       }
     },
-    [canvasWorkspace, applyCanvasContent, resetCanvasState, setNodes, setEdges],
+    [
+      canvasWorkspace,
+      applyCanvasContent,
+      resetCanvasState,
+      setNodes,
+      setEdges,
+      restoreNodeIcons,
+      restoreEdgePurposes,
+    ],
   );
 
   const saveActiveProblemCanvas = useCallback(

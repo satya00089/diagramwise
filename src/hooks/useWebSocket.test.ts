@@ -82,7 +82,7 @@ describe("useWebSocket callback lifecycle", () => {
   });
 
   it("keeps the connection function stable when event callbacks change", () => {
-    const render = (onMessage: (message: { type: string }) => void) => {
+    const Render = (onMessage: (message: { type: string }) => void) => {
       hookRuntime.cursor = 0;
       return useWebSocket({
         url: "ws://localhost:8000/collaborate",
@@ -93,9 +93,9 @@ describe("useWebSocket callback lifecycle", () => {
 
     const initialHandler = vi.fn();
     const latestHandler = vi.fn();
-    const firstConnect = render(initialHandler);
+    const firstConnect = Render(initialHandler);
     firstConnect();
-    const nextConnect = render(latestHandler);
+    const nextConnect = Render(latestHandler);
 
     expect(nextConnect).toBe(firstConnect);
     expect(MockWebSocket.instances).toHaveLength(1);
