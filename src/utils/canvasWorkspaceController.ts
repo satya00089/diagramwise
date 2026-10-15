@@ -76,7 +76,26 @@ function stableStringify(value: unknown): string {
 }
 
 function contentKey(nodes: unknown[], edges: unknown[]): string {
-  return stableStringify({ nodes, edges });
+  // React Flow adds these view-only fields while mounting/selecting a graph.
+  // They must not turn an unchanged page into a write (or a version conflict).
+  const viewOnlyFields = new Set([
+    "selected",
+    "dragging",
+    "resizing",
+    "measured",
+    "internals",
+    "positionAbsolute",
+  ]);
+  const persistentPart = (item: unknown): unknown => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return item;
+    return Object.fromEntries(
+      Object.entries(item).filter(([field]) => !viewOnlyFields.has(field)),
+    );
+  };
+  return stableStringify({
+    nodes: nodes.map(persistentPart),
+    edges: edges.map(persistentPart),
+  });
 }
 
 const CONFLICT_MESSAGE =
@@ -357,35 +376,65 @@ export class CanvasWorkspaceController {
         edges,
         version,
       });
-      this.versions.set(canvasId, saved.version);
-      this.lastSavedKey.set(canvasId, key);
-      if (this.snapshot.activeCanvasId === canvasId) {
-        this.activeContent = { nodes, edges };
-      }
-      this.update({
-        saveStatus: "saved",
-        lastSavedAt: Date.now(),
-        message: null,
-      });
+      this.recordSavedContent(canvasId, nodes, edges, key, saved.version);
       return "saved";
     } catch (error) {
       if (!(error instanceof CanvasVersionConflictError)) throw error;
-
-      if (canRecover) {
-        const stored = await this.api.getCanvas(workspaceId, canvasId);
-        const storedKey = contentKey(stored.nodes, stored.edges);
-        if (
-          storedKey === key ||
-          storedKey === this.lastSavedKey.get(canvasId)
-        ) {
-          this.versions.set(canvasId, stored.version);
-          return this.sendSave(workspaceId, canvasId, nodes, edges, key, false);
-        }
-      }
-
-      this.update({ saveStatus: "conflict", message: CONFLICT_MESSAGE });
-      return "conflict";
+      return this.recoverVersionConflict(
+        workspaceId,
+        canvasId,
+        nodes,
+        edges,
+        key,
+        canRecover,
+      );
     }
+  }
+
+  private async recoverVersionConflict(
+    workspaceId: string,
+    canvasId: string,
+    nodes: unknown[],
+    edges: unknown[],
+    key: string,
+    canRecover: boolean,
+  ): Promise<CanvasPersistResult> {
+    if (!canRecover) return this.reportConflict();
+
+    const stored = await this.api.getCanvas(workspaceId, canvasId);
+    const storedKey = contentKey(stored.nodes, stored.edges);
+    if (storedKey === key) {
+      // The requested content is already saved. A second PUT would only
+      // advance its version and make other open tabs stale again.
+      this.recordSavedContent(canvasId, nodes, edges, key, stored.version);
+      return "saved";
+    }
+    if (storedKey === this.lastSavedKey.get(canvasId)) {
+      this.versions.set(canvasId, stored.version);
+      return this.sendSave(workspaceId, canvasId, nodes, edges, key, false);
+    }
+
+    return this.reportConflict();
+  }
+
+  private recordSavedContent(
+    canvasId: string,
+    nodes: unknown[],
+    edges: unknown[],
+    key: string,
+    version: number,
+  ): void {
+    this.versions.set(canvasId, version);
+    this.lastSavedKey.set(canvasId, key);
+    if (this.snapshot.activeCanvasId === canvasId) {
+      this.activeContent = { nodes, edges };
+    }
+    this.update({ saveStatus: "saved", lastSavedAt: Date.now(), message: null });
+  }
+
+  private reportConflict(): CanvasPersistResult {
+    this.update({ saveStatus: "conflict", message: CONFLICT_MESSAGE });
+    return "conflict";
   }
 
   private enqueue<T>(task: () => Promise<T>): Promise<T> {
