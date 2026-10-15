@@ -15,6 +15,13 @@ html:has(.systema-page[data-theme="dark"]) {
   --systema-primary-hover: #2f2f2a;
   --systema-muted: #686863;
   --systema-line: #d4d2ca;
+  --systema-accent: var(--product-accent);
+  --systema-accent-hover: var(--product-accent-hover);
+  --systema-accent-soft: color-mix(
+    in srgb,
+    var(--systema-accent) 10%,
+    transparent
+  );
   background: var(--systema-bg);
   color: var(--systema-text);
   font-family: "Inter", sans-serif;
@@ -92,7 +99,7 @@ html:has(.systema-page[data-theme="dark"]) {
   color: #080808;
 }
 .systema-page[data-theme="dark"] .systema-scroll-line {
-  background: #626260;
+  background: var(--systema-accent);
 }
 .systema-page[data-theme="dark"] .systema-stage-heading span:first-child {
   color: #d4d4d0;
@@ -136,12 +143,12 @@ html:has(.systema-page[data-theme="dark"]) {
 .systema-page[data-theme="dark"]
   .systema-phase-controls
   button[aria-pressed="true"] {
-  background: #242424;
-  color: #f5f5f3;
+  background: color-mix(in srgb, var(--systema-accent) 17%, #131313);
+  color: var(--systema-accent);
 }
 .systema-page[data-theme="dark"] .systema-phase-controls button:hover {
-  color: #fff;
-  background: #1b1b1b;
+  color: var(--systema-accent);
+  background: color-mix(in srgb, var(--systema-accent) 10%, #131313);
 }
 .systema-page[data-theme="dark"] .systema-motion-toggle:hover {
   background: #242424;
@@ -157,7 +164,7 @@ html:has(.systema-page[data-theme="dark"]) {
   color: #babab6;
 }
 .systema-page[data-theme="dark"] .systema-decisions svg {
-  color: #e3e3df;
+  color: var(--systema-accent);
 }
 .systema-page[data-theme="dark"] .systema-feature:hover {
   background: #1b1b1b;
@@ -170,7 +177,7 @@ html:has(.systema-page[data-theme="dark"]) {
   color: #fff;
 }
 .systema-page :focus-visible {
-  outline: 2px solid #151513;
+  outline: 2px solid var(--systema-accent);
   outline-offset: 5px;
 }
 .systema-page a {
@@ -237,7 +244,7 @@ html:has(.systema-page[data-theme="dark"]) {
 .systema-desktop-nav button:hover,
 .systema-footer a:hover,
 .systema-mobile-nav a:hover {
-  color: var(--systema-text);
+  color: var(--systema-accent-hover);
 }
 .systema-desktop-nav button {
   padding: 0;
@@ -252,15 +259,15 @@ html:has(.systema-page[data-theme="dark"]) {
 }
 .systema-desktop-nav button:focus-visible,
 .systema-mobile-nav button:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid var(--systema-accent);
   outline-offset: 4px;
 }
 .systema-desktop-nav .systema-nav-workspace-link {
-  color: var(--systema-text);
+  color: var(--systema-accent);
   font-weight: 600;
 }
 .systema-desktop-nav .systema-nav-workspace-link:hover {
-  color: var(--systema-text);
+  color: var(--systema-accent);
 }
 .systema-nav-actions {
   display: flex;
@@ -461,7 +468,8 @@ html:has(.systema-page[data-theme="dark"]) {
   text-decoration: none;
 }
 .systema-account-menu__profile:hover {
-  background: color-mix(in srgb, var(--systema-primary-bg) 10%, transparent);
+  background: var(--systema-accent-soft);
+  color: var(--systema-accent);
 }
 .systema-account-menu > button:hover {
   background: color-mix(in srgb, #a33d3d 10%, transparent);
@@ -509,7 +517,7 @@ html:has(.systema-page[data-theme="dark"]) {
   border-top: 1px solid var(--systema-line);
 }
 .systema-mobile-nav-workspace-link {
-  color: var(--systema-text) !important;
+  color: var(--systema-accent) !important;
   font-weight: 600;
 }
 .systema-mobile-nav-sign-in {
@@ -598,6 +606,9 @@ html:has(.systema-page[data-theme="dark"]) {
 .systema-page h2 span {
   color: var(--systema-muted);
 }
+.systema-page h1 .systema-accent-text {
+  color: var(--systema-accent);
+}
 .systema-story-copy > p {
   color: var(--systema-muted);
   font-size: 15px;
@@ -616,11 +627,12 @@ html:has(.systema-page[data-theme="dark"]) {
   align-items: center;
   gap: 10px;
   font-size: 12px;
-  color: var(--systema-text);
+  color: var(--systema-accent);
   min-height: 44px;
   text-underline-offset: 5px;
 }
 .systema-text-link:hover {
+  color: var(--systema-accent-hover);
   text-decoration: underline;
 }
 .systema-text-link svg {
@@ -639,7 +651,7 @@ html:has(.systema-page[data-theme="dark"]) {
 .systema-page .systema-text-button:focus-visible,
 .systema-ai-dialog button:focus-visible,
 .systema-ai-dialog a:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid var(--systema-accent);
   outline-offset: 3px;
 }
 .systema-ai-dialog {
@@ -726,9 +738,13 @@ html:has(.systema-page[data-theme="dark"]) {
   cursor: pointer;
 }
 .systema-ai-provider-tabs button[aria-selected="true"] {
-  border-color: var(--systema-line);
-  background: var(--systema-bg);
-  color: var(--systema-text);
+  border-color: color-mix(
+    in srgb,
+    var(--systema-accent) 35%,
+    var(--systema-line)
+  );
+  background: var(--systema-accent-soft);
+  color: var(--systema-accent);
 }
 .systema-ai-tab-status {
   color: var(--systema-muted);
@@ -742,7 +758,7 @@ html:has(.systema-page[data-theme="dark"]) {
   outline: none;
 }
 .systema-ai-provider-panel:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid var(--systema-accent);
   outline-offset: 3px;
 }
 .systema-ai-connection-summary {
@@ -872,9 +888,9 @@ html:has(.systema-page[data-theme="dark"]) {
   cursor: pointer;
 }
 .systema-ai-gemini-options button[aria-pressed="true"] {
-  background: var(--systema-surface);
-  color: var(--systema-text);
-  border-color: var(--systema-text);
+  background: var(--systema-accent-soft);
+  color: var(--systema-accent);
+  border-color: var(--systema-accent);
 }
 .systema-ai-done-button {
   min-height: 44px;
@@ -892,9 +908,9 @@ html:has(.systema-page[data-theme="dark"]) {
   color: var(--systema-text);
 }
 .systema-page .systema-outline-cta:hover {
-  border-color: var(--systema-text);
+  border-color: var(--systema-accent);
   background: var(--systema-surface);
-  color: var(--systema-text);
+  color: var(--systema-accent);
 }
 .systema-scroll-note {
   display: flex;
@@ -908,7 +924,7 @@ html:has(.systema-page[data-theme="dark"]) {
   display: block;
   height: 1px;
   width: 35px;
-  background: #9d9b92;
+  background: var(--systema-accent);
 }
 .systema-stage-column {
   grid-row: 1 / 4;
@@ -1041,12 +1057,12 @@ html:has(.systema-page[data-theme="dark"]) {
   opacity: 0.7;
 }
 .systema-phase-controls button[aria-pressed="true"] {
-  background: #dcdad2;
-  color: #151513;
+  background: var(--systema-accent-soft);
+  color: var(--systema-accent);
 }
 .systema-phase-controls button:hover {
-  color: #151513;
-  background: #e4e2dc;
+  color: var(--systema-accent);
+  background: color-mix(in srgb, var(--systema-accent) 7%, var(--systema-bg));
 }
 .systema-motion-toggle {
   min-width: 40px;
@@ -1118,6 +1134,9 @@ html:has(.systema-page[data-theme="dark"]) {
   font-size: 10px;
   color: var(--systema-muted);
 }
+.systema-review-excerpt span:first-child {
+  color: var(--systema-accent);
+}
 .systema-review-excerpt p {
   font-size: 20px;
   line-height: 1.5;
@@ -1140,7 +1159,7 @@ html:has(.systema-page[data-theme="dark"]) {
 .systema-decisions svg {
   width: 14px;
   height: 14px;
-  color: #34342f;
+  color: var(--systema-accent);
 }
 .systema-capabilities {
   border-top: 1px solid var(--systema-line);
@@ -1340,7 +1359,7 @@ html:has(.systema-page[data-theme="dark"]) {
 }
 .systema-footer-links a:focus-visible,
 .systema-footer > a:focus-visible {
-  outline: 2px solid var(--systema-primary-bg);
+  outline: 2px solid var(--systema-accent);
   outline-offset: 4px;
 }
 .systema-footer > a {

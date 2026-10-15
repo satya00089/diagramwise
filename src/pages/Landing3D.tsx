@@ -131,7 +131,7 @@ export default function Landing3D() {
         ref: heroDecisionRef,
         config: {
           type: "underline" as const,
-          color: landingTheme === "light" ? "#151513" : "#d5d5d2",
+          color: landingTheme === "light" ? "#9c344e" : "#f0a1b1",
           strokeWidth: 1.5,
           padding: 2,
           iterations: 1,
@@ -444,7 +444,9 @@ export default function Landing3D() {
               <span>
                 Understand
                 <br />
-                <span ref={heroDecisionRef}>every decision.</span>
+                <span ref={heroDecisionRef} className="systema-accent-text">
+                  every decision.
+                </span>
               </span>
             </h1>
             <p>

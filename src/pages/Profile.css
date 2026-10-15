@@ -6,7 +6,7 @@
   --muted: #686863;
   --border: #d4d2ca;
   --brand: #151513;
-  --accent: #9c344e;
+  --accent: var(--product-accent);
   --theme: var(--text);
   min-height: 100vh;
   background: var(--bg);
@@ -21,7 +21,7 @@
   --muted: #a5a5a1;
   --border: #292929;
   --brand: #ffffff;
-  --accent: #f0a1b1;
+  --accent: var(--product-accent);
   --theme: var(--text);
 }
 
