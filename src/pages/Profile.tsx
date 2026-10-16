@@ -353,7 +353,12 @@ const Profile: React.FC = () => {
             alt=""
             animate="hover"
           />
-          {draftAvatarKey === null && <MdCheckCircle aria-hidden="true" />}
+          {draftAvatarKey === null && (
+            <MdCheckCircle
+              className="profile-avatar-option-check"
+              aria-hidden="true"
+            />
+          )}
         </button>
       );
     }
@@ -373,7 +378,10 @@ const Profile: React.FC = () => {
             alt=""
             animate="hover"
           />
-          <MdCheckCircle aria-hidden="true" />
+          <MdCheckCircle
+            className="profile-avatar-option-check"
+            aria-hidden="true"
+          />
         </div>
       );
     }
@@ -399,7 +407,12 @@ const Profile: React.FC = () => {
           alt=""
           animate="hover"
         />
-        {draftAvatarKey === key && <MdCheckCircle aria-hidden="true" />}
+        {draftAvatarKey === key && (
+          <MdCheckCircle
+            className="profile-avatar-option-check"
+            aria-hidden="true"
+          />
+        )}
       </button>
     );
   };
