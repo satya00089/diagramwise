@@ -1,6 +1,6 @@
 export const BLOBATAR_AVATAR_BATCH_SIZE = 12;
 export const BLOBATAR_INITIAL_AVATAR_COUNT = 12;
-export const BLOBATAR_MAX_AVATAR_COUNT = 99_999;
+export const BLOBATAR_MAX_AVATAR_COUNT = 100;
 
 export type AvatarKey = `blobatar-v2-${string}`;
 
