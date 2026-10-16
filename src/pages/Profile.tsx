@@ -1,12 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { HiArrowUpRight, HiPencil } from "react-icons/hi2";
-import { MdCheckCircle, MdOutlineAccountCircle } from "react-icons/md";
+import { MdCheckCircle } from "react-icons/md";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import ProductHeader from "../components/ProductHeader";
 import SEO from "../components/SEO";
+import UserAvatar from "../components/UserAvatar";
+import {
+  BLOBATAR_AVATAR_CHOICES,
+  isAvatarKey,
+  type AvatarKey,
+} from "../config/avatar";
 import { apiService } from "../services/api";
 import {
   fetchLearningPaths,
@@ -79,6 +85,12 @@ const Profile: React.FC = () => {
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileSaved, setProfileSaved] = useState(false);
+  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  const [draftAvatarKey, setDraftAvatarKey] = useState<AvatarKey | null>(null);
+  const [avatarSaving, setAvatarSaving] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  const [avatarSaved, setAvatarSaved] = useState(false);
+  const avatarDialogRef = useRef<HTMLDialogElement>(null);
 
   const loadProgress = useCallback(async () => {
     if (!user) return;
@@ -133,7 +145,14 @@ const Profile: React.FC = () => {
     const [savedFirstName, savedLastName] = getUserNameParts(user);
     setFirstName(savedFirstName);
     setLastName(savedLastName);
-  }, [user?.firstName, user?.lastName, user?.name]);
+  }, [user]);
+
+  useEffect(() => {
+    const dialog = avatarDialogRef.current;
+    if (!dialog) return;
+    if (avatarPickerOpen && !dialog.open) dialog.showModal();
+    if (!avatarPickerOpen && dialog.open) dialog.close();
+  }, [avatarPickerOpen]);
 
   const beginProfileEdit = () => {
     if (user) {
@@ -165,6 +184,31 @@ const Profile: React.FC = () => {
       );
     } finally {
       setProfileSaving(false);
+    }
+  };
+
+  const openAvatarPicker = () => {
+    if (!user) return;
+    setDraftAvatarKey(isAvatarKey(user.avatarKey) ? user.avatarKey : null);
+    setAvatarError("");
+    setAvatarSaved(false);
+    setAvatarPickerOpen(true);
+  };
+
+  const saveAvatar = async () => {
+    setAvatarSaving(true);
+    setAvatarError("");
+    try {
+      await apiService.updateAvatar(draftAvatarKey);
+      await refreshUser();
+      setAvatarPickerOpen(false);
+      setAvatarSaved(true);
+    } catch (error) {
+      setAvatarError(
+        error instanceof Error ? error.message : "Failed to update avatar",
+      );
+    } finally {
+      setAvatarSaving(false);
     }
   };
 
@@ -249,12 +293,25 @@ const Profile: React.FC = () => {
 
         <main className="profile-content">
           <header className="profile-heading">
-            <div className="profile-avatar" aria-hidden="true">
-              {user.picture ? (
-                <img src={user.picture} alt="" />
-              ) : (
-                <MdOutlineAccountCircle />
-              )}
+            <div className="profile-avatar-control">
+              <div className="profile-avatar" aria-hidden="true">
+                <UserAvatar
+                  userId={user.id}
+                  picture={user.picture}
+                  avatarKey={user.avatarKey}
+                  size={72}
+                  className="profile-avatar-image"
+                />
+              </div>
+              <button
+                className="profile-avatar-edit"
+                type="button"
+                onClick={openAvatarPicker}
+                aria-label="Change profile avatar"
+                title="Change avatar"
+              >
+                <HiPencil aria-hidden="true" />
+              </button>
             </div>
             <div>
               <h1>Your profile</h1>
@@ -576,6 +633,128 @@ const Profile: React.FC = () => {
             </aside>
           </div>
         </main>
+
+        {!avatarPickerOpen && avatarSaved && (
+          <p className="profile-avatar-status" role="status">
+            Avatar updated.
+          </p>
+        )}
+
+        {avatarPickerOpen && (
+          <dialog
+            ref={avatarDialogRef}
+            className="profile-avatar-dialog"
+            aria-labelledby="profile-avatar-dialog-title"
+            onCancel={(event) => {
+              event.preventDefault();
+              setAvatarPickerOpen(false);
+            }}
+          >
+            <div className="profile-avatar-dialog-heading">
+              <div>
+                <h2 id="profile-avatar-dialog-title">Choose your avatar</h2>
+                <p>Choose a profile photo or pick a Blobatar.</p>
+              </div>
+              <button
+                className="profile-avatar-dialog-close"
+                type="button"
+                onClick={() => setAvatarPickerOpen(false)}
+                aria-label="Close avatar picker"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="profile-avatar-options">
+              {user.picture ? (
+                <button
+                  type="button"
+                  className={`profile-avatar-option${draftAvatarKey === null ? " is-selected" : ""}`}
+                  aria-pressed={draftAvatarKey === null}
+                  onClick={() => setDraftAvatarKey(null)}
+                >
+                  <UserAvatar
+                    userId={user.id}
+                    picture={user.picture}
+                    size={72}
+                    className="profile-avatar-option-image"
+                    alt=""
+                  />
+                  <span>Google photo</span>
+                  {draftAvatarKey === null && (
+                    <MdCheckCircle aria-label="Selected" />
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className={`profile-avatar-option${draftAvatarKey === null ? " is-selected" : ""}`}
+                  aria-pressed={draftAvatarKey === null}
+                  onClick={() => setDraftAvatarKey(null)}
+                >
+                  <UserAvatar
+                    userId={user.id}
+                    size={72}
+                    className="profile-avatar-option-image"
+                    alt=""
+                  />
+                  <span>Default Blobatar</span>
+                  {draftAvatarKey === null && (
+                    <MdCheckCircle aria-label="Selected" />
+                  )}
+                </button>
+              )}
+              {BLOBATAR_AVATAR_CHOICES.map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`profile-avatar-option${draftAvatarKey === key ? " is-selected" : ""}`}
+                  aria-pressed={draftAvatarKey === key}
+                  onClick={() => setDraftAvatarKey(key)}
+                >
+                  <UserAvatar
+                    userId={user.id}
+                    avatarKey={key}
+                    size={72}
+                    className="profile-avatar-option-image"
+                    alt=""
+                  />
+                  <span>{label}</span>
+                  {draftAvatarKey === key && (
+                    <MdCheckCircle aria-label="Selected" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {avatarError && (
+              <p
+                className="profile-form-message profile-form-error"
+                role="alert"
+              >
+                {avatarError}
+              </p>
+            )}
+            <div className="profile-avatar-dialog-actions">
+              <button
+                className="profile-secondary-button"
+                type="button"
+                onClick={() => setAvatarPickerOpen(false)}
+                disabled={avatarSaving}
+              >
+                Cancel
+              </button>
+              <button
+                className="profile-primary-button"
+                type="button"
+                onClick={() => void saveAvatar()}
+                disabled={avatarSaving}
+              >
+                {avatarSaving ? "Saving…" : "Save avatar"}
+              </button>
+            </div>
+          </dialog>
+        )}
       </div>
     </>
   );

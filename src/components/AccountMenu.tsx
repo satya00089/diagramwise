@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { HiChevronDown } from "react-icons/hi2";
 import { useAuth } from "../hooks/useAuth";
+import UserAvatar from "./UserAvatar";
 
 type AccountMenuProps = {
   variant?: "default" | "inverse" | "landing";
@@ -12,20 +13,10 @@ const AccountMenu = ({ variant = "default" }: AccountMenuProps) => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
-  const [avatarFailed, setAvatarFailed] = useState(false);
   const panelId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const accountName = user?.name?.trim() || user?.email || "Account";
-  const initials = accountName
-    .split(/[\s@._+-]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0].toUpperCase())
-    .join("") || "U";
-
-  useEffect(() => setAvatarFailed(false), [user?.picture]);
-
   useEffect(() => {
     if (!open) return;
     const closeOnOutside = (event: PointerEvent) => {
@@ -63,19 +54,13 @@ const AccountMenu = ({ variant = "default" }: AccountMenuProps) => {
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
       >
-        {user.picture && !avatarFailed ? (
-          <img
-            className="account-menu__avatar"
-            src={user.picture}
-            alt=""
-            referrerPolicy="no-referrer"
-            onError={() => setAvatarFailed(true)}
-          />
-        ) : (
-          <span className="account-menu__avatar account-menu__avatar--initials" aria-hidden="true">
-            {initials}
-          </span>
-        )}
+        <UserAvatar
+          userId={user.id}
+          picture={user.picture}
+          avatarKey={user.avatarKey}
+          size={32}
+          className="account-menu__avatar"
+        />
         <span className="account-menu__name">{accountName}</span>
         <HiChevronDown
           className={`account-menu__chevron${open ? " account-menu__chevron--open" : ""}`}
