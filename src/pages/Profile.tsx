@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Link, useNavigate } from "react-router-dom";
 import { HiArrowUpRight, HiPencil } from "react-icons/hi2";
-import { MdCheckCircle } from "react-icons/md";
+import { MdCheckCircle, MdClose } from "react-icons/md";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
 import ThemeSwitcher from "../components/ThemeSwitcher";
@@ -791,7 +791,7 @@ const Profile: React.FC = () => {
                 onClick={() => setAvatarPickerOpen(false)}
                 aria-label="Close avatar picker"
               >
-                ×
+                <MdClose size={20} aria-hidden="true" />
               </button>
             </div>
 
