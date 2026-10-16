@@ -338,6 +338,30 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
     box-shadow 180ms ease;
 }
 
+.app-modal .dashboard-select-trigger.app-modal__select {
+  min-height: 42px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.app-modal .dashboard-select-trigger.app-modal__select:hover,
+.app-modal .dashboard-select-trigger.app-modal__select[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+  background: var(--bg-hover);
+}
+
+.app-modal .dashboard-select-trigger.app-modal__select:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.app-modal .dashboard-select-menu--top {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
 .app-modal__field:hover {
   border-color: color-mix(in srgb, var(--accent) 48%, var(--border)) !important;
 }
