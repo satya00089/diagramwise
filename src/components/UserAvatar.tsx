@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { Blobatar } from "@blobatar/react";
+import "blobatar/motion.css";
 import { getAvatarSeed, isAvatarKey } from "../config/avatar";
 
 type UserAvatarProps = {
@@ -11,6 +12,7 @@ type UserAvatarProps = {
   className?: string;
   alt?: string;
   style?: CSSProperties;
+  animate?: "hover" | "always";
 };
 
 const UserAvatar = ({
@@ -21,6 +23,7 @@ const UserAvatar = ({
   className,
   alt = "",
   style,
+  animate,
 }: UserAvatarProps) => {
   const [pictureFailed, setPictureFailed] = useState(false);
   const selectedAvatarKey = isAvatarKey(avatarKey) ? avatarKey : null;
@@ -50,6 +53,7 @@ const UserAvatar = ({
       className={className}
       alt={alt}
       style={style}
+      animate={animate}
     />
   );
 };

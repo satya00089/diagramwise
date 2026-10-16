@@ -239,6 +239,17 @@
   padding-top: 1rem;
 }
 
+.profile-avatar-dialog-actions .profile-avatar-cancel-button {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.profile-avatar-dialog-actions .profile-avatar-cancel-button:hover:not(:disabled) {
+  background: var(--surface);
+  opacity: 1;
+}
+
 .profile-avatar-status {
   position: fixed;
   right: 1.25rem;
@@ -646,6 +657,17 @@
 .profile-account-action button:hover {
   opacity: 0.84;
   transform: translateY(-1px);
+}
+
+.profile-form-actions .profile-form-cancel-button {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.profile-form-actions .profile-form-cancel-button:hover:not(:disabled) {
+  background: var(--surface);
+  opacity: 1;
 }
 
 .profile-account-action {
