@@ -2,12 +2,14 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MdWifiOff, MdPeople, MdSync } from "react-icons/md";
 import { getCollaboratorColor } from "../utils/collaborationUtils";
+import UserAvatar from "./UserAvatar";
 
 interface CollaboratorUser {
   id: string;
   name: string;
   email?: string; // Optional to support both Yjs and custom WebSocket
   pictureUrl?: string;
+  avatarKey?: string | null;
 }
 
 interface CollaborationStatusProps {
@@ -118,26 +120,17 @@ export const CollaborationStatus: React.FC<CollaborationStatusProps> = ({
                 aria-label={collaborator.name}
                 data-tooltip={collaborator.name}
               >
-                {collaborator.pictureUrl ? (
-                  <img
-                    src={collaborator.pictureUrl}
-                    alt={collaborator.name}
-                    className="w-8 h-8 rounded-full border-2 border-surface"
-                    style={{
-                      borderColor: getCollaboratorColor(collaborator.id),
-                    }}
-                  />
-                ) : (
-                  <div
-                    className="w-6 h-6 rounded-full border-2 border-surface flex items-center justify-center text-xs font-bold text-white"
-                    style={{
-                      backgroundColor: getCollaboratorColor(collaborator.id),
-                    }}
-                    aria-label={collaborator.name}
-                  >
-                    {collaborator.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                <UserAvatar
+                  userId={collaborator.id}
+                  picture={collaborator.pictureUrl}
+                  avatarKey={collaborator.avatarKey}
+                  size={32}
+                  className="w-8 h-8 rounded-full border-2 border-surface object-cover"
+                  alt={collaborator.name}
+                  style={{
+                    borderColor: getCollaboratorColor(collaborator.id),
+                  }}
+                />
               </div>
             ))}
             {collaborators.length > 3 && (

@@ -5946,10 +5946,12 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
               return (
                 <CollaboratorCursor
                   key={cursor.userId}
+                  userId={cursor.user.id}
                   name={cursor.user.name}
                   color={getCollaboratorColor(cursor.userId)}
                   position={screenPosition}
                   pictureUrl={cursor.user.pictureUrl}
+                  avatarKey={cursor.user.avatarKey}
                 />
               );
             })}

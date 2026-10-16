@@ -58,17 +58,164 @@
   flex: 0 0 auto;
   place-items: center;
   overflow: hidden;
-  border: 1px solid var(--border);
   border-radius: 50%;
-  background: var(--surface);
-  color: var(--accent);
-  font-size: 2.7rem;
+  background: transparent;
 }
 
-.profile-avatar img {
+.profile-avatar-control {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.profile-avatar-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.profile-avatar-edit {
+  position: absolute;
+  right: -0.15rem;
+  bottom: -0.15rem;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.profile-avatar-edit:hover,
+.profile-avatar-dialog-close:hover {
+  color: var(--accent);
+}
+
+.profile-avatar-dialog {
+  width: min(42rem, calc(100vw - 2rem));
+  max-width: none;
+  max-height: min(90vh, 48rem);
+  margin: auto;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 42%);
+}
+
+.profile-avatar-dialog::backdrop {
+  background: rgb(0 0 0 / 68%);
+  backdrop-filter: blur(3px);
+}
+
+.profile-avatar-dialog-heading,
+.profile-avatar-dialog-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.profile-avatar-dialog-heading h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.35rem;
+}
+
+.profile-avatar-dialog-heading p {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.profile-avatar-dialog-close {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.profile-avatar-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1.35rem 0;
+}
+
+.profile-avatar-option {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 8.75rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  padding: 0.8rem;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.profile-avatar-option:hover {
+  border-color: var(--accent);
+}
+
+.profile-avatar-option.is-selected {
+  border: 2px solid var(--accent);
+  padding: calc(0.8rem - 1px);
+}
+
+.profile-avatar-option > svg:last-child {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  color: var(--accent);
+  font-size: 1.15rem;
+}
+
+.profile-avatar-option-image {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: cover;
+}
+
+.profile-avatar-dialog-actions {
+  justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.profile-avatar-status {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 10;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 16%);
 }
 
 .profile-heading h1 {
@@ -569,7 +716,28 @@
   .profile-avatar {
     width: 3.5rem;
     height: 3.5rem;
-    font-size: 2.1rem;
+  }
+
+  .profile-avatar-edit {
+    width: 1.8rem;
+    height: 1.8rem;
+  }
+
+  .profile-avatar-dialog {
+    padding: 1rem;
+  }
+
+  .profile-avatar-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .profile-avatar-option {
+    min-height: 7.5rem;
+  }
+
+  .profile-avatar-option-image {
+    width: 3.75rem;
+    height: 3.75rem;
   }
 
   .profile-heading h1 {

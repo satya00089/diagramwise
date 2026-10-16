@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { useNavigate } from "react-router-dom";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import AccountMenu from "../components/AccountMenu";
+import UserAvatar from "../components/UserAvatar";
 import { AuthModal } from "../components/AuthModal";
 import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../hooks/useAuth";
@@ -873,15 +874,13 @@ const MyDesigns: React.FC = () => {
                                         aria-hidden="true"
                                       />
                                       <div className="my-designs-sharing-avatar">
-                                        {diagram.owner.pictureUrl ? (
-                                          <img
-                                            src={diagram.owner.pictureUrl}
-                                            alt=""
-                                            className="h-full w-full object-cover"
-                                          />
-                                        ) : (
-                                          diagram.owner.name[0]?.toUpperCase()
-                                        )}
+                                        <UserAvatar
+                                          userId={diagram.owner.id}
+                                          picture={diagram.owner.pictureUrl}
+                                          avatarKey={diagram.owner.avatarKey}
+                                          size={32}
+                                          className="h-full w-full object-cover"
+                                        />
                                       </div>
                                       <div className="my-designs-sharing-copy">
                                         <span className="my-designs-sharing-label">

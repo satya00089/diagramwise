@@ -5,6 +5,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   picture?: string | null;
+  avatarKey?: string | null;
   createdAt?: string;
   preferences?: Record<string, unknown> | null;
   roles?: string[];
@@ -46,6 +47,7 @@ export interface DiagramOwner {
   name: string;
   email: string;
   pictureUrl?: string;
+  avatarKey?: string | null;
 }
 
 export interface SavedDiagram {

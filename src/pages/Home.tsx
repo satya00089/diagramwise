@@ -2,6 +2,7 @@ import React, { Suspense, useEffect, useMemo, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import AccountMenu from "../components/AccountMenu";
+import UserAvatar from "../components/UserAvatar";
 import RollingNavLabel from "../components/RollingNavLabel";
 import { useTheme } from "../hooks/useTheme";
 import SEO from "../components/SEO";
@@ -1247,17 +1248,14 @@ const Home: React.FC = () => {
                                   <div className="relative flex items-center gap-1.5">
                                     {/* Avatar */}
                                     <div className="relative flex-shrink-0">
-                                      {diagram.owner.pictureUrl ? (
-                                        <img
-                                          src={diagram.owner.pictureUrl}
-                                          alt={diagram.owner.name}
-                                          className="w-5 h-5 rounded-full object-cover ring-1 ring-purple-300 dark:ring-purple-600"
-                                        />
-                                      ) : (
-                                        <div className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center text-[9px] text-white font-bold">
-                                          {diagram.owner.name[0]?.toUpperCase()}
-                                        </div>
-                                      )}
+                                      <UserAvatar
+                                        userId={diagram.owner.id}
+                                        picture={diagram.owner.pictureUrl}
+                                        avatarKey={diagram.owner.avatarKey}
+                                        size={20}
+                                        alt={diagram.owner.name}
+                                        className="w-5 h-5 rounded-full object-cover ring-1 ring-purple-300 dark:ring-purple-600"
+                                      />
                                       {/* Online indicator */}
                                       <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-green-500 rounded-full border border-white dark:border-gray-900" />
                                     </div>

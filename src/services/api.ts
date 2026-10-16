@@ -262,6 +262,22 @@ class ApiService {
     return response.json();
   }
 
+  async updateAvatar(avatarKey: string | null): Promise<User> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/me/avatar`, {
+      method: "PATCH",
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify({ avatarKey }),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        await this.getErrorMessage(response, "Failed to update avatar"),
+      );
+    }
+
+    return response.json();
+  }
+
   // User preferences endpoints
   async getPreferences(): Promise<Record<string, unknown> | null> {
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/me/preferences`, {

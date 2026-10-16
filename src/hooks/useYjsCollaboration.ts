@@ -28,6 +28,7 @@ export interface CollaboratorUser {
   name: string;
   email?: string;
   pictureUrl?: string;
+  avatarKey?: string | null;
 }
 
 export interface CollaboratorCursor {
@@ -54,6 +55,7 @@ export interface UseYjsCollaborationParams {
   userName: string;
   userEmail?: string;
   userPictureUrl?: string;
+  userAvatarKey?: string | null;
   enabled?: boolean;
   onUserJoined?: (user: CollaboratorUser) => void;
   onUserLeft?: (user: CollaboratorUser) => void;
@@ -89,6 +91,7 @@ export const useYjsCollaboration = ({
   userName,
   userEmail,
   userPictureUrl,
+  userAvatarKey,
   enabled = true,
   onUserJoined,
   onUserLeft,
@@ -187,6 +190,7 @@ export const useYjsCollaboration = ({
           name: userName,
           email: userEmail,
           pictureUrl: userPictureUrl,
+          avatarKey: userAvatarKey,
         },
         cursor: null,
       });
@@ -420,7 +424,7 @@ export const useYjsCollaboration = ({
     }
     // Only re-initialize if diagramId, user info, or enabled changes
     // NOT when nodes/edges change - that's handled by the sync effect below
-  }, [diagramId, userId, userName, userEmail, userPictureUrl, enabled]); // Removed: nodes, edges, onNodesChange, onEdgesChange, onUserJoined, onUserLeft
+  }, [diagramId, userId, userName, userEmail, userPictureUrl, userAvatarKey, enabled]); // Removed: nodes, edges, onNodesChange, onEdgesChange, onUserJoined, onUserLeft
 
   /**
    * Sync local changes to Yjs with smart delta updates

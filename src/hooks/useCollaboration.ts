@@ -8,6 +8,7 @@ interface CollaboratorUser {
   name: string;
   email: string;
   pictureUrl?: string;
+  avatarKey?: string | null;
 }
 
 interface CollaboratorCursor {

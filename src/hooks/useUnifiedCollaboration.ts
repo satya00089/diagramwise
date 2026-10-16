@@ -86,6 +86,7 @@ export const useUnifiedCollaboration = ({
     userName: user?.name || "Anonymous",
     userEmail: user?.email,
     userPictureUrl: user?.picture || undefined,
+    userAvatarKey: user?.avatarKey,
     enabled: useYjs && enabled,
   });
 

@@ -1,18 +1,23 @@
 import React from "react";
 import { motion } from "framer-motion";
+import UserAvatar from "./UserAvatar";
 
 interface CollaboratorCursorProps {
+  userId: string;
   name: string;
   color: string;
   position: { x: number; y: number };
   pictureUrl?: string;
+  avatarKey?: string | null;
 }
 
 export const CollaboratorCursor: React.FC<CollaboratorCursorProps> = ({
+  userId,
   name,
   color,
   position,
   pictureUrl,
+  avatarKey,
 }) => {
   return (
     <motion.div
@@ -49,13 +54,14 @@ export const CollaboratorCursor: React.FC<CollaboratorCursorProps> = ({
         className="ml-6 -mt-2 px-2 py-1 rounded-md text-xs font-medium text-white whitespace-nowrap shadow-lg flex items-center gap-1.5"
         style={{ backgroundColor: color }}
       >
-        {pictureUrl && (
-          <img
-            src={pictureUrl}
-            alt={name}
-            className="w-4 h-4 rounded-full border border-white/50"
-          />
-        )}
+        <UserAvatar
+          userId={userId}
+          picture={pictureUrl}
+          avatarKey={avatarKey}
+          size={16}
+          alt=""
+          className="w-4 h-4 rounded-full border border-white/50 object-cover"
+        />
         <span>{name}</span>
       </div>
     </motion.div>
