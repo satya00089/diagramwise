@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { HiArrowUpRight } from "react-icons/hi2";
+import { HiArrowUpRight, HiPencil } from "react-icons/hi2";
 import { MdCheckCircle, MdOutlineAccountCircle } from "react-icons/md";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
@@ -457,96 +457,104 @@ const Profile: React.FC = () => {
                 aria-labelledby="account-title"
               >
                 <h2 id="account-title">Account details</h2>
-                <div className="profile-account-heading">
-                  <p>Keep your account name up to date.</p>
-                  {!editingProfile && (
-                    <button
-                      type="button"
-                      className="profile-text-link"
-                      onClick={beginProfileEdit}
-                    >
-                      Edit name
-                    </button>
+                <dl className="profile-account-list">
+                  <div>
+                    <dt>Name</dt>
+                    <dd>
+                      {editingProfile ? (
+                        <form
+                          className="profile-name-form"
+                          onSubmit={saveProfile}
+                        >
+                          <label>
+                            <span>First name</span>
+                            <input
+                              autoComplete="given-name"
+                              maxLength={80}
+                              required
+                              value={firstName}
+                              onChange={(event) =>
+                                setFirstName(event.target.value)
+                              }
+                              disabled={profileSaving}
+                            />
+                          </label>
+                          <label>
+                            <span>Last name</span>
+                            <input
+                              autoComplete="family-name"
+                              maxLength={80}
+                              value={lastName}
+                              onChange={(event) =>
+                                setLastName(event.target.value)
+                              }
+                              disabled={profileSaving}
+                            />
+                          </label>
+                          {profileError && (
+                            <p
+                              className="profile-form-message profile-form-error"
+                              role="alert"
+                            >
+                              {profileError}
+                            </p>
+                          )}
+                          <div className="profile-form-actions">
+                            <button
+                              className="profile-secondary-button"
+                              type="button"
+                              onClick={() => {
+                                setEditingProfile(false);
+                                setProfileError("");
+                              }}
+                              disabled={profileSaving}
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              className="profile-primary-button"
+                              type="submit"
+                              disabled={profileSaving || !firstName.trim()}
+                            >
+                              {profileSaving ? "Saving…" : "Save name"}
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <span className="profile-name-display">
+                          <span>
+                            {[firstName, lastName].filter(Boolean).join(" ") ||
+                              "Not set"}
+                          </span>
+                          <button
+                            type="button"
+                            className="profile-edit-icon-button"
+                            onClick={beginProfileEdit}
+                            aria-label="Edit name"
+                            title="Edit name"
+                          >
+                            <HiPencil aria-hidden="true" />
+                          </button>
+                        </span>
+                      )}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Email</dt>
+                    <dd>{user.email}</dd>
+                  </div>
+                  {memberSince && (
+                    <div>
+                      <dt>Member since</dt>
+                      <dd>{memberSince}</dd>
+                    </div>
                   )}
-                </div>
-                {editingProfile ? (
-                  <form className="profile-name-form" onSubmit={saveProfile}>
-                    <label>
-                      <span>First name</span>
-                      <input
-                        autoComplete="given-name"
-                        maxLength={80}
-                        required
-                        value={firstName}
-                        onChange={(event) => setFirstName(event.target.value)}
-                        disabled={profileSaving}
-                      />
-                    </label>
-                    <label>
-                      <span>Last name</span>
-                      <input
-                        autoComplete="family-name"
-                        maxLength={80}
-                        value={lastName}
-                        onChange={(event) => setLastName(event.target.value)}
-                        disabled={profileSaving}
-                      />
-                    </label>
-                    {profileError && (
-                      <p className="profile-form-message profile-form-error" role="alert">
-                        {profileError}
-                      </p>
-                    )}
-                    <div className="profile-form-actions">
-                      <button
-                        className="profile-secondary-button"
-                        type="button"
-                        onClick={() => {
-                          setEditingProfile(false);
-                          setProfileError("");
-                        }}
-                        disabled={profileSaving}
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        className="profile-primary-button"
-                        type="submit"
-                        disabled={profileSaving || !firstName.trim()}
-                      >
-                        {profileSaving ? "Saving…" : "Save name"}
-                      </button>
-                    </div>
-                  </form>
-                ) : (
-                  <dl className="profile-account-list">
-                    <div>
-                      <dt>Name</dt>
-                      <dd>
-                        {[firstName, lastName].filter(Boolean).join(" ") || "Not set"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Email</dt>
-                      <dd>{user.email}</dd>
-                    </div>
-                    {memberSince && (
-                      <div>
-                        <dt>Member since</dt>
-                        <dd>{memberSince}</dd>
-                      </div>
-                    )}
-                  </dl>
-                )}
+                </dl>
                 {!editingProfile && profileSaved && (
                   <p className="profile-form-message" role="status">
                     Your name has been updated.
                   </p>
                 )}
-                <p className="profile-inline-note">
-                  Email changes, account deactivation, and account deletion
-                  aren’t available here yet.
-                </p>
               </section>
 
               <section
