@@ -9,7 +9,9 @@ import ProductHeader from "../components/ProductHeader";
 import SEO from "../components/SEO";
 import UserAvatar from "../components/UserAvatar";
 import {
-  BLOBATAR_AVATAR_CHOICES,
+  BLOBATAR_AVATAR_BATCH_SIZE,
+  BLOBATAR_INITIAL_AVATAR_COUNT,
+  getBlobatarAvatarChoice,
   isAvatarKey,
   type AvatarKey,
 } from "../config/avatar";
@@ -90,7 +92,12 @@ const Profile: React.FC = () => {
   const [avatarSaving, setAvatarSaving] = useState(false);
   const [avatarError, setAvatarError] = useState("");
   const [avatarSaved, setAvatarSaved] = useState(false);
+  const [visibleAvatarCount, setVisibleAvatarCount] = useState(
+    BLOBATAR_INITIAL_AVATAR_COUNT,
+  );
   const avatarDialogRef = useRef<HTMLDialogElement>(null);
+  const avatarOptionsRef = useRef<HTMLDivElement>(null);
+  const avatarLoadMoreRef = useRef<HTMLDivElement>(null);
 
   const loadProgress = useCallback(async () => {
     if (!user) return;
@@ -154,6 +161,23 @@ const Profile: React.FC = () => {
     if (!avatarPickerOpen && dialog.open) dialog.close();
   }, [avatarPickerOpen]);
 
+  useEffect(() => {
+    const root = avatarOptionsRef.current;
+    const sentinel = avatarLoadMoreRef.current;
+    if (!avatarPickerOpen || !root || !sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisibleAvatarCount((count) => count + BLOBATAR_AVATAR_BATCH_SIZE);
+        }
+      },
+      { root, rootMargin: "160px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [avatarPickerOpen, visibleAvatarCount]);
+
   const beginProfileEdit = () => {
     if (user) {
       const [savedFirstName, savedLastName] = getUserNameParts(user);
@@ -190,10 +214,23 @@ const Profile: React.FC = () => {
   const openAvatarPicker = () => {
     if (!user) return;
     setDraftAvatarKey(isAvatarKey(user.avatarKey) ? user.avatarKey : null);
+    setVisibleAvatarCount(BLOBATAR_INITIAL_AVATAR_COUNT);
     setAvatarError("");
     setAvatarSaved(false);
     setAvatarPickerOpen(true);
   };
+
+  const avatarChoices = useMemo(
+    () =>
+      Array.from({ length: visibleAvatarCount }, (_, index) =>
+        getBlobatarAvatarChoice(index),
+      ),
+    [visibleAvatarCount],
+  );
+
+  const selectedAvatarIsOutsideLoadedOptions =
+    isAvatarKey(draftAvatarKey) &&
+    !avatarChoices.some(({ key }) => key === draftAvatarKey);
 
   const saveAvatar = async () => {
     setAvatarSaving(true);
@@ -665,12 +702,13 @@ const Profile: React.FC = () => {
               </button>
             </div>
 
-            <div className="profile-avatar-options">
+            <div className="profile-avatar-options" ref={avatarOptionsRef}>
               {user.picture ? (
                 <button
                   type="button"
                   className={`profile-avatar-option${draftAvatarKey === null ? " is-selected" : ""}`}
                   aria-pressed={draftAvatarKey === null}
+                  aria-label="Use Google photo"
                   onClick={() => setDraftAvatarKey(null)}
                 >
                   <UserAvatar
@@ -680,9 +718,8 @@ const Profile: React.FC = () => {
                     className="profile-avatar-option-image"
                     alt=""
                   />
-                  <span>Google photo</span>
                   {draftAvatarKey === null && (
-                    <MdCheckCircle aria-label="Selected" />
+                    <MdCheckCircle aria-hidden="true" />
                   )}
                 </button>
               ) : (
@@ -690,6 +727,7 @@ const Profile: React.FC = () => {
                   type="button"
                   className={`profile-avatar-option${draftAvatarKey === null ? " is-selected" : ""}`}
                   aria-pressed={draftAvatarKey === null}
+                  aria-label="Use default Blobatar"
                   onClick={() => setDraftAvatarKey(null)}
                 >
                   <UserAvatar
@@ -698,18 +736,34 @@ const Profile: React.FC = () => {
                     className="profile-avatar-option-image"
                     alt=""
                   />
-                  <span>Default Blobatar</span>
                   {draftAvatarKey === null && (
-                    <MdCheckCircle aria-label="Selected" />
+                    <MdCheckCircle aria-hidden="true" />
                   )}
                 </button>
               )}
-              {BLOBATAR_AVATAR_CHOICES.map(({ key, label }) => (
+              {selectedAvatarIsOutsideLoadedOptions && draftAvatarKey && (
+                <div
+                  className="profile-avatar-option is-selected"
+                  role="img"
+                  aria-label="Currently selected Blobatar"
+                >
+                  <UserAvatar
+                    userId={user.id}
+                    avatarKey={draftAvatarKey}
+                    size={72}
+                    className="profile-avatar-option-image"
+                    alt=""
+                  />
+                  <MdCheckCircle aria-hidden="true" />
+                </div>
+              )}
+              {avatarChoices.map(({ key, label }) => (
                 <button
                   key={key}
                   type="button"
                   className={`profile-avatar-option${draftAvatarKey === key ? " is-selected" : ""}`}
                   aria-pressed={draftAvatarKey === key}
+                  aria-label={`Select ${label}`}
                   onClick={() => setDraftAvatarKey(key)}
                 >
                   <UserAvatar
@@ -719,12 +773,16 @@ const Profile: React.FC = () => {
                     className="profile-avatar-option-image"
                     alt=""
                   />
-                  <span>{label}</span>
                   {draftAvatarKey === key && (
-                    <MdCheckCircle aria-label="Selected" />
+                    <MdCheckCircle aria-hidden="true" />
                   )}
                 </button>
               ))}
+              <div
+                ref={avatarLoadMoreRef}
+                className="profile-avatar-load-more"
+                aria-hidden="true"
+              />
             </div>
 
             {avatarError && (
