@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Link, useNavigate } from "react-router-dom";
 import { HiArrowUpRight, HiPencil } from "react-icons/hi2";
 import { MdCheckCircle } from "react-icons/md";
@@ -11,7 +12,9 @@ import UserAvatar from "../components/UserAvatar";
 import {
   BLOBATAR_AVATAR_BATCH_SIZE,
   BLOBATAR_INITIAL_AVATAR_COUNT,
+  BLOBATAR_MAX_AVATAR_COUNT,
   getBlobatarAvatarChoice,
+  getBlobatarAvatarChoiceIndex,
   isAvatarKey,
   type AvatarKey,
 } from "../config/avatar";
@@ -95,9 +98,9 @@ const Profile: React.FC = () => {
   const [visibleAvatarCount, setVisibleAvatarCount] = useState(
     BLOBATAR_INITIAL_AVATAR_COUNT,
   );
+  const [avatarColumnCount, setAvatarColumnCount] = useState(3);
   const avatarDialogRef = useRef<HTMLDialogElement>(null);
   const avatarOptionsRef = useRef<HTMLDivElement>(null);
-  const avatarLoadMoreRef = useRef<HTMLDivElement>(null);
 
   const loadProgress = useCallback(async () => {
     if (!user) return;
@@ -162,21 +165,27 @@ const Profile: React.FC = () => {
   }, [avatarPickerOpen]);
 
   useEffect(() => {
-    const root = avatarOptionsRef.current;
-    const sentinel = avatarLoadMoreRef.current;
-    if (!avatarPickerOpen || !root || !sentinel) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisibleAvatarCount((count) => count + BLOBATAR_AVATAR_BATCH_SIZE);
-        }
-      },
-      { root, rootMargin: "160px" },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
+    const options = avatarOptionsRef.current;
+    if (
+      avatarPickerOpen &&
+      options &&
+      options.scrollHeight <= options.clientHeight + 240 &&
+      visibleAvatarCount < BLOBATAR_MAX_AVATAR_COUNT
+    ) {
+      setVisibleAvatarCount((count) =>
+        Math.min(BLOBATAR_MAX_AVATAR_COUNT, count + BLOBATAR_AVATAR_BATCH_SIZE),
+      );
+    }
   }, [avatarPickerOpen, visibleAvatarCount]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 520px)");
+    const updateColumnCount = () =>
+      setAvatarColumnCount(mediaQuery.matches ? 2 : 3);
+    updateColumnCount();
+    mediaQuery.addEventListener("change", updateColumnCount);
+    return () => mediaQuery.removeEventListener("change", updateColumnCount);
+  }, []);
 
   const beginProfileEdit = () => {
     if (user) {
@@ -219,18 +228,6 @@ const Profile: React.FC = () => {
     setAvatarSaved(false);
     setAvatarPickerOpen(true);
   };
-
-  const avatarChoices = useMemo(
-    () =>
-      Array.from({ length: visibleAvatarCount }, (_, index) =>
-        getBlobatarAvatarChoice(index),
-      ),
-    [visibleAvatarCount],
-  );
-
-  const selectedAvatarIsOutsideLoadedOptions =
-    isAvatarKey(draftAvatarKey) &&
-    !avatarChoices.some(({ key }) => key === draftAvatarKey);
 
   const saveAvatar = async () => {
     setAvatarSaving(true);
@@ -288,6 +285,18 @@ const Profile: React.FC = () => {
   const startedPathCount = pathSummaries.filter(
     (path) => path.completed > 0,
   ).length;
+  const selectedAvatarChoiceIndex = getBlobatarAvatarChoiceIndex(draftAvatarKey);
+  const selectedAvatarIsOutsideLoadedOptions =
+    selectedAvatarChoiceIndex >= visibleAvatarCount;
+  const avatarOptionCount =
+    1 + Number(selectedAvatarIsOutsideLoadedOptions) + visibleAvatarCount;
+  const avatarRowCount = Math.ceil(avatarOptionCount / avatarColumnCount);
+  const avatarVirtualizer = useVirtualizer({
+    count: avatarRowCount,
+    getScrollElement: () => avatarOptionsRef.current,
+    estimateSize: () => (avatarColumnCount === 2 ? 120 : 124),
+    overscan: 4,
+  });
   const preferences = user?.preferences ?? {};
   const visiblePreferences = preferenceLabels
     .map(([key, label]) => ({
@@ -307,6 +316,90 @@ const Profile: React.FC = () => {
   }
 
   const memberSince = formatMemberDate(user.createdAt);
+  const selectedAvatarKey = isAvatarKey(draftAvatarKey) ? draftAvatarKey : null;
+
+  const loadMoreAvatarChoices = () => {
+    setVisibleAvatarCount((count) =>
+      Math.min(BLOBATAR_MAX_AVATAR_COUNT, count + BLOBATAR_AVATAR_BATCH_SIZE),
+    );
+  };
+
+  const handleAvatarOptionsScroll = () => {
+    const options = avatarOptionsRef.current;
+    if (
+      options &&
+      visibleAvatarCount < BLOBATAR_MAX_AVATAR_COUNT &&
+      options.scrollTop + options.clientHeight >= options.scrollHeight - 240
+    ) {
+      loadMoreAvatarChoices();
+    }
+  };
+
+  const renderAvatarOption = (optionIndex: number): React.ReactNode => {
+    if (optionIndex === 0) {
+      return (
+        <button
+          type="button"
+          className={`profile-avatar-option${draftAvatarKey === null ? " is-selected" : ""}`}
+          aria-pressed={draftAvatarKey === null}
+          aria-label={user.picture ? "Use Google photo" : "Use default Blobatar"}
+          onClick={() => setDraftAvatarKey(null)}
+        >
+          <UserAvatar
+            userId={user.id}
+            picture={user.picture}
+            size={72}
+            className="profile-avatar-option-image"
+            alt=""
+          />
+          {draftAvatarKey === null && <MdCheckCircle aria-hidden="true" />}
+        </button>
+      );
+    }
+
+    if (selectedAvatarIsOutsideLoadedOptions && optionIndex === 1 && selectedAvatarKey) {
+      return (
+        <div
+          className="profile-avatar-option is-selected"
+          role="img"
+          aria-label="Currently selected Blobatar"
+        >
+          <UserAvatar
+            userId={user.id}
+            avatarKey={selectedAvatarKey}
+            size={72}
+            className="profile-avatar-option-image"
+            alt=""
+          />
+          <MdCheckCircle aria-hidden="true" />
+        </div>
+      );
+    }
+
+    const choiceIndex =
+      optionIndex - 1 - Number(selectedAvatarIsOutsideLoadedOptions);
+    if (choiceIndex < 0 || choiceIndex >= visibleAvatarCount) return null;
+
+    const { key, label } = getBlobatarAvatarChoice(choiceIndex);
+    return (
+      <button
+        type="button"
+        className={`profile-avatar-option${draftAvatarKey === key ? " is-selected" : ""}`}
+        aria-pressed={draftAvatarKey === key}
+        aria-label={`Select ${label}`}
+        onClick={() => setDraftAvatarKey(key)}
+      >
+        <UserAvatar
+          userId={user.id}
+          avatarKey={key}
+          size={72}
+          className="profile-avatar-option-image"
+          alt=""
+        />
+        {draftAvatarKey === key && <MdCheckCircle aria-hidden="true" />}
+      </button>
+    );
+  };
 
   return (
     <>
@@ -702,87 +795,46 @@ const Profile: React.FC = () => {
               </button>
             </div>
 
-            <div className="profile-avatar-options" ref={avatarOptionsRef}>
-              {user.picture ? (
-                <button
-                  type="button"
-                  className={`profile-avatar-option${draftAvatarKey === null ? " is-selected" : ""}`}
-                  aria-pressed={draftAvatarKey === null}
-                  aria-label="Use Google photo"
-                  onClick={() => setDraftAvatarKey(null)}
-                >
-                  <UserAvatar
-                    userId={user.id}
-                    picture={user.picture}
-                    size={72}
-                    className="profile-avatar-option-image"
-                    alt=""
-                  />
-                  {draftAvatarKey === null && (
-                    <MdCheckCircle aria-hidden="true" />
-                  )}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className={`profile-avatar-option${draftAvatarKey === null ? " is-selected" : ""}`}
-                  aria-pressed={draftAvatarKey === null}
-                  aria-label="Use default Blobatar"
-                  onClick={() => setDraftAvatarKey(null)}
-                >
-                  <UserAvatar
-                    userId={user.id}
-                    size={72}
-                    className="profile-avatar-option-image"
-                    alt=""
-                  />
-                  {draftAvatarKey === null && (
-                    <MdCheckCircle aria-hidden="true" />
-                  )}
-                </button>
-              )}
-              {selectedAvatarIsOutsideLoadedOptions && draftAvatarKey && (
-                <div
-                  className="profile-avatar-option is-selected"
-                  role="img"
-                  aria-label="Currently selected Blobatar"
-                >
-                  <UserAvatar
-                    userId={user.id}
-                    avatarKey={draftAvatarKey}
-                    size={72}
-                    className="profile-avatar-option-image"
-                    alt=""
-                  />
-                  <MdCheckCircle aria-hidden="true" />
-                </div>
-              )}
-              {avatarChoices.map(({ key, label }) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={`profile-avatar-option${draftAvatarKey === key ? " is-selected" : ""}`}
-                  aria-pressed={draftAvatarKey === key}
-                  aria-label={`Select ${label}`}
-                  onClick={() => setDraftAvatarKey(key)}
-                >
-                  <UserAvatar
-                    userId={user.id}
-                    avatarKey={key}
-                    size={72}
-                    className="profile-avatar-option-image"
-                    alt=""
-                  />
-                  {draftAvatarKey === key && (
-                    <MdCheckCircle aria-hidden="true" />
-                  )}
-                </button>
-              ))}
+            <div
+              className="profile-avatar-options"
+              ref={avatarOptionsRef}
+              onScroll={handleAvatarOptionsScroll}
+              tabIndex={0}
+              role="region"
+              aria-label="Avatar choices"
+            >
               <div
-                ref={avatarLoadMoreRef}
-                className="profile-avatar-load-more"
-                aria-hidden="true"
-              />
+                className="profile-avatar-options-inner"
+                style={{ height: avatarVirtualizer.getTotalSize() }}
+              >
+                {avatarVirtualizer.getVirtualItems().map((virtualRow) => (
+                  <div
+                    key={virtualRow.key}
+                    ref={avatarVirtualizer.measureElement}
+                    data-index={virtualRow.index}
+                    className="profile-avatar-options-row"
+                    style={{
+                      gridTemplateColumns: `repeat(${avatarColumnCount}, minmax(0, 1fr))`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  >
+                    {Array.from({ length: avatarColumnCount }, (_, column) => {
+                      const optionIndex =
+                        virtualRow.index * avatarColumnCount + column;
+                      return optionIndex < avatarOptionCount ? (
+                        <span key={optionIndex}>
+                          {renderAvatarOption(optionIndex)}
+                        </span>
+                      ) : (
+                        <span
+                          key={`empty-${optionIndex}`}
+                          aria-hidden="true"
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
             </div>
 
             {avatarError && (
