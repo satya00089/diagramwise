@@ -83,7 +83,6 @@ const Dashboard: React.FC = () => {
   }, [trackPageView]);
 
   // Local UI state
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Redux state
@@ -120,7 +119,6 @@ const Dashboard: React.FC = () => {
     login,
     signup,
     googleLogin,
-    logout,
   } = useAuth();
 
   const prioritizedProblems = useMemo(() => {
@@ -383,98 +381,15 @@ const Dashboard: React.FC = () => {
                 <span className="hidden sm:inline">Tour</span>
               </button>
               <ThemeSwitcher />
-              <div className="relative">
-                {isAuth ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setShowUserMenu(!showUserMenu)}
-                      className="dashboard-account-button"
-                    >
-                      {user?.picture ? (
-                        <img
-                          src={user.picture}
-                          alt={user.name || "User"}
-                          className="dashboard-avatar dashboard-avatar-image"
-                        />
-                      ) : (
-                        <div className="dashboard-avatar">
-                          {user?.name?.[0]?.toUpperCase() ||
-                            user?.email?.[0]?.toUpperCase() ||
-                            "U"}
-                        </div>
-                      )}
-                      <span className="hidden sm:inline max-w-[150px] truncate">
-                        {user?.name || user?.email}
-                      </span>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
-                    {showUserMenu && (
-                      <div className="dashboard-user-menu">
-                        <div className="px-4 py-2">
-                          <p className="text-sm font-medium text-theme">
-                            {user?.name || "User"}
-                          </p>
-                          <p className="text-xs text-muted truncate">
-                            {user?.email}
-                          </p>
-                        </div>
-                        <Link
-                          to="/profile"
-                          onClick={() => setShowUserMenu(false)}
-                          className="dashboard-user-menu-item border-b border-theme/10"
-                        >
-                          Your profile
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            globalThis.dispatchEvent(
-                              new Event("open-quick-setup"),
-                            );
-                            setShowUserMenu(false);
-                          }}
-                          aria-label="Edit preferences"
-                          className="dashboard-user-menu-item border-b border-theme/10"
-                        >
-                          Edit preferences
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            logout();
-                            setShowUserMenu(false);
-                          }}
-                          className="dashboard-user-menu-item text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        >
-                          Sign Out
-                        </button>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setShowAuthModal(true)}
-                    className="product-sign-in dashboard-sign-in"
-                  >
-                    Sign In
-                  </button>
-                )}
-              </div>
+              {!isAuth && (
+                <button
+                  type="button"
+                  onClick={() => setShowAuthModal(true)}
+                  className="product-sign-in dashboard-sign-in"
+                >
+                  Sign In
+                </button>
+              )}
             </>
           }
         />

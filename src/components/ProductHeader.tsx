@@ -2,6 +2,7 @@ import { useState, type FC, type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { HiBars2, HiXMark } from "react-icons/hi2";
 import RollingNavLabel from "./RollingNavLabel";
+import AccountMenu from "./AccountMenu";
 
 type ProductHeaderProps = {
   actions?: ReactNode;
@@ -51,6 +52,7 @@ const ProductHeader: FC<ProductHeaderProps> = ({ actions }) => {
 
         <div className="product-header__actions">
           {actions}
+          <AccountMenu />
           <button
             type="button"
             className="product-header__menu-toggle"
