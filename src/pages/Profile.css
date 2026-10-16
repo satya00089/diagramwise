@@ -239,6 +239,17 @@
   padding-top: 1rem;
 }
 
+.profile-avatar-dialog-actions .profile-avatar-cancel-button {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.profile-avatar-dialog-actions .profile-avatar-cancel-button:hover:not(:disabled) {
+  background: var(--surface);
+  opacity: 1;
+}
+
 .profile-avatar-status {
   position: fixed;
   right: 1.25rem;
@@ -654,7 +665,7 @@
   color: var(--text);
 }
 
-.profile-form-actions .profile-form-cancel-button:hover {
+.profile-form-actions .profile-form-cancel-button:hover:not(:disabled) {
   background: var(--surface);
   opacity: 1;
 }

@@ -351,6 +351,7 @@ const Profile: React.FC = () => {
             size={72}
             className="profile-avatar-option-image"
             alt=""
+            animate="hover"
           />
           {draftAvatarKey === null && <MdCheckCircle aria-hidden="true" />}
         </button>
@@ -370,6 +371,7 @@ const Profile: React.FC = () => {
             size={72}
             className="profile-avatar-option-image"
             alt=""
+            animate="hover"
           />
           <MdCheckCircle aria-hidden="true" />
         </div>
@@ -395,6 +397,7 @@ const Profile: React.FC = () => {
           size={72}
           className="profile-avatar-option-image"
           alt=""
+          animate="hover"
         />
         {draftAvatarKey === key && <MdCheckCircle aria-hidden="true" />}
       </button>
@@ -431,6 +434,7 @@ const Profile: React.FC = () => {
                   avatarKey={user.avatarKey}
                   size={72}
                   className="profile-avatar-image"
+                  animate="always"
                 />
               </div>
               <button
@@ -847,7 +851,7 @@ const Profile: React.FC = () => {
             )}
             <div className="profile-avatar-dialog-actions">
               <button
-                className="profile-secondary-button"
+                className="profile-secondary-button profile-avatar-cancel-button"
                 type="button"
                 onClick={() => setAvatarPickerOpen(false)}
                 disabled={avatarSaving}
