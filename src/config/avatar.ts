@@ -1,6 +1,8 @@
 export const BLOBATAR_AVATAR_BATCH_SIZE = 12;
 export const BLOBATAR_INITIAL_AVATAR_COUNT = 12;
-export const BLOBATAR_MAX_AVATAR_COUNT = 100;
+// The picker has one leading choice (Google photo or default Blobatar), so
+// 99 generated choices keeps the full grid at 100 items.
+export const BLOBATAR_MAX_AVATAR_COUNT = 99;
 
 export type AvatarKey = `blobatar-v2-${string}`;
 

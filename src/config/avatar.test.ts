@@ -11,9 +11,9 @@ describe("Blobatar avatar choices", () => {
     expect(getBlobatarAvatarChoice(0).key).toBe("blobatar-v2-01");
     expect(getBlobatarAvatarChoice(8).key).toBe("blobatar-v2-09");
     expect(getBlobatarAvatarChoice(119).key).toBe("blobatar-v2-120");
-    expect(BLOBATAR_MAX_AVATAR_COUNT).toBe(100);
+    expect(BLOBATAR_MAX_AVATAR_COUNT).toBe(99);
     expect(getBlobatarAvatarChoice(BLOBATAR_MAX_AVATAR_COUNT - 1).key).toBe(
-      "blobatar-v2-100",
+      "blobatar-v2-99",
     );
   });
 
