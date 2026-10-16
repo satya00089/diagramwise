@@ -53,14 +53,32 @@ const formatMemberDate = (value?: string): string | undefined => {
   }).format(date);
 };
 
+const getUserNameParts = (user: {
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+}): [string, string] => {
+  if (user.firstName !== undefined || user.lastName !== undefined) {
+    return [user.firstName?.trim() ?? "", user.lastName?.trim() ?? ""];
+  }
+  const parts = user.name?.trim().split(/\s+/, 2) ?? [];
+  return [parts[0] ?? "", parts[1] ?? ""];
+};
+
 const Profile: React.FC = () => {
   useTheme();
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { user, isAuthenticated, isLoading, logout, refreshUser } = useAuth();
   const [paths, setPaths] = useState<LearningPath[]>([]);
   const [progress, setProgress] = useState<Record<string, PathProgress>>({});
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSaved, setProfileSaved] = useState(false);
 
   const loadProgress = useCallback(async () => {
     if (!user) return;
@@ -109,6 +127,46 @@ const Profile: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated && user) void loadProgress();
   }, [isAuthenticated, user, loadProgress]);
+
+  useEffect(() => {
+    if (!user) return;
+    const [savedFirstName, savedLastName] = getUserNameParts(user);
+    setFirstName(savedFirstName);
+    setLastName(savedLastName);
+  }, [user?.firstName, user?.lastName, user?.name]);
+
+  const beginProfileEdit = () => {
+    if (user) {
+      const [savedFirstName, savedLastName] = getUserNameParts(user);
+      setFirstName(savedFirstName);
+      setLastName(savedLastName);
+    }
+    setProfileError("");
+    setProfileSaved(false);
+    setEditingProfile(true);
+  };
+
+  const saveProfile = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setProfileSaving(true);
+    setProfileError("");
+    setProfileSaved(false);
+    try {
+      await apiService.updateProfile({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+      });
+      await refreshUser();
+      setEditingProfile(false);
+      setProfileSaved(true);
+    } catch (error) {
+      setProfileError(
+        error instanceof Error ? error.message : "Failed to update profile",
+      );
+    } finally {
+      setProfileSaving(false);
+    }
+  };
 
   const pathSummaries = useMemo(
     () =>
@@ -399,25 +457,95 @@ const Profile: React.FC = () => {
                 aria-labelledby="account-title"
               >
                 <h2 id="account-title">Account details</h2>
-                <dl className="profile-account-list">
-                  <div>
-                    <dt>Name</dt>
-                    <dd>{user.name?.trim() || "Not set"}</dd>
-                  </div>
-                  <div>
-                    <dt>Email</dt>
-                    <dd>{user.email}</dd>
-                  </div>
-                  {memberSince && (
-                    <div>
-                      <dt>Member since</dt>
-                      <dd>{memberSince}</dd>
-                    </div>
+                <div className="profile-account-heading">
+                  <p>Keep your account name up to date.</p>
+                  {!editingProfile && (
+                    <button
+                      type="button"
+                      className="profile-text-link"
+                      onClick={beginProfileEdit}
+                    >
+                      Edit name
+                    </button>
                   )}
-                </dl>
+                </div>
+                {editingProfile ? (
+                  <form className="profile-name-form" onSubmit={saveProfile}>
+                    <label>
+                      <span>First name</span>
+                      <input
+                        autoComplete="given-name"
+                        maxLength={80}
+                        required
+                        value={firstName}
+                        onChange={(event) => setFirstName(event.target.value)}
+                        disabled={profileSaving}
+                      />
+                    </label>
+                    <label>
+                      <span>Last name</span>
+                      <input
+                        autoComplete="family-name"
+                        maxLength={80}
+                        value={lastName}
+                        onChange={(event) => setLastName(event.target.value)}
+                        disabled={profileSaving}
+                      />
+                    </label>
+                    {profileError && (
+                      <p className="profile-form-message profile-form-error" role="alert">
+                        {profileError}
+                      </p>
+                    )}
+                    <div className="profile-form-actions">
+                      <button
+                        className="profile-secondary-button"
+                        type="button"
+                        onClick={() => {
+                          setEditingProfile(false);
+                          setProfileError("");
+                        }}
+                        disabled={profileSaving}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        className="profile-primary-button"
+                        type="submit"
+                        disabled={profileSaving || !firstName.trim()}
+                      >
+                        {profileSaving ? "Saving…" : "Save name"}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <dl className="profile-account-list">
+                    <div>
+                      <dt>Name</dt>
+                      <dd>
+                        {[firstName, lastName].filter(Boolean).join(" ") || "Not set"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Email</dt>
+                      <dd>{user.email}</dd>
+                    </div>
+                    {memberSince && (
+                      <div>
+                        <dt>Member since</dt>
+                        <dd>{memberSince}</dd>
+                      </div>
+                    )}
+                  </dl>
+                )}
+                {!editingProfile && profileSaved && (
+                  <p className="profile-form-message" role="status">
+                    Your name has been updated.
+                  </p>
+                )}
                 <p className="profile-inline-note">
-                  Name and email changes, account deactivation, and account
-                  deletion aren’t available here yet.
+                  Email changes, account deactivation, and account deletion
+                  aren’t available here yet.
                 </p>
               </section>
 

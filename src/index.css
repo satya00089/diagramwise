@@ -267,6 +267,30 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   box-shadow: 0 24px 80px rgb(0 0 0 / 18%);
 }
 
+/* Keep preference editing on the same paper-and-ink surfaces as Profile,
+   regardless of the app-wide theme defaults used by other dialogs. */
+.quick-setup-modal {
+  --bg: #f4f3ee;
+  --surface: #ebeae5;
+  --bg-hover: #e4e2db;
+  --text: #151513;
+  --muted: #686863;
+  --border: #d4d2ca;
+  --brand: #151513;
+  --accent: var(--product-accent);
+}
+
+.dark .quick-setup-modal {
+  --bg: #080808;
+  --surface: #131313;
+  --bg-hover: #1b1b1b;
+  --text: #f5f5f3;
+  --muted: #a5a5a1;
+  --border: #292929;
+  --brand: #ffffff;
+  --accent: var(--product-accent);
+}
+
 .app-modal__body {
   padding: 32px;
 }
@@ -336,6 +360,30 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   transition:
     border-color 180ms ease,
     box-shadow 180ms ease;
+}
+
+.app-modal .dashboard-select-trigger.app-modal__select {
+  min-height: 42px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.app-modal .dashboard-select-trigger.app-modal__select:hover,
+.app-modal .dashboard-select-trigger.app-modal__select[aria-expanded="true"] {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+  background: var(--bg-hover);
+}
+
+.app-modal .dashboard-select-trigger.app-modal__select:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.app-modal .dashboard-select-menu--top {
+  top: auto;
+  bottom: calc(100% + 8px);
 }
 
 .app-modal__field:hover {
@@ -590,6 +638,146 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   flex: none;
   align-items: center;
   gap: 8px;
+}
+
+.account-menu {
+  position: relative;
+  z-index: 30;
+  color: var(--text);
+}
+
+.account-menu__trigger {
+  display: inline-flex;
+  min-height: 38px;
+  max-width: 220px;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.account-menu__trigger:hover {
+  background: var(--bg-hover, color-mix(in srgb, currentColor 8%, transparent));
+}
+
+.account-menu__trigger:focus-visible,
+.account-menu__item:focus-visible {
+  outline: 2px solid var(--product-accent, var(--accent));
+  outline-offset: 2px;
+}
+
+.account-menu__avatar {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.account-menu__avatar--initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-hover, color-mix(in srgb, currentColor 12%, transparent));
+  color: inherit;
+  font-size: 11px;
+}
+
+.account-menu__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu__chevron {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  transition: transform 160ms ease;
+}
+
+.account-menu__chevron--open { transform: rotate(180deg); }
+
+.account-menu__panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  width: min(260px, calc(100vw - 32px));
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface, var(--bg));
+  color: var(--text);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 16%);
+}
+
+.account-menu__identity {
+  display: grid;
+  gap: 3px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.account-menu__identity strong,
+.account-menu__identity span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-menu__identity strong { font-size: 13px; }
+.account-menu__identity span { color: var(--muted); font-size: 12px; }
+
+.account-menu__item {
+  display: flex;
+  width: 100%;
+  min-height: 42px;
+  align-items: center;
+  padding: 10px 16px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  text-decoration: none;
+}
+
+.account-menu__item:hover,
+.account-menu__item--current {
+  background: var(--bg-hover, color-mix(in srgb, currentColor 8%, transparent));
+}
+
+.account-menu__item--current { color: var(--product-accent, var(--accent)); }
+.account-menu__item--sign-out { border-top: 1px solid var(--border); }
+.account-menu--inverse { color: #fff; }
+.account-menu--inverse .account-menu__trigger:hover { background: rgb(255 255 255 / 14%); }
+.account-menu--inverse .account-menu__avatar--initials { background: rgb(255 255 255 / 18%); }
+.account-menu--landing { color: var(--systema-text, var(--text)); }
+.account-menu--landing .account-menu__panel {
+  --text: var(--systema-text, #151513);
+  --muted: var(--systema-muted, #686863);
+  --surface: var(--systema-surface, #f4f3ee);
+  --border: var(--systema-line, #d4d2ca);
+  --bg-hover: var(--systema-bg, #e4e2db);
+}
+
+@media (max-width: 560px) {
+  .account-menu__name { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-menu__chevron {
+    transition-duration: 1ms;
+  }
 }
 
 /* Shared header authentication action across landing, catalog, learning, and

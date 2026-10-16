@@ -2,6 +2,8 @@ export interface User {
   id: string;
   email: string;
   name?: string;
+  firstName?: string;
+  lastName?: string;
   picture?: string | null;
   createdAt?: string;
   preferences?: Record<string, unknown> | null;

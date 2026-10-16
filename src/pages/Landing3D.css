@@ -1433,6 +1433,10 @@ html:has(.systema-page[data-theme="dark"]) {
   }
 }
 @media (max-width: 899px) {
+  .systema-auth-control {
+    display: none;
+  }
+
   .systema-theme-tooltip {
     right: 0;
     left: auto;

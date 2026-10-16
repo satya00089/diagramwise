@@ -36,7 +36,6 @@ import {
 import {
   MdAccessTime,
   MdClose,
-  MdExpandMore,
   MdSave,
   MdHelpOutline,
   MdPublic,
@@ -136,6 +135,7 @@ import {
 // UI Components - Layout
 import SEO from "../components/SEO";
 import ThemeSwitcher from "../components/ThemeSwitcher";
+import AccountMenu from "../components/AccountMenu";
 import { ToastContainer } from "../components/Toast";
 import { AuthModal } from "../components/AuthModal";
 import ShareToWorldModal from "../components/ShareToWorldModal";
@@ -804,7 +804,6 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     sourceDiagramId: string;
     familyId?: string | null;
   } | null>(null);
-  const [showUserMenu, setShowUserMenu] = useState(false);
 
   // Persist the pre-assessment interview transcript with the current attempt.
   const [interviewSession, setInterviewSession] = useState<InterviewSession>({
@@ -5719,82 +5718,17 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                 )}
                 <ThemeSwitcher />
                 {/* User Profile / Auth Button */}
-                <div className="relative">
-                  {isAuthenticated ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setShowUserMenu(!showUserMenu)}
-                        className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white hover:bg-white/20 rounded-md transition-colors"
-                      >
-                        {user?.picture ? (
-                          <img
-                            src={user.picture}
-                            alt={user.name || "User"}
-                            className="w-8 h-8 rounded-full object-cover border-2 border-white"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-white/20 text-white flex items-center justify-center font-bold">
-                            {user?.name?.[0]?.toUpperCase() ||
-                              user?.email?.[0]?.toUpperCase() ||
-                              "U"}
-                          </div>
-                        )}
-                        <span className="hidden sm:inline">
-                          {user?.name || user?.email}
-                        </span>
-                        <MdExpandMore className="h-4 w-4" />
-                      </button>
-
-                      {showUserMenu && (
-                        <div className="absolute top-full right-0 mt-1 bg-[var(--surface)] shadow-lg rounded-lg border border-theme/10 py-1 z-50 min-w-[180px]">
-                          <div className="px-4 py-2">
-                            <p className="text-sm font-medium text-theme">
-                              {user?.name || "User"}
-                            </p>
-                            <p className="text-xs text-muted truncate">
-                              {user?.email}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              // Open preferences editor (Quick Setup modal)
-                              globalThis.dispatchEvent(
-                                new Event("open-quick-setup"),
-                              );
-                              setShowUserMenu(false);
-                            }}
-                            aria-label="Edit preferences"
-                            className="w-full px-4 py-2 text-left text-sm text-theme hover:bg-[var(--bg-hover,var(--bg))] dark:hover:bg-[var(--bg-hover,var(--bg))] transition-colors border-b border-theme/10"
-                          >
-                            Edit preferences
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              logout();
-                              setShowUserMenu(false);
-                              setCurrentDiagramId(null);
-                            }}
-                            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                          >
-                            Sign Out
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowAuthModal(true)}
-                      className="product-sign-in"
-                    >
-                      Sign In
-                    </button>
-                  )}
-                </div>
+                {isAuthenticated ? (
+                  <AccountMenu variant="inverse" />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowAuthModal(true)}
+                    className="product-sign-in"
+                  >
+                    Sign In
+                  </button>
+                )}
               </div>
             </div>
           </div>
