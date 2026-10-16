@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import ThemeSwitcher from "../components/ThemeSwitcher";
+import AccountMenu from "../components/AccountMenu";
 import { AuthModal } from "../components/AuthModal";
 import { useTheme } from "../hooks/useTheme";
 import { useAuth } from "../hooks/useAuth";
@@ -281,7 +282,6 @@ const MyDesigns: React.FC = () => {
     "updated",
   );
   const [filterBy, setFilterBy] = useState<"all" | "owned" | "shared">("all");
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [diagramToDelete, setDiagramToDelete] = useState<SavedDiagramSummary | null>(
@@ -298,12 +298,10 @@ const MyDesigns: React.FC = () => {
     () => new Set(),
   );
   const {
-    user,
     isAuthenticated: isAuth,
     login,
     signup,
     googleLogin,
-    logout,
   } = useAuth();
   const toast = useToast();
 
@@ -671,80 +669,17 @@ const MyDesigns: React.FC = () => {
                 <ThemeSwitcher />
 
                 {/* Authentication UI */}
-                <div className="relative">
-                  {isAuth ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setShowUserMenu(!showUserMenu)}
-                        className="my-designs-account flex items-center gap-2 px-3 py-2 rounded-md transition-colors cursor-pointer"
-                      >
-                        {user?.picture ? (
-                          <img
-                            src={user.picture}
-                            alt={user.name || "User"}
-                            className="w-8 h-8 rounded-full object-cover border-2 border-white/30"
-                          />
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-medium">
-                            {user?.name?.[0]?.toUpperCase() || "U"}
-                          </div>
-                        )}
-                        <span className="hidden sm:inline text-sm">
-                          {user?.name || user?.email}
-                        </span>
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </button>
-
-                      {/* User Dropdown Menu */}
-                      {showUserMenu && (
-                        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-[var(--elevated)] backdrop-blur-sm ring-1 ring-black/5 border border-[var(--border)]">
-                          <div className="py-1">
-                            <div className="px-4 py-3 border-b border-[var(--border)]">
-                              <p className="text-sm font-medium text-theme">
-                                {user?.name}
-                              </p>
-                              <p className="text-sm text-muted truncate">
-                                {user?.email}
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setShowUserMenu(false);
-                                logout();
-                              }}
-                              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
-                            >
-                              Sign Out
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setShowAuthModal(true)}
-                      className="my-designs-sign-in px-4 py-2 text-sm font-medium rounded-md transition-all cursor-pointer"
-                    >
-                      Sign In
-                    </button>
-                  )}
-                </div>
+                {isAuth ? (
+                  <AccountMenu variant="inverse" />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowAuthModal(true)}
+                    className="my-designs-sign-in px-4 py-2 text-sm font-medium rounded-md transition-all cursor-pointer"
+                  >
+                    Sign In
+                  </button>
+                )}
               </div>
             </div>
           </div>

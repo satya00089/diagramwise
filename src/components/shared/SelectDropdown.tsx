@@ -9,6 +9,7 @@ export interface SelectDropdownProps {
   "aria-label": string;
   disabled?: boolean;
   className?: string;
+  menuPlacement?: "top" | "bottom";
   onFocus?: React.FocusEventHandler<HTMLButtonElement>;
   onBlur?: React.FocusEventHandler<HTMLButtonElement>;
 }
@@ -21,6 +22,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
   "aria-label": ariaLabel,
   disabled = false,
   className = "",
+  menuPlacement = "bottom",
   onFocus,
   onBlur,
 }) => {
@@ -95,7 +97,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
       {open && (
         <div
           id={`${id}-menu`}
-          className="dashboard-select-menu"
+          className={`dashboard-select-menu dashboard-select-menu--${menuPlacement}`}
           role="listbox"
           aria-label={ariaLabel}
         >

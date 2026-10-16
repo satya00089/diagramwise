@@ -3,6 +3,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useOnboarding } from "../hooks/useOnboarding";
 import { apiService } from "../services/api";
 import { MdClose } from "react-icons/md";
+import SelectDropdown from "./shared/SelectDropdown";
 
 const roles = [
   "Student",
@@ -167,7 +168,7 @@ export const QuickSetupModal: React.FC = () => {
         onClick={() => setVisible(false)}
       />
 
-      <div className="app-modal relative w-full overflow-hidden">
+      <div className="app-modal quick-setup-modal relative w-full">
         <button
           aria-label="Close quick setup"
           onClick={() => setVisible(false)}
@@ -197,32 +198,28 @@ export const QuickSetupModal: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <label className="block">
                 <div className="app-modal__label">Role</div>
-                <select
+                <SelectDropdown
+                  id="quick-setup-role"
                   value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="app-modal__field mt-1 block w-full"
-                >
-                  {roles.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
-                </select>
+                  options={roles}
+                  onChange={setRole}
+                  aria-label="Role"
+                  disabled={submitting}
+                  className="app-modal__select mt-1"
+                />
               </label>
 
               <label className="block">
                 <div className="app-modal__label">Experience</div>
-                <select
+                <SelectDropdown
+                  id="quick-setup-experience"
                   value={experience}
-                  onChange={(e) => setExperience(e.target.value)}
-                  className="app-modal__field mt-1 block w-full"
-                >
-                  {experienceLevels.map((lev) => (
-                    <option key={lev} value={lev}>
-                      {lev}
-                    </option>
-                  ))}
-                </select>
+                  options={experienceLevels}
+                  onChange={setExperience}
+                  aria-label="Experience"
+                  disabled={submitting}
+                  className="app-modal__select mt-1"
+                />
               </label>
 
               <label className="block md:col-span-2">
@@ -241,32 +238,30 @@ export const QuickSetupModal: React.FC = () => {
 
               <label className="block">
                 <div className="app-modal__label">Preferred cloud</div>
-                <select
+                <SelectDropdown
+                  id="quick-setup-cloud"
                   value={preferredCloud}
-                  onChange={(e) => setPreferredCloud(e.target.value)}
-                  className="app-modal__field mt-1 block w-full"
-                >
-                  {clouds.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
+                  options={clouds}
+                  onChange={setPreferredCloud}
+                  aria-label="Preferred cloud"
+                  disabled={submitting}
+                  className="app-modal__select mt-1"
+                  menuPlacement="top"
+                />
               </label>
 
               <label className="block">
                 <div className="app-modal__label">Preferred content</div>
-                <select
+                <SelectDropdown
+                  id="quick-setup-content"
                   value={preferredContent}
-                  onChange={(e) => setPreferredContent(e.target.value)}
-                  className="app-modal__field mt-1 block w-full"
-                >
-                  {contentTypes.map((ct) => (
-                    <option key={ct} value={ct}>
-                      {ct}
-                    </option>
-                  ))}
-                </select>
+                  options={contentTypes}
+                  onChange={setPreferredContent}
+                  aria-label="Preferred content"
+                  disabled={submitting}
+                  className="app-modal__select mt-1"
+                  menuPlacement="top"
+                />
               </label>
             </div>
 

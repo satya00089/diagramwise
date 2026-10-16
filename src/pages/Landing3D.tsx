@@ -6,7 +6,6 @@ import {
   HiArrowUpRight,
   HiBars2,
   HiCheck,
-  HiChevronDown,
   HiMoon,
   HiPause,
   HiPlay,
@@ -21,6 +20,7 @@ import ArchitectureDiagram, {
 } from "../components/landing3d/ArchitectureDiagram";
 import Seo from "../components/SEO";
 import { AuthModal } from "../components/AuthModal";
+import AccountMenu from "../components/AccountMenu";
 import AiConnectionGuideDialog from "../components/AiConnectionGuideDialog";
 import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
@@ -64,10 +64,9 @@ export default function Landing3D() {
   const [phase, setPhase] = useState<DesignPhase>(0);
   const [paused, setPaused] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAiConnectionGuide, setShowAiConnectionGuide] = useState(false);
-  const { user, isAuthenticated, login, signup, googleLogin, logout } =
+  const { isAuthenticated, login, signup, googleLogin } =
     useAuth();
   const { setTheme, flowColorMode } = useTheme();
   const landingTheme = flowColorMode;
@@ -188,17 +187,6 @@ export default function Landing3D() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [menuOpen]);
 
-  useEffect(() => {
-    if (!showUserMenu) return;
-    const closeOnOutsidePointer = (event: PointerEvent) => {
-      const target = event.target as Element | null;
-      if (!target?.closest(".systema-auth-control")) setShowUserMenu(false);
-    };
-    window.addEventListener("pointerdown", closeOnOutsidePointer);
-    return () =>
-      window.removeEventListener("pointerdown", closeOnOutsidePointer);
-  }, [showUserMenu]);
-
   return (
     <div className="systema-page" data-theme={landingTheme}>
       <div
@@ -270,59 +258,7 @@ export default function Landing3D() {
           </span>
           <div className="systema-auth-control">
             {isAuthenticated ? (
-              <>
-                <button
-                  type="button"
-                  className="systema-account-button"
-                  aria-label="Open account menu"
-                  aria-expanded={showUserMenu}
-                  onClick={() => setShowUserMenu((open) => !open)}
-                >
-                  {user?.picture ? (
-                    <img
-                      src={user.picture}
-                      alt={user.name || "User"}
-                      className="systema-account-avatar systema-account-avatar-image"
-                    />
-                  ) : (
-                    <span className="systema-account-avatar">
-                      {user?.name?.[0]?.toUpperCase() ||
-                        user?.email?.[0]?.toUpperCase() ||
-                        "U"}
-                    </span>
-                  )}
-                  <span className="systema-account-name">
-                    {user?.name || user?.email}
-                  </span>
-                  <HiChevronDown
-                    aria-hidden="true"
-                    className={`systema-account-chevron ${showUserMenu ? "systema-account-chevron--open" : ""}`}
-                  />
-                </button>
-                {showUserMenu && (
-                  <div className="systema-account-menu">
-                    <div className="systema-account-menu__identity">
-                      <strong>{user?.name || "User"}</strong>
-                      <span>{user?.email}</span>
-                    </div>
-                    <Link
-                      to="/profile"
-                      className="systema-account-menu__profile"
-                    >
-                      Your profile
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        logout();
-                        setShowUserMenu(false);
-                      }}
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                )}
-              </>
+              <AccountMenu variant="landing" />
             ) : (
               <button
                 type="button"
@@ -392,26 +328,7 @@ export default function Landing3D() {
               AI connections
             </button>
             {isAuthenticated ? (
-              <>
-                <div className="systema-mobile-nav-account">
-                  <span className="systema-account-avatar">
-                    {user?.name?.[0]?.toUpperCase() ||
-                      user?.email?.[0]?.toUpperCase() ||
-                      "U"}
-                  </span>
-                  <span>{user?.name || user?.email}</span>
-                </div>
-                <button
-                  type="button"
-                  className="systema-mobile-nav-sign-in"
-                  onClick={() => {
-                    logout();
-                    setMenuOpen(false);
-                  }}
-                >
-                  Sign Out
-                </button>
-              </>
+              <AccountMenu variant="landing" />
             ) : (
               <button
                 type="button"

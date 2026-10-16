@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { AuthModal } from "../components/AuthModal";
 import ThemeSwitcher from "../components/ThemeSwitcher";
@@ -20,14 +20,11 @@ const LearningPath: React.FC = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const {
-    user,
     isAuthenticated: isAuth,
     login,
     signup,
     googleLogin,
-    logout,
   } = useAuth();
-  const [showUserMenu, setShowUserMenu] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [path, setPath] = useState<LPType | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
@@ -124,84 +121,15 @@ const LearningPath: React.FC = () => {
                 <span className="hidden sm:inline">All Paths</span>
               </button>
               <ThemeSwitcher />
-              <div className="relative">
-                {isAuth ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setShowUserMenu(!showUserMenu)}
-                      className="detail-account-button"
-                    >
-                      {user?.picture ? (
-                        <img
-                          src={user.picture}
-                          alt={user.name || "User"}
-                          className="detail-avatar detail-avatar-image"
-                        />
-                      ) : (
-                        <div className="detail-avatar">
-                          {user?.name?.[0]?.toUpperCase() ||
-                            user?.email?.[0]?.toUpperCase() ||
-                            "U"}
-                        </div>
-                      )}
-                      <span className="hidden sm:inline max-w-[150px] truncate">
-                        {user?.name || user?.email}
-                      </span>
-                      <span aria-hidden="true">⌄</span>
-                    </button>
-                    {showUserMenu && (
-                      <div className="detail-user-menu">
-                        <div className="px-4 py-2">
-                          <p className="text-sm font-medium text-theme">
-                            {user?.name || "User"}
-                          </p>
-                          <p className="text-xs text-muted truncate">
-                            {user?.email}
-                          </p>
-                        </div>
-                        <Link
-                          to="/profile"
-                          onClick={() => setShowUserMenu(false)}
-                          className="detail-user-menu-item border-b border-theme/10"
-                        >
-                          Your profile
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            globalThis.dispatchEvent(
-                              new Event("open-quick-setup"),
-                            );
-                            setShowUserMenu(false);
-                          }}
-                          className="detail-user-menu-item border-b border-theme/10"
-                        >
-                          Edit preferences
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            logout();
-                            setShowUserMenu(false);
-                          }}
-                          className="detail-user-menu-item text-red-600"
-                        >
-                          Sign Out
-                        </button>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setShowAuthModal(true)}
-                    className="product-sign-in detail-sign-in"
-                  >
-                    Sign In
-                  </button>
-                )}
-              </div>
+              {!isAuth && (
+                <button
+                  type="button"
+                  onClick={() => setShowAuthModal(true)}
+                  className="product-sign-in detail-sign-in"
+                >
+                  Sign In
+                </button>
+              )}
             </>
           }
         />
