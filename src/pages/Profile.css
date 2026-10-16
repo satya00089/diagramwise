@@ -219,7 +219,7 @@
   padding: calc(0.8rem - 1px);
 }
 
-.profile-avatar-option > svg:last-child {
+.profile-avatar-option-check {
   position: absolute;
   top: 0.45rem;
   right: 0.45rem;
@@ -228,8 +228,10 @@
 }
 
 .profile-avatar-option-image {
-  width: 4.5rem;
-  height: 4.5rem;
+  display: block;
+  width: 5rem;
+  height: 5rem;
+  flex: 0 0 auto;
   object-fit: cover;
 }
 
@@ -797,8 +799,8 @@
   }
 
   .profile-avatar-option-image {
-    width: 3.75rem;
-    height: 3.75rem;
+    width: 4.25rem;
+    height: 4.25rem;
   }
 
   .profile-heading h1 {
