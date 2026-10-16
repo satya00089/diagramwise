@@ -304,7 +304,6 @@
   padding: 0.85rem 0;
 }
 
-.profile-account-heading,
 .profile-form-actions {
   display: flex;
   align-items: center;
@@ -312,11 +311,33 @@
   gap: 0.75rem;
 }
 
-.profile-account-heading > p {
-  margin: 0;
+.profile-name-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.profile-edit-icon-button {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
   color: var(--muted);
-  font-size: 0.84rem;
-  line-height: 1.5;
+  font-size: 1rem;
+  cursor: pointer;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+.profile-edit-icon-button:hover {
+  background: var(--surface);
+  color: var(--accent);
 }
 
 .profile-name-form {
