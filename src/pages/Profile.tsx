@@ -688,7 +688,7 @@ const Profile: React.FC = () => {
                           )}
                           <div className="profile-form-actions">
                             <button
-                              className="profile-secondary-button"
+                              className="profile-secondary-button profile-form-cancel-button"
                               type="button"
                               onClick={() => {
                                 setEditingProfile(false);

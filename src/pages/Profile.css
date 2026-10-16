@@ -648,6 +648,17 @@
   transform: translateY(-1px);
 }
 
+.profile-form-actions .profile-form-cancel-button {
+  border-color: var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
+.profile-form-actions .profile-form-cancel-button:hover {
+  background: var(--surface);
+  opacity: 1;
+}
+
 .profile-account-action {
   display: grid;
   justify-items: start;
