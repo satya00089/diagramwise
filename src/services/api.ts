@@ -243,6 +243,25 @@ class ApiService {
     return response.json();
   }
 
+  async updateProfile(profile: {
+    firstName: string;
+    lastName: string;
+  }): Promise<User> {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/me/profile`, {
+      method: "PATCH",
+      headers: this.getAuthHeaders(),
+      body: JSON.stringify(profile),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        await this.getErrorMessage(response, "Failed to update profile"),
+      );
+    }
+
+    return response.json();
+  }
+
   // User preferences endpoints
   async getPreferences(): Promise<Record<string, unknown> | null> {
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/me/preferences`, {
