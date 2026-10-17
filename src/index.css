@@ -679,7 +679,7 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   flex: none;
   align-items: center;
   justify-content: center;
-  transform: scale(1.5);
+  transform: scale(1.867);
 }
 
 .account-menu__avatar {

@@ -59,7 +59,7 @@ const AccountMenu = ({ variant = "default" }: AccountMenuProps) => {
             userId={user.id}
             picture={user.picture}
             avatarKey={user.avatarKey}
-            size={48}
+            size={56}
             className="account-menu__avatar"
             animate="always"
           />
