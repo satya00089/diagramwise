@@ -58,8 +58,9 @@ const AccountMenu = ({ variant = "default" }: AccountMenuProps) => {
           userId={user.id}
           picture={user.picture}
           avatarKey={user.avatarKey}
-          size={32}
+          size={72}
           className="account-menu__avatar"
+          animate="always"
         />
         <span className="account-menu__name">{accountName}</span>
         <HiChevronDown
