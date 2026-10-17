@@ -647,7 +647,6 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
 }
 
 .account-menu__trigger {
-  --account-menu-avatar-size: 6em;
   display: inline-flex;
   min-height: 38px;
   max-width: 220px;
@@ -673,9 +672,19 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   outline-offset: 2px;
 }
 
+.account-menu__avatar-frame {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  transform: scale(1.5);
+}
+
 .account-menu__avatar {
-  width: var(--account-menu-avatar-size);
-  height: var(--account-menu-avatar-size);
+  width: 30px;
+  height: 30px;
   flex: none;
   border-radius: 50%;
   object-fit: cover;
