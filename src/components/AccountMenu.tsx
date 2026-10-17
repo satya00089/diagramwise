@@ -54,13 +54,16 @@ const AccountMenu = ({ variant = "default" }: AccountMenuProps) => {
         aria-controls={panelId}
         onClick={() => setOpen((value) => !value)}
       >
-        <UserAvatar
-          userId={user.id}
-          picture={user.picture}
-          avatarKey={user.avatarKey}
-          size={32}
-          className="account-menu__avatar"
-        />
+        <span className="account-menu__avatar-frame" aria-hidden="true">
+          <UserAvatar
+            userId={user.id}
+            picture={user.picture}
+            avatarKey={user.avatarKey}
+            size={56}
+            className="account-menu__avatar"
+            animate="always"
+          />
+        </span>
         <span className="account-menu__name">{accountName}</span>
         <HiChevronDown
           className={`account-menu__chevron${open ? " account-menu__chevron--open" : ""}`}

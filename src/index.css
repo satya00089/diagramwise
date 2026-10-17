@@ -672,6 +672,16 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   outline-offset: 2px;
 }
 
+.account-menu__avatar-frame {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  transform: scale(1.867);
+}
+
 .account-menu__avatar {
   width: 30px;
   height: 30px;
