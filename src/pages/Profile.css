@@ -661,6 +661,29 @@
   transform: translateY(-1px);
 }
 
+.profile-account-action button {
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.profile-account-action button:hover {
+  border-color: #b42318;
+  background: color-mix(in srgb, #b42318 10%, var(--surface));
+  color: #b42318;
+  opacity: 1;
+  transform: none;
+}
+
+.dark .profile-account-action button:hover {
+  border-color: #ff8a80;
+  background: color-mix(in srgb, #ff8a80 14%, var(--surface));
+  color: #ff8a80;
+}
+
 .profile-form-actions .profile-form-cancel-button {
   border-color: var(--border);
   background: transparent;

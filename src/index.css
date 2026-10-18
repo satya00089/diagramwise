@@ -768,6 +768,14 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
 
 .account-menu__item--current { color: var(--product-accent, var(--accent)); }
 .account-menu__item--sign-out { border-top: 1px solid var(--border); }
+.account-menu__item--sign-out:hover {
+  background: color-mix(in srgb, #b42318 10%, var(--surface, var(--bg)));
+  color: #b42318;
+}
+.dark .account-menu__item--sign-out:hover {
+  background: color-mix(in srgb, #ff8a80 14%, var(--surface, var(--bg)));
+  color: #ff8a80;
+}
 .account-menu--inverse { color: #fff; }
 .account-menu--inverse .account-menu__trigger:hover { background: rgb(255 255 255 / 14%); }
 .account-menu--inverse .account-menu__avatar--initials { background: rgb(255 255 255 / 18%); }
