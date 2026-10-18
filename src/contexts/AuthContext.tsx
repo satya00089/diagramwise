@@ -14,13 +14,15 @@ import type {
 } from "../types/auth";
 import { apiService } from "../services/api";
 import useAnalytics from "../hooks/useAnalytics";
+import { useToast } from "../hooks/useToast";
+import { ToastContainer } from "../components/Toast";
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   signup: (credentials: SignupCredentials) => Promise<void>;
   googleLogin: (credential: string) => Promise<void>;
   completeSession: (response: AuthResponse) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
@@ -43,6 +45,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     isEnabled: true,
     trackTimeOnUnmount: false,
   });
+  const { toasts, removeToast, warning: showWarning } = useToast();
 
   // Check if token is expired
   const isTokenExpired = useCallback((token: string): boolean => {
@@ -56,7 +59,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   // Define logout first so it can be used in other functions
-  const logout = useCallback(() => {
+  const logout = useCallback(async (): Promise<void> => {
+    const token = localStorage.getItem("auth_token");
     localStorage.removeItem("auth_token");
     setState({
       user: null,
@@ -64,7 +68,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       isAuthenticated: false,
       isLoading: false,
     });
-  }, []);
+    if (!token) return;
+    try {
+      await apiService.logout(token);
+    } catch (error) {
+      console.warn("Server-side session revocation could not be confirmed:", error);
+      showWarning(
+        "Signed out on this device. The server could not confirm session revocation, so this session may remain valid until it expires.",
+        8000,
+      );
+    }
+  }, [showWarning]);
 
   // Initialize auth state from localStorage
   useEffect(() => {
@@ -84,6 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       try {
         const user = await apiService.getCurrentUser();
+        if (localStorage.getItem("auth_token") !== token) return;
         setState({
           user,
           token,
@@ -92,12 +107,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         });
       } catch (error) {
         console.error("Failed to fetch user:", error);
-        localStorage.removeItem("auth_token");
-        setState((prev) => ({ ...prev, isLoading: false }));
+        if (localStorage.getItem("auth_token") === token) {
+          localStorage.removeItem("auth_token");
+          setState((prev) => ({ ...prev, isLoading: false }));
+        }
       }
     };
 
     initAuth();
+  }, [isTokenExpired]);
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== "auth_token") return;
+      const token = event.newValue;
+      if (!token) {
+        setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
+        return;
+      }
+      if (isTokenExpired(token)) {
+        if (localStorage.getItem("auth_token") === token) {
+          localStorage.removeItem("auth_token");
+        }
+        setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
+        return;
+      }
+      setState((prev) => ({ ...prev, isLoading: true }));
+      void apiService.getCurrentUser().then((user) => {
+        if (localStorage.getItem("auth_token") !== token) return;
+        setState({ user, token, isAuthenticated: true, isLoading: false });
+      }).catch(() => {
+        if (localStorage.getItem("auth_token") !== token) return;
+        localStorage.removeItem("auth_token");
+        setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
+      });
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
   }, [isTokenExpired]);
 
   const login = useCallback(async (credentials: LoginCredentials) => {
@@ -159,6 +205,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   return (
-    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>
+      {children}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+    </AuthContext.Provider>
   );
 };

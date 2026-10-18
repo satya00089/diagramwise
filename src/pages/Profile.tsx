@@ -770,7 +770,7 @@ const Profile: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    logout();
+                    void logout();
                     navigate("/");
                   }}
                 >

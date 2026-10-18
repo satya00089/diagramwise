@@ -113,6 +113,8 @@ const Toast: React.FC<ToastProps> = ({ toast, onClose }) => {
       initial={{ opacity: 0, y: -50, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
+      role={toast.type === "warning" || toast.type === "error" ? "alert" : "status"}
+      aria-live={toast.type === "warning" || toast.type === "error" ? "assertive" : "polite"}
       className={`${getToastStyles()} rounded-lg shadow-lg p-4 flex items-center gap-3 min-w-[300px] max-w-md`}
     >
       <div className="flex-shrink-0">{getIcon()}</div>

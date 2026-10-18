@@ -93,7 +93,7 @@ const AccountMenu = ({ variant = "default" }: AccountMenuProps) => {
             type="button"
             onClick={() => {
               setOpen(false);
-              logout();
+              void logout();
               navigate("/");
             }}
           >
