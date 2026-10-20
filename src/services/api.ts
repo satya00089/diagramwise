@@ -137,6 +137,25 @@ class ApiService {
     return response.json();
   }
 
+  async logout(token: string): Promise<void> {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 5000);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal,
+      });
+      // An expired or already revoked token cannot be used again.
+      if (response.status === 401) return;
+      if (!response.ok) {
+        throw await this.createApiError(response, "Could not revoke this session");
+      }
+    } finally {
+      window.clearTimeout(timeout);
+    }
+  }
+
   async signup(credentials: SignupCredentials): Promise<SignupPendingResponse> {
     const response = await fetch(`${API_BASE_URL}/api/v1/auth/signup`, {
       method: "POST",
