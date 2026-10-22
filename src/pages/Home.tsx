@@ -198,6 +198,7 @@ const PermissionBadge: React.FC<{
         viewBox="0 0 24 24"
         stroke="currentColor"
         strokeWidth={2.5}
+        aria-hidden="true"
       >
         <PermissionIcon permission={permission} />
       </svg>
@@ -734,7 +735,7 @@ const Home: React.FC = () => {
             <canvas
               ref={canvasRef}
               className="absolute inset-0 w-full h-full pointer-events-none"
-              role="presentation"
+              aria-hidden="true"
             />
             {/* Animated decorative graph */}
             <div className="absolute inset-0 pointer-events-none">
@@ -831,6 +832,7 @@ const Home: React.FC = () => {
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -1180,6 +1182,7 @@ const Home: React.FC = () => {
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
+                      aria-hidden="true"
                     >
                       <path
                         strokeLinecap="round"
@@ -1269,6 +1272,7 @@ const Home: React.FC = () => {
                                         viewBox="0 0 24 24"
                                         stroke="currentColor"
                                         strokeWidth={3}
+                                        aria-hidden="true"
                                       >
                                         <path
                                           strokeLinecap="round"
@@ -1308,6 +1312,7 @@ const Home: React.FC = () => {
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
+                              aria-hidden="true"
                             >
                               <path
                                 strokeLinecap="round"
@@ -1325,6 +1330,7 @@ const Home: React.FC = () => {
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
+                              aria-hidden="true"
                             >
                               <path
                                 strokeLinecap="round"

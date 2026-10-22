@@ -576,7 +576,7 @@ var HL = (() => {
       }
     }
     const style = doc.createElement("style");
-    style.setAttribute("data-hairline-style", "");
+    style.dataset.hairlineStyle = "";
     style.textContent = text;
     (root.nodeType === 9 ? doc.head ?? doc.documentElement : root).appendChild(style);
   }

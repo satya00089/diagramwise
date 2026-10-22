@@ -121,7 +121,7 @@ export function useAnalytics({
         target.closest &&
         (target.closest("[data-analytics]") as HTMLElement | null);
       if (!el) return;
-      const attr = el.getAttribute("data-analytics");
+      const attr = el.dataset.analytics;
       if (!attr) return;
       // Attribute format: "event:cta_signup" or "cta:signup"
       const parts = attr.split(":");

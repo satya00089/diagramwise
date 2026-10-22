@@ -17,7 +17,7 @@ const StyledFlowControls: React.FC<React.ComponentProps<typeof Controls>> = (pro
       root.querySelectorAll<HTMLElement>("[title]").forEach((element) => {
         const title = element.getAttribute("title");
         if (!title) return;
-        element.setAttribute("data-tooltip", title);
+        element.dataset.tooltip = title;
         element.removeAttribute("title");
       });
     };

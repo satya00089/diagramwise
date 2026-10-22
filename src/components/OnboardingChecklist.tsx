@@ -187,7 +187,11 @@ const OnboardingChecklist: React.FC = () => {
       >
         {/* Circular progress indicator */}
         <div className="relative h-7 w-7 shrink-0">
-          <svg className="h-7 w-7 -rotate-90" viewBox="0 0 28 28">
+          <svg
+            className="h-7 w-7 -rotate-90"
+            viewBox="0 0 28 28"
+            aria-hidden="true"
+          >
             <circle
               cx="14"
               cy="14"
