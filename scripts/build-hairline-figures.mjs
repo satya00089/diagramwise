@@ -36,7 +36,8 @@ for (const name of [...names, ...toolkitNames]) {
   const shared = toolkitNames.has(name)
     ? await read("toolkit-geometry.js")
     : geometry;
-  const figure = `/* ${license.replace(/\s+/g, " ")} */\n${shared}\n${await read(`${name}.js`)}\n`;
+  const scene = await read(`${name}.js`);
+  const figure = `/* ${license.replace(/\s+/g, " ")} */\n${shared}\n${scene}\n`;
   // Preserve the skill's fixed bench; the production host is a separate template.
   await writeFile(rawOut, inject(bench, figure), "utf8");
   const productionHost = toolkitNames.has(name)
