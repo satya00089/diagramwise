@@ -40,7 +40,7 @@ export const QuickSetupModal: React.FC = () => {
       if (typeof val === "string") return val;
       if (typeof val === "number" || typeof val === "boolean")
         return String(val);
-      if (Array.isArray(val)) return val.map((v) => String(v)).join(", ");
+      if (Array.isArray(val)) return val.map(String).join(", ");
       if (typeof val === "object") {
         const anyVal = val as Record<string, unknown>;
         if (typeof anyVal.value === "string") return anyVal.value;
@@ -63,7 +63,7 @@ export const QuickSetupModal: React.FC = () => {
 
     const pi = prefs.primary_interest;
     if (Array.isArray(pi)) {
-      setPrimaryInterest(pi.map((v) => String(v)).join(", "));
+      setPrimaryInterest(pi.map(String).join(", "));
     } else {
       const parsed = toStringSafe(pi);
       if (parsed) setPrimaryInterest(parsed);

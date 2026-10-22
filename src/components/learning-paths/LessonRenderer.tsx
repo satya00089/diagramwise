@@ -14,7 +14,7 @@ function ExerciseRunner({
 
   const parseNumber = (s?: string) => {
     if (!s) return Number.NaN;
-    const cleaned = s.replaceAll(",", "").match(/-?\d+(?:\.\d+)?/);
+    const cleaned = /-?\d+(?:\.\d+)?/.exec(s.replaceAll(",", ""));
     return cleaned ? Number.parseFloat(cleaned[0]) : Number.NaN;
   };
 
@@ -95,7 +95,7 @@ function ExerciseRunner({
     validateString(q, user);
   };
 
-  if (!exercise || !exercise.questions || exercise.questions.length === 0) {
+  if (!exercise?.questions?.length) {
     return <div className="text-sm text-muted">No exercises available.</div>;
   }
 

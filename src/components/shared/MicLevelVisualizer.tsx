@@ -23,8 +23,8 @@ const formatElapsed = (totalSeconds: number) => {
 /** RMS amplitude (0..1) of a time-domain byte buffer centered at 128. */
 const computeAmplitude = (data: Uint8Array) => {
   let sumSquares = 0;
-  for (let i = 0; i < data.length; i++) {
-    const normalized = (data[i] - 128) / 128;
+  for (const value of data) {
+    const normalized = (value - 128) / 128;
     sumSquares += normalized * normalized;
   }
   const rms = Math.sqrt(sumSquares / data.length);

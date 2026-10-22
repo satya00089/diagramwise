@@ -26,9 +26,9 @@ const connectionDetails = {
   },
 } as const;
 
-type AiConnectionGuideDialogProps = {
+type AiConnectionGuideDialogProps = Readonly<{
   onClose: () => void;
-};
+}>;
 
 export default function AiConnectionGuideDialog({
   onClose,
@@ -52,7 +52,7 @@ export default function AiConnectionGuideDialog({
 
   const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
     const currentIndex = providers.indexOf(provider);
-    let nextIndex = currentIndex;
+    let nextIndex: number;
     if (event.key === "ArrowRight")
       nextIndex = (currentIndex + 1) % providers.length;
     else if (event.key === "ArrowLeft")

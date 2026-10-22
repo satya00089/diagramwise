@@ -7,12 +7,12 @@ const sourceRoot = join(here, "hairline-figures");
 const outputRoot = join(appRoot, "public", "path-figures");
 const embedRoot = join(outputRoot, "embed");
 const names = ["workbench", "switchback", "inspection-stack", "drafting-board"];
-const toolkitNames = [
+const toolkitNames = new Set([
   "component-rack",
   "annotation-bridge",
   "assessment-sheet",
   "share-frame",
-];
+]);
 
 await mkdir(outputRoot, { recursive: true });
 await mkdir(embedRoot, { recursive: true });
@@ -33,13 +33,13 @@ const inject = (template, figure) =>
     .replace("/*FIGURE*/", () => `\n${figure.trim()}\n`);
 for (const name of [...names, ...toolkitNames]) {
   const rawOut = join(outputRoot, `${name}.html`);
-  const shared = toolkitNames.includes(name)
+  const shared = toolkitNames.has(name)
     ? await read("toolkit-geometry.js")
     : geometry;
   const figure = `/* ${license.replace(/\s+/g, " ")} */\n${shared}\n${await read(`${name}.js`)}\n`;
   // Preserve the skill's fixed bench; the production host is a separate template.
   await writeFile(rawOut, inject(bench, figure), "utf8");
-  const productionHost = toolkitNames.includes(name)
+  const productionHost = toolkitNames.has(name)
     ? embed.replace('viewBox="0 0 400 320"', 'viewBox="0 65 400 230"')
     : embed;
   await writeFile(
