@@ -472,8 +472,8 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
             {Object.keys(step.component.properties).length > 0 && (
               <div className="space-y-2">
                 <p className="text-[10px] text-muted/50 uppercase tracking-wide font-medium">
-                  Properties
-                  <span className="ml-1 normal-case font-normal opacity-60">
+                  Properties{" "}
+                  <span className="normal-case font-normal opacity-60">
                     — tap a row to learn why
                   </span>
                 </p>

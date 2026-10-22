@@ -163,28 +163,30 @@ export const useChatSuggestions = (
       intentText.includes("schema") ||
       intentText.includes("er ")
     ) {
-      fallbackSuggestions.push({
-        id: "er-entity",
-        title: "Add Entity",
-        description: "Create a database entity with attributes",
-        action: () => {}, // Will be handled by parent
-        icon: "📦",
-        category: "component",
-        priority: 10,
-        componentId: "er-entity",
-        actionType: "add-component",
-      });
-      fallbackSuggestions.push({
-        id: "er-relationship",
-        title: "Add Relationship",
-        description: "Connect entities with relationships",
-        action: () => {},
-        icon: "🔗",
-        category: "component",
-        priority: 9,
-        componentId: "er-relationship",
-        actionType: "add-component",
-      });
+      fallbackSuggestions.push(
+        {
+          id: "er-entity",
+          title: "Add Entity",
+          description: "Create a database entity with attributes",
+          action: () => {}, // Will be handled by parent
+          icon: "📦",
+          category: "component",
+          priority: 10,
+          componentId: "er-entity",
+          actionType: "add-component",
+        },
+        {
+          id: "er-relationship",
+          title: "Add Relationship",
+          description: "Connect entities with relationships",
+          action: () => {},
+          icon: "🔗",
+          category: "component",
+          priority: 9,
+          componentId: "er-relationship",
+          actionType: "add-component",
+        },
+      );
     }
 
     // UML/Class diagram patterns
@@ -194,28 +196,30 @@ export const useChatSuggestions = (
       intentText.includes("oop") ||
       intentText.includes("object-oriented")
     ) {
-      fallbackSuggestions.push({
-        id: "uml-class",
-        title: "Add Class",
-        description: "Create a UML class with methods and properties",
-        action: () => {},
-        icon: "🎓",
-        category: "component",
-        priority: 10,
-        componentId: "uml-class",
-        actionType: "add-component",
-      });
-      fallbackSuggestions.push({
-        id: "uml-interface",
-        title: "Add Interface",
-        description: "Define an interface for your design",
-        action: () => {},
-        icon: "📋",
-        category: "component",
-        priority: 8,
-        componentId: "uml-interface",
-        actionType: "add-component",
-      });
+      fallbackSuggestions.push(
+        {
+          id: "uml-class",
+          title: "Add Class",
+          description: "Create a UML class with methods and properties",
+          action: () => {},
+          icon: "🎓",
+          category: "component",
+          priority: 10,
+          componentId: "uml-class",
+          actionType: "add-component",
+        },
+        {
+          id: "uml-interface",
+          title: "Add Interface",
+          description: "Define an interface for your design",
+          action: () => {},
+          icon: "📋",
+          category: "component",
+          priority: 8,
+          componentId: "uml-interface",
+          actionType: "add-component",
+        },
+      );
     }
 
     // System Design patterns
@@ -225,39 +229,41 @@ export const useChatSuggestions = (
       intentText.includes("microservice") ||
       intentText.includes("api")
     ) {
-      fallbackSuggestions.push({
-        id: "api-gateway",
-        title: "Add API Gateway",
-        description: "Central entry point for your services",
-        action: () => {},
-        icon: "🚪",
-        category: "component",
-        priority: 10,
-        componentId: "api-gateway",
-        actionType: "add-component",
-      });
-      fallbackSuggestions.push({
-        id: "load-balancer",
-        title: "Add Load Balancer",
-        description: "Distribute traffic across servers",
-        action: () => {},
-        icon: "⚖️",
-        category: "component",
-        priority: 9,
-        componentId: "loadbalancer",
-        actionType: "add-component",
-      });
-      fallbackSuggestions.push({
-        id: "database",
-        title: "Add Database",
-        description: "Add a database to store your data",
-        action: () => {},
-        icon: "💾",
-        category: "component",
-        priority: 8,
-        componentId: "database",
-        actionType: "add-component",
-      });
+      fallbackSuggestions.push(
+        {
+          id: "api-gateway",
+          title: "Add API Gateway",
+          description: "Central entry point for your services",
+          action: () => {},
+          icon: "🚪",
+          category: "component",
+          priority: 10,
+          componentId: "api-gateway",
+          actionType: "add-component",
+        },
+        {
+          id: "load-balancer",
+          title: "Add Load Balancer",
+          description: "Distribute traffic across servers",
+          action: () => {},
+          icon: "⚖️",
+          category: "component",
+          priority: 9,
+          componentId: "loadbalancer",
+          actionType: "add-component",
+        },
+        {
+          id: "database",
+          title: "Add Database",
+          description: "Add a database to store your data",
+          action: () => {},
+          icon: "💾",
+          category: "component",
+          priority: 8,
+          componentId: "database",
+          actionType: "add-component",
+        },
+      );
     }
 
     // Cache patterns
@@ -387,32 +393,33 @@ export const useChatSuggestions = (
 
     // General tips if no specific patterns matched
     if (fallbackSuggestions.length === 0) {
-      fallbackSuggestions.push({
-        id: "tip-palette",
-        title: "Explore Components",
-        description: `Browse ${COMPONENTS.length}+ components in the palette`,
-        action: () => {},
-        icon: "🎨",
-        category: "tip",
-        priority: 5,
-        actionType: "info-only",
-      });
-      fallbackSuggestions.push({
-        id: "tip-export",
-        title: "Export Your Design",
-        description: "Save your work as PNG or JSON",
-        action: () => {},
-        icon: "💾",
-        category: "tip",
-        priority: 4,
-        actionType: "info-only",
-      });
+      fallbackSuggestions.push(
+        {
+          id: "tip-palette",
+          title: "Explore Components",
+          description: `Browse ${COMPONENTS.length}+ components in the palette`,
+          action: () => {},
+          icon: "🎨",
+          category: "tip",
+          priority: 5,
+          actionType: "info-only",
+        },
+        {
+          id: "tip-export",
+          title: "Export Your Design",
+          description: "Save your work as PNG or JSON",
+          action: () => {},
+          icon: "💾",
+          category: "tip",
+          priority: 4,
+          actionType: "info-only",
+        },
+      );
     }
 
     // Sort by priority
-    return fallbackSuggestions
-      .sort((a, b) => b.priority - a.priority)
-      .slice(0, 5);
+    fallbackSuggestions.sort((a, b) => b.priority - a.priority);
+    return fallbackSuggestions.slice(0, 5);
   }, [userIntent, canvasContext]);
 
   // Return AI suggestions if available, otherwise fallback to rule-based
