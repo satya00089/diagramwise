@@ -147,7 +147,8 @@ export const useWebSocket = ({
 
     const backoffDelay =
       reconnectInterval * Math.pow(2, reconnectAttemptsRef.current);
-    const jitter = Math.random() * 1000; // Add jitter to prevent thundering herd
+    const jitterBytes = crypto.getRandomValues(new Uint32Array(1));
+    const jitter = (jitterBytes[0] / 2 ** 32) * 1000; // Prevent reconnect bursts
     const delay = Math.min(backoffDelay + jitter, 30000); // Cap at 30 seconds
 
     reconnectTimeoutRef.current = setTimeout(() => {

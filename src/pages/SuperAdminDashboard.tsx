@@ -872,7 +872,6 @@ const SuperAdminDashboard = () => {
                           className="admin-ga-city-list"
                           role="region"
                           aria-label="Top cities"
-                          tabIndex={0}
                           onScroll={syncCityNavigation}
                         >
                           {googleAnalytics.cities?.length ? (

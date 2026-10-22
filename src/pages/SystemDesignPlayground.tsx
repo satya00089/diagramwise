@@ -925,7 +925,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       }
     };
 
-    fetchProblem();
+    void fetchProblem();
   }, [idFromUrl, isSharedView]);
 
   useEffect(() => {
@@ -1661,7 +1661,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           }
         };
 
-        loadLastDiagram();
+        void loadLastDiagram();
       }
     } else if (idFromUrl && idFromUrl !== "free" && isAuthenticated) {
       // Load saved progress for problem-solving from database
@@ -1777,7 +1777,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         }
       };
 
-      loadAttempt();
+      void loadAttempt();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -3532,7 +3532,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     if (!inspectedNodeId) return;
 
     const newProperty: CustomProperty = {
-      id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+      id: `custom-${crypto.randomUUID()}`,
       key: `customProperty${(customProperties[inspectedNodeId]?.length || 0) + 1}`,
       label: `Custom Property ${(customProperties[inspectedNodeId]?.length || 0) + 1}`,
       type: "text",
@@ -4228,7 +4228,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
           {/* Color */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-muted w-12 flex-shrink-0">
+            <label
+              htmlFor="edge-color-value"
+              className="text-xs text-muted w-12 flex-shrink-0"
+            >
               Color
             </label>
             <div className="relative flex-shrink-0">
@@ -4246,6 +4249,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
               />
             </div>
             <input
+              id="edge-color-value"
               type="text"
               value={currentEdgeColor}
               placeholder="default"
@@ -4267,10 +4271,14 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
           {/* Stroke Width */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-muted w-12 flex-shrink-0">
+            <label
+              htmlFor="edge-stroke-width"
+              className="text-xs text-muted w-12 flex-shrink-0"
+            >
               Width
             </label>
             <input
+              id="edge-stroke-width"
               type="range"
               min={1}
               max={8}
@@ -6349,10 +6357,12 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        navigator.clipboard.writeText(
-                          `${globalThis.location.origin}/#/playground/free?diagramId=${currentDiagramId}`,
-                        );
-                        toast.success("Link copied to clipboard!");
+                        void navigator.clipboard
+                          .writeText(
+                            `${globalThis.location.origin}/#/playground/free?diagramId=${currentDiagramId}`,
+                          )
+                          .then(() => toast.success("Link copied to clipboard!"))
+                          .catch(() => toast.error("Could not copy the link."));
                       }}
                       className="px-3 py-2 bg-theme/10 hover:bg-theme/20 text-theme rounded-md transition-colors"
                     >

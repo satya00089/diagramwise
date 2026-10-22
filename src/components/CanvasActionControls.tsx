@@ -358,9 +358,19 @@ function CanvasesMenuBody({
   const [renameError, setRenameError] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
   const skipRenameBlur = useRef(false);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+  const newNameInputRef = useRef<HTMLInputElement>(null);
   const [actionsId, setActionsId] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dropId, setDropId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (editingId) renameInputRef.current?.focus();
+  }, [editingId]);
+
+  useEffect(() => {
+    if (adding) newNameInputRef.current?.focus();
+  }, [adding]);
 
   const notice = message ? (
     <div
@@ -545,7 +555,7 @@ function CanvasesMenuBody({
               </button>
               {editingId === canvas.id ? (
                 <input
-                  autoFocus
+                  ref={renameInputRef}
                   aria-label={`Rename ${canvas.name}`}
                   value={renameValue}
                   maxLength={60}
@@ -666,7 +676,7 @@ function CanvasesMenuBody({
           }}
         >
           <input
-            autoFocus
+            ref={newNameInputRef}
             aria-label="New page name"
             value={newName}
             maxLength={60}

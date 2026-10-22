@@ -331,7 +331,7 @@ const Home: React.FC = () => {
       }
     };
 
-    loadDiagrams();
+    void loadDiagrams();
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -734,7 +734,7 @@ const Home: React.FC = () => {
             <canvas
               ref={canvasRef}
               className="absolute inset-0 w-full h-full pointer-events-none"
-              aria-hidden="true"
+              role="presentation"
             />
             {/* Animated decorative graph */}
             <div className="absolute inset-0 pointer-events-none">

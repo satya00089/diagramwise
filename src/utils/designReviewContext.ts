@@ -70,9 +70,12 @@ export function buildProvidedReasoningContext(
     ),
     readWriteRatio: targets(
       "readWriteRatio",
-      /read.heavy|write.heavy|read.*write|\d+:\d+/i,
+      /read.heavy|write.heavy|read.{0,256}write|\d{1,12}:\d{1,12}/i,
     ),
-    latencyGoals: targets("latency", /latency|\d+\s*ms|response time/i),
+    latencyGoals: targets(
+      "latency",
+      /latency|\d{1,9}\s{0,8}ms|response time/i,
+    ),
     availabilityTarget: targets("availability", /availability|uptime|\bSLA\b/i),
     consistencyRequirements: targets(
       "consistency",

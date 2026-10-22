@@ -114,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     };
 
-    initAuth();
+    void initAuth();
   }, [isTokenExpired]);
 
   useEffect(() => {

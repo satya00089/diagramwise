@@ -816,7 +816,6 @@ const Profile: React.FC = () => {
               className="profile-avatar-options"
               ref={avatarOptionsRef}
               onScroll={handleAvatarOptionsScroll}
-              tabIndex={0}
               role="region"
               aria-label="Avatar choices"
             >
@@ -853,6 +852,15 @@ const Profile: React.FC = () => {
                 ))}
               </div>
             </div>
+            {visibleAvatarCount < BLOBATAR_MAX_AVATAR_COUNT && (
+              <button
+                type="button"
+                className="profile-secondary-button"
+                onClick={loadMoreAvatarChoices}
+              >
+                Load more avatars
+              </button>
+            )}
 
             {avatarError && (
               <p
