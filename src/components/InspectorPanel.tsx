@@ -29,6 +29,7 @@ import {
   MdLink,
   MdLockOpen,
   MdMenuBook,
+  MdPlayArrow,
   MdSettings,
   MdTrackChanges,
   MdWarning,
@@ -174,8 +175,11 @@ type InspectorPanelProps = {
     hints: string[];
     tags: string[];
   } | null;
-  activeTab: "details" | "inspector" | "assessment" | "guide";
-  setActiveTab: (t: "details" | "inspector" | "assessment" | "guide") => void;
+  activeTab: "details" | "inspector" | "assessment" | "guide" | "simulation";
+  setActiveTab: (
+    t: "details" | "inspector" | "assessment" | "guide" | "simulation",
+  ) => void;
+  simulationContent?: React.ReactNode;
   /** Problem ID used to fetch the guided walkthrough */
   problemId?: string | null;
   /** Called when the user clicks "Apply to Canvas" on a guided step */
@@ -225,6 +229,7 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
   problem,
   activeTab,
   setActiveTab,
+  simulationContent,
   problemId,
   onApplyStep,
   appliedGuidedStepIds,
@@ -601,6 +606,17 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 <span className="text-sm font-medium">Details</span>
               </button>
 
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === "simulation"}
+                className={`flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "simulation" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
+                onClick={() => setActiveTab("simulation")}
+              >
+                <MdPlayArrow className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="text-sm font-medium">Simulate</span>
+              </button>
+
               {!isFreeDesignMode && (
                 <button
                   type="button"
@@ -667,8 +683,14 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
               </div>
             )}
 
+            {activeTab === "simulation" && (
+              <div className="min-w-0 min-h-0 flex-1 overflow-x-hidden overflow-y-auto component-palette pt-1">
+                {simulationContent}
+              </div>
+            )}
+
             {/* scrollable content area under the tabs */}
-            {activeTab !== "guide" && (
+            {activeTab !== "guide" && activeTab !== "simulation" && (
               <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto component-palette">
                 {activeTab === "details" && (
                   <div>

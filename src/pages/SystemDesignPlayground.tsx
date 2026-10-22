@@ -40,6 +40,7 @@ import {
   MdHelpOutline,
   MdPublic,
   MdExtension,
+  MdPlayArrow,
 } from "react-icons/md";
 
 // Routing
@@ -146,6 +147,7 @@ import DiagramCanvas from "../components/DiagramCanvas";
 import CanvasActionControls from "../components/CanvasActionControls";
 import ComponentPalette from "../components/ComponentPalette";
 import InspectorPanel from "../components/InspectorPanel";
+import SimulationPanel from "../components/SimulationPanel";
 
 // UI Components - Nodes
 import CustomNode from "../components/Node";
@@ -2784,12 +2786,14 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
   // which tab is active in the right sidebar: 'details' or 'inspector'
   const [activeRightTab, setActiveRightTab] = useState<
-    "details" | "inspector" | "assessment" | "guide"
+    "details" | "inspector" | "assessment" | "guide" | "simulation"
   >("details");
   useEffect(() => {
     if (
       compactViewport &&
-      (activeRightTab === "assessment" || activeRightTab === "inspector")
+      (activeRightTab === "assessment" ||
+        activeRightTab === "inspector" ||
+        activeRightTab === "simulation")
     ) {
       setMobileSidebar("inspector");
     }
@@ -5704,6 +5708,18 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                     </button>
                   </div>
                 )}
+                {!isSharedView && (
+                  <button
+                    type="button"
+                    onClick={() => setActiveRightTab("simulation")}
+                    className="flex items-center gap-1.5 rounded-md border border-white/25 px-3 py-1.5 text-sm font-semibold text-white/90 transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                    aria-label="Open simulation panel"
+                    data-tooltip="Prepare and run a capacity simulation"
+                  >
+                    <MdPlayArrow className="h-4 w-4" aria-hidden="true" />
+                    <span>Simulate</span>
+                  </button>
+                )}
                 {/* Tour trigger */}
                 {!isSharedView && (
                   <button
@@ -5963,6 +5979,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             problem={problem}
             activeTab={activeRightTab}
             setActiveTab={setActiveRightTab}
+            simulationContent={
+              <SimulationPanel nodes={nodes} edges={edges} problem={problem} />
+            }
             problemId={problem?.id ?? null}
             onApplyStep={handleApplyStep}
             guideCurrentStep={guideCurrentStep}
