@@ -5,6 +5,11 @@ import { useModalDialog } from "../hooks/useModalDialog";
 const providers = ["chatgpt", "claude", "gemini"] as const;
 type Provider = (typeof providers)[number];
 type GeminiClient = "apps" | "cli";
+const providerLabels: Record<Provider, string> = {
+  chatgpt: "ChatGPT",
+  claude: "Claude",
+  gemini: "Gemini",
+};
 
 const connectionDetails = {
   chatgpt: {
@@ -109,12 +114,7 @@ export default function AiConnectionGuideDialog({
           aria-label="AI provider"
         >
           {providers.map((item, index) => {
-            const label =
-              item === "chatgpt"
-                ? "ChatGPT"
-                : item === "claude"
-                  ? "Claude"
-                  : "Gemini";
+            const label = providerLabels[item];
             return (
               <button
                 key={item}
