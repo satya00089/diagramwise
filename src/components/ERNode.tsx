@@ -55,7 +55,7 @@ const ERNode: React.FC<Props> = React.memo(
     const isEmptyValue = (val: unknown): boolean => {
       if (val === undefined || val === null || val === "") return true;
       if (typeof val === "string") {
-        const stripped = val.replaceAll(/<[^>]*>/g, "").trim();
+        const stripped = val.replaceAll(/<[^<>]*>/g, "").trim();
         return stripped === "";
       }
       return false;

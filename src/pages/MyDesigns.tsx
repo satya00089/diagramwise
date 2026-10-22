@@ -345,7 +345,7 @@ const MyDesigns: React.FC = () => {
         setLoadingDiagrams(false);
       }
     };
-    loadDiagrams();
+    void loadDiagrams();
   }, [isAuth]);
 
   const loadMoreDiagrams = useCallback(async () => {
@@ -790,9 +790,7 @@ const MyDesigns: React.FC = () => {
                         ? "No designs match your search"
                         : filterBy === "shared"
                           ? "Nothing shared with you yet"
-                          : filterBy === "owned"
-                            ? "No designs yet"
-                            : "No designs yet"}
+                          : "No designs yet"}
                     </div>
                     <div className="text-muted text-lg mb-6">
                       {searchTerm
@@ -823,15 +821,18 @@ const MyDesigns: React.FC = () => {
                         className={`my-designs-card group elevated-card-bg rounded-2xl transition-all duration-500 overflow-hidden ${CARD_DELAY_CLASSES[index] ?? ""}`}
                       >
                         <div className="relative p-6">
-                          <div
-                            className="cursor-pointer"
-                            onClick={() => handleOpenDiagram(diagram.id)}
-                          >
+                          <div>
                             <div className="flex items-start justify-between mb-4">
                               <div className="flex-1 pr-8">
                                 <div className="flex items-start gap-2 mb-2">
                                   <h3 className="text-lg font-bold text-theme group-hover:text-[var(--brand)] transition-colors duration-300 line-clamp-2 flex-1">
-                                    {diagram.title}
+                                    <button
+                                      type="button"
+                                      className="w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+                                      onClick={() => handleOpenDiagram(diagram.id)}
+                                    >
+                                      {diagram.title}
+                                    </button>
                                   </h3>
                                 </div>
 

@@ -92,7 +92,7 @@ const HeadingSelect: React.FC<{
       data-tooltip="Heading level"
       value={headingValue}
       onChange={(e) => {
-        const level = parseInt(e.target.value, 10);
+        const level = Number.parseInt(e.target.value, 10);
         if (level === 0) {
           editor.chain().focus().setParagraph().run();
         } else {
