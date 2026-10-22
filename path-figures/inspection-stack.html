@@ -874,7 +874,11 @@ function mountScene({stage,svg,read},value,kind) {
       demoTime+=dt;
       const t=clamp(demoTime/1.5,0,1), e=HL.EASE_LIFT(t);
       const p=demoTime<2.5?e:1-HL.EASE_LIFT(clamp((demoTime-2.5)/1.5,0,1));
-      const op=choice.map((_,i)=>i===2?lerp(0.55,1,p):p*(i===1?0.16:0.07));
+      const op=choice.map((_,i)=>{
+        if(i===2)return lerp(0.55,1,p);
+        const factor=i===1?0.16:0.07;
+        return p*factor;
+      });
       render(p,op,p);
       if(demoTime>=4.1){demo=false;active=false;read.textContent='rest';render(0,[0,0,0.55,0],0);}
       return demo;
@@ -886,7 +890,13 @@ function mountScene({stage,svg,read},value,kind) {
   function activate(next=true,index=2,location=0.8){
     demo=false;active=next;selected=next?index:2;const now=performance.now();
     tset(progress,next?1:0,now,0);
-    choice.forEach((t,i)=>tset(t,next?(i===index?1:0.12/Math.max(1,Math.abs(i-index))):(i===2?0.55:0),now,Math.abs(i-index)*amount));
+    choice.forEach((t,i)=>{
+      let target=0;
+      if(next&&i===index)target=1;
+      else if(next)target=0.12/Math.max(1,Math.abs(i-index));
+      else if(i===2)target=0.55;
+      tset(t,target,now,Math.abs(i-index)*amount);
+    });
     tracking.t=next?clamp(location,-1,1):0;
     read.textContent=next?({practice:'component placed',learn:`lesson ${index+1}`,review:'connection inspected',canvas:'first node'})[kind]:'rest';
     last='';B.wake();
