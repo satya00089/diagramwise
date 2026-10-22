@@ -417,17 +417,18 @@ const ERNode: React.FC<Props> = React.memo(
                     const isForeignKey = data?.foreignKeys
                       ?.split("\n")
                       .some((fk) => attr.includes(fk));
+                    let attributeClassName = "";
+                    if (isPrimaryKey) {
+                      attributeClassName =
+                        "font-bold text-yellow-600 dark:text-yellow-400";
+                    } else if (isForeignKey) {
+                      attributeClassName = "text-blue-600 dark:text-blue-400";
+                    }
 
                     return (
                       <div
                         key={attr}
-                        className={`font-mono ${
-                          isPrimaryKey
-                            ? "font-bold text-yellow-600 dark:text-yellow-400"
-                            : isForeignKey
-                              ? "text-blue-600 dark:text-blue-400"
-                              : ""
-                        }`}
+                        className={`font-mono ${attributeClassName}`}
                       >
                         {attr.trim().startsWith("+") ? (
                           <span className="text-yellow-600 dark:text-yellow-400">

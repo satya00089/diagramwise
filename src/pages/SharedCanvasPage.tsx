@@ -1469,6 +1469,15 @@ const SharedCanvasPage: React.FC = () => {
     );
   }
 
+  let captureReady: "true" | "false" | undefined;
+  if (captureMode) {
+    if (publicIconLoading || !captureCanvasReady) {
+      captureReady = "false";
+    } else {
+      captureReady = "true";
+    }
+  }
+
   return (
     <>
       <SEO
@@ -1487,13 +1496,7 @@ const SharedCanvasPage: React.FC = () => {
           captureMode ? " diagramwise-capture-root" : ""
         }`}
         data-diagramwise-capture-root={captureMode ? "true" : undefined}
-        data-diagramwise-capture-ready={
-          captureMode
-            ? publicIconLoading || !captureCanvasReady
-              ? "false"
-              : "true"
-            : undefined
-        }
+        data-diagramwise-capture-ready={captureReady}
         aria-label={
           captureMode ? `${data.title} Diagramwise architecture preview` : undefined
         }

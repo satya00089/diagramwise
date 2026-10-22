@@ -183,11 +183,10 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
   const rawError = useSelector((state: RootState) =>
     selectWalkthroughError(state, problemId ?? ""),
   );
-  const error: "not_found" | "error" | null = !rawError
-    ? null
-    : rawError === "NOT_FOUND"
-      ? "not_found"
-      : "error";
+  let error: "not_found" | "error" | null = null;
+  if (rawError) {
+    error = rawError === "NOT_FOUND" ? "not_found" : "error";
+  }
 
   const [currentStep, setCurrentStep] = useState<number>(currentStepProp ?? 0); // 0-indexed
   const [appliedSteps, setAppliedSteps] = useState<Set<string>>(new Set());
