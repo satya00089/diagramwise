@@ -782,6 +782,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   const searchParams = new URLSearchParams(globalThis.location.search);
   const diagramIdFromUrl = searchParams.get("diagramId");
   const remixIdFromUrl = searchParams.get("remix");
+  const requestedTab = searchParams.get("tab");
 
   // State for problem data
   const [problem, setProblem] = useState<SystemDesignProblem | null>(null);
@@ -1730,8 +1731,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
               ) {
                 setLastSuccessfulAssessment(attempt.lastAssessment);
               }
-              // Automatically open Assessment tab to show the assessment
-              setActiveRightTab("assessment");
+              // Respect a dashboard request to start directly in the guide.
+              if (requestedTab !== "guide") {
+                setActiveRightTab("assessment");
+              }
             }
             if (
               attempt.lastAssessmentCheck?.scoreAvailable === false ||
@@ -2788,7 +2791,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   >(
     idFromUrl &&
       idFromUrl !== "free" &&
-      searchParams.get("tab") === "guide"
+      requestedTab === "guide"
       ? "guide"
       : "details",
   );
