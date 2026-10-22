@@ -99,7 +99,7 @@ function loadState(): OnboardingState {
       ...parsed,
       visits: {
         ...INITIAL_STATE.visits,
-        ...(parsed.visits ?? {}),
+        ...parsed.visits,
       },
     };
   } catch {

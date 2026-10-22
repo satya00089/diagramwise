@@ -2758,7 +2758,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         // Ensure full component metadata is fetched if it's a provider component
         if (
           comp.componentType &&
-          !COMPONENTS.find((c) => c.id === comp.componentType) &&
+          !COMPONENTS.some((c) => c.id === comp.componentType) &&
           !fullComponentsCache[comp.componentType] &&
           !isGenericComponentReference(comp.componentType)
         ) {
@@ -3039,7 +3039,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           if (n.id !== nodeId) return n;
           const updated: Node = {
             ...n,
-            style: { ...(n.style ?? {}), width, height },
+            style: { ...n.style, width, height },
             data: {
               ...(n.data as AnyNodeData),
               shape: {
@@ -3070,7 +3070,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         const newOrder = [...others, node];
         return newOrder.map((n, i) => ({
           ...n,
-          style: { ...(n.style ?? {}), zIndex: i },
+          style: { ...n.style, zIndex: i },
         }));
       });
     };
@@ -3086,7 +3086,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         const newOrder = [node, ...others];
         return newOrder.map((n, i) => ({
           ...n,
-          style: { ...(n.style ?? {}), zIndex: i },
+          style: { ...n.style, zIndex: i },
         }));
       });
     };
