@@ -1219,10 +1219,10 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   transform: translateY(-4px);
 }
 
-.dashboard-guided-banner {
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-hover);
-  color: var(--text);
+.dashboard-walkthrough-chip {
+  border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
+  background: color-mix(in srgb, var(--brand) 10%, transparent);
+  color: var(--brand);
 }
 
 .dashboard-recommended {

@@ -14,6 +14,7 @@ import {
   MdSearchOff,
   MdSmartToy,
   MdHelpOutline,
+  MdMenuBook,
 } from "react-icons/md";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import ProductHeader from "../components/ProductHeader";
@@ -606,14 +607,21 @@ const Dashboard: React.FC = () => {
                                 }
                                 className={`dashboard-problem-card group elevated-card-bg backdrop-blur-md rounded-2xl transition-all duration-500 relative h-full flex flex-col ${delayClass}`}
                               >
-                                {problem.has_guided_walkthrough ? (
-                                  <div className="dashboard-guided-banner flex items-center justify-between px-4 py-2 rounded-t-2xl">
-                                    <div className="flex items-center gap-3 text-sm font-semibold tracking-wide">
-                                      <span>🗺️</span>
-                                      <span>Guided Walkthrough</span>
+                                <div className="relative p-6 flex flex-col flex-1">
+                                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                                    <div className="flex flex-wrap items-center gap-2">
                                       {score > 0 && (
-                                        <span className="dashboard-recommended inline-block px-2 py-0.5 text-xs font-semibold rounded">
+                                        <span className="dashboard-recommended inline-block px-2 py-1 text-xs font-semibold rounded">
                                           Recommended
+                                        </span>
+                                      )}
+                                      {problem.has_guided_walkthrough && (
+                                        <span className="dashboard-walkthrough-chip inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full">
+                                          <MdMenuBook
+                                            className="h-3.5 w-3.5"
+                                            aria-hidden="true"
+                                          />
+                                          Guided walkthrough
                                         </span>
                                       )}
                                     </div>
@@ -623,21 +631,6 @@ const Dashboard: React.FC = () => {
                                       {problem.difficulty}
                                     </span>
                                   </div>
-                                ) : null}
-                                <div className="relative p-6 flex flex-col flex-1">
-                                  {!problem.has_guided_walkthrough &&
-                                    score > 0 && (
-                                      <div className="flex items-center justify-between mb-3">
-                                        <span className="dashboard-recommended inline-block px-2 py-1 text-xs font-semibold rounded">
-                                          Recommended
-                                        </span>
-                                        <span
-                                          className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${getDifficultyColor(problem.difficulty)}`}
-                                        >
-                                          {problem.difficulty}
-                                        </span>
-                                      </div>
-                                    )}
                                   <div className="flex items-start justify-between mb-4">
                                     <h3 className="text-lg font-bold text-theme group-hover:text-[var(--brand)] transition-colors duration-300 line-clamp-2 flex-1 pr-2">
                                       <Link
@@ -647,16 +640,6 @@ const Dashboard: React.FC = () => {
                                         {problem.title}
                                       </Link>
                                     </h3>
-                                    {!problem.has_guided_walkthrough &&
-                                      score === 0 && (
-                                        <div className="flex-shrink-0 ml-2">
-                                          <span
-                                            className={`px-3 py-1 text-xs font-semibold rounded-full ${getDifficultyColor(problem.difficulty)}`}
-                                          >
-                                            {problem.difficulty}
-                                          </span>
-                                        </div>
-                                      )}
                                   </div>
 
                                   <p className="text-muted text-sm mb-4 line-clamp-3 leading-relaxed">
@@ -695,10 +678,10 @@ const Dashboard: React.FC = () => {
                                   <div className="mt-auto grid grid-cols-[5fr_7fr] gap-2">
                                     <Link
                                       to={`/problems/${getProblemSlug(problem)}/`}
-                                      aria-label={`View guide for ${problem.title}`}
+                                      aria-label={`View problem details for ${problem.title}`}
                                       className="dashboard-secondary-cta inline-flex w-full items-center justify-center rounded-xl border px-3 py-3 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]"
                                     >
-                                      View guide
+                                      Details
                                     </Link>
                                     <button
                                       type="button"
@@ -714,9 +697,18 @@ const Dashboard: React.FC = () => {
                                           setShowAuthModal(true);
                                           return;
                                         }
-                                        navigate(`/playground/${problem.id}`);
+                                        const playgroundUrl = `/playground/${problem.id}`;
+                                        navigate(
+                                          problem.has_guided_walkthrough
+                                            ? `${playgroundUrl}?tab=guide`
+                                            : playgroundUrl,
+                                        );
                                       }}
-                                      aria-label={`Start ${problem.title}`}
+                                      aria-label={
+                                        problem.has_guided_walkthrough
+                                          ? `Open guided walkthrough for ${problem.title}`
+                                          : `Start ${problem.title}`
+                                      }
                                       className={`dashboard-primary-cta w-full px-3 py-3 text-sm font-semibold rounded-xl transition-all duration-300 cursor-pointer ${
                                         isAuth &&
                                         attemptedProblems.has(problem.id)
@@ -742,10 +734,12 @@ const Dashboard: React.FC = () => {
                                               />
                                             </svg>
                                           )}
-                                        {isAuth &&
-                                        attemptedProblems.has(problem.id)
-                                          ? "Continue Problem"
-                                          : "Start Problem"}{" "}
+                                        {problem.has_guided_walkthrough
+                                          ? "Open walkthrough"
+                                          : isAuth &&
+                                              attemptedProblems.has(problem.id)
+                                            ? "Continue Problem"
+                                            : "Start Problem"}{" "}
                                         →
                                       </span>
                                     </button>

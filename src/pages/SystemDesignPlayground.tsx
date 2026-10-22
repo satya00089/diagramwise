@@ -2785,7 +2785,13 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   // which tab is active in the right sidebar: 'details' or 'inspector'
   const [activeRightTab, setActiveRightTab] = useState<
     "details" | "inspector" | "assessment" | "guide"
-  >("details");
+  >(
+    idFromUrl &&
+      idFromUrl !== "free" &&
+      searchParams.get("tab") === "guide"
+      ? "guide"
+      : "details",
+  );
   useEffect(() => {
     if (
       compactViewport &&
