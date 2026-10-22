@@ -597,6 +597,14 @@ const Dashboard: React.FC = () => {
                               virtualRow.index * columnCount + columnIndex;
                             const problem = entry.problem;
                             const score = entry.score;
+                            const hasAttemptedProblem =
+                              isAuth && attemptedProblems.has(problem.id);
+                            let primaryActionLabel = hasAttemptedProblem
+                              ? "Continue Problem"
+                              : "Start Problem";
+                            if (problem.has_guided_walkthrough) {
+                              primaryActionLabel = "Open walkthrough";
+                            }
                             const delayClass =
                               ["delay-0", "delay-100", "delay-200"][index] ?? "";
                             return (
@@ -710,36 +718,29 @@ const Dashboard: React.FC = () => {
                                           : `Start ${problem.title}`
                                       }
                                       className={`dashboard-primary-cta w-full px-3 py-3 text-sm font-semibold rounded-xl transition-all duration-300 cursor-pointer ${
-                                        isAuth &&
-                                        attemptedProblems.has(problem.id)
+                                        hasAttemptedProblem
                                           ? "bg-blue-600 text-white hover:shadow-md"
                                           : "bg-[var(--brand)] text-[var(--bg)] hover:shadow-md"
                                       }`}
                                     >
                                       <span className="flex items-center justify-center gap-2">
-                                        {isAuth &&
-                                          attemptedProblems.has(problem.id) && (
-                                            <svg
-                                              xmlns="http://www.w3.org/2000/svg"
-                                              className="h-4 w-4"
-                                              fill="none"
-                                              viewBox="0 0 24 24"
-                                              stroke="currentColor"
-                                              strokeWidth={2.5}
-                                            >
-                                              <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                              />
-                                            </svg>
-                                          )}
-                                        {problem.has_guided_walkthrough
-                                          ? "Open walkthrough"
-                                          : isAuth &&
-                                              attemptedProblems.has(problem.id)
-                                            ? "Continue Problem"
-                                            : "Start Problem"}{" "}
+                                        {hasAttemptedProblem && (
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-4 w-4"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                            stroke="currentColor"
+                                            strokeWidth={2.5}
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            />
+                                          </svg>
+                                        )}
+                                        {primaryActionLabel}{" "}
                                         →
                                       </span>
                                     </button>
