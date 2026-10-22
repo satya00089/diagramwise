@@ -4,7 +4,10 @@ import GuidedHelpPanel from "./GuidedHelpPanel";
 import type { ApplyStepPayload } from "./GuidedHelpPanel";
 import AssessmentFindings from "./AssessmentFindings";
 import ProblemRequirements from "./ProblemRequirements";
-import type { RequirementSpec } from "../types/requirements";
+import type {
+  RequirementCoverage,
+  RequirementSpec,
+} from "../types/requirements";
 import ReasoningPanel from "./ReasoningPanel";
 import type { DesignReasoningContext } from "../types/systemDesign";
 import {
@@ -160,6 +163,97 @@ const AssessmentFeedbackPrompt: React.FC<{
   );
 };
 
+type AssessmentHistoryEntry = import("../types/systemDesign").AssessmentHistoryEntry;
+
+function getHistoryScore(entry?: AssessmentHistoryEntry): number | null {
+  if (
+    !entry ||
+    entry.source !== "ai" ||
+    entry.scoreAvailable === false ||
+    typeof entry.score !== "number" ||
+    !Number.isFinite(entry.score) ||
+    entry.score < 0 ||
+    entry.score > 100
+  ) {
+    return null;
+  }
+  return entry.score;
+}
+
+function isComparableReview(
+  current: AssessmentHistoryEntry,
+  previous?: AssessmentHistoryEntry,
+): boolean {
+  const currentScore = getHistoryScore(current);
+  const previousScore = getHistoryScore(previous);
+  return Boolean(
+    currentScore !== null &&
+      previousScore !== null &&
+      current.rubricVersion?.trim() &&
+      current.rubricVersion === previous?.rubricVersion &&
+      current.requirementRevision?.trim() &&
+      current.requirementRevision === previous?.requirementRevision &&
+      current.modelVersion?.trim() &&
+      current.modelVersion === previous?.modelVersion,
+  );
+}
+
+const AssessmentHistoryList: React.FC<{
+  history: AssessmentHistoryEntry[];
+}> = ({ history }) => (
+  <details className="rounded-xl border border-theme/10 bg-[var(--surface)] p-4">
+    <summary className="cursor-pointer text-sm font-semibold text-theme focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]">
+      Review history ({history.length})
+    </summary>
+    <p className="mt-3 text-xs leading-relaxed text-muted">
+      Score changes are comparable only for AI reviews using the same rubric,
+      requirement revision, and model.
+    </p>
+    <div className="mt-3 space-y-2">
+      {history.slice(-5).map((entry, index, entries) => {
+        const historyIndex = history.length - entries.length + index;
+        const previous = history[historyIndex - 1];
+        const currentScore = getHistoryScore(entry);
+        const previousScore = getHistoryScore(previous);
+        const comparable = isComparableReview(entry, previous);
+        const unchangedInput = Boolean(
+          entry.inputFingerprint &&
+            entry.inputFingerprint === previous?.inputFingerprint,
+        );
+        const delta =
+          comparable && !unchangedInput && currentScore !== null && previousScore !== null
+            ? currentScore - previousScore
+            : null;
+
+        return (
+          <div
+            key={entry.id}
+            className="flex flex-wrap items-center justify-between gap-2 border-t border-theme/10 py-2 text-xs"
+          >
+            <span className="text-muted">Review {historyIndex + 1}</span>
+            <span className="font-semibold text-theme">
+              {currentScore !== null
+                ? `${currentScore}/100`
+                : entry.source === "rule_based"
+                  ? "Structure check · unscored"
+                  : "Unscored"}
+            </span>
+            <span className="text-muted">
+              {delta === null
+                ? unchangedInput && comparable
+                  ? "Same input · —"
+                  : "Not comparable · —"
+                : delta > 0
+                  ? `+${delta}`
+                  : String(delta)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  </details>
+);
+
 type InspectorPanelProps = {
   compact?: boolean;
   compactOpen?: boolean;
@@ -217,6 +311,607 @@ type InspectorPanelProps = {
     disconnectedCount: number;
   };
 };
+
+type InspectorProblem = NonNullable<InspectorPanelProps["problem"]>;
+type InspectorAssessment = InspectorPanelProps["assessmentResult"];
+
+const verdictLabels = {
+  strong_alignment: "Strong alignment",
+  needs_revision: "Needs revision",
+  more_context_needed: "More context needed",
+  unavailable: "AI review unavailable",
+};
+
+function normalizeAdvice(text: string) {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+
+function buildAssessmentViewData(
+  problem: InspectorProblem,
+  assessmentResult: InspectorAssessment,
+  reviewedRequirementSpec?: RequirementSpec,
+) {
+  const reviewSpec =
+    !assessmentResult?.requirementRevision ||
+    assessmentResult.requirementRevision === problem.requirementSpec?.revision
+      ? problem.requirementSpec
+      : assessmentResult.requirementRevision === reviewedRequirementSpec?.revision
+        ? reviewedRequirementSpec
+        : undefined;
+  const reviewUsesOlderBrief = Boolean(
+    assessmentResult?.requirementRevision &&
+      problem.requirementSpec &&
+      assessmentResult.requirementRevision !== problem.requirementSpec.revision,
+  );
+  const requirements = reviewSpec
+    ? [...reviewSpec.functional, ...reviewSpec.nonFunctional]
+    : !problem.requirementSpec
+      ? [
+          ...problem.requirements
+            .join(".\n")
+            .split("\n")
+            .map((text, index) => ({
+              id: `legacy-requirement:${index + 1}`,
+              text,
+              scope: "core" as const,
+            })),
+          ...problem.constraints
+            .join(".\n")
+            .split("\n")
+            .map((text, index) => ({
+              id: `legacy-constraint:${index + 1}`,
+              text,
+              scope: "core" as const,
+            })),
+          {
+            id: "problem-brief",
+            text: problem.description,
+            scope: "core" as const,
+          },
+        ]
+      : [];
+  const knownRequirements = new Map(
+    requirements.map((requirement) => [requirement.id, requirement]),
+  );
+  const isExtensionFinding = (
+    finding: import("../types/systemDesign").ReviewFinding,
+  ) =>
+    finding.kind === "extension" ||
+    (Boolean(finding.requirement_ids?.length) &&
+      finding.requirement_ids?.every(
+        (id) => knownRequirements.get(id)?.scope === "extension",
+      ));
+  const hasCriticalFinding = assessmentResult?.findings?.some(
+    (finding) =>
+      finding.severity === "critical" &&
+      finding.kind !== "strength" &&
+      !isExtensionFinding(finding),
+  );
+  const showAiScore = Boolean(
+    assessmentResult?.source === "ai" &&
+      assessmentResult.scoreAvailable !== false &&
+      assessmentResult.verdict !== "unavailable" &&
+      Number.isFinite(assessmentResult.score) &&
+      assessmentResult.score >= 0 &&
+      assessmentResult.score <= 100,
+  );
+  const verdict = !showAiScore
+    ? "unavailable"
+    : hasCriticalFinding
+      ? "needs_revision"
+      : (assessmentResult?.verdict ?? "more_context_needed");
+  const advice = [
+    ...(assessmentResult?.improvements ?? []),
+    ...(assessmentResult?.suggestions ?? []),
+    ...(assessmentResult?.missingComponents ?? []),
+    ...(assessmentResult?.missingDescriptions ?? []),
+    ...(assessmentResult?.unclearConnections ?? []),
+  ];
+  const representedAdvice = new Set(
+    [
+      ...advice,
+      ...(assessmentResult?.architectureStrengths ?? []),
+      ...(assessmentResult?.findings ?? []).flatMap((finding) => [
+        finding.title,
+        finding.explanation,
+        finding.recommendation ?? "",
+      ]),
+    ].map(normalizeAdvice),
+  );
+  const feedback = (assessmentResult?.feedback ?? []).filter((item) => {
+    const key = normalizeAdvice(item.message);
+    if (!key || representedAdvice.has(key)) return false;
+    representedAdvice.add(key);
+    return true;
+  });
+  const detailedAnalysis = Object.entries(
+    assessmentResult?.detailedAnalysis ?? {},
+  ).filter(([, text]) => {
+    const key = normalizeAdvice(text);
+    if (!key || representedAdvice.has(key)) return false;
+    representedAdvice.add(key);
+    return true;
+  });
+  const coverage: RequirementCoverage[] = [
+    ...new Map(
+      (assessmentResult?.requirementCoverage ?? []).map((item) => [
+        item.requirement_id,
+        item,
+      ]),
+    ).values(),
+  ];
+  const coreCoverage = coverage.filter(
+    (item) => knownRequirements.get(item.requirement_id)?.scope !== "extension",
+  );
+  const extensionCoverage = coverage.filter(
+    (item) => knownRequirements.get(item.requirement_id)?.scope === "extension",
+  );
+
+  return {
+    reviewSpec,
+    reviewUsesOlderBrief,
+    knownRequirements,
+    showAiScore,
+    verdict,
+    advice,
+    feedback,
+    detailedAnalysis,
+    coverage,
+    coreCoverage,
+    extensionCoverage,
+  };
+}
+
+type AssessmentTabContentProps =
+  Pick<
+    InspectorPanelProps,
+    | "problemId"
+    | "assessmentResult"
+    | "previousAiAssessment"
+    | "assessmentHistory"
+    | "addressedFindingIds"
+    | "onToggleFindingAddressed"
+    | "onSelectEvidence"
+    | "onReviewAgain"
+    | "reasoningContext"
+    | "canvasStats"
+  > &
+    ReturnType<typeof buildAssessmentViewData> & {
+      problem: InspectorProblem;
+      showInterviewQuestions: boolean;
+      setShowInterviewQuestions: React.Dispatch<React.SetStateAction<boolean>>;
+      renderCoverage: (
+        items: RequirementCoverage[],
+        optional?: boolean,
+      ) => React.ReactNode;
+      copyAssessment: () => Promise<void>;
+      downloadAssessment: () => void;
+    };
+
+type AssessmentReview = NonNullable<InspectorAssessment>;
+
+const AssessmentSummaryCard: React.FC<{
+  problem: InspectorProblem;
+  assessment: AssessmentReview;
+  showAiScore: boolean;
+  verdict: keyof typeof verdictLabels;
+  reviewUsesOlderBrief: boolean;
+}> = ({ problem, assessment, showAiScore, verdict, reviewUsesOlderBrief }) => (
+  <section
+    className="p-4 border rounded-xl bg-[var(--surface)] space-y-3"
+    aria-labelledby="architecture-review-heading"
+  >
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h3 id="architecture-review-heading" className="font-semibold text-theme text-base">
+          {showAiScore ? "Architecture review" : "Structure checks"}
+        </h3>
+        <p
+          className={`mt-1 text-xs font-semibold ${verdict === "strong_alignment" ? "text-green-500" : "text-muted"}`}
+        >
+          {verdictLabels[verdict]}
+        </p>
+      </div>
+      {showAiScore && (
+        <p className="text-xl font-bold tabular-nums text-theme">
+          {assessment.score}
+          <span className="text-sm font-medium text-muted">/100</span>
+        </p>
+      )}
+    </div>
+    {showAiScore ? (
+      <>
+        {assessment.summary && (
+          <p className="break-words text-xs leading-relaxed text-theme">
+            {assessment.summary}
+          </p>
+        )}
+        <p className="text-xs leading-relaxed text-muted">
+          AI architecture review against the exercise scope. This score is a
+          learning signal, not requirement completion or production readiness.
+        </p>
+      </>
+    ) : (
+      <div className="space-y-2 text-xs leading-relaxed text-muted" role="status">
+        <p className="text-theme">
+          {assessment.source === "rule_based"
+            ? "AI review is unavailable. These are walkthrough-structure checks, not an architecture assessment."
+            : "The AI review is incomplete or unavailable. No architecture score is available."}
+        </p>
+        {assessment.summary && (
+          <p className="break-words text-theme">{assessment.summary}</p>
+        )}
+        <p>
+          Your design is still available. Retry the AI review to receive an
+          architecture score and requirement-level feedback.
+        </p>
+      </div>
+    )}
+    {(assessment.rubricVersion || assessment.requirementRevision) && (
+      <p className="break-words text-xs text-muted">
+        {assessment.requirementRevision &&
+          `Requirements: ${assessment.requirementRevision}`}
+        {assessment.rubricVersion && ` · Rubric: ${assessment.rubricVersion}`}
+      </p>
+    )}
+    {reviewUsesOlderBrief && (
+      <p className="break-words rounded-lg border border-theme/10 px-3 py-2 text-xs leading-relaxed text-muted">
+        This review uses an earlier problem brief. The Details tab shows
+        requirements {problem.requirementSpec?.revision}. Review the updated
+        requirements before assessing again; a new review will use that current
+        brief.
+      </p>
+    )}
+  </section>
+);
+
+const PreviousAssessmentNote: React.FC<{
+  assessment?: InspectorPanelProps["previousAiAssessment"];
+  showAiScore: boolean;
+}> = ({ assessment, showAiScore }) => {
+  if (
+    showAiScore ||
+    assessment?.source !== "ai" ||
+    assessment.scoreAvailable === false ||
+    !Number.isFinite(assessment.score) ||
+    assessment.score < 0 ||
+    assessment.score > 100
+  ) {
+    return null;
+  }
+  return (
+    <p className="rounded-lg border border-theme/10 px-3 py-2 text-xs leading-relaxed text-muted">
+      Previous AI review: {assessment.score}/100. It belongs to an earlier
+      review; current design has not been AI-reviewed.
+    </p>
+  );
+};
+
+const RequirementCoverageSections: React.FC<{
+  showAiScore: boolean;
+  coreCoverage: RequirementCoverage[];
+  extensionCoverage: RequirementCoverage[];
+  renderCoverage: (
+    items: RequirementCoverage[],
+    optional?: boolean,
+  ) => React.ReactNode;
+}> = ({ showAiScore, coreCoverage, extensionCoverage, renderCoverage }) => {
+  if (!showAiScore || coreCoverage.length + extensionCoverage.length === 0) {
+    return null;
+  }
+  return (
+    <section
+      className="p-4 border rounded-xl bg-[var(--surface)] space-y-3"
+      aria-labelledby="requirement-coverage-heading"
+    >
+      <h3 id="requirement-coverage-heading" className="text-sm font-semibold text-theme">
+        Requirement coverage
+      </h3>
+      {coreCoverage.length > 0 && renderCoverage(coreCoverage)}
+      {extensionCoverage.length > 0 && (
+        <details className="border-t border-theme/10 pt-3">
+          <summary className="cursor-pointer text-xs font-semibold text-theme focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]">
+            Optional extension coverage
+          </summary>
+          <div className="mt-3">{renderCoverage(extensionCoverage, true)}</div>
+        </details>
+      )}
+    </section>
+  );
+};
+
+const StructuralChecks: React.FC<{
+  assessment: AssessmentReview;
+  showAiScore: boolean;
+}> = ({ assessment, showAiScore }) => {
+  const checks = assessment.structuralChecks ?? [];
+  if (showAiScore || checks.length === 0) return null;
+  return (
+    <section
+      className="p-4 border rounded-xl bg-[var(--surface)]"
+      aria-labelledby="structural-checks-heading"
+    >
+      <h3 id="structural-checks-heading" className="text-sm font-semibold text-theme">
+        Observed structure
+      </h3>
+      <ul className="mt-3 space-y-3">
+        {checks.map((check, index) => (
+          <li key={index} className="break-words text-xs leading-relaxed">
+            <p className="font-semibold text-theme">{check.title}</p>
+            <p className="text-muted">
+              {check.status.replaceAll("_", " ")} · {check.explanation}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+};
+
+const AssessmentAnalysisDetails: React.FC<{
+  detailedAnalysis: [string, string][];
+  feedback: NonNullable<AssessmentReview["feedback"]>;
+}> = ({ detailedAnalysis, feedback }) => {
+  if (detailedAnalysis.length === 0 && feedback.length === 0) return null;
+  return (
+    <details className="p-4 border rounded-xl bg-[var(--surface)]">
+      <summary className="cursor-pointer text-sm font-semibold text-theme focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]">
+        Detailed analysis
+      </summary>
+      <div className="mt-4 space-y-4">
+        {detailedAnalysis.map(([dimension, text]) => (
+          <section key={dimension} className="space-y-1.5">
+            <h4 className="text-xs font-semibold text-theme">
+              {DIM_LABELS[dimension] ?? dimension.replaceAll("_", " ")}
+            </h4>
+            <p className="break-words text-xs leading-relaxed text-muted">
+              {text}
+            </p>
+          </section>
+        ))}
+        {feedback.map((item) => (
+          <div
+            key={`${item.category}:${item.message}`}
+            className="flex items-start gap-2"
+          >
+            <FeedbackIcon
+              type={item.type}
+              className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted"
+            />
+            <p className="min-w-0 break-words text-xs leading-relaxed text-muted">
+              {item.message}
+            </p>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+};
+
+const AssessmentFollowUpQuestions: React.FC<{
+  questions?: string[];
+  expanded: boolean;
+  onToggle: () => void;
+}> = ({ questions, expanded, onToggle }) => {
+  if (!questions?.length) return null;
+  return (
+    <div className="border rounded-xl bg-[var(--surface)] overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        aria-controls="review-follow-up-questions"
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--bg-hover)] transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <MdTrackChanges className="h-4 w-4 text-indigo-400" aria-hidden="true" />
+          <span className="font-semibold text-theme text-sm">Follow-up Questions</span>
+          <span className="text-[10px] font-semibold bg-indigo-500/15 text-indigo-400 px-1.5 py-0.5 rounded-full">
+            {questions.length}
+          </span>
+        </div>
+        <PiCaretDownBold
+          size={14}
+          className={`text-muted transition-transform ${expanded ? "rotate-180" : ""}`}
+        />
+      </button>
+      {expanded && (
+        <div
+          id="review-follow-up-questions"
+          className="px-4 pb-4 space-y-2.5 border-t border-[var(--border)]"
+        >
+          <p className="text-[10px] text-muted pt-3 pb-1">
+            Questions tailored to your specific design — use them to guide your
+            next iteration.
+          </p>
+          <ol className="space-y-2.5 list-none">
+            {questions.map((question, index) => (
+              <li
+                key={`iq-${question.slice(0, 30)}`}
+                className="flex items-start gap-2.5"
+              >
+                <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-500/15 text-indigo-400 text-[10px] font-bold flex items-center justify-center mt-0.5">
+                  {index + 1}
+                </span>
+                <span className="text-xs text-theme leading-relaxed">
+                  {question}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const AssessmentTabContent: React.FC<AssessmentTabContentProps> = ({
+  problem,
+  problemId,
+  assessmentResult,
+  previousAiAssessment,
+  assessmentHistory = [],
+  addressedFindingIds = [],
+  onToggleFindingAddressed,
+  onSelectEvidence,
+  onReviewAgain,
+  reasoningContext,
+  canvasStats,
+  reviewSpec,
+  reviewUsesOlderBrief,
+  showAiScore,
+  verdict,
+  advice,
+  feedback,
+  detailedAnalysis,
+  coverage,
+  coreCoverage,
+  extensionCoverage,
+  showInterviewQuestions,
+  setShowInterviewQuestions,
+  renderCoverage,
+  copyAssessment,
+  downloadAssessment,
+}) => (
+                  <div>
+                    {assessmentResult ? (
+                      <div className="space-y-4">
+                        <AssessmentSummaryCard
+                          problem={problem}
+                          assessment={assessmentResult}
+                          showAiScore={showAiScore}
+                          verdict={verdict}
+                          reviewUsesOlderBrief={reviewUsesOlderBrief}
+                        />
+
+                        <PreviousAssessmentNote
+                          assessment={previousAiAssessment}
+                          showAiScore={showAiScore}
+                        />
+
+                        <RequirementCoverageSections
+                          showAiScore={showAiScore}
+                          coreCoverage={coreCoverage}
+                          extensionCoverage={extensionCoverage}
+                          renderCoverage={renderCoverage}
+                        />
+
+                        <StructuralChecks
+                          assessment={assessmentResult}
+                          showAiScore={showAiScore}
+                        />
+
+                        <AssessmentFindings
+                          findings={assessmentResult.findings ?? []}
+                          addressedFindingIds={addressedFindingIds}
+                          onToggleAddressed={onToggleFindingAddressed}
+                          onSelectEvidence={onSelectEvidence}
+                          requirementSpec={reviewSpec}
+                          suggestions={advice}
+                          strengths={
+                            assessmentResult.architectureStrengths ?? []
+                          }
+                          structuralOnly={!showAiScore}
+                        />
+
+                        {onReviewAgain && (
+                          <button
+                            type="button"
+                            onClick={onReviewAgain}
+                            className="w-full rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-[var(--bg)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]/60"
+                          >
+                            {showAiScore
+                              ? "Review again after making changes"
+                              : "Retry AI review"}
+                          </button>
+                        )}
+
+                        <AssessmentAnalysisDetails
+                          detailedAnalysis={detailedAnalysis}
+                          feedback={feedback}
+                        />
+
+                        {showAiScore && (
+                          <details className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs">
+                            <summary className="cursor-pointer font-semibold text-theme focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]">
+                              How this score works
+                            </summary>
+                            <p className="mt-2 leading-relaxed text-muted">
+                              The API combines the applicable architecture
+                              dimensions into one review score. It does not
+                              measure accuracy, completion percentage, or
+                              production readiness. Findings and requirement
+                              evidence explain what to improve next.
+                            </p>
+                          </details>
+                        )}
+
+                        {assessmentHistory.length > 1 && (
+                          <AssessmentHistoryList history={assessmentHistory} />
+                        )}
+
+                        {showAiScore && (
+                          <AssessmentFeedbackPrompt
+                            problemId={problemId}
+                            assessmentId={assessmentResult.assessmentId}
+                            traceId={assessmentResult.traceId}
+                          />
+                        )}
+
+                        {/* ── 8. Follow-up Questions ── */}
+                        <AssessmentFollowUpQuestions
+                          questions={assessmentResult.interviewQuestions}
+                          expanded={showInterviewQuestions}
+                          onToggle={() => setShowInterviewQuestions((value) => !value)}
+                        />
+
+                        {/* ── Copy / Download ── */}
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={copyAssessment}
+                            className="flex-1 px-3 py-2 bg-theme border border-theme rounded-md hover:bg-[var(--bg-hover)] transition-colors text-sm"
+                          >
+                            <MdContentCopy
+                              className="mr-1.5 inline h-4 w-4"
+                              aria-hidden="true"
+                            />
+                            Copy JSON
+                          </button>
+                          <button
+                            type="button"
+                            onClick={downloadAssessment}
+                            className="flex-1 px-3 py-2 bg-theme border border-theme rounded-md hover:bg-[var(--bg-hover)] transition-colors text-sm"
+                          >
+                            <MdDownload
+                              className="mr-1.5 inline h-4 w-4"
+                              aria-hidden="true"
+                            />
+                            Download
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-12">
+                        <MdAssessment
+                          className="mx-auto mb-4 h-12 w-12 text-[var(--brand)]"
+                          aria-hidden="true"
+                        />
+                        <div className="text-lg font-semibold text-theme mb-2">
+                          No Assessment Yet
+                        </div>
+                        <div className="text-sm text-muted">
+                          Run an assessment to see your design evaluation and
+                          feedback.
+                        </div>
+                      </div>
+                    )}
+                  </div>
+);
 
 const InspectorPanel: React.FC<InspectorPanelProps> = ({
   compact = false,
@@ -311,135 +1006,19 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
   if (!problem) return null;
 
-  const reviewSpec =
-    !assessmentResult?.requirementRevision ||
-    assessmentResult.requirementRevision === problem.requirementSpec?.revision
-      ? problem.requirementSpec
-      : assessmentResult.requirementRevision === reviewedRequirementSpec?.revision
-        ? reviewedRequirementSpec
-        : undefined;
-  const reviewUsesOlderBrief = Boolean(
-    assessmentResult?.requirementRevision &&
-      problem.requirementSpec &&
-      assessmentResult.requirementRevision !== problem.requirementSpec.revision,
-  );
-  const knownRequirements = new Map(
-    (reviewSpec
-      ? [
-          ...(reviewSpec?.functional ?? []),
-          ...(reviewSpec?.nonFunctional ?? []),
-        ]
-      : !problem.requirementSpec
-        ? [
-            ...problem.requirements
-              .join(".\n")
-              .split("\n")
-              .map((text, index) => ({
-                id: `legacy-requirement:${index + 1}`,
-                text,
-                scope: "core" as const,
-              })),
-            ...problem.constraints
-              .join(".\n")
-              .split("\n")
-              .map((text, index) => ({
-                id: `legacy-constraint:${index + 1}`,
-                text,
-                scope: "core" as const,
-              })),
-            {
-              id: "problem-brief",
-              text: problem.description,
-              scope: "core" as const,
-            },
-          ]
-        : []
-    ).map((requirement) => [requirement.id, requirement]),
-  );
-  const isExtensionFinding = (
-    finding: import("../types/systemDesign").ReviewFinding,
-  ) =>
-    finding.kind === "extension" ||
-    (Boolean(finding.requirement_ids?.length) &&
-      finding.requirement_ids?.every(
-        (id) => knownRequirements.get(id)?.scope === "extension",
-      ));
-  const hasCriticalFinding = assessmentResult?.findings?.some(
-    (finding) =>
-      finding.severity === "critical" &&
-      finding.kind !== "strength" &&
-      !isExtensionFinding(finding),
-  );
-  const showAiScore =
-    assessmentResult?.source === "ai" &&
-    assessmentResult.scoreAvailable !== false &&
-    assessmentResult.verdict !== "unavailable" &&
-    Number.isFinite(assessmentResult.score) &&
-    assessmentResult.score >= 0 &&
-    assessmentResult.score <= 100;
-  const verdict = !showAiScore
-    ? "unavailable"
-    : hasCriticalFinding
-      ? "needs_revision"
-      : (assessmentResult?.verdict ?? "more_context_needed");
-  const verdictLabels = {
-    strong_alignment: "Strong alignment",
-    needs_revision: "Needs revision",
-    more_context_needed: "More context needed",
-    unavailable: "AI review unavailable",
-  };
-  const advice = [
-    ...(assessmentResult?.improvements ?? []),
-    ...(assessmentResult?.suggestions ?? []),
-    ...(assessmentResult?.missingComponents ?? []),
-    ...(assessmentResult?.missingDescriptions ?? []),
-    ...(assessmentResult?.unclearConnections ?? []),
-  ];
-  const normalizeAdvice = (text: string) =>
-    text
-      .trim()
-      .toLowerCase()
-      .replace(/[^\p{L}\p{N}]+/gu, " ")
-      .trim();
-  const representedAdvice = new Set(
-    [
-      ...advice,
-      ...(assessmentResult?.architectureStrengths ?? []),
-      ...(assessmentResult?.findings ?? []).flatMap((finding) => [
-        finding.title,
-        finding.explanation,
-        finding.recommendation ?? "",
-      ]),
-    ].map(normalizeAdvice),
-  );
-  const feedback = (assessmentResult?.feedback ?? []).filter((item) => {
-    const key = normalizeAdvice(item.message);
-    if (!key || representedAdvice.has(key)) return false;
-    representedAdvice.add(key);
-    return true;
-  });
-  const detailedAnalysis = Object.entries(
-    assessmentResult?.detailedAnalysis ?? {},
-  ).filter(([, text]) => {
-    const key = normalizeAdvice(text);
-    if (!key || representedAdvice.has(key)) return false;
-    representedAdvice.add(key);
-    return true;
-  });
-  const coverage = [
-    ...new Map(
-      (assessmentResult?.requirementCoverage ?? []).map((item) => [
-        item.requirement_id,
-        item,
-      ]),
-    ).values(),
-  ];
-  const coreCoverage = coverage.filter(
-    (item) => knownRequirements.get(item.requirement_id)?.scope !== "extension",
-  );
-  const extensionCoverage = coverage.filter(
-    (item) => knownRequirements.get(item.requirement_id)?.scope === "extension",
-  );
+  const {
+    reviewSpec,
+    reviewUsesOlderBrief,
+    knownRequirements,
+    showAiScore,
+    verdict,
+    advice,
+    feedback,
+    detailedAnalysis,
+    coverage,
+    coreCoverage,
+    extensionCoverage,
+  } = buildAssessmentViewData(problem, assessmentResult, reviewedRequirementSpec);
   const renderCoverage = (items: typeof coverage, optional = false) => (
     <ul className="space-y-3">
       {items.map((item) => (
@@ -939,457 +1518,35 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 )}
 
                 {activeTab === "assessment" && (
-                  <div>
-                    {assessmentResult ? (
-                      <div className="space-y-4">
-                        <section
-                          className="p-4 border rounded-xl bg-[var(--surface)] space-y-3"
-                          aria-labelledby="architecture-review-heading"
-                        >
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                              <h3
-                                id="architecture-review-heading"
-                                className="font-semibold text-theme text-base"
-                              >
-                                {showAiScore
-                                  ? "Architecture review"
-                                  : "Structure checks"}
-                              </h3>
-                              <p
-                                className={`mt-1 text-xs font-semibold ${verdict === "strong_alignment" ? "text-green-500" : "text-muted"}`}
-                              >
-                                {verdictLabels[verdict]}
-                              </p>
-                            </div>
-                            {showAiScore && (
-                              <p className="text-xl font-bold tabular-nums text-theme">
-                                {assessmentResult.score}
-                                <span className="text-sm font-medium text-muted">
-                                  /100
-                                </span>
-                              </p>
-                            )}
-                          </div>
-                          {showAiScore ? (
-                            <>
-                              {assessmentResult.summary && (
-                                <p className="break-words text-xs leading-relaxed text-theme">
-                                  {assessmentResult.summary}
-                                </p>
-                              )}
-                              <p className="text-xs leading-relaxed text-muted">
-                                AI architecture review against the exercise
-                                scope. This score is a learning signal, not
-                                requirement completion or production readiness.
-                              </p>
-                            </>
-                          ) : (
-                            <div
-                              className="space-y-2 text-xs leading-relaxed text-muted"
-                              role="status"
-                            >
-                              <p className="text-theme">
-                                {assessmentResult.source === "rule_based"
-                                  ? "AI review is unavailable. These are walkthrough-structure checks, not an architecture assessment."
-                                  : "The AI review is incomplete or unavailable. No architecture score is available."}
-                              </p>
-                              {assessmentResult.summary && (
-                                <p className="break-words text-theme">
-                                  {assessmentResult.summary}
-                                </p>
-                              )}
-                              <p>
-                                Your design is still available. Retry the AI
-                                review to receive an architecture score and
-                                requirement-level feedback.
-                              </p>
-                            </div>
-                          )}
-                          {(assessmentResult.rubricVersion ||
-                            assessmentResult.requirementRevision) && (
-                            <p className="break-words text-xs text-muted">
-                              {assessmentResult.requirementRevision &&
-                                `Requirements: ${assessmentResult.requirementRevision}`}
-                              {assessmentResult.rubricVersion &&
-                                ` · Rubric: ${assessmentResult.rubricVersion}`}
-                            </p>
-                          )}
-                          {reviewUsesOlderBrief && (
-                            <p className="break-words rounded-lg border border-theme/10 px-3 py-2 text-xs leading-relaxed text-muted">
-                              This review uses an earlier problem brief. The
-                              Details tab shows requirements {problem.requirementSpec?.revision}.
-                              Review the updated requirements before assessing
-                              again; a new review will use that current brief.
-                            </p>
-                          )}
-                        </section>
-
-                        {!showAiScore &&
-                          previousAiAssessment?.source === "ai" &&
-                          previousAiAssessment.scoreAvailable !== false &&
-                          Number.isFinite(previousAiAssessment.score) &&
-                          previousAiAssessment.score >= 0 &&
-                          previousAiAssessment.score <= 100 && (
-                            <p className="rounded-lg border border-theme/10 px-3 py-2 text-xs leading-relaxed text-muted">
-                              Previous AI review: {previousAiAssessment.score}
-                              /100. It belongs to an earlier review; current
-                              design has not been AI-reviewed.
-                            </p>
-                          )}
-
-                        {showAiScore &&
-                          coreCoverage.length + extensionCoverage.length >
-                            0 && (
-                            <section
-                              className="p-4 border rounded-xl bg-[var(--surface)] space-y-3"
-                              aria-labelledby="requirement-coverage-heading"
-                            >
-                              <h3
-                                id="requirement-coverage-heading"
-                                className="text-sm font-semibold text-theme"
-                              >
-                                Requirement coverage
-                              </h3>
-                              {coreCoverage.length > 0 &&
-                                renderCoverage(coreCoverage)}
-                              {extensionCoverage.length > 0 && (
-                                <details className="border-t border-theme/10 pt-3">
-                                  <summary className="cursor-pointer text-xs font-semibold text-theme focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]">
-                                    Optional extension coverage
-                                  </summary>
-                                  <div className="mt-3">
-                                    {renderCoverage(extensionCoverage, true)}
-                                  </div>
-                                </details>
-                              )}
-                            </section>
-                          )}
-
-                        {!showAiScore &&
-                          Boolean(
-                            assessmentResult.structuralChecks?.length,
-                          ) && (
-                            <section
-                              className="p-4 border rounded-xl bg-[var(--surface)]"
-                              aria-labelledby="structural-checks-heading"
-                            >
-                              <h3
-                                id="structural-checks-heading"
-                                className="text-sm font-semibold text-theme"
-                              >
-                                Observed structure
-                              </h3>
-                              <ul className="mt-3 space-y-3">
-                                {assessmentResult.structuralChecks?.map(
-                                  (check, index) => (
-                                    <li
-                                      key={index}
-                                      className="break-words text-xs leading-relaxed"
-                                    >
-                                      <p className="font-semibold text-theme">
-                                        {check.title}
-                                      </p>
-                                      <p className="text-muted">
-                                        {check.status.replaceAll("_", " ")} ·{" "}
-                                        {check.explanation}
-                                      </p>
-                                    </li>
-                                  ),
-                                )}
-                              </ul>
-                            </section>
-                          )}
-
-                        <AssessmentFindings
-                          findings={assessmentResult.findings ?? []}
-                          addressedFindingIds={addressedFindingIds}
-                          onToggleAddressed={onToggleFindingAddressed}
-                          onSelectEvidence={onSelectEvidence}
-                          requirementSpec={reviewSpec}
-                          suggestions={advice}
-                          strengths={
-                            assessmentResult.architectureStrengths ?? []
-                          }
-                          structuralOnly={!showAiScore}
-                        />
-
-                        {onReviewAgain && (
-                          <button
-                            type="button"
-                            onClick={onReviewAgain}
-                            className="w-full rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-[var(--bg)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]/60"
-                          >
-                            {showAiScore
-                              ? "Review again after making changes"
-                              : "Retry AI review"}
-                          </button>
-                        )}
-
-                        {(detailedAnalysis.length > 0 ||
-                          feedback.length > 0) && (
-                          <details className="p-4 border rounded-xl bg-[var(--surface)]">
-                            <summary className="cursor-pointer text-sm font-semibold text-theme focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]">
-                              Detailed analysis
-                            </summary>
-                            <div className="mt-4 space-y-4">
-                              {detailedAnalysis.map(([dimension, text]) => (
-                                <section
-                                  key={dimension}
-                                  className="space-y-1.5"
-                                >
-                                  <h4 className="text-xs font-semibold text-theme">
-                                    {DIM_LABELS[dimension] ??
-                                      dimension.replaceAll("_", " ")}
-                                  </h4>
-                                  <p className="break-words text-xs leading-relaxed text-muted">
-                                    {text}
-                                  </p>
-                                </section>
-                              ))}
-                              {feedback.map((item) => (
-                                <div
-                                  key={`${item.category}:${item.message}`}
-                                  className="flex items-start gap-2"
-                                >
-                                  <FeedbackIcon
-                                    type={item.type}
-                                    className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted"
-                                  />
-                                  <p className="min-w-0 break-words text-xs leading-relaxed text-muted">
-                                    {item.message}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-                          </details>
-                        )}
-
-                        {showAiScore && (
-                          <details className="rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-xs">
-                            <summary className="cursor-pointer font-semibold text-theme focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]">
-                              How this score works
-                            </summary>
-                            <p className="mt-2 leading-relaxed text-muted">
-                              The API combines the applicable architecture
-                              dimensions into one review score. It does not
-                              measure accuracy, completion percentage, or
-                              production readiness. Findings and requirement
-                              evidence explain what to improve next.
-                            </p>
-                          </details>
-                        )}
-
-                        {assessmentHistory.length > 1 && (
-                          <details className="rounded-xl border border-theme/10 bg-[var(--surface)] p-4">
-                            <summary className="cursor-pointer text-sm font-semibold text-theme focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]">
-                              Review history ({assessmentHistory.length})
-                            </summary>
-                            <p className="mt-3 text-xs leading-relaxed text-muted">
-                              Score changes are comparable only for AI reviews
-                              using the same rubric, requirement revision, and
-                              model.
-                            </p>
-                            <div className="mt-3 space-y-2">
-                              {assessmentHistory
-                                .slice(-5)
-                                .map((entry, index, entries) => {
-                                  const previous =
-                                    assessmentHistory[
-                                      assessmentHistory.length -
-                                        entries.length +
-                                        index -
-                                        1
-                                    ];
-                                  const currentScore =
-                                    entry.source === "ai" &&
-                                    entry.scoreAvailable !== false &&
-                                    typeof entry.score === "number" &&
-                                    Number.isFinite(entry.score) &&
-                                    entry.score >= 0 &&
-                                    entry.score <= 100
-                                      ? entry.score
-                                      : null;
-                                  const previousScore =
-                                    previous?.source === "ai" &&
-                                    previous.scoreAvailable !== false &&
-                                    typeof previous.score === "number" &&
-                                    Number.isFinite(previous.score) &&
-                                    previous.score >= 0 &&
-                                    previous.score <= 100
-                                      ? previous.score
-                                      : null;
-                                  const comparable =
-                                    currentScore !== null &&
-                                    previousScore !== null &&
-                                    Boolean(entry.rubricVersion?.trim()) &&
-                                    entry.rubricVersion ===
-                                      previous.rubricVersion &&
-                                    Boolean(
-                                      entry.requirementRevision?.trim(),
-                                    ) &&
-                                    entry.requirementRevision ===
-                                      previous.requirementRevision &&
-                                    Boolean(entry.modelVersion?.trim()) &&
-                                    entry.modelVersion ===
-                                      previous.modelVersion;
-                                  const unchangedInput =
-                                    Boolean(entry.inputFingerprint) &&
-                                    entry.inputFingerprint ===
-                                      previous?.inputFingerprint;
-                                  const delta =
-                                    comparable &&
-                                    !unchangedInput &&
-                                    currentScore !== null &&
-                                    previousScore !== null
-                                      ? currentScore - previousScore
-                                      : null;
-                                  return (
-                                    <div
-                                      key={entry.id}
-                                      className="flex flex-wrap items-center justify-between gap-2 border-t border-theme/10 py-2 text-xs"
-                                    >
-                                      <span className="text-muted">
-                                        Review{" "}
-                                        {assessmentHistory.length -
-                                          entries.length +
-                                          index +
-                                          1}
-                                      </span>
-                                      <span className="font-semibold text-theme">
-                                        {currentScore !== null
-                                          ? `${currentScore}/100`
-                                          : entry.source === "rule_based"
-                                            ? "Structure check · unscored"
-                                            : "Unscored"}
-                                      </span>
-                                      <span className="text-muted">
-                                        {delta === null
-                                          ? unchangedInput && comparable
-                                            ? "Same input · —"
-                                            : "Not comparable · —"
-                                          : delta > 0
-                                            ? `+${delta}`
-                                            : String(delta)}
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                            </div>
-                          </details>
-                        )}
-
-                        {showAiScore && (
-                          <AssessmentFeedbackPrompt
-                            problemId={problemId}
-                            assessmentId={assessmentResult.assessmentId}
-                            traceId={assessmentResult.traceId}
-                          />
-                        )}
-
-                        {/* ── 8. Follow-up Questions ── */}
-                        {assessmentResult.interviewQuestions &&
-                          assessmentResult.interviewQuestions.length > 0 && (
-                            <div className="border rounded-xl bg-[var(--surface)] overflow-hidden">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setShowInterviewQuestions((v) => !v)
-                                }
-                                aria-expanded={showInterviewQuestions}
-                                aria-controls="review-follow-up-questions"
-                                className="w-full flex items-center justify-between px-4 py-3 hover:bg-[var(--bg-hover)] transition-colors"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <MdTrackChanges
-                                    className="h-4 w-4 text-indigo-400"
-                                    aria-hidden="true"
-                                  />
-                                  <span className="font-semibold text-theme text-sm">
-                                    Follow-up Questions
-                                  </span>
-                                  <span className="text-[10px] font-semibold bg-indigo-500/15 text-indigo-400 px-1.5 py-0.5 rounded-full">
-                                    {assessmentResult.interviewQuestions.length}
-                                  </span>
-                                </div>
-                                <PiCaretDownBold
-                                  size={14}
-                                  className={`text-muted transition-transform ${showInterviewQuestions ? "rotate-180" : ""}`}
-                                />
-                              </button>
-                              {showInterviewQuestions && (
-                                <div
-                                  id="review-follow-up-questions"
-                                  className="px-4 pb-4 space-y-2.5 border-t border-[var(--border)]"
-                                >
-                                  <p className="text-[10px] text-muted pt-3 pb-1">
-                                    Questions tailored to your specific design —
-                                    use them to guide your next iteration.
-                                  </p>
-                                  <ol className="space-y-2.5 list-none">
-                                    {assessmentResult.interviewQuestions.map(
-                                      (q, i) => (
-                                        <li
-                                          key={`iq-${q.slice(0, 30)}`}
-                                          className="flex items-start gap-2.5"
-                                        >
-                                          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-500/15 text-indigo-400 text-[10px] font-bold flex items-center justify-center mt-0.5">
-                                            {i + 1}
-                                          </span>
-                                          <span className="text-xs text-theme leading-relaxed">
-                                            {q}
-                                          </span>
-                                        </li>
-                                      ),
-                                    )}
-                                  </ol>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                        {/* ── Copy / Download ── */}
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={copyAssessment}
-                            className="flex-1 px-3 py-2 bg-theme border border-theme rounded-md hover:bg-[var(--bg-hover)] transition-colors text-sm"
-                          >
-                            <MdContentCopy
-                              className="mr-1.5 inline h-4 w-4"
-                              aria-hidden="true"
-                            />
-                            Copy JSON
-                          </button>
-                          <button
-                            type="button"
-                            onClick={downloadAssessment}
-                            className="flex-1 px-3 py-2 bg-theme border border-theme rounded-md hover:bg-[var(--bg-hover)] transition-colors text-sm"
-                          >
-                            <MdDownload
-                              className="mr-1.5 inline h-4 w-4"
-                              aria-hidden="true"
-                            />
-                            Download
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-12">
-                        <MdAssessment
-                          className="mx-auto mb-4 h-12 w-12 text-[var(--brand)]"
-                          aria-hidden="true"
-                        />
-                        <div className="text-lg font-semibold text-theme mb-2">
-                          No Assessment Yet
-                        </div>
-                        <div className="text-sm text-muted">
-                          Run an assessment to see your design evaluation and
-                          feedback.
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <AssessmentTabContent
+                    problem={problem}
+                    problemId={problemId}
+                    assessmentResult={assessmentResult}
+                    previousAiAssessment={previousAiAssessment}
+                    assessmentHistory={assessmentHistory}
+                    addressedFindingIds={addressedFindingIds}
+                    onToggleFindingAddressed={onToggleFindingAddressed}
+                    onSelectEvidence={onSelectEvidence}
+                    onReviewAgain={onReviewAgain}
+                    reasoningContext={reasoningContext}
+                    canvasStats={canvasStats}
+                    reviewSpec={reviewSpec}
+                    reviewUsesOlderBrief={reviewUsesOlderBrief}
+                    knownRequirements={knownRequirements}
+                    showAiScore={showAiScore}
+                    verdict={verdict}
+                    advice={advice}
+                    feedback={feedback}
+                    detailedAnalysis={detailedAnalysis}
+                    coverage={coverage}
+                    coreCoverage={coreCoverage}
+                    extensionCoverage={extensionCoverage}
+                    showInterviewQuestions={showInterviewQuestions}
+                    setShowInterviewQuestions={setShowInterviewQuestions}
+                    renderCoverage={renderCoverage}
+                    copyAssessment={copyAssessment}
+                    downloadAssessment={downloadAssessment}
+                  />
                 )}
               </div>
             )}

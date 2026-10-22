@@ -24,7 +24,12 @@ const STEP_TYPE_CONFIG: Record<
     label: "Explanation",
     color: "bg-blue-500/15 text-blue-400 border-blue-500/30",
     icon: (
-      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+      <svg
+        className="w-3 h-3"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+        aria-hidden="true"
+      >
         <path
           fillRule="evenodd"
           d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -43,6 +48,7 @@ const STEP_TYPE_CONFIG: Record<
         viewBox="0 0 24 24"
         stroke="currentColor"
         strokeWidth={2}
+        aria-hidden="true"
       >
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
       </svg>
@@ -58,6 +64,7 @@ const STEP_TYPE_CONFIG: Record<
         viewBox="0 0 24 24"
         stroke="currentColor"
         strokeWidth={2}
+        aria-hidden="true"
       >
         <path
           strokeLinecap="round"
@@ -82,6 +89,7 @@ const STEP_TYPE_CONFIG: Record<
         viewBox="0 0 24 24"
         stroke="currentColor"
         strokeWidth={2}
+        aria-hidden="true"
       >
         <path
           strokeLinecap="round"
@@ -100,6 +108,7 @@ const STEP_TYPE_CONFIG: Record<
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
+        aria-hidden="true"
       >
         <path d="m5 12 4 4L19 6" strokeWidth={2} />
       </svg>
@@ -115,6 +124,7 @@ const STEP_TYPE_CONFIG: Record<
         viewBox="0 0 24 24"
         stroke="currentColor"
         strokeWidth={2}
+        aria-hidden="true"
       >
         <path
           strokeLinecap="round"
@@ -154,6 +164,380 @@ function StepTypeBadge({ type }: { type: GuidedStepType }) {
   );
 }
 
+function getWalkthroughError(
+  error: string | null,
+): "not_found" | "error" | null {
+  if (!error) return null;
+  return error === "NOT_FOUND" ? "not_found" : "error";
+}
+
+function hasApplyAction(
+  step: GuidedStep | null,
+): step is GuidedStep {
+  return Boolean(
+    step &&
+      (step.type === "add_component" ||
+        step.type === "add_connection" ||
+        step.componentUpdate),
+  );
+}
+
+function countAppliedActions(steps: GuidedStep[], appliedIds: Set<string>) {
+  const actionSteps = steps.filter(hasApplyAction);
+  return {
+    actionCount: actionSteps.length,
+    completedCount: actionSteps.filter((item) => appliedIds.has(item.id)).length,
+  };
+}
+
+const NoProblemState = () => (
+  <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
+    <svg
+      className="w-10 h-10 text-muted/30"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+      />
+    </svg>
+    <p className="text-xs text-muted/60">
+      Open a problem to view its guided walkthrough.
+    </p>
+  </div>
+);
+
+const LoadingState = () => (
+  <div className="flex flex-col items-center justify-center h-full gap-3">
+    <div className="w-5 h-5 border-2 border-[var(--brand)]/30 border-t-[var(--brand)] rounded-full animate-spin" />
+    <p className="text-xs text-muted/60">Loading walkthrough…</p>
+  </div>
+);
+
+const NotFoundState = () => (
+  <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
+    <svg
+      className="w-10 h-10 text-muted/30"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+      />
+    </svg>
+    <p className="text-sm font-medium text-muted">
+      Guided walkthrough coming soon
+    </p>
+    <p className="text-xs text-muted/60">
+      Step-by-step guidance for this problem is being authored. Check back
+      soon.
+    </p>
+  </div>
+);
+
+const LoadErrorState: React.FC<{ onRetry: () => void }> = ({ onRetry }) => (
+  <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
+    <p className="text-sm font-medium text-red-400">Failed to load walkthrough</p>
+    <button
+      type="button"
+      onClick={onRetry}
+      className="text-xs text-[var(--brand)] hover:underline"
+    >
+      Try again
+    </button>
+  </div>
+);
+
+const GuidedStepAttachments: React.FC<{ step: GuidedStep }> = ({ step }) => (
+  <>
+        {/* Component card */}
+        {step.type === "add_component" && step.component && (
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 space-y-2.5">
+            <div className="flex items-start gap-2">
+              <div className="w-6 h-6 rounded bg-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg
+                  className="w-3.5 h-3.5 text-emerald-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-emerald-300">
+                  {step.component.label}
+                </p>
+                <p className="text-[10px] text-muted/70 mt-0.5">
+                  {step.component.componentType}
+                </p>
+              </div>
+            </div>
+
+            {/* Highlight reason */}
+            <div className="rounded bg-emerald-500/8 border border-emerald-500/15 px-2.5 py-2">
+              <p className="text-[11px] text-emerald-300/90 leading-relaxed">
+                {step.component.highlightReason}
+              </p>
+            </div>
+
+            {/* Properties */}
+            {Object.keys(step.component.properties).length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[10px] text-muted/50 uppercase tracking-wide font-medium">
+                  Properties{" "}
+                  <span className="ml-1 normal-case font-normal opacity-60">
+                    — tap a row to learn why
+                  </span>
+                </p>
+                <div className="space-y-2">
+                  {Object.entries(step.component.properties)
+                    .filter(([k]) => k !== "_customProperties")
+                    .map(([key, entry]) => (
+                      <NodePropertyDisplay
+                        key={key}
+                        propertyKey={key}
+                        value={entry}
+                      />
+                    ))}
+
+                  {/* Render each custom property as its own row for clarity */}
+                  {step.component.properties._customProperties &&
+                    Array.isArray(
+                      step.component.properties._customProperties,
+                    ) &&
+                    step.component.properties._customProperties.length > 0 && (
+                      <>
+                        <div className="text-xs font-semibold opacity-60 uppercase tracking-wide">
+                          Custom Properties
+                        </div>
+                        {step.component.properties._customProperties.map(
+                          (cp: CustomProperty) => (
+                            <NodePropertyDisplay
+                              key={cp.id}
+                              propertyKey={cp.label || cp.key}
+                              value={cp.value}
+                            />
+                          ),
+                        )}
+                      </>
+                    )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Connection card */}
+        {step.type === "add_connection" && step.connection && (
+          <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3 space-y-2.5">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded bg-purple-500/15 flex items-center justify-center flex-shrink-0">
+                <svg
+                  className="w-3.5 h-3.5 text-purple-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-purple-300">
+                  {step.connection.label}
+                </p>
+                <p className="text-[10px] text-muted/70">
+                  {step.connection.connectionType}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-muted/70">
+              <span className="font-mono bg-[var(--surface-2)] px-1.5 py-0.5 rounded text-muted">
+                {step.connection.sourceNodeId.replace("guided_", "")}
+              </span>
+              <svg
+                className="w-3 h-3 text-muted/40 flex-shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17 8l4 4m0 0l-4 4m4-4H3"
+                />
+              </svg>
+              <span className="font-mono bg-[var(--surface-2)] px-1.5 py-0.5 rounded text-muted">
+                {step.connection.targetNodeId.replace("guided_", "")}
+              </span>
+            </div>
+            <p className="text-[11px] text-muted/80 leading-relaxed">
+              {step.connection.description}
+            </p>
+          </div>
+        )}
+
+        {/* Decision point card */}
+        {step.componentUpdate && (
+          <section
+            className="space-y-2 border-t border-[var(--border)] pt-3"
+            aria-label="Decision to apply"
+          >
+            <h4 className="text-xs font-semibold text-foreground">
+              What this changes
+            </h4>
+            <p className="text-xs text-muted">
+              These decisions are recorded on the component only when you apply
+              them.
+            </p>
+            {Object.entries(step.componentUpdate.properties).map(
+              ([key, value]) => (
+                <NodePropertyDisplay
+                  key={key}
+                  propertyKey={key}
+                  value={
+                    typeof value === "string" ||
+                    typeof value === "number" ||
+                    typeof value === "boolean"
+                      ? value
+                      : (JSON.stringify(value) ?? "")
+                  }
+                />
+              ),
+            )}
+          </section>
+        )}
+        {step.type === "decision_point" && step.decision && (
+          <div className="space-y-2">
+            {/* Question */}
+            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
+              <p className="text-[11px] font-semibold text-amber-300">
+                {step.decision.question}
+              </p>
+              {/* Chosen */}
+              <div className="rounded bg-amber-500/10 border border-amber-500/20 px-2.5 py-2">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <svg
+                    className="w-3 h-3 text-amber-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span className="text-[11px] font-semibold text-amber-300">
+                    {step.decision.chosen}
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted/80 leading-relaxed">
+                  {step.decision.chosenReason}
+                </p>
+              </div>
+            </div>
+
+            {/* Alternatives */}
+            {step.decision.alternatives.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] text-muted/50 uppercase tracking-wide font-medium px-0.5">
+                  Alternatives & Trade-offs
+                </p>
+                {step.decision.alternatives.map((alt) => (
+                  <div
+                    key={alt.option}
+                    className="rounded-lg border border-[var(--border)] bg-[var(--surface-1)] p-2.5 space-y-1"
+                  >
+                    <p className="text-[11px] font-semibold text-muted">
+                      {alt.option}
+                    </p>
+                    <p className="text-[10px] text-muted/60 leading-relaxed">
+                      {alt.tradeoff}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Scale trigger card */}
+        {step.type === "scale_trigger" && step.scaleTrigger && (
+          <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-3 space-y-2.5">
+            <div className="space-y-1.5">
+              <div className="flex items-start gap-2">
+                <svg
+                  className="w-3.5 h-3.5 text-orange-400 mt-0.5 flex-shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+                <div className="space-y-0.5">
+                  <p className="text-[10px] text-orange-400/70 uppercase tracking-wide font-medium">
+                    Trigger Metric
+                  </p>
+                  <p className="text-[11px] text-orange-300 font-medium leading-relaxed">
+                    {step.scaleTrigger.metric}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t border-orange-500/15 pt-2 space-y-0.5">
+                <p className="text-[10px] text-muted/50 uppercase tracking-wide font-medium">
+                  Action
+                </p>
+                <p className="text-[11px] text-muted/80 leading-relaxed">
+                  {step.scaleTrigger.action}
+                </p>
+              </div>
+
+              <div className="border-t border-orange-500/15 pt-2 space-y-0.5">
+                <p className="text-[10px] text-muted/50 uppercase tracking-wide font-medium">
+                  Expected Impact
+                </p>
+                <p className="text-[11px] text-muted/80 leading-relaxed">
+                  {step.scaleTrigger.impact}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+  </>
+);
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
@@ -173,11 +557,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
   const rawError = useSelector((state: RootState) =>
     selectWalkthroughError(state, problemId ?? ""),
   );
-  const error: "not_found" | "error" | null = !rawError
-    ? null
-    : rawError === "NOT_FOUND"
-      ? "not_found"
-      : "error";
+  const error = getWalkthroughError(rawError);
 
   const [currentStep, setCurrentStep] = useState<number>(currentStepProp ?? 0); // 0-indexed
   const [appliedSteps, setAppliedSteps] = useState<Set<string>>(new Set());
@@ -244,106 +624,35 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
     ? new Set(appliedGuidedStepIds)
     : appliedSteps;
   const canApply =
-    step &&
-    (step.type === "add_component" ||
-      step.type === "add_connection" ||
-      !!step.componentUpdate) &&
-    !effectiveAppliedSteps.has(step.id);
-
+    hasApplyAction(step) && !effectiveAppliedSteps.has(step.id);
   const alreadyApplied =
-    step &&
-    (step.type === "add_component" ||
-      step.type === "add_connection" ||
-      !!step.componentUpdate) &&
-    effectiveAppliedSteps.has(step.id);
-  const actionSteps =
-    walkthrough?.steps.filter(
-      (item) =>
-        item.type === "add_component" ||
-        item.type === "add_connection" ||
-        !!item.componentUpdate,
-    ) ?? [];
-  const completedActions = actionSteps.filter((item) =>
-    effectiveAppliedSteps.has(item.id),
-  ).length;
+    hasApplyAction(step) && effectiveAppliedSteps.has(step.id);
+  const actionProgress = countAppliedActions(
+    walkthrough?.steps ?? [],
+    effectiveAppliedSteps,
+  );
 
   // ── Render states ──────────────────────────────────────────────────────────
 
   if (!problemId) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
-        <svg
-          className="w-10 h-10 text-muted/30"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.5}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-          />
-        </svg>
-        <p className="text-xs text-muted/60">
-          Open a problem to view its guided walkthrough.
-        </p>
-      </div>
-    );
+    return <NoProblemState />;
   }
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-3">
-        <div className="w-5 h-5 border-2 border-[var(--brand)]/30 border-t-[var(--brand)] rounded-full animate-spin" />
-        <p className="text-xs text-muted/60">Loading walkthrough…</p>
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (error === "not_found") {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
-        <svg
-          className="w-10 h-10 text-muted/30"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.5}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-          />
-        </svg>
-        <p className="text-sm font-medium text-muted">
-          Guided walkthrough coming soon
-        </p>
-        <p className="text-xs text-muted/60">
-          Step-by-step guidance for this problem is being authored. Check back
-          soon.
-        </p>
-      </div>
-    );
+    return <NotFoundState />;
   }
 
   if (error === "error") {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
-        <p className="text-sm font-medium text-red-400">
-          Failed to load walkthrough
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            if (problemId) dispatch(fetchWalkthrough(problemId));
-          }}
-          className="text-xs text-[var(--brand)] hover:underline"
-        >
-          Try again
-        </button>
-      </div>
+      <LoadErrorState
+        onRetry={() => {
+          if (problemId) dispatch(fetchWalkthrough(problemId));
+        }}
+      />
     );
   }
 
@@ -387,7 +696,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
             Lesson step {step.stepNumber} of {total}
           </span>
           <span className="text-[10px] text-muted/50">
-            {completedActions} / {actionSteps.length} design actions applied
+            {actionProgress.completedCount} / {actionProgress.actionCount} design actions applied
           </span>
         </div>
         <div className="h-1 bg-[var(--border)] rounded-full overflow-hidden">
@@ -420,276 +729,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
           />
         </div>
 
-        {/* Component card */}
-        {step.type === "add_component" && step.component && (
-          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 space-y-2.5">
-            <div className="flex items-start gap-2">
-              <div className="w-6 h-6 rounded bg-emerald-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <svg
-                  className="w-3.5 h-3.5 text-emerald-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <rect x="3" y="3" width="7" height="7" />
-                  <rect x="14" y="3" width="7" height="7" />
-                  <rect x="14" y="14" width="7" height="7" />
-                  <rect x="3" y="14" width="7" height="7" />
-                </svg>
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-emerald-300">
-                  {step.component.label}
-                </p>
-                <p className="text-[10px] text-muted/70 mt-0.5">
-                  {step.component.componentType}
-                </p>
-              </div>
-            </div>
-
-            {/* Highlight reason */}
-            <div className="rounded bg-emerald-500/8 border border-emerald-500/15 px-2.5 py-2">
-              <p className="text-[11px] text-emerald-300/90 leading-relaxed">
-                {step.component.highlightReason}
-              </p>
-            </div>
-
-            {/* Properties */}
-            {Object.keys(step.component.properties).length > 0 && (
-              <div className="space-y-2">
-                <p className="text-[10px] text-muted/50 uppercase tracking-wide font-medium">
-                  Properties
-                  <span className="ml-1 normal-case font-normal opacity-60">
-                    — tap a row to learn why
-                  </span>
-                </p>
-                <div className="space-y-2">
-                  {Object.entries(step.component.properties)
-                    .filter(([k]) => k !== "_customProperties")
-                    .map(([key, entry]) => (
-                      <NodePropertyDisplay
-                        key={key}
-                        propertyKey={key}
-                        value={entry}
-                      />
-                    ))}
-
-                  {/* Render each custom property as its own row for clarity */}
-                  {step.component.properties._customProperties &&
-                    Array.isArray(
-                      step.component.properties._customProperties,
-                    ) &&
-                    step.component.properties._customProperties.length > 0 && (
-                      <>
-                        <div className="text-xs font-semibold opacity-60 uppercase tracking-wide">
-                          Custom Properties
-                        </div>
-                        {step.component.properties._customProperties.map(
-                          (cp: CustomProperty) => (
-                            <NodePropertyDisplay
-                              key={cp.id}
-                              propertyKey={cp.label || cp.key}
-                              value={cp.value}
-                            />
-                          ),
-                        )}
-                      </>
-                    )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Connection card */}
-        {step.type === "add_connection" && step.connection && (
-          <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3 space-y-2.5">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded bg-purple-500/15 flex items-center justify-center flex-shrink-0">
-                <svg
-                  className="w-3.5 h-3.5 text-purple-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M17 8l4 4m0 0l-4 4m4-4H3"
-                  />
-                </svg>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-purple-300">
-                  {step.connection.label}
-                </p>
-                <p className="text-[10px] text-muted/70">
-                  {step.connection.connectionType}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] text-muted/70">
-              <span className="font-mono bg-[var(--surface-2)] px-1.5 py-0.5 rounded text-muted">
-                {step.connection.sourceNodeId.replace("guided_", "")}
-              </span>
-              <svg
-                className="w-3 h-3 text-muted/40 flex-shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
-              <span className="font-mono bg-[var(--surface-2)] px-1.5 py-0.5 rounded text-muted">
-                {step.connection.targetNodeId.replace("guided_", "")}
-              </span>
-            </div>
-            <p className="text-[11px] text-muted/80 leading-relaxed">
-              {step.connection.description}
-            </p>
-          </div>
-        )}
-
-        {/* Decision point card */}
-        {step.componentUpdate && (
-          <section
-            className="space-y-2 border-t border-[var(--border)] pt-3"
-            aria-label="Decision to apply"
-          >
-            <h4 className="text-xs font-semibold text-foreground">
-              What this changes
-            </h4>
-            <p className="text-xs text-muted">
-              These decisions are recorded on the component only when you apply
-              them.
-            </p>
-            {Object.entries(step.componentUpdate.properties).map(
-              ([key, value]) => (
-                <NodePropertyDisplay
-                  key={key}
-                  propertyKey={key}
-                  value={
-                    typeof value === "string" ||
-                    typeof value === "number" ||
-                    typeof value === "boolean"
-                      ? value
-                      : (JSON.stringify(value) ?? "")
-                  }
-                />
-              ),
-            )}
-          </section>
-        )}
-        {step.type === "decision_point" && step.decision && (
-          <div className="space-y-2">
-            {/* Question */}
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-2">
-              <p className="text-[11px] font-semibold text-amber-300">
-                {step.decision.question}
-              </p>
-              {/* Chosen */}
-              <div className="rounded bg-amber-500/10 border border-amber-500/20 px-2.5 py-2">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <svg
-                    className="w-3 h-3 text-amber-400"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  <span className="text-[11px] font-semibold text-amber-300">
-                    {step.decision.chosen}
-                  </span>
-                </div>
-                <p className="text-[11px] text-muted/80 leading-relaxed">
-                  {step.decision.chosenReason}
-                </p>
-              </div>
-            </div>
-
-            {/* Alternatives */}
-            {step.decision.alternatives.length > 0 && (
-              <div className="space-y-1.5">
-                <p className="text-[10px] text-muted/50 uppercase tracking-wide font-medium px-0.5">
-                  Alternatives & Trade-offs
-                </p>
-                {step.decision.alternatives.map((alt) => (
-                  <div
-                    key={alt.option}
-                    className="rounded-lg border border-[var(--border)] bg-[var(--surface-1)] p-2.5 space-y-1"
-                  >
-                    <p className="text-[11px] font-semibold text-muted">
-                      {alt.option}
-                    </p>
-                    <p className="text-[10px] text-muted/60 leading-relaxed">
-                      {alt.tradeoff}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Scale trigger card */}
-        {step.type === "scale_trigger" && step.scaleTrigger && (
-          <div className="rounded-lg border border-orange-500/20 bg-orange-500/5 p-3 space-y-2.5">
-            <div className="space-y-1.5">
-              <div className="flex items-start gap-2">
-                <svg
-                  className="w-3.5 h-3.5 text-orange-400 mt-0.5 flex-shrink-0"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-                <div className="space-y-0.5">
-                  <p className="text-[10px] text-orange-400/70 uppercase tracking-wide font-medium">
-                    Trigger Metric
-                  </p>
-                  <p className="text-[11px] text-orange-300 font-medium leading-relaxed">
-                    {step.scaleTrigger.metric}
-                  </p>
-                </div>
-              </div>
-
-              <div className="border-t border-orange-500/15 pt-2 space-y-0.5">
-                <p className="text-[10px] text-muted/50 uppercase tracking-wide font-medium">
-                  Action
-                </p>
-                <p className="text-[11px] text-muted/80 leading-relaxed">
-                  {step.scaleTrigger.action}
-                </p>
-              </div>
-
-              <div className="border-t border-orange-500/15 pt-2 space-y-0.5">
-                <p className="text-[10px] text-muted/50 uppercase tracking-wide font-medium">
-                  Expected Impact
-                </p>
-                <p className="text-[11px] text-muted/80 leading-relaxed">
-                  {step.scaleTrigger.impact}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        <GuidedStepAttachments step={step} />
       </div>
 
       {/* Footer — Apply + Navigation */}
@@ -717,6 +757,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
                   className="w-3.5 h-3.5"
                   fill="currentColor"
                   viewBox="0 0 20 20"
+                  aria-hidden="true"
                 >
                   <path
                     fillRule="evenodd"
@@ -734,6 +775,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                   strokeWidth={2}
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
@@ -765,6 +807,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
               viewBox="0 0 24 24"
               stroke="currentColor"
               strokeWidth={2}
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -790,6 +833,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
               viewBox="0 0 24 24"
               stroke="currentColor"
               strokeWidth={2}
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"

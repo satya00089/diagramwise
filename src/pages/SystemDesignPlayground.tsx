@@ -360,6 +360,105 @@ const getApiErrorStatus = (error: unknown): number | undefined => {
   return typeof status === "number" ? status : undefined;
 };
 
+type DiagramFallbackErrors = { privateError: unknown; publicError: unknown };
+
+type DiagramFallbackResult =
+  | { kind: "diagram"; diagram: SavedDiagram }
+  | { kind: "errors"; errors: DiagramFallbackErrors };
+
+type DiagramUrlSource =
+  | { kind: "workspace"; workspace: CanvasWorkspaceBootstrapResponse }
+  | { kind: "diagram"; diagram: SavedDiagram }
+  | { kind: "errors"; errors: DiagramFallbackErrors };
+
+type LoadedAttempt = {
+  id?: string;
+  title?: string;
+  difficulty?: string;
+  category?: string;
+  nodes: Node[];
+  edges: Edge[];
+  elapsedTime: number;
+  lastAssessment?: ValidationResult;
+  lastAssessmentCheck?: ValidationResult;
+  problemRequirementSpec?: RequirementSpec;
+  reasoningContext?: DesignReasoningContext;
+  interviewSession?: InterviewSession;
+  assessmentCount?: number;
+  assessmentHistory?: AssessmentHistoryEntry[];
+  addressedFindingIds?: string[];
+  isPublic?: boolean;
+};
+
+async function loadDiagramFallback(
+  diagramId: string,
+  workspaceError: unknown,
+): Promise<DiagramFallbackResult> {
+  // Preserve the workspace failure for access-state reporting. The legacy
+  // endpoint is a compatibility fallback and its failure must not mask it.
+  const privateError = workspaceError;
+  try {
+    return {
+      kind: "diagram",
+      diagram: (await apiService.getDiagram(diagramId)) as SavedDiagram,
+    };
+  } catch {
+    // Continue to the public-copy fallback.
+  }
+
+  try {
+    return {
+      kind: "diagram",
+      diagram: (await apiService.getPublicDiagram(diagramId)) as SavedDiagram,
+    };
+  } catch (publicError) {
+    return { kind: "errors", errors: { privateError, publicError } };
+  }
+}
+
+async function resolveDiagramUrlSource(
+  loadMode: "private" | "public",
+  diagramId: string,
+): Promise<DiagramUrlSource> {
+  if (loadMode === "public") {
+    return {
+      kind: "diagram",
+      diagram: (await apiService.getPublicDiagram(diagramId)) as SavedDiagram,
+    };
+  }
+  try {
+    return {
+      kind: "workspace",
+      workspace: await apiService.getDiagramWorkspace(diagramId),
+    };
+  } catch (workspaceError) {
+    return loadDiagramFallback(diagramId, workspaceError);
+  }
+}
+
+function getDiagramLoadFailureState(
+  error: unknown,
+  isAuthenticated: boolean,
+): "requires-auth" | "not-found" | "error" {
+  const status = getApiErrorStatus(error);
+  if (!isAuthenticated && [401, 403, 404].includes(status ?? 0)) {
+    return "requires-auth";
+  }
+  return status === 404 ? "not-found" : "error";
+}
+
+function getDiagramFallbackAccessState(errors: {
+  privateError: unknown;
+  publicError: unknown;
+}): "forbidden" | "not-found" | "error" {
+  const privateStatus = getApiErrorStatus(errors.privateError);
+  const publicStatus = getApiErrorStatus(errors.publicError);
+  const status = publicStatus ?? privateStatus;
+  if (status === 403 || privateStatus === 403) return "forbidden";
+  if (status === 404 || privateStatus === 404) return "not-found";
+  return "error";
+}
+
 // Persists the user's "Skip for now" / submit choice on the project intent
 // dialog so it doesn't reappear after a remount or after the canvas briefly
 // goes non-blank and back (e.g. add then delete a node).
@@ -632,6 +731,531 @@ const createFreeformNodeWithCopyHandler = (
       <FreeformNodeWithCopy {...props} onCopy={onCopy} isInGroup={isInGroup} />
     );
   };
+};
+
+type PlaygroundHeaderProps = {
+  problem: SystemDesignProblem;
+  idFromUrl: string | undefined;
+  isSharedView: boolean;
+  elapsedTime: number;
+  formatTime: (seconds: number) => string;
+  isAuthenticated: boolean;
+  currentDiagramId: string | null;
+  currentDiagram: SavedDiagram | null;
+  nodeCount: number;
+  handleManualSave: () => void;
+  autoSaveEnabled: boolean;
+  autoSaveStatus: "idle" | "saving" | "saved" | "error";
+  lastSavedAt: Date | null;
+  formatSavedTime: (savedAt: Date) => string;
+  setShowExtensionHub: React.Dispatch<React.SetStateAction<boolean>>;
+  extensionImportStatus: string | null;
+  collaborationPaused: boolean;
+  toast: ReturnType<typeof useToast>;
+  setShowShareModal: React.Dispatch<React.SetStateAction<boolean>>;
+  isCollaborationConnected: boolean;
+  isCollaborationConnecting: boolean;
+  collaborationReconnectAttempts: number;
+  onlineCollaborators: React.ComponentProps<typeof CollaborationStatus>["collaborators"];
+  savedAttemptId: string | null;
+  setShowShareToWorldModal: React.Dispatch<React.SetStateAction<boolean>>;
+  publicDesignButtonClass: string;
+  publicDesignAction: string;
+  publicDesignStatus: string;
+  getAssessmentTooltip: typeof getAssessmentTooltip;
+  isAssessing: boolean;
+  isPreparingInterview: boolean;
+  runAssessment: () => void;
+  startTour: () => void;
+  setShowAuthModal: React.Dispatch<React.SetStateAction<boolean>>;
+};
+
+const difficultyClasses: Record<string, string> = {
+  Easy: "playground-difficulty--easy",
+  Medium: "playground-difficulty--medium",
+  Hard: "playground-difficulty--hard",
+  "Very Hard": "playground-difficulty--very-hard",
+};
+
+type PlaygroundHeaderIdentityProps = Pick<
+  PlaygroundHeaderProps,
+  "problem" | "idFromUrl" | "isSharedView" | "elapsedTime" | "formatTime"
+>;
+
+const PlaygroundHeaderIdentity: React.FC<PlaygroundHeaderIdentityProps> = ({
+  problem,
+  idFromUrl,
+  isSharedView,
+  elapsedTime,
+  formatTime,
+}) => {
+  const isProblem = idFromUrl !== "free" && !isSharedView;
+  const difficultyClass =
+    difficultyClasses[problem.difficulty] ?? "playground-difficulty--hard";
+
+  return (
+    <div className="flex items-center space-x-4">
+      <Link className="systema-brand" to="/" aria-label="Diagramwise home">
+        <img src="/logo-64.png" alt="" aria-hidden="true" />
+        <span>Diagramwise</span>
+      </Link>
+      <div className="hidden md:flex items-center space-x-3 border-l border-white/20 ml-3 pl-4">
+        <h1
+          className="text-sm font-semibold text-white max-w-[200px] truncate cursor-default"
+          data-tooltip={problem.title}
+        >
+          {problem.title}
+        </h1>
+        {isProblem && (
+          <>
+            <span
+              className={`playground-difficulty px-2 py-1 rounded text-xs font-medium ${difficultyClass}`}
+            >
+              {problem.difficulty}
+            </span>
+            {problem.estimated_time && (
+              <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 flex items-center gap-1">
+                <MdAccessTime className="h-3 w-3" />
+                {problem.estimated_time}
+              </span>
+            )}
+            <div
+              className="flex items-center gap-1 border-l border-white/20 pl-3"
+              data-tour="timer"
+            >
+              <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 flex items-center gap-1 font-mono">
+                {formatTime(elapsedTime)}
+              </span>
+            </div>
+          </>
+        )}
+        {isSharedView && (
+          <span className="px-2 py-1 rounded text-xs font-medium bg-white/10 text-white/80">
+            View only
+          </span>
+        )}
+      </div>
+    </div>
+  );
+};
+
+type AutoSaveIndicatorProps = Pick<
+  PlaygroundHeaderProps,
+  "autoSaveEnabled" | "autoSaveStatus" | "lastSavedAt" | "formatSavedTime"
+> & { isProblem: boolean };
+
+const AutoSaveIndicator: React.FC<AutoSaveIndicatorProps> = ({
+  autoSaveEnabled,
+  autoSaveStatus,
+  lastSavedAt,
+  formatSavedTime,
+  isProblem,
+}) => {
+  const statusText = {
+    saving: isProblem ? "Saving progress..." : "Saving...",
+    saved: isProblem ? "Progress saved" : "Saved",
+    error: "Save failed",
+    idle: isProblem ? "Progress saved" : "Saved",
+  }[autoSaveStatus];
+  const statusDotClass = {
+    saving:
+      "w-3 h-3 border border-white/60 border-t-transparent rounded-full animate-spin",
+    saved: "w-3 h-3 bg-green-400 rounded-full",
+    error: "w-3 h-3 bg-red-400 rounded-full",
+    idle: "w-3 h-3 bg-white/40 rounded-full",
+  }[autoSaveStatus];
+  const hasSavedTime =
+    (autoSaveStatus === "saved" || autoSaveStatus === "idle") &&
+    lastSavedAt !== null;
+  const savedTime =
+    lastSavedAt && (autoSaveStatus === "saved" || autoSaveStatus === "idle")
+      ? formatSavedTime(lastSavedAt)
+      : "";
+
+  if (!autoSaveEnabled || (autoSaveStatus === "idle" && !lastSavedAt)) {
+    return null;
+  }
+
+  return (
+    <div className="hidden sm:flex items-center gap-2 border-white/20">
+      <div className="flex items-center gap-2 px-2 py-1 text-xs text-white/80">
+        <div className={statusDotClass} aria-hidden="true" />
+        <span>
+          {statusText} {hasSavedTime ? savedTime : ""}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+type PlaygroundDesignManagementProps = Pick<
+  PlaygroundHeaderProps,
+  | "idFromUrl"
+  | "isAuthenticated"
+  | "currentDiagramId"
+  | "nodeCount"
+  | "handleManualSave"
+  | "autoSaveEnabled"
+  | "autoSaveStatus"
+  | "lastSavedAt"
+  | "formatSavedTime"
+>;
+
+const PlaygroundDesignManagement: React.FC<PlaygroundDesignManagementProps> = (
+  props,
+) => {
+  if (props.idFromUrl !== "free") return null;
+
+  return (
+    <div className="hidden sm:flex items-center gap-2 border-white/20">
+      {!props.currentDiagramId && props.nodeCount > 0 && props.isAuthenticated && (
+        <button
+          type="button"
+          onClick={props.handleManualSave}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-white/20 hover:bg-white/30 rounded-md transition-colors cursor-pointer"
+          data-tooltip="Save Design"
+          data-tour="save-btn"
+        >
+          <MdSave className="h-4 w-4" />
+          Save
+        </button>
+      )}
+      <AutoSaveIndicator {...props} isProblem={false} />
+    </div>
+  );
+};
+
+type PlaygroundShareActionsProps = Pick<
+  PlaygroundHeaderProps,
+  | "idFromUrl"
+  | "isSharedView"
+  | "isAuthenticated"
+  | "currentDiagramId"
+  | "currentDiagram"
+  | "savedAttemptId"
+  | "collaborationPaused"
+  | "toast"
+  | "setShowShareModal"
+  | "isCollaborationConnected"
+  | "isCollaborationConnecting"
+  | "collaborationReconnectAttempts"
+  | "onlineCollaborators"
+  | "setShowShareToWorldModal"
+  | "publicDesignButtonClass"
+  | "publicDesignAction"
+  | "publicDesignStatus"
+>;
+
+const PlaygroundShareActions: React.FC<PlaygroundShareActionsProps> = ({
+  idFromUrl,
+  isSharedView,
+  isAuthenticated,
+  currentDiagramId,
+  currentDiagram,
+  savedAttemptId,
+  collaborationPaused,
+  toast,
+  setShowShareModal,
+  isCollaborationConnected,
+  isCollaborationConnecting,
+  collaborationReconnectAttempts,
+  onlineCollaborators,
+  setShowShareToWorldModal,
+  publicDesignButtonClass,
+  publicDesignAction,
+  publicDesignStatus,
+}) => {
+  const canShareDiagram =
+    idFromUrl === "free" &&
+    isAuthenticated &&
+    Boolean(currentDiagramId) &&
+    currentDiagram?.isOwner !== false;
+  const canPublishDiagram =
+    !isSharedView &&
+    isAuthenticated &&
+    ((idFromUrl === "free" &&
+      Boolean(currentDiagramId) &&
+      currentDiagram?.isOwner !== false) ||
+      (idFromUrl !== "free" && Boolean(savedAttemptId)));
+  const handleShareClick = () => {
+    if (collaborationPaused) {
+      toast.info(
+        "Live collaboration is paused while this design has more than one canvas. We're improving this.",
+      );
+      return;
+    }
+    setShowShareModal(true);
+  };
+
+  return (
+    <>
+      {canShareDiagram && (
+        <>
+          <button
+            type="button"
+            onClick={handleShareClick}
+            className="p-2 text-white hover:bg-white/20 rounded-md transition-colors cursor-pointer"
+            data-tooltip="Invite collaborators"
+            aria-label="Invite collaborators"
+          >
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
+              />
+            </svg>
+          </button>
+          <CollaborationStatus
+            isConnected={isCollaborationConnected}
+            isConnecting={!collaborationPaused && isCollaborationConnecting}
+            reconnectAttempts={collaborationReconnectAttempts}
+            collaborators={onlineCollaborators}
+            showCollaborators={true}
+          />
+        </>
+      )}
+      {canPublishDiagram && (
+        <button
+          type="button"
+          onClick={() => setShowShareToWorldModal(true)}
+          className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${publicDesignButtonClass}`}
+          aria-label={publicDesignAction}
+          data-tooltip={publicDesignAction}
+        >
+          <MdPublic className="h-4 w-4" aria-hidden />
+          <span className="hidden lg:inline">{publicDesignStatus}</span>
+        </button>
+      )}
+    </>
+  );
+};
+
+type PlaygroundAssessmentActionProps = Pick<
+  PlaygroundHeaderProps,
+  | "problem"
+  | "isAuthenticated"
+  | "isAssessing"
+  | "isPreparingInterview"
+  | "getAssessmentTooltip"
+  | "runAssessment"
+>;
+
+const PlaygroundAssessmentAction: React.FC<PlaygroundAssessmentActionProps> = ({
+  problem,
+  isAuthenticated,
+  isAssessing,
+  isPreparingInterview,
+  getAssessmentTooltip,
+  runAssessment,
+}) =>
+  problem.id !== "free" ? (
+    <div
+      data-tour="assess-btn"
+      data-tooltip={getAssessmentTooltip(
+        isAuthenticated,
+        isAssessing,
+        isPreparingInterview,
+      )}
+    >
+      <button
+        type="button"
+        onClick={runAssessment}
+        disabled={isAssessing || isPreparingInterview || !isAuthenticated}
+        className="px-6 py-1 text-white font-bold rounded-md hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
+      >
+        {getAssessmentActionLabel(isAssessing, isPreparingInterview)}
+      </button>
+    </div>
+  ) : null;
+
+type PlaygroundAccountActionsProps = Pick<
+  PlaygroundHeaderProps,
+  "isSharedView" | "isAuthenticated" | "startTour" | "setShowAuthModal"
+>;
+
+const PlaygroundAccountActions: React.FC<PlaygroundAccountActionsProps> = ({
+  isSharedView,
+  isAuthenticated,
+  startTour,
+  setShowAuthModal,
+}) => (
+  <>
+    {!isSharedView && (
+      <button
+        type="button"
+        onClick={startTour}
+        className="flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-white/80 hover:text-white hover:bg-white/20 rounded-md transition-colors cursor-pointer"
+        data-tooltip="Take a tour"
+      >
+        <MdHelpOutline className="h-4 w-4" />
+        <span className="hidden sm:inline text-xs">Tour</span>
+      </button>
+    )}
+    <ThemeSwitcher />
+    {isAuthenticated ? (
+      <AccountMenu variant="inverse" />
+    ) : (
+      <button
+        type="button"
+        onClick={() => setShowAuthModal(true)}
+        className="product-sign-in"
+      >
+        Sign In
+      </button>
+    )}
+  </>
+);
+
+const PlaygroundHeader: React.FC<PlaygroundHeaderProps> = (props) => (
+  <header className="relative z-50 bg-[var(--brand)] shadow-md overflow-visible">
+    <div className="max-w-full mx-auto px-4 sm:px-6 overflow-visible">
+      <div className="flex flex-wrap items-center justify-between min-h-14 gap-y-2 py-2 md:h-14 md:flex-nowrap md:py-0 overflow-visible">
+        <PlaygroundHeaderIdentity {...props} />
+        <div className="flex w-full flex-wrap items-center justify-between gap-2 md:w-auto md:flex-nowrap md:justify-start">
+          <PlaygroundDesignManagement {...props} />
+          {props.idFromUrl && props.idFromUrl !== "free" && (
+            <AutoSaveIndicator {...props} isProblem={true} />
+          )}
+          <button
+            type="button"
+            onClick={() => props.setShowExtensionHub(true)}
+            disabled={props.extensionImportStatus !== null}
+            className="p-2 text-white hover:bg-white/20 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+            data-tooltip="Extensions: import and export"
+            data-tour="export-btn"
+            aria-label="Open extensions"
+          >
+            <MdExtension className="h-5 w-5" />
+          </button>
+          <PlaygroundShareActions {...props} />
+          <PlaygroundAssessmentAction {...props} />
+          <PlaygroundAccountActions {...props} />
+        </div>
+      </div>
+    </div>
+  </header>
+);
+
+type DiagramAccessOverlayProps = {
+  state: DiagramAccessState;
+  setShowAuthModal: React.Dispatch<React.SetStateAction<boolean>>;
+  logout: () => void;
+  setDiagramAccessState: React.Dispatch<React.SetStateAction<DiagramAccessState>>;
+  onBack: () => void;
+};
+
+type DiagramAccessCopy = {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  primaryActionLabel?: string;
+};
+
+const diagramAccessCopy: Record<Exclude<DiagramAccessState, null>, DiagramAccessCopy> = {
+  loading: {
+    icon: (
+      <div
+        className="mx-auto mb-5 h-10 w-10 animate-spin rounded-full border-4 border-theme/15 border-t-accent"
+        aria-label="Loading diagram"
+      />
+    ),
+    title: "Loading diagram…",
+    description: "We’re checking the diagram link and preparing the canvas.",
+  },
+  "requires-auth": {
+    icon: <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 text-2xl">🔒</div>,
+    title: "Sign in to view this design",
+    description: "This link points to a private or account-scoped design. Sign in to continue. After you sign in, we’ll return here and load it automatically.",
+    primaryActionLabel: "Sign in to continue",
+  },
+  forbidden: {
+    icon: <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-2xl">🔐</div>,
+    title: "This design belongs to another account",
+    description: "The signed-in account does not have access to this design. Sign in with the account that owns it or use a public Diagramwise link.",
+    primaryActionLabel: "Sign in with another account",
+  },
+  "not-found": {
+    icon: <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-2xl">!</div>,
+    title: "This design is no longer available",
+    description: "The link may be expired, deleted, or no longer shared with you.",
+  },
+  error: {
+    icon: <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-2xl">!</div>,
+    title: "We couldn’t load this design",
+    description: "The diagram service could not load this link. Please try again.",
+    primaryActionLabel: "Try again",
+  },
+};
+
+const DiagramAccessOverlay: React.FC<DiagramAccessOverlayProps> = ({
+  state,
+  setShowAuthModal,
+  logout,
+  setDiagramAccessState,
+  onBack,
+}) => {
+  if (!state) return null;
+
+  const content = diagramAccessCopy[state];
+  const primaryActions: Partial<
+    Record<Exclude<DiagramAccessState, null>, () => void>
+  > = {
+    "requires-auth": () => setShowAuthModal(true),
+    forbidden: () => {
+      void logout();
+      setDiagramAccessState("requires-auth");
+      setShowAuthModal(true);
+    },
+    error: () => globalThis.location.reload(),
+  };
+  const primaryAction = primaryActions[state];
+
+  return (
+    <div
+      className="absolute inset-0 z-40 flex items-center justify-center bg-theme/95 px-6 py-10 backdrop-blur-sm"
+      role={state === "loading" ? undefined : "dialog"}
+      aria-labelledby="diagram-access-title"
+      aria-describedby="diagram-access-description"
+    >
+      <div className="w-full max-w-lg rounded-2xl border border-theme/15 bg-surface p-8 text-center shadow-2xl">
+        {content.icon}
+        <h2 id="diagram-access-title" className="text-xl font-semibold text-theme">
+          {content.title}
+        </h2>
+        <p id="diagram-access-description" className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted">
+          {content.description}
+        </p>
+        {state !== "loading" && (
+          <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
+            {primaryAction && (
+              <button
+                type="button"
+                onClick={primaryAction}
+                className="rounded-lg bg-accent px-5 py-2.5 font-semibold text-[var(--bg)] transition hover:brightness-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+              >
+                {content.primaryActionLabel}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onBack}
+              className="rounded-lg border border-theme/20 bg-theme/5 px-5 py-2.5 font-semibold text-theme transition hover:bg-theme/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
+            >
+              Back to Diagramwise
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
 
 const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
@@ -1520,65 +2144,37 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         };
 
         try {
-          if (loadMode === "public") {
-            applyDiagram(await apiService.getPublicDiagram(diagramIdFromUrl));
-            return;
-          }
-
-          try {
-            const workspace =
-              await apiService.getDiagramWorkspace(diagramIdFromUrl);
+          const source = await resolveDiagramUrlSource(
+            loadMode,
+            diagramIdFromUrl,
+          );
+          if (cancelled) return;
+          if (source.kind === "workspace") {
             const design: SavedDiagram = {
-              ...workspace.design,
+              ...source.workspace.design,
               nodes: [],
               edges: [],
-              owner: workspace.design.owner ?? {
-                id: workspace.design.userId,
+              owner: source.workspace.design.owner ?? {
+                id: source.workspace.design.userId,
                 name: "Anonymous",
                 email: "",
               },
             };
             applyDiagram(design, false);
-            await openCanvasWorkspaceFor(diagramIdFromUrl, workspace);
-          } catch (privateError) {
-            if (cancelled) return;
-            // Keep older API deployments and legacy responses usable during rollout.
-            try {
-              applyDiagram(await apiService.getDiagram(diagramIdFromUrl));
-              return;
-            } catch {
-              // Continue to the public-copy fallback below.
-            }
-            // A signed-in user may still be opening a public editor-shaped
-            // link. Keep that compatible by falling back to the public copy.
-            try {
-              applyDiagram(await apiService.getPublicDiagram(diagramIdFromUrl));
-            } catch (publicError) {
-              if (cancelled) return;
-              const privateStatus = getApiErrorStatus(privateError);
-              const publicStatus = getApiErrorStatus(publicError);
-              const status = publicStatus ?? privateStatus;
-
-              if (status === 403 || privateStatus === 403) {
-                setDiagramAccessState("forbidden");
-              } else if (status === 404 || privateStatus === 404) {
-                setDiagramAccessState("not-found");
-              } else {
-                setDiagramAccessState("error");
-              }
-            }
+            await openCanvasWorkspaceFor(diagramIdFromUrl, source.workspace);
+            return;
           }
-        } catch (err) {
+          if (source.kind === "diagram") {
+            applyDiagram(source.diagram);
+            return;
+          }
+          setDiagramAccessState(getDiagramFallbackAccessState(source.errors));
+        } catch (error) {
           if (cancelled) return;
-          console.error("Failed to load diagram:", err);
-          const status = getApiErrorStatus(err);
-          if (!isAuthenticated && [401, 403, 404].includes(status ?? 0)) {
-            setDiagramAccessState("requires-auth");
-          } else if (status === 404) {
-            setDiagramAccessState("not-found");
-          } else {
-            setDiagramAccessState("error");
-          }
+          console.error("Failed to load diagram:", error);
+          setDiagramAccessState(
+            getDiagramLoadFailureState(error, isAuthenticated),
+          );
         }
       };
 
@@ -1665,28 +2261,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       }
     } else if (idFromUrl && idFromUrl !== "free" && isAuthenticated) {
       // Load saved progress for problem-solving from database
-      const loadAttempt = async () => {
-        try {
-          const attempt = (await apiService.getAttemptByProblem(idFromUrl)) as {
-            id?: string;
-            title?: string;
-            difficulty?: string;
-            category?: string;
-            nodes: Node[];
-            edges: Edge[];
-            elapsedTime: number;
-            lastAssessment?: ValidationResult;
-            lastAssessmentCheck?: ValidationResult;
-            problemRequirementSpec?: RequirementSpec;
-            reasoningContext?: DesignReasoningContext;
-            interviewSession?: InterviewSession;
-            assessmentCount?: number;
-            assessmentHistory?: AssessmentHistoryEntry[];
-            addressedFindingIds?: string[];
-            isPublic?: boolean;
-          } | null;
-
-          if (attempt) {
+      const restoreAttempt = (attempt: LoadedAttempt) => {
             setAttemptRequirementContext({
               problemId: idFromUrl,
               spec: attempt.problemRequirementSpec,
@@ -1757,7 +2332,13 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             setCanvasState({ nodes: restoredNodes, edges: loadedEdges });
 
             toast.success("Progress restored from previous session");
-          }
+      };
+
+      const loadAttempt = async () => {
+        try {
+          const attempt = (await apiService.getAttemptByProblem(idFromUrl)) as LoadedAttempt | null;
+
+          if (attempt) restoreAttempt(attempt);
         } catch (error) {
           console.error("Failed to load saved attempt:", error);
         }
@@ -3840,7 +4421,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     );
   };
 
-  // compute property elements once to avoid inline IIFE and deep nesting inside JSX
+  const buildNodePropertyElements = () => {
   let propertyElements: React.ReactNode = null;
   if (inspectedNodeId) {
     const node = nodes.find((n) => n.id === inspectedNodeId);
@@ -4116,8 +4697,11 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       );
     }
   }
+    return propertyElements;
+  };
+  const propertyElements = buildNodePropertyElements();
 
-  // Render custom property elements
+  const buildCustomPropertyElements = () => {
   let customPropertyElements: React.ReactNode = null;
   if (inspectedNodeId) {
     const nodeCustomProps = customProperties[inspectedNodeId] || [];
@@ -4138,8 +4722,11 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       );
     }
   }
+    return customPropertyElements;
+  };
+  const customPropertyElements = buildCustomPropertyElements();
 
-  // Compute edge property elements
+  const buildEdgePropertyElements = () => {
   let edgePropertyElements: React.ReactNode = null;
   if (inspectedEdgeId) {
     const currentEdgeColor = (edgeProps["color"] as string) || "";
@@ -4355,6 +4942,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
+            aria-hidden="true"
           >
             <polyline points="3 6 5 6 21 6" />
             <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
@@ -4367,6 +4955,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       </div>
     );
   }
+    return edgePropertyElements;
+  };
+  const edgePropertyElements = buildEdgePropertyElements();
 
   // Handle copying a node (defined before early returns to satisfy React Hook rules)
   const handleNodeCopy = useCallback(
@@ -4912,7 +5503,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
    * Capture the current canvas viewport as a PNG data URL.
    * Shared between downloadImage() and ShareToWorldModal screenshot.
    */
-  const captureCanvasPng = async (): Promise<string> => {
+  const captureCanvasPng = (): Promise<string> => {
     const nodesBounds = getNodesBounds(getNodes());
     const padding = 80;
     const sourceWidth = Math.max(nodesBounds.width + padding * 2, 320);
@@ -4931,7 +5522,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       ".react-flow__viewport",
     ) as HTMLElement;
 
-    if (!viewportElement) throw new Error("Viewport element not found");
+    if (!viewportElement)
+      return Promise.reject(new Error("Viewport element not found"));
 
     const docStyle = getComputedStyle(document.documentElement);
     const bgColor =
@@ -5458,407 +6050,52 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         noIndex
       />
       <div className="design-studio-page h-screen flex flex-col overflow-hidden bg-theme">
-        {/* Header */}
-        <header className="relative z-50 bg-[var(--brand)] shadow-md overflow-visible">
-          <div className="max-w-full mx-auto px-4 sm:px-6 overflow-visible">
-            <div className="flex flex-wrap items-center justify-between min-h-14 gap-y-2 py-2 md:h-14 md:flex-nowrap md:py-0 overflow-visible">
-              {/* Left side - Logo and Title */}
-              <div className="flex items-center space-x-4">
-                <Link
-                  className="systema-brand"
-                  to="/"
-                  aria-label="Diagramwise home"
-                >
-                  <img src="/logo-64.png" alt="" aria-hidden="true" />
-                  <span>Diagramwise</span>
-                </Link>
-                <div className="hidden md:flex items-center space-x-3 border-l border-white/20 ml-3 pl-4">
-                  <h1
-                    className="text-sm font-semibold text-white max-w-[200px] truncate cursor-default"
-                    data-tooltip={problem.title}
-                  >
-                    {problem.title}
-                  </h1>
-
-                  {/* Show difficulty and estimated time only for problems, not Design Studio or shared view */}
-                  {idFromUrl !== "free" && !isSharedView && (
-                    <>
-                      <span
-                        className={`playground-difficulty px-2 py-1 rounded text-xs font-medium ${
-                          problem.difficulty === "Easy"
-                            ? "playground-difficulty--easy"
-                            : problem.difficulty === "Medium"
-                              ? "playground-difficulty--medium"
-                              : problem.difficulty === "Very Hard"
-                                ? "playground-difficulty--very-hard"
-                                : "playground-difficulty--hard"
-                        }`}
-                      >
-                        {problem.difficulty}
-                      </span>
-                      {problem.estimated_time && (
-                        <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 flex items-center gap-1">
-                          <MdAccessTime className="h-3 w-3" />
-                          {problem.estimated_time}
-                        </span>
-                      )}
-                    </>
-                  )}
-
-                  {/* Timer - only show for problems, not Design Studio or shared view */}
-                  {idFromUrl !== "free" && !isSharedView && (
-                    <div
-                      className="flex items-center gap-1 border-l border-white/20 pl-3"
-                      data-tour="timer"
-                    >
-                      <span className="px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300 flex items-center gap-1 font-mono">
-                        {formatTime(elapsedTime)}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Read-only badge for shared view */}
-                  {isSharedView && (
-                    <span className="px-2 py-1 rounded text-xs font-medium bg-white/10 text-white/80">
-                      View only
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="flex w-full flex-wrap items-center justify-between gap-2 md:w-auto md:flex-nowrap md:justify-start">
-                {/* Design Management Buttons (only for free mode and authenticated users) */}
-                {idFromUrl === "free" && (
-                  <div className="hidden sm:flex items-center gap-2 border-white/20">
-                    {/* Manual Save button — shown when authenticated with unsaved canvas */}
-                    {isAuthenticated &&
-                      !currentDiagramId &&
-                      nodes.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={handleManualSave}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-white/20 hover:bg-white/30 rounded-md transition-colors cursor-pointer"
-                          data-tooltip="Save Design"
-                          data-tour="save-btn"
-                        >
-                          <MdSave className="h-4 w-4" />
-                          Save
-                        </button>
-                      )}
-                    {/* Auto-save indicator */}
-                    {autoSaveEnabled && (
-                      <div className="flex items-center gap-2 px-2 py-1 text-xs text-white/80">
-                        {autoSaveStatus === "saving" && (
-                          <>
-                            <div className="w-3 h-3 border border-white/60 border-t-transparent rounded-full animate-spin"></div>
-                            <span>Saving...</span>
-                          </>
-                        )}
-                        {autoSaveStatus === "saved" && (
-                          <>
-                            <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                            <span>
-                              Saved{" "}
-                              {lastSavedAt && formatSavedTime(lastSavedAt)}
-                            </span>
-                          </>
-                        )}
-                        {autoSaveStatus === "error" && (
-                          <>
-                            <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                            <span>Save failed</span>
-                          </>
-                        )}
-                        {autoSaveStatus === "idle" && lastSavedAt && (
-                          <>
-                            <div className="w-3 h-3 bg-white/40 rounded-full"></div>
-                            <span>Saved {formatSavedTime(lastSavedAt)}</span>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Auto-save indicator for problem-solving mode */}
-                {idFromUrl && idFromUrl !== "free" && autoSaveEnabled && (
-                  <div className="hidden sm:flex items-center gap-2 border-white/20">
-                    <div className="flex items-center gap-2 px-2 py-1 text-xs text-white/80">
-                      {autoSaveStatus === "saving" && (
-                        <>
-                          <div className="w-3 h-3 border border-white/60 border-t-transparent rounded-full animate-spin"></div>
-                          <span>Saving progress...</span>
-                        </>
-                      )}
-                      {autoSaveStatus === "saved" && (
-                        <>
-                          <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                          <span>
-                            Progress saved{" "}
-                            {lastSavedAt && formatSavedTime(lastSavedAt)}
-                          </span>
-                        </>
-                      )}
-                      {autoSaveStatus === "error" && (
-                        <>
-                          <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                          <span>Save failed</span>
-                        </>
-                      )}
-                      {autoSaveStatus === "idle" && lastSavedAt && (
-                        <>
-                          <div className="w-3 h-3 bg-white/40 rounded-full"></div>
-                          <span>
-                            Progress saved {formatSavedTime(lastSavedAt)}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => setShowExtensionHub(true)}
-                  disabled={extensionImportStatus !== null}
-                  className="p-2 text-white hover:bg-white/20 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                  data-tooltip="Extensions: import and export"
-                  data-tour="export-btn"
-                  aria-label="Open extensions"
-                >
-                  <MdExtension className="h-5 w-5" />
-                </button>
-
-                {/* Share button - only show for Design Studio and authenticated users with owned diagrams */}
-                {idFromUrl === "free" &&
-                  isAuthenticated &&
-                  currentDiagramId &&
-                  currentDiagram?.isOwner !== false && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (collaborationPaused) {
-                            toast.info(
-                              "Live collaboration is paused while this design has more than one canvas. We're improving this.",
-                            );
-                            return;
-                          }
-                          setShowShareModal(true);
-                        }}
-                        className="p-2 text-white hover:bg-white/20 rounded-md transition-colors cursor-pointer"
-                        data-tooltip="Invite collaborators"
-                        aria-label="Invite collaborators"
-                      >
-                        <svg
-                          className="h-5 w-5"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z"
-                          />
-                        </svg>
-                      </button>
-
-                      {/* Collaboration Status - Figma-style: invisible when working, visible when needed */}
-                      <CollaborationStatus
-                        isConnected={isCollaborationConnected}
-                        isConnecting={
-                          !collaborationPaused && isCollaborationConnecting
-                        }
-                        reconnectAttempts={collaborationReconnectAttempts}
-                        collaborators={onlineCollaborators}
-                        showCollaborators={true}
-                      />
-                    </>
-                  )}
-
-                {!isSharedView &&
-                  isAuthenticated &&
-                  ((idFromUrl === "free" &&
-                    currentDiagramId &&
-                    currentDiagram?.isOwner !== false) ||
-                    (idFromUrl !== "free" && savedAttemptId)) && (
-                    <button
-                      type="button"
-                      onClick={() => setShowShareToWorldModal(true)}
-                      className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${publicDesignButtonClass}`}
-                      aria-label={publicDesignAction}
-                      data-tooltip={publicDesignAction}
-                    >
-                      <MdPublic className="h-4 w-4" aria-hidden />
-                      <span className="hidden lg:inline">
-                        {publicDesignStatus}
-                      </span>
-                    </button>
-                  )}
-
-                {problem?.id !== "free" && (
-                  <div
-                    data-tour="assess-btn"
-                    data-tooltip={getAssessmentTooltip(
-                      isAuthenticated,
-                      isAssessing,
-                      isPreparingInterview,
-                    )}
-                  >
-                    <button
-                      type="button"
-                      onClick={runAssessment}
-                      disabled={
-                        isAssessing || isPreparingInterview || !isAuthenticated
-                      }
-                      className="px-6 py-1 text-white font-bold rounded-md hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                    >
-                      {getAssessmentActionLabel(
-                        isAssessing,
-                        isPreparingInterview,
-                      )}
-                    </button>
-                  </div>
-                )}
-                {/* Tour trigger */}
-                {!isSharedView && (
-                  <button
-                    type="button"
-                    onClick={startTour}
-                    className="flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-white/80 hover:text-white hover:bg-white/20 rounded-md transition-colors cursor-pointer"
-                    data-tooltip="Take a tour"
-                  >
-                    <MdHelpOutline className="h-4 w-4" />
-                    <span className="hidden sm:inline text-xs">Tour</span>
-                  </button>
-                )}
-                <ThemeSwitcher />
-                {/* User Profile / Auth Button */}
-                {isAuthenticated ? (
-                  <AccountMenu variant="inverse" />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setShowAuthModal(true)}
-                    className="product-sign-in"
-                  >
-                    Sign In
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
+        <PlaygroundHeader
+          problem={problem}
+          idFromUrl={idFromUrl}
+          isSharedView={isSharedView}
+          elapsedTime={elapsedTime}
+          formatTime={formatTime}
+          isAuthenticated={isAuthenticated}
+          currentDiagramId={currentDiagramId}
+          currentDiagram={currentDiagram}
+          nodeCount={nodes.length}
+          handleManualSave={handleManualSave}
+          autoSaveEnabled={autoSaveEnabled}
+          autoSaveStatus={autoSaveStatus}
+          lastSavedAt={lastSavedAt}
+          formatSavedTime={formatSavedTime}
+          setShowExtensionHub={setShowExtensionHub}
+          extensionImportStatus={extensionImportStatus}
+          collaborationPaused={collaborationPaused}
+          toast={toast}
+          setShowShareModal={setShowShareModal}
+          isCollaborationConnected={isCollaborationConnected}
+          isCollaborationConnecting={isCollaborationConnecting}
+          collaborationReconnectAttempts={collaborationReconnectAttempts}
+          onlineCollaborators={onlineCollaborators}
+          savedAttemptId={savedAttemptId}
+          setShowShareToWorldModal={setShowShareToWorldModal}
+          publicDesignButtonClass={publicDesignButtonClass}
+          publicDesignAction={publicDesignAction}
+          publicDesignStatus={publicDesignStatus}
+          getAssessmentTooltip={getAssessmentTooltip}
+          isAssessing={isAssessing}
+          isPreparingInterview={isPreparingInterview}
+          runAssessment={runAssessment}
+          startTour={startTour}
+          setShowAuthModal={setShowAuthModal}
+        />
 
         {/* Main Content */}
         <div className="relative flex-1 flex min-h-0 min-w-0 overflow-hidden">
-          {diagramAccessState && (
-            <div
-              className="absolute inset-0 z-40 flex items-center justify-center bg-theme/95 px-6 py-10 backdrop-blur-sm"
-              role={diagramAccessState === "loading" ? undefined : "dialog"}
-              aria-labelledby="diagram-access-title"
-              aria-describedby="diagram-access-description"
-            >
-              <div className="w-full max-w-lg rounded-2xl border border-theme/15 bg-surface p-8 text-center shadow-2xl">
-                {diagramAccessState === "loading" && (
-                  <div
-                    className="mx-auto mb-5 h-10 w-10 animate-spin rounded-full border-4 border-theme/15 border-t-accent"
-                    aria-label="Loading diagram"
-                  />
-                )}
-                {diagramAccessState === "requires-auth" && (
-                  <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-accent/10 text-2xl">
-                    🔒
-                  </div>
-                )}
-                {diagramAccessState === "forbidden" && (
-                  <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-2xl">
-                    🔐
-                  </div>
-                )}
-                {(diagramAccessState === "not-found" ||
-                  diagramAccessState === "error") && (
-                  <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-red-500/10 text-2xl">
-                    !
-                  </div>
-                )}
-
-                <h2
-                  id="diagram-access-title"
-                  className="text-xl font-semibold text-theme"
-                >
-                  {diagramAccessState === "loading" && "Loading diagram…"}
-                  {diagramAccessState === "requires-auth" &&
-                    "Sign in to view this design"}
-                  {diagramAccessState === "forbidden" &&
-                    "This design belongs to another account"}
-                  {diagramAccessState === "not-found" &&
-                    "This design is no longer available"}
-                  {diagramAccessState === "error" &&
-                    "We couldn’t load this design"}
-                </h2>
-                <p
-                  id="diagram-access-description"
-                  className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted"
-                >
-                  {diagramAccessState === "loading" &&
-                    "We’re checking the diagram link and preparing the canvas."}
-                  {diagramAccessState === "requires-auth" &&
-                    "This link points to a private or account-scoped design. Sign in to continue. After you sign in, we’ll return here and load it automatically."}
-                  {diagramAccessState === "forbidden" &&
-                    "The signed-in account does not have access to this design. Sign in with the account that owns it or use a public Diagramwise link."}
-                  {diagramAccessState === "not-found" &&
-                    "The link may be expired, deleted, or no longer shared with you."}
-                  {diagramAccessState === "error" &&
-                    "The diagram service could not load this link. Please try again."}
-                </p>
-
-                {diagramAccessState !== "loading" && (
-                  <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-                    {diagramAccessState === "requires-auth" && (
-                      <button
-                        type="button"
-                        onClick={() => setShowAuthModal(true)}
-                        className="rounded-lg bg-accent px-5 py-2.5 font-semibold text-[var(--bg)] transition hover:brightness-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-                      >
-                        Sign in to continue
-                      </button>
-                    )}
-                    {diagramAccessState === "forbidden" && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          logout();
-                          setDiagramAccessState("requires-auth");
-                          setShowAuthModal(true);
-                        }}
-                        className="rounded-lg bg-accent px-5 py-2.5 font-semibold text-[var(--bg)] transition hover:brightness-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-                      >
-                        Sign in with another account
-                      </button>
-                    )}
-                    {diagramAccessState === "error" && (
-                      <button
-                        type="button"
-                        onClick={() => globalThis.location.reload()}
-                        className="rounded-lg bg-accent px-5 py-2.5 font-semibold text-[var(--bg)] transition hover:brightness-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-                      >
-                        Try again
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={onBack}
-                      className="rounded-lg border border-theme/20 bg-theme/5 px-5 py-2.5 font-semibold text-theme transition hover:bg-theme/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60"
-                    >
-                      Back to Diagramwise
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+          <DiagramAccessOverlay
+            state={diagramAccessState}
+            setShowAuthModal={setShowAuthModal}
+            logout={logout}
+            setDiagramAccessState={setDiagramAccessState}
+            onBack={onBack}
+          />
           {!isSharedView && (
             <ComponentPalette
               compact={compactViewport}
@@ -6084,6 +6321,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
+                    aria-hidden="true"
                   >
                     <path
                       strokeLinecap="round"

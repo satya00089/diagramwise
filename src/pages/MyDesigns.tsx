@@ -59,6 +59,109 @@ const isRemix = (diagram: SavedDiagramSummary) =>
 const remixBaseTitle = (title: string) =>
   title.replace(/\s[—-]\sRemix$/i, "").trim();
 
+function findRemixParent(
+  diagram: SavedDiagramSummary,
+  diagrams: SavedDiagramSummary[],
+  byId: Map<string, SavedDiagramSummary>,
+) {
+  const explicitParent = diagram.sourceDiagramId
+    ? byId.get(diagram.sourceDiagramId)
+    : undefined;
+  if (explicitParent) return explicitParent;
+
+  const baseTitle = remixBaseTitle(diagram.title);
+  return (
+    diagrams.find(
+      (candidate) =>
+        !isRemix(candidate) &&
+        candidate.title.trim() === baseTitle &&
+        candidate.isPublic,
+    ) ??
+    diagrams.find(
+      (candidate) =>
+        !isRemix(candidate) && candidate.title.trim() === baseTitle,
+    )
+  );
+}
+
+function buildDesignFamilies(diagrams: SavedDiagramSummary[]): DesignFamily[] {
+  const byId = new Map(diagrams.map((diagram) => [diagram.id, diagram]));
+  const families = new Map<string, DesignFamily>();
+
+  for (const diagram of diagrams) {
+    if (isRemix(diagram)) continue;
+    const key = diagram.familyId || diagram.id;
+    families.set(key, { primary: diagram, related: [] });
+  }
+
+  for (const diagram of diagrams) {
+    if (!isRemix(diagram)) continue;
+    const parent = findRemixParent(diagram, diagrams, byId);
+    const key = parent?.familyId || parent?.id || diagram.familyId || diagram.id;
+    const family = families.get(key);
+    if (family) {
+      family.related.push(diagram);
+      continue;
+    }
+    families.set(key, { primary: parent || diagram, related: parent ? [diagram] : [] });
+  }
+
+  return Array.from(families.values());
+}
+
+function familyMatches(
+  family: DesignFamily,
+  filterBy: "all" | "owned" | "shared",
+  searchLower: string,
+) {
+  const members = [family.primary, ...family.related];
+  if (filterBy === "owned" && !members.some((diagram) => diagram.isOwner)) {
+    return false;
+  }
+  if (filterBy === "shared" && !members.some((diagram) => !diagram.isOwner)) {
+    return false;
+  }
+  return members.some((diagram) => {
+    const description = diagram.description?.toLowerCase() ?? "";
+    return (
+      diagram.title.toLowerCase().includes(searchLower) ||
+      description.includes(searchLower) ||
+      diagram.owner.name.toLowerCase().includes(searchLower) ||
+      diagram.owner.email.toLowerCase().includes(searchLower)
+    );
+  });
+}
+
+function compareDesignFamilies(
+  firstFamily: DesignFamily,
+  secondFamily: DesignFamily,
+  sortBy: SortOption,
+) {
+  const first = firstFamily.primary;
+  const second = secondFamily.primary;
+  switch (sortBy) {
+    case "title":
+      return first.title.localeCompare(second.title);
+    case "created":
+      return new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime();
+    case "updated":
+    default:
+      return new Date(second.updatedAt).getTime() - new Date(first.updatedAt).getTime();
+  }
+}
+
+function filterAndSortFamilies(
+  diagrams: SavedDiagramSummary[],
+  filterBy: "all" | "owned" | "shared",
+  searchTerm: string,
+  sortBy: SortOption,
+) {
+  const searchLower = searchTerm.toLowerCase();
+  return buildDesignFamilies(diagrams)
+    .filter((family) => familyMatches(family, filterBy, searchLower))
+    .sort((first, second) => compareDesignFamilies(first, second, sortBy));
+}
+
 const sortOptions: Array<{ value: SortOption; label: string }> = [
   { value: "updated", label: "Last Updated" },
   { value: "created", label: "Date Created" },
@@ -397,7 +500,7 @@ const MyDesigns: React.FC = () => {
     navigate(`/playground/free?diagramId=${diagramId}`);
   };
 
-  const handleDeleteDiagram = async (
+  const handleDeleteDiagram = (
     diagram: SavedDiagramSummary,
     e: React.MouseEvent,
   ) => {
@@ -527,80 +630,16 @@ const MyDesigns: React.FC = () => {
     }
   };
 
-  const { filteredFamilies, ownedCount, sharedCount } = useMemo(() => {
-    const searchLower = searchTerm.toLowerCase();
-    const byId = new Map(savedDiagrams.map((diagram) => [diagram.id, diagram]));
-    const families = new Map<string, DesignFamily>();
-
-    savedDiagrams.filter((diagram) => !isRemix(diagram)).forEach((diagram) => {
-      const key = diagram.familyId || diagram.id;
-      families.set(key, { primary: diagram, related: [] });
-    });
-
-    savedDiagrams.filter(isRemix).forEach((diagram) => {
-      const explicitParent = diagram.sourceDiagramId
-        ? byId.get(diagram.sourceDiagramId)
-        : undefined;
-      const legacyParent =
-        explicitParent ||
-        savedDiagrams.find(
-          (candidate) =>
-            !isRemix(candidate) &&
-            candidate.title.trim() === remixBaseTitle(diagram.title) &&
-            candidate.isPublic,
-        ) ||
-        savedDiagrams.find(
-          (candidate) =>
-            !isRemix(candidate) &&
-            candidate.title.trim() === remixBaseTitle(diagram.title),
-        );
-      const parent = explicitParent || legacyParent;
-      const key = parent?.familyId || parent?.id || diagram.familyId || diagram.id;
-      const family = families.get(key);
-      if (family) {
-        family.related.push(diagram);
-      } else {
-        families.set(key, { primary: parent || diagram, related: parent ? [diagram] : [] });
-      }
-    });
-
-    const filtered = Array.from(families.values())
-      .filter((family) => {
-        const members = [family.primary, ...family.related];
-        if (filterBy === "owned" && !members.some((diagram) => diagram.isOwner)) return false;
-        if (filterBy === "shared" && !members.some((diagram) => !diagram.isOwner)) return false;
-        return members.some((diagram) =>
-          diagram.title.toLowerCase().includes(searchLower) ||
-          diagram.description?.toLowerCase().includes(searchLower) ||
-          diagram.owner.name.toLowerCase().includes(searchLower) ||
-          diagram.owner.email.toLowerCase().includes(searchLower) ||
-          false,
-        );
-      })
-      .sort((a, b) => {
-        const first = a.primary;
-        const second = b.primary;
-        switch (sortBy) {
-          case "title":
-            return first.title.localeCompare(second.title);
-          case "created":
-            return (
-              new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime()
-            );
-          case "updated":
-          default:
-            return (
-              new Date(second.updatedAt).getTime() - new Date(first.updatedAt).getTime()
-            );
-        }
-      });
-
-    return {
-      filteredFamilies: filtered,
-      ownedCount: savedDiagrams.filter((diagram) => diagram.isOwner).length,
-      sharedCount: savedDiagrams.filter((diagram) => !diagram.isOwner).length,
-    };
-  }, [filterBy, savedDiagrams, searchTerm, sortBy]);
+  const { filteredFamilies, ownedCount, sharedCount } = useMemo(() => ({
+    filteredFamilies: filterAndSortFamilies(
+      savedDiagrams,
+      filterBy,
+      searchTerm,
+      sortBy,
+    ),
+    ownedCount: savedDiagrams.filter((diagram) => diagram.isOwner).length,
+    sharedCount: savedDiagrams.filter((diagram) => !diagram.isOwner).length,
+  }), [filterBy, savedDiagrams, searchTerm, sortBy]);
 
   return (
     <>
@@ -933,6 +972,7 @@ const MyDesigns: React.FC = () => {
                                   fill="none"
                                   viewBox="0 0 24 24"
                                   stroke="currentColor"
+                                  aria-hidden="true"
                                 >
                                   <path
                                     strokeLinecap="round"
@@ -951,6 +991,7 @@ const MyDesigns: React.FC = () => {
                                   fill="none"
                                   viewBox="0 0 24 24"
                                   stroke="currentColor"
+                                  aria-hidden="true"
                                 >
                                   <path
                                     strokeLinecap="round"

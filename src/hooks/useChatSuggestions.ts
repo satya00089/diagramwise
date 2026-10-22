@@ -4,6 +4,260 @@ import type { UserIntent, CanvasContext, Suggestion } from "../types/chatBot";
 import { COMPONENTS } from "../config/components";
 import { apiService } from "../services/api";
 
+type SuggestionDetails = Omit<Suggestion, "action">;
+
+const createSuggestion = (details: SuggestionDetails): Suggestion => ({
+  ...details,
+  action: () => {},
+});
+
+const intentSuggestionRules: Array<{
+  keywords: string[];
+  suggestions: SuggestionDetails[];
+}> = [
+  {
+    keywords: ["database", "schema", "er "],
+    suggestions: [
+      {
+        id: "er-entity",
+        title: "Add Entity",
+        description: "Create a database entity with attributes",
+        icon: "📦",
+        category: "component",
+        priority: 10,
+        componentId: "er-entity",
+        actionType: "add-component",
+      },
+      {
+        id: "er-relationship",
+        title: "Add Relationship",
+        description: "Connect entities with relationships",
+        icon: "🔗",
+        category: "component",
+        priority: 9,
+        componentId: "er-relationship",
+        actionType: "add-component",
+      },
+    ],
+  },
+  {
+    keywords: ["class", "uml", "oop", "object-oriented"],
+    suggestions: [
+      {
+        id: "uml-class",
+        title: "Add Class",
+        description: "Create a UML class with methods and properties",
+        icon: "🎓",
+        category: "component",
+        priority: 10,
+        componentId: "uml-class",
+        actionType: "add-component",
+      },
+      {
+        id: "uml-interface",
+        title: "Add Interface",
+        description: "Define an interface for your design",
+        icon: "📋",
+        category: "component",
+        priority: 8,
+        componentId: "uml-interface",
+        actionType: "add-component",
+      },
+    ],
+  },
+  {
+    keywords: ["system", "architecture", "microservice", "api"],
+    suggestions: [
+      {
+        id: "api-gateway",
+        title: "Add API Gateway",
+        description: "Central entry point for your services",
+        icon: "🚪",
+        category: "component",
+        priority: 10,
+        componentId: "api-gateway",
+        actionType: "add-component",
+      },
+      {
+        id: "load-balancer",
+        title: "Add Load Balancer",
+        description: "Distribute traffic across servers",
+        icon: "⚖️",
+        category: "component",
+        priority: 9,
+        componentId: "loadbalancer",
+        actionType: "add-component",
+      },
+      {
+        id: "database",
+        title: "Add Database",
+        description: "Add a database to store your data",
+        icon: "💾",
+        category: "component",
+        priority: 8,
+        componentId: "database",
+        actionType: "add-component",
+      },
+    ],
+  },
+  {
+    keywords: ["cache", "redis", "performance"],
+    suggestions: [
+      {
+        id: "cache",
+        title: "Add Cache Layer",
+        description: "Improve performance with caching",
+        icon: "⚡",
+        category: "component",
+        priority: 9,
+        componentId: "cache",
+        actionType: "add-component",
+      },
+    ],
+  },
+  {
+    keywords: ["queue", "async", "message", "event"],
+    suggestions: [
+      {
+        id: "message-queue",
+        title: "Add Message Queue",
+        description: "Enable asynchronous communication",
+        icon: "📬",
+        category: "component",
+        priority: 9,
+        componentId: "queue",
+        actionType: "add-component",
+      },
+    ],
+  },
+];
+
+const getIntentSuggestions = (intentText: string): Suggestion[] =>
+  intentSuggestionRules
+    .filter((rule) => rule.keywords.some((keyword) => intentText.includes(keyword)))
+    .flatMap((rule) => rule.suggestions.map(createSuggestion));
+
+const getContextSuggestions = (
+  context: CanvasContext | null,
+): Suggestion[] => {
+  if (!context) return [];
+  const { nodeCount, componentTypes } = context;
+  const candidates: Array<{ matches: boolean; suggestion: SuggestionDetails }> = [
+    {
+      matches: context.isEmpty,
+      suggestion: {
+        id: "tip-start",
+        title: "Start with a Component",
+        description: "Drag a component from the palette to begin your design",
+        icon: "💡",
+        category: "tip",
+        priority: 10,
+        actionType: "info-only",
+      },
+    },
+    {
+      matches: nodeCount > 1 && componentTypes.length > 1,
+      suggestion: {
+        id: "tip-connect",
+        title: "Connect Components",
+        description:
+          "Click and drag from one component to another to create connections",
+        icon: "🔗",
+        category: "tip",
+        priority: 8,
+        actionType: "info-only",
+      },
+    },
+    {
+      matches: nodeCount > 5,
+      suggestion: {
+        id: "group",
+        title: "Organize with Groups",
+        description: "Use group containers to organize related components",
+        icon: "📁",
+        category: "pattern",
+        priority: 7,
+        componentId: "cluster",
+        actionType: "add-component",
+      },
+    },
+    {
+      matches:
+        componentTypes.includes("database") &&
+        !componentTypes.includes("cache"),
+      suggestion: {
+        id: "pattern-cache",
+        title: "Consider Adding Cache",
+        description: "Reduce database load with a caching layer",
+        icon: "⚡",
+        category: "pattern",
+        priority: 8,
+        componentId: "cache",
+        actionType: "add-component",
+      },
+    },
+    {
+      matches:
+        (componentTypes.includes("api-gateway") ||
+          componentTypes.includes("server")) &&
+        !componentTypes.includes("load-balancer"),
+      suggestion: {
+        id: "pattern-lb",
+        title: "Add Load Balancing",
+        description: "Scale your API with a load balancer",
+        icon: "⚖️",
+        category: "pattern",
+        priority: 7,
+        componentId: "loadbalancer",
+        actionType: "add-component",
+      },
+    },
+  ];
+
+  return candidates
+    .filter((candidate) => candidate.matches)
+    .map((candidate) => createSuggestion(candidate.suggestion));
+};
+
+const createRuleBasedSuggestions = (
+  userIntent: UserIntent | null,
+  canvasContext: CanvasContext | null,
+): Suggestion[] => {
+  if (!userIntent && !canvasContext) return [];
+  const intentText = userIntent
+    ? `${userIntent.title} ${userIntent.description}`.toLowerCase()
+    : "";
+  const suggestions = [
+    ...getIntentSuggestions(intentText),
+    ...getContextSuggestions(canvasContext),
+  ];
+
+  if (suggestions.length === 0) {
+    suggestions.push(
+      createSuggestion({
+        id: "tip-palette",
+        title: "Explore Components",
+        description: `Browse ${COMPONENTS.length}+ components in the palette`,
+        icon: "🎨",
+        category: "tip",
+        priority: 5,
+        actionType: "info-only",
+      }),
+      createSuggestion({
+        id: "tip-export",
+        title: "Export Your Design",
+        description: "Save your work as PNG or JSON",
+        icon: "💾",
+        category: "tip",
+        priority: 4,
+        actionType: "info-only",
+      }),
+    );
+  }
+
+  return suggestions.sort((a, b) => b.priority - a.priority).slice(0, 5);
+};
+
 /**
  * Hook for getting AI-powered chat suggestions with manual refresh control.
  *
@@ -145,275 +399,10 @@ export const useChatSuggestions = (
   }, [userIntent, canvasContext, nodes, edges]);
 
   // Rule-based suggestions (always available as fallback)
-  const ruleBasedSuggestions = useMemo(() => {
-    const fallbackSuggestions: Suggestion[] = [];
-
-    if (!userIntent && !canvasContext) {
-      return fallbackSuggestions;
-    }
-
-    // Pattern detection from user intent
-    const intentText = userIntent
-      ? `${userIntent.title} ${userIntent.description}`.toLowerCase()
-      : "";
-
-    // Database/ER patterns
-    if (
-      intentText.includes("database") ||
-      intentText.includes("schema") ||
-      intentText.includes("er ")
-    ) {
-      fallbackSuggestions.push({
-        id: "er-entity",
-        title: "Add Entity",
-        description: "Create a database entity with attributes",
-        action: () => {}, // Will be handled by parent
-        icon: "📦",
-        category: "component",
-        priority: 10,
-        componentId: "er-entity",
-        actionType: "add-component",
-      });
-      fallbackSuggestions.push({
-        id: "er-relationship",
-        title: "Add Relationship",
-        description: "Connect entities with relationships",
-        action: () => {},
-        icon: "🔗",
-        category: "component",
-        priority: 9,
-        componentId: "er-relationship",
-        actionType: "add-component",
-      });
-    }
-
-    // UML/Class diagram patterns
-    if (
-      intentText.includes("class") ||
-      intentText.includes("uml") ||
-      intentText.includes("oop") ||
-      intentText.includes("object-oriented")
-    ) {
-      fallbackSuggestions.push({
-        id: "uml-class",
-        title: "Add Class",
-        description: "Create a UML class with methods and properties",
-        action: () => {},
-        icon: "🎓",
-        category: "component",
-        priority: 10,
-        componentId: "uml-class",
-        actionType: "add-component",
-      });
-      fallbackSuggestions.push({
-        id: "uml-interface",
-        title: "Add Interface",
-        description: "Define an interface for your design",
-        action: () => {},
-        icon: "📋",
-        category: "component",
-        priority: 8,
-        componentId: "uml-interface",
-        actionType: "add-component",
-      });
-    }
-
-    // System Design patterns
-    if (
-      intentText.includes("system") ||
-      intentText.includes("architecture") ||
-      intentText.includes("microservice") ||
-      intentText.includes("api")
-    ) {
-      fallbackSuggestions.push({
-        id: "api-gateway",
-        title: "Add API Gateway",
-        description: "Central entry point for your services",
-        action: () => {},
-        icon: "🚪",
-        category: "component",
-        priority: 10,
-        componentId: "api-gateway",
-        actionType: "add-component",
-      });
-      fallbackSuggestions.push({
-        id: "load-balancer",
-        title: "Add Load Balancer",
-        description: "Distribute traffic across servers",
-        action: () => {},
-        icon: "⚖️",
-        category: "component",
-        priority: 9,
-        componentId: "loadbalancer",
-        actionType: "add-component",
-      });
-      fallbackSuggestions.push({
-        id: "database",
-        title: "Add Database",
-        description: "Add a database to store your data",
-        action: () => {},
-        icon: "💾",
-        category: "component",
-        priority: 8,
-        componentId: "database",
-        actionType: "add-component",
-      });
-    }
-
-    // Cache patterns
-    if (
-      intentText.includes("cache") ||
-      intentText.includes("redis") ||
-      intentText.includes("performance")
-    ) {
-      fallbackSuggestions.push({
-        id: "cache",
-        title: "Add Cache Layer",
-        description: "Improve performance with caching",
-        action: () => {},
-        icon: "⚡",
-        category: "component",
-        priority: 9,
-        componentId: "cache",
-        actionType: "add-component",
-      });
-    }
-
-    // Message Queue patterns
-    if (
-      intentText.includes("queue") ||
-      intentText.includes("async") ||
-      intentText.includes("message") ||
-      intentText.includes("event")
-    ) {
-      fallbackSuggestions.push({
-        id: "message-queue",
-        title: "Add Message Queue",
-        description: "Enable asynchronous communication",
-        action: () => {},
-        icon: "📬",
-        category: "component",
-        priority: 9,
-        componentId: "queue",
-        actionType: "add-component",
-      });
-    }
-
-    // Context-based suggestions (canvas state)
-    if (canvasContext) {
-      const { nodeCount, componentTypes, isEmpty } = canvasContext;
-
-      // Empty canvas suggestions
-      if (isEmpty) {
-        fallbackSuggestions.push({
-          id: "tip-start",
-          title: "Start with a Component",
-          description: "Drag a component from the palette to begin your design",
-          action: () => {},
-          icon: "💡",
-          category: "tip",
-          priority: 10,
-          actionType: "info-only",
-        });
-      }
-
-      // Has components but no connections
-      if (nodeCount > 1 && componentTypes.length > 1) {
-        fallbackSuggestions.push({
-          id: "tip-connect",
-          title: "Connect Components",
-          description:
-            "Click and drag from one component to another to create connections",
-          action: () => {},
-          icon: "🔗",
-          category: "tip",
-          priority: 8,
-          actionType: "info-only",
-        });
-      }
-
-      // Many components suggest grouping
-      if (nodeCount > 5) {
-        fallbackSuggestions.push({
-          id: "group",
-          title: "Organize with Groups",
-          description: "Use group containers to organize related components",
-          action: () => {},
-          icon: "📁",
-          category: "pattern",
-          priority: 7,
-          componentId: "cluster",
-          actionType: "add-component",
-        });
-      }
-
-      // Has databases, suggest cache
-      if (
-        componentTypes.includes("database") &&
-        !componentTypes.includes("cache")
-      ) {
-        fallbackSuggestions.push({
-          id: "pattern-cache",
-          title: "Consider Adding Cache",
-          description: "Reduce database load with a caching layer",
-          action: () => {},
-          icon: "⚡",
-          category: "pattern",
-          priority: 8,
-          componentId: "cache",
-          actionType: "add-component",
-        });
-      }
-
-      // Has API but no load balancer
-      if (
-        (componentTypes.includes("api-gateway") ||
-          componentTypes.includes("server")) &&
-        !componentTypes.includes("load-balancer")
-      ) {
-        fallbackSuggestions.push({
-          id: "pattern-lb",
-          title: "Add Load Balancing",
-          description: "Scale your API with a load balancer",
-          action: () => {},
-          icon: "⚖️",
-          category: "pattern",
-          priority: 7,
-          componentId: "loadbalancer",
-          actionType: "add-component",
-        });
-      }
-    }
-
-    // General tips if no specific patterns matched
-    if (fallbackSuggestions.length === 0) {
-      fallbackSuggestions.push({
-        id: "tip-palette",
-        title: "Explore Components",
-        description: `Browse ${COMPONENTS.length}+ components in the palette`,
-        action: () => {},
-        icon: "🎨",
-        category: "tip",
-        priority: 5,
-        actionType: "info-only",
-      });
-      fallbackSuggestions.push({
-        id: "tip-export",
-        title: "Export Your Design",
-        description: "Save your work as PNG or JSON",
-        action: () => {},
-        icon: "💾",
-        category: "tip",
-        priority: 4,
-        actionType: "info-only",
-      });
-    }
-
-    // Sort by priority
-    return fallbackSuggestions
-      .sort((a, b) => b.priority - a.priority)
-      .slice(0, 5);
-  }, [userIntent, canvasContext]);
+  const ruleBasedSuggestions = useMemo(
+    () => createRuleBasedSuggestions(userIntent, canvasContext),
+    [userIntent, canvasContext],
+  );
 
   // Return AI suggestions if available, otherwise fallback to rule-based
   // Prefer AI suggestions for higher precision and contextual relevance

@@ -26,6 +26,274 @@ const connectionDetails = {
   },
 } as const;
 
+const providerTabLabels: Record<Provider, string> = {
+  chatgpt: "ChatGPT",
+  claude: "Claude",
+  gemini: "Gemini",
+};
+
+function CopyableEndpoint({
+  endpoint,
+  copyStatus,
+  onCopy,
+}: {
+  endpoint: string;
+  copyStatus: string;
+  onCopy: () => void;
+}) {
+  const copied = copyStatus === "Connection URL copied.";
+  return (
+    <>
+      <div className="systema-ai-endpoint">
+        <code>{endpoint}</code>
+        <button
+          type="button"
+          className="systema-ai-copy-button"
+          onClick={onCopy}
+        >
+          {copied ? (
+            <HiCheck aria-hidden="true" />
+          ) : (
+            <HiClipboard aria-hidden="true" />
+          )}
+          {copied ? "Copied" : "Copy URL"}
+        </button>
+      </div>
+      <span className="systema-ai-copy-status" aria-live="polite">
+        {copyStatus}
+      </span>
+    </>
+  );
+}
+
+function GeminiConnectionGuide({
+  geminiClient,
+  onSelectClient,
+  endpoint,
+  helpUrl,
+  copyStatus,
+  onCopy,
+}: {
+  geminiClient: GeminiClient;
+  onSelectClient: (client: GeminiClient) => void;
+  endpoint: string;
+  helpUrl: string;
+  copyStatus: string;
+  onCopy: () => void;
+}) {
+  return (
+    <div>
+      <div
+        className="systema-ai-gemini-options"
+        role="group"
+        aria-label="Gemini connection options"
+      >
+        <button
+          type="button"
+          aria-pressed={geminiClient === "apps"}
+          onClick={() => onSelectClient("apps")}
+        >
+          Gemini Apps
+        </button>
+        <button
+          type="button"
+          aria-pressed={geminiClient === "cli"}
+          onClick={() => onSelectClient("cli")}
+        >
+          Gemini CLI{" "}
+          <span className="systema-ai-tab-status">Soon</span>
+        </button>
+      </div>
+      {geminiClient === "cli" ? (
+        <div className="systema-ai-coming-soon-panel">
+          <p className="systema-ai-coming-soon-eyebrow">IN DEVELOPMENT</p>
+          <h3>Gemini CLI is coming soon</h3>
+          <p>
+            We’ve tested Diagramwise with Gemini Apps. Gemini CLI instructions
+            will follow after separate end-to-end testing.
+          </p>
+        </div>
+      ) : (
+        <>
+          <p className="systema-ai-connection-summary">
+            Connect Gemini Apps to Diagramwise to create and save architecture
+            in your account.
+          </p>
+          <CopyableEndpoint
+            endpoint={endpoint}
+            copyStatus={copyStatus}
+            onCopy={onCopy}
+          />
+          <ol className="systema-ai-steps">
+            <li>
+              In Gemini on the web, open <strong>Settings</strong> and choose{" "}
+              <strong>Connected Apps</strong>.
+            </li>
+            <li>
+              Under <strong>Custom apps</strong>, choose{" "}
+              <strong>Add a custom app</strong>, paste the URL above, and select{" "}
+              <strong>Next</strong>.
+            </li>
+            <li>
+              Complete the Google sign-in and Diagramwise authorization prompts
+              to connect your account.
+            </li>
+            <li>
+              In a Gemini chat, type <strong>@Diagramwise</strong> and select the
+              app. Describe the architecture you want; when Gemini asks to use
+              Diagramwise’s <strong>create architecture</strong> action, choose{" "}
+              <strong>Allow</strong> to create and save it.
+            </li>
+          </ol>
+          <p className="systema-ai-dialog-footnote">
+            Google currently requires an eligible personal account in the US,
+            age 18 or older, with Keep Activity enabled.{" "}
+            <a href={helpUrl} target="_blank" rel="noreferrer">
+              See setup and eligibility details{" "}
+              <HiArrowUpRight aria-hidden="true" />
+            </a>
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+function OtherProviderGuide({
+  provider,
+  endpoint,
+  helpUrl,
+  copyStatus,
+  onCopy,
+}: {
+  provider: Exclude<Provider, "gemini">;
+  endpoint: string;
+  helpUrl: string;
+  copyStatus: string;
+  onCopy: () => void;
+}) {
+  const chatgpt = provider === "chatgpt";
+  return (
+    <>
+      <p className="systema-ai-connection-summary">
+        {chatgpt
+          ? "Connect ChatGPT to Diagramwise so it can help you design and save architecture to your account."
+          : "Connect Claude to Diagramwise so it can help you design and save architecture to your account."}
+      </p>
+      <CopyableEndpoint
+        endpoint={endpoint}
+        copyStatus={copyStatus}
+        onCopy={onCopy}
+      />
+      {chatgpt ? (
+        <>
+          <ol className="systema-ai-steps">
+            <li>
+              In a supported ChatGPT workspace, open <strong>Settings → Apps</strong>
+              and enable <strong>Developer mode</strong>. Your workspace admin may
+              need to allow custom apps.
+            </li>
+            <li>
+              Choose <strong>Create app</strong>, name it Diagramwise, paste the
+              URL above, select <strong>OAuth</strong>, and scan the available
+              tools.
+            </li>
+            <li>
+              Sign in or create your Diagramwise account when prompted, authorize
+              the connection, then finish creating the app. Select Diagramwise
+              from the tools menu in a chat.
+            </li>
+          </ol>
+          <div className="systema-ai-access-note">
+            <strong>Design and save with Diagramwise</strong>
+            <p>
+              Your authorized Diagramwise account is used to create and save
+              architecture. Full MCP write actions require a supported Business,
+              Enterprise, or Edu workspace.
+            </p>
+          </div>
+        </>
+      ) : (
+        <>
+          <ol className="systema-ai-steps">
+            <li>
+              In Claude, open <strong>Customize → Connectors</strong> and choose{" "}
+              <strong>Add custom connector</strong>.
+            </li>
+            <li>
+              Name it <strong>Diagramwise</strong>, paste the URL above, then
+              choose <strong>Sign in now</strong>.
+            </li>
+            <li>
+              Sign in or create your Diagramwise account, authorize the
+              connection, then enable it in the chat where you want to work on an
+              architecture.
+            </li>
+          </ol>
+          <div className="systema-ai-access-note">
+            <strong>Design and save with Diagramwise</strong>
+            <p>
+              Use Claude to create and save architecture through the Diagramwise
+              account you authorize, then continue working with your design in
+              Diagramwise.
+            </p>
+          </div>
+        </>
+      )}
+      <p className="systema-ai-dialog-footnote">
+        {provider === "claude" &&
+          "On Claude Team or Enterprise, an organization owner may need to add the connector first. "}
+        <a href={helpUrl} target="_blank" rel="noreferrer">
+          {chatgpt
+            ? "See ChatGPT setup details"
+            : "See Claude setup instructions"}{" "}
+          <HiArrowUpRight aria-hidden="true" />
+        </a>
+      </p>
+    </>
+  );
+}
+
+function ProviderGuideContent({
+  provider,
+  geminiClient,
+  onSelectGeminiClient,
+  endpoint,
+  helpUrl,
+  copyStatus,
+  onCopy,
+}: {
+  provider: Provider;
+  geminiClient: GeminiClient;
+  onSelectGeminiClient: (client: GeminiClient) => void;
+  endpoint: string;
+  helpUrl: string;
+  copyStatus: string;
+  onCopy: () => void;
+}) {
+  if (provider === "gemini")
+    return (
+      <GeminiConnectionGuide
+        geminiClient={geminiClient}
+        onSelectClient={onSelectGeminiClient}
+        endpoint={endpoint}
+        helpUrl={helpUrl}
+        copyStatus={copyStatus}
+        onCopy={onCopy}
+      />
+    );
+
+  return (
+    <OtherProviderGuide
+      provider={provider}
+      endpoint={endpoint}
+      helpUrl={helpUrl}
+      copyStatus={copyStatus}
+      onCopy={onCopy}
+    />
+  );
+}
+
 type AiConnectionGuideDialogProps = {
   onClose: () => void;
 };
@@ -109,12 +377,6 @@ export default function AiConnectionGuideDialog({
           aria-label="AI provider"
         >
           {providers.map((item, index) => {
-            const label =
-              item === "chatgpt"
-                ? "ChatGPT"
-                : item === "claude"
-                  ? "Claude"
-                  : "Gemini";
             return (
               <button
                 key={item}
@@ -130,7 +392,7 @@ export default function AiConnectionGuideDialog({
                 onClick={() => selectProvider(item)}
                 onKeyDown={handleTabKeyDown}
               >
-                {label}
+                {providerTabLabels[item]}
               </button>
             );
           })}
@@ -143,206 +405,15 @@ export default function AiConnectionGuideDialog({
           aria-labelledby={`ai-provider-tab-${provider}`}
           tabIndex={0}
         >
-          {provider === "gemini" ? (
-            <div>
-              <div
-                className="systema-ai-gemini-options"
-                role="group"
-                aria-label="Gemini connection options"
-              >
-                <button
-                  type="button"
-                  aria-pressed={geminiClient === "apps"}
-                  onClick={() => selectGeminiClient("apps")}
-                >
-                  Gemini Apps
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={geminiClient === "cli"}
-                  onClick={() => selectGeminiClient("cli")}
-                >
-                  Gemini CLI
-                  <span className="systema-ai-tab-status">Soon</span>
-                </button>
-              </div>
-              {geminiClient === "cli" ? (
-                <div className="systema-ai-coming-soon-panel">
-                  <p className="systema-ai-coming-soon-eyebrow">
-                    IN DEVELOPMENT
-                  </p>
-                  <h3>Gemini CLI is coming soon</h3>
-                  <p>
-                    We’ve tested Diagramwise with Gemini Apps. Gemini CLI
-                    instructions will follow after separate end-to-end testing.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <p className="systema-ai-connection-summary">
-                    Connect Gemini Apps to Diagramwise to create and save
-                    architecture in your account.
-                  </p>
-                  <div className="systema-ai-endpoint">
-                    <code>{activeConnection.endpoint}</code>
-                    <button
-                      type="button"
-                      className="systema-ai-copy-button"
-                      onClick={copyConnectorUrl}
-                    >
-                      {copyStatus === "Connection URL copied." ? (
-                        <HiCheck aria-hidden="true" />
-                      ) : (
-                        <HiClipboard aria-hidden="true" />
-                      )}
-                      {copyStatus === "Connection URL copied."
-                        ? "Copied"
-                        : "Copy URL"}
-                    </button>
-                  </div>
-                  <span className="systema-ai-copy-status" aria-live="polite">
-                    {copyStatus}
-                  </span>
-
-                  <ol className="systema-ai-steps">
-                    <li>
-                      In Gemini on the web, open <strong>Settings</strong> and
-                      choose <strong>Connected Apps</strong>.
-                    </li>
-                    <li>
-                      Under <strong>Custom apps</strong>, choose{" "}
-                      <strong>Add a custom app</strong>, paste the URL above,
-                      and select <strong>Next</strong>.
-                    </li>
-                    <li>
-                      Complete the Google sign-in and Diagramwise authorization
-                      prompts to connect your account.
-                    </li>
-                    <li>
-                      In a Gemini chat, type <strong>@Diagramwise</strong> and
-                      select the app. Describe the architecture you want; when
-                      Gemini asks to use Diagramwise’s{" "}
-                      <strong>create architecture</strong> action, choose{" "}
-                      <strong>Allow</strong> to create and save it.
-                    </li>
-                  </ol>
-
-                  <p className="systema-ai-dialog-footnote">
-                    Google currently requires an eligible personal account in
-                    the US, age 18 or older, with Keep Activity enabled.{" "}
-                    <a
-                      href={activeConnection.helpUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      See setup and eligibility details{" "}
-                      <HiArrowUpRight aria-hidden="true" />
-                    </a>
-                  </p>
-                </>
-              )}
-            </div>
-          ) : (
-            <>
-              <p className="systema-ai-connection-summary">
-                {provider === "chatgpt"
-                  ? "Connect ChatGPT to Diagramwise so it can help you design and save architecture to your account."
-                  : "Connect Claude to Diagramwise so it can help you design and save architecture to your account."}
-              </p>
-              <div className="systema-ai-endpoint">
-                <code>{activeConnection.endpoint}</code>
-                <button
-                  type="button"
-                  className="systema-ai-copy-button"
-                  onClick={copyConnectorUrl}
-                >
-                  {copyStatus === "Connection URL copied." ? (
-                    <HiCheck aria-hidden="true" />
-                  ) : (
-                    <HiClipboard aria-hidden="true" />
-                  )}
-                  {copyStatus === "Connection URL copied."
-                    ? "Copied"
-                    : "Copy URL"}
-                </button>
-              </div>
-              <span className="systema-ai-copy-status" aria-live="polite">
-                {copyStatus}
-              </span>
-
-              {provider === "chatgpt" ? (
-                <>
-                  <ol className="systema-ai-steps">
-                    <li>
-                      In a supported ChatGPT workspace, open{" "}
-                      <strong>Settings → Apps</strong> and enable{" "}
-                      <strong>Developer mode</strong>. Your workspace admin may
-                      need to allow custom apps.
-                    </li>
-                    <li>
-                      Choose <strong>Create app</strong>, name it Diagramwise,
-                      paste the URL above, select <strong>OAuth</strong>, and
-                      scan the available tools.
-                    </li>
-                    <li>
-                      Sign in or create your Diagramwise account when prompted,
-                      authorize the connection, then finish creating the app.
-                      Select Diagramwise from the tools menu in a chat.
-                    </li>
-                  </ol>
-                  <div className="systema-ai-access-note">
-                    <strong>Design and save with Diagramwise</strong>
-                    <p>
-                      Your authorized Diagramwise account is used to create and
-                      save architecture. Full MCP write actions require a
-                      supported Business, Enterprise, or Edu workspace.
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <ol className="systema-ai-steps">
-                    <li>
-                      In Claude, open <strong>Customize → Connectors</strong>{" "}
-                      and choose <strong>Add custom connector</strong>.
-                    </li>
-                    <li>
-                      Name it <strong>Diagramwise</strong>, paste the URL above,
-                      then choose <strong>Sign in now</strong>.
-                    </li>
-                    <li>
-                      Sign in or create your Diagramwise account, authorize the
-                      connection, then enable it in the chat where you want to
-                      work on an architecture.
-                    </li>
-                  </ol>
-                  <div className="systema-ai-access-note">
-                    <strong>Design and save with Diagramwise</strong>
-                    <p>
-                      Use Claude to create and save architecture through the
-                      Diagramwise account you authorize, then continue working
-                      with your design in Diagramwise.
-                    </p>
-                  </div>
-                </>
-              )}
-
-              <p className="systema-ai-dialog-footnote">
-                {provider === "claude" &&
-                  "On Claude Team or Enterprise, an organization owner may need to add the connector first. "}
-                <a
-                  href={activeConnection?.helpUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {provider === "chatgpt"
-                    ? "See ChatGPT setup details"
-                    : "See Claude setup instructions"}{" "}
-                  <HiArrowUpRight aria-hidden="true" />
-                </a>
-              </p>
-            </>
-          )}
+          <ProviderGuideContent
+            provider={provider}
+            geminiClient={geminiClient}
+            onSelectGeminiClient={selectGeminiClient}
+            endpoint={activeConnection.endpoint}
+            helpUrl={activeConnection.helpUrl}
+            copyStatus={copyStatus}
+            onCopy={copyConnectorUrl}
+          />
         </section>
 
         <button

@@ -7,98 +7,77 @@ interface NodePropertyDisplayProps {
   value: PropertyValue;
 }
 
+const renderArrayValue = (value: unknown[]): React.ReactNode => {
+  if (value.length === 0) return <span className="opacity-60 italic">[ ]</span>;
+
+  return (
+    <div className="flex flex-col gap-1">
+      {value.map((item, index) => (
+        <div key={index} className="ml-2 opacity-70">
+          • {String(item)}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const renderObjectValue = (value: object): React.ReactNode => (
+  <div className="flex flex-col gap-1">
+    {Object.entries(value).map(([key, entry]) => (
+      <div key={key} className="ml-2 opacity-70">
+        <span className="font-semibold">{key}:</span> {String(entry)}
+      </div>
+    ))}
+  </div>
+);
+
+const renderStringValue = (value: string): React.ReactNode => {
+  if (value.includes("<") && value.includes(">")) {
+    const sanitized = DOMPurify.sanitize(value);
+    const textOnly = sanitized
+      .split("<")
+      .map((part) => part.slice(part.indexOf(">") + 1))
+      .join(" ")
+      .replaceAll("\n", " ")
+      .trim();
+
+    if (textOnly.length === 0)
+      return <span className="opacity-60 italic">empty</span>;
+
+    return (
+      <div
+        className="text-xs [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:ml-1 [&_p]:mb-1 [&_p:last-child]:mb-0"
+        dangerouslySetInnerHTML={{ __html: sanitized }}
+      />
+    );
+  }
+
+  if (value.length === 0) return <span className="opacity-60 italic">empty</span>;
+  return <span className="break-words">{value}</span>;
+};
+
+const renderPropertyValue = (value: PropertyValue): React.ReactNode => {
+  if (value === null || value === undefined)
+    return <span className="opacity-60 italic">empty</span>;
+  if (typeof value === "function")
+    return <span className="text-purple-500 italic">[Component]</span>;
+  if (typeof value === "boolean")
+    return (
+      <span className={value ? "text-green-500" : "text-red-500"}>
+        {value ? "✓ true" : "✗ false"}
+      </span>
+    );
+  if (typeof value === "number")
+    return <span className="font-mono text-blue-500">{value}</span>;
+  if (Array.isArray(value)) return renderArrayValue(value);
+  if (typeof value === "object") return renderObjectValue(value);
+  return renderStringValue(String(value));
+};
+
 const NodePropertyDisplay: React.FC<NodePropertyDisplayProps> = ({
   propertyKey,
   value,
 }) => {
-  // Helper to render value based on type
-  const renderValue = (val: PropertyValue): React.ReactNode => {
-    // Handle null/undefined
-    if (val === null || val === undefined) {
-      return <span className="opacity-60 italic">empty</span>;
-    }
-
-    // Handle React Component
-    if (typeof val === "function") {
-      return <span className="text-purple-500 italic">[Component]</span>;
-    }
-
-    // Handle boolean
-    if (typeof val === "boolean") {
-      return (
-        <span className={val ? "text-green-500" : "text-red-500"}>
-          {val ? "✓ true" : "✗ false"}
-        </span>
-      );
-    }
-
-    // Handle number
-    if (typeof val === "number") {
-      return <span className="font-mono text-blue-500">{val}</span>;
-    }
-
-    // Handle array
-    if (Array.isArray(val)) {
-      if (val.length === 0) {
-        return <span className="opacity-60 italic">[ ]</span>;
-      }
-      return (
-        <div className="flex flex-col gap-1">
-          {val.map((item, idx) => (
-            <div key={idx} className="ml-2 opacity-70">
-              • {String(item)}
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    // Handle object
-    if (typeof val === "object" && val !== null) {
-      return (
-        <div className="flex flex-col gap-1">
-          {Object.entries(val).map(([key, value]) => (
-            <div key={key} className="ml-2 opacity-70">
-              <span className="font-semibold">{key}:</span> {String(value)}
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    // Handle HTML string
-    const strVal = String(val);
-    if (strVal.includes("<") && strVal.includes(">")) {
-      const sanitized = DOMPurify.sanitize(strVal);
-
-      // Strip HTML for checking if empty
-      const textOnly = sanitized
-        .split("<")
-        .map((part) => part.slice(part.indexOf(">") + 1))
-        .join(" ")
-        .replaceAll("\n", " ")
-        .trim();
-
-      if (textOnly.length === 0) {
-        return <span className="opacity-60 italic">empty</span>;
-      }
-
-      return (
-        <div
-          className="text-xs [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:ml-1 [&_p]:mb-1 [&_p:last-child]:mb-0"
-          dangerouslySetInnerHTML={{ __html: sanitized }}
-        />
-      );
-    }
-
-    // Handle regular string
-    if (strVal.length === 0) {
-      return <span className="opacity-60 italic">empty</span>;
-    }
-
-    return <span className="break-words">{strVal}</span>;
-  };
-
   return (
     <div className="flex flex-col gap-1 p-2 rounded bg-[var(--bg-hover)]/30">
       <div
@@ -110,7 +89,7 @@ const NodePropertyDisplay: React.FC<NodePropertyDisplayProps> = ({
           .replaceAll(/([A-Z])([A-Z][a-z])/g, "$1 $2")}
       </div>
       <div className="break-words overflow-wrap-anywhere">
-        {renderValue(value)}
+        {renderPropertyValue(value)}
       </div>
     </div>
   );

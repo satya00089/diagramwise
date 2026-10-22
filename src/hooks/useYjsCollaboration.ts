@@ -77,6 +77,77 @@ export interface UseYjsCollaborationReturn {
   reconnect: () => void;
 }
 
+function uniqueById<T extends { id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
+function findDepartedCollaborators(
+  previous: CollaboratorUser[],
+  current: CollaboratorUser[],
+): CollaboratorUser[] {
+  const currentIds = new Set(current.map((collaborator) => collaborator.id));
+  return previous.filter((collaborator) => !currentIds.has(collaborator.id));
+}
+
+type AwarenessUserState = {
+  user?: CollaboratorUser;
+  cursor?: { x: number; y: number };
+};
+
+type AwarenessChanges = {
+  added: number[];
+  updated: number[];
+  removed: number[];
+};
+
+function collectAwarenessPresence(
+  states: Map<number, AwarenessUserState>,
+  localClientId: number,
+): { collaborators: CollaboratorUser[]; cursors: CollaboratorCursor[] } {
+  const collaborators: CollaboratorUser[] = [];
+  const cursors: CollaboratorCursor[] = [];
+
+  for (const [clientId, state] of states) {
+    if (clientId === localClientId || !state.user) continue;
+    collaborators.push(state.user);
+    if (!state.cursor) continue;
+    cursors.push({
+      userId: state.user.id,
+      user: state.user,
+      position: state.cursor,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  return { collaborators, cursors };
+}
+
+function notifyAwarenessChanges(
+  changes: AwarenessChanges,
+  states: Map<number, AwarenessUserState>,
+  localClientId: number,
+  previous: CollaboratorUser[],
+  current: CollaboratorUser[],
+  onJoined?: (user: CollaboratorUser) => void,
+  onLeft?: (user: CollaboratorUser) => void,
+): void {
+  for (const clientId of changes.added) {
+    if (clientId === localClientId) continue;
+    const user = states.get(clientId)?.user;
+    if (user) onJoined?.(user);
+  }
+
+  if (changes.removed.every((clientId) => clientId === localClientId)) return;
+  for (const departedUser of findDepartedCollaborators(previous, current)) {
+    onLeft?.(departedUser);
+  }
+}
+
 /**
  * Hook for managing Yjs collaboration
  * Implements graceful degradation - falls back to local state if connection fails
@@ -240,19 +311,8 @@ export const useYjsCollaboration = ({
           const remoteEdges = yEdges.toArray();
 
           // Deduplicate remote data before applying
-          const uniqueNodes = remoteNodes.reduce((acc: Node[], node: Node) => {
-            if (!acc.some((n: Node) => n.id === node.id)) {
-              acc.push(node);
-            }
-            return acc;
-          }, []);
-
-          const uniqueEdges = remoteEdges.reduce((acc: Edge[], edge: Edge) => {
-            if (!acc.some((e: Edge) => e.id === edge.id)) {
-              acc.push(edge);
-            }
-            return acc;
-          }, []);
+          const uniqueNodes = uniqueById(remoteNodes);
+          const uniqueEdges = uniqueById(remoteEdges);
 
           // Update local state with remote data
           onNodesChangeRef.current(uniqueNodes);
@@ -269,76 +329,31 @@ export const useYjsCollaboration = ({
       // Update collaborators, cursors, and count from awareness
       provider.awareness.on(
         "change",
-        (changes: {
-          added: number[];
-          updated: number[];
-          removed: number[];
-        }) => {
+        (changes: AwarenessChanges) => {
           const states = provider.awareness.getStates();
           const localClientId = provider.awareness.clientID;
-
-          // Track collaborators
-          const collaboratorsList: CollaboratorUser[] = [];
-          const cursorsList: CollaboratorCursor[] = [];
-
-          states.forEach(
-            (
-              state: {
-                user?: CollaboratorUser;
-                cursor?: { x: number; y: number };
-              },
-              clientId: number,
-            ) => {
-              // Skip self
-              if (clientId === localClientId) return;
-
-              const user = state.user as CollaboratorUser;
-              if (user) {
-                collaboratorsList.push(user);
-
-                // Track cursor if present
-                if (state.cursor) {
-                  cursorsList.push({
-                    userId: user.id,
-                    user,
-                    position: state.cursor,
-                    timestamp: new Date().toISOString(),
-                  });
-                }
-              }
-            },
+          const previousCollaborators = collaboratorsRef.current;
+          const presence = collectAwarenessPresence(
+            states as Map<number, AwarenessUserState>,
+            localClientId,
           );
-
+          const collaboratorsList = presence.collaborators;
           setCollaborators(collaboratorsList);
-          setCursors(cursorsList);
-          collaboratorsRef.current = collaboratorsList;
+          setCursors(presence.cursors);
           setState((prev) => ({
             ...prev,
             collaboratorCount: collaboratorsList.length,
           }));
-
-          // Handle user joined events
-          changes.added.forEach((clientId) => {
-            if (clientId === localClientId) return;
-            const state = states.get(clientId) as
-              | { user?: CollaboratorUser; cursor?: { x: number; y: number } }
-              | undefined;
-            if (state?.user) {
-              onUserJoinedRef.current?.(state.user);
-            }
-          });
-
-          // Handle user left events
-          changes.removed.forEach((clientId) => {
-            if (clientId === localClientId) return;
-            // Find which user left by comparing with previous collaborators
-            const leftUser = collaboratorsRef.current.find((c) => {
-              return !collaboratorsList.some((nc) => nc.id === c.id);
-            });
-            if (leftUser) {
-              onUserLeftRef.current?.(leftUser);
-            }
-          });
+          notifyAwarenessChanges(
+            changes,
+            states as Map<number, AwarenessUserState>,
+            localClientId,
+            previousCollaborators,
+            collaboratorsList,
+            onUserJoinedRef.current,
+            onUserLeftRef.current,
+          );
+          collaboratorsRef.current = collaboratorsList;
         },
       );
 
@@ -356,12 +371,7 @@ export const useYjsCollaboration = ({
           const updatedNodes = yNodes.toArray();
 
           // Deduplicate nodes by ID (critical for preventing React key warnings)
-          const uniqueNodes = updatedNodes.reduce((acc: Node[], node: Node) => {
-            if (!acc.some((n: Node) => n.id === node.id)) {
-              acc.push(node);
-            }
-            return acc;
-          }, []);
+          const uniqueNodes = uniqueById(updatedNodes);
 
           const updatedNodesHash = getCanvasNodesRevision(uniqueNodes);
 
@@ -382,12 +392,7 @@ export const useYjsCollaboration = ({
           const updatedEdges = yEdges.toArray();
 
           // Deduplicate edges by ID (critical for preventing React key warnings)
-          const uniqueEdges = updatedEdges.reduce((acc: Edge[], edge: Edge) => {
-            if (!acc.some((e: Edge) => e.id === edge.id)) {
-              acc.push(edge);
-            }
-            return acc;
-          }, []);
+          const uniqueEdges = uniqueById(updatedEdges);
 
           const updatedEdgesHash = getCanvasEdgesRevision(uniqueEdges);
 

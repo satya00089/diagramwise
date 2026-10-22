@@ -5575,8 +5575,8 @@ export const COMPONENTS: CanvasComponent[] = [
         key: "cidr",
         label: "CIDR Block",
         type: "text",
-        placeholder: "e.g., 10.0.0.0/16",
-        default: "10.0.0.0/16",
+        placeholder: "e.g., a private VPC CIDR range",
+        default: "",
       },
       {
         key: "backgroundColor",

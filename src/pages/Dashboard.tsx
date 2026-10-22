@@ -54,6 +54,101 @@ import {
   selectAttemptedProblems,
 } from "../store/slices/problemsSelectors";
 import { getProblemSlug } from "../utils/problemSlug";
+import type { SystemDesignProblem } from "../types/systemDesign";
+
+type PrioritizedProblem = {
+  problem: SystemDesignProblem;
+  score: number;
+  originalIndex?: number;
+  attempted?: boolean;
+};
+
+const normalizePreferenceString = (value: string): string[] => {
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+  return trimmed.includes(",")
+    ? trimmed
+        .split(",")
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean)
+    : [trimmed.toLowerCase()];
+};
+
+const normalizePreferenceObject = (value: Record<string, unknown>) => {
+  for (const key of ["value", "label", "id", "name"]) {
+    const item = value[key];
+    if (typeof item === "string" && item.trim())
+      return [item.trim().toLowerCase()];
+  }
+  try {
+    const serialized = JSON.stringify(value);
+    return serialized ? [serialized.toLowerCase()] : [];
+  } catch {
+    return [];
+  }
+};
+
+const normalizePreferenceValues = (value: unknown): string[] => {
+  if (value == null) return [];
+  if (Array.isArray(value)) return value.map((item) => String(item).toLowerCase());
+  if (typeof value === "string") return normalizePreferenceString(value);
+  if (typeof value === "object")
+    return normalizePreferenceObject(value as Record<string, unknown>);
+  return [String(value).toLowerCase()];
+};
+
+const scoreExperience = (experience: string, difficulty: string) => {
+  const expectedDifficulty: Record<string, readonly string[]> = {
+    beginner: ["easy"],
+    intermediate: ["medium", "easy"],
+    advanced: ["hard", "very hard"],
+  };
+  return Number(expectedDifficulty[experience]?.includes(difficulty) ?? false);
+};
+
+const scoreProblem = (
+  problem: SystemDesignProblem,
+  primaryInterests: string[],
+  preferredClouds: string[],
+  experience: string,
+) => {
+  const tags = new Set((problem.tags || []).map((tag) => String(tag).toLowerCase()));
+  const category = String(problem.category || "").toLowerCase();
+  const domain = String(problem.domain || "").toLowerCase();
+  const interestScore = primaryInterests.reduce(
+    (score, interest) =>
+      score +
+      Number(Boolean(interest) && tags.has(interest)) * 3 +
+      Number(Boolean(interest) && category === interest) * 2 +
+      Number(Boolean(interest) && domain === interest),
+    0,
+  );
+  const cloudScore = preferredClouds.reduce(
+    (score, cloud) =>
+      score +
+      Number(
+        Boolean(cloud) &&
+          (tags.has(cloud) || category === cloud || domain === cloud),
+      ),
+    0,
+  );
+  return (
+    interestScore +
+    cloudScore +
+    scoreExperience(experience, String(problem.difficulty || "").toLowerCase())
+  );
+};
+
+const comparePrioritizedProblems = (
+  left: PrioritizedProblem,
+  right: PrioritizedProblem,
+) => {
+  const attemptedDifference =
+    Number(right.attempted) - Number(left.attempted);
+  if (attemptedDifference !== 0) return attemptedDifference;
+  if (left.score !== right.score) return right.score - left.score;
+  return (left.originalIndex ?? 0) - (right.originalIndex ?? 0);
+};
 
 const Dashboard: React.FC = () => {
   useTheme();
@@ -161,99 +256,33 @@ const Dashboard: React.FC = () => {
       return filteredProblems.map((p) => ({ problem: p, score: 0 }));
     }
 
-    const normalize = (v: unknown): string[] => {
-      if (v == null) return [];
-      if (Array.isArray(v)) return v.map((x) => String(x).toLowerCase());
-      if (typeof v === "string") {
-        const s = v.trim();
-        if (!s) return [];
-        return s.includes(",")
-          ? s
-              .split(",")
-              .map((x) => x.trim().toLowerCase())
-              .filter(Boolean)
-          : [s.toLowerCase()];
-      }
-      if (typeof v === "object") {
-        const obj = v as Record<string, unknown>;
-        for (const key of ["value", "label", "id", "name"]) {
-          const val = obj[key];
-          if (typeof val === "string" && val.trim())
-            return [val.trim().toLowerCase()];
-        }
-        try {
-          return [JSON.stringify(obj).toLowerCase()];
-        } catch {
-          return [];
-        }
-      }
-      return [String(v).toLowerCase()];
-    };
-
-    const primaryInterests = normalize(
+    const primaryInterests = normalizePreferenceValues(
       prefs.primary_interest ??
         prefs["primaryInterest"] ??
         prefs["primary_interest"],
     );
-    const preferredClouds = normalize(
+    const preferredClouds = normalizePreferenceValues(
       prefs.preferred_cloud ?? prefs["preferredCloud"],
     );
-    const experience = normalize(
+    const experience = normalizePreferenceValues(
       prefs.experience_level ?? prefs["experienceLevel"] ?? "",
     )
       .join(",")
       .toLowerCase();
 
-    const scored = filteredProblems.map((problem, idx) => {
-      let score = 0;
-      const tags = new Set((problem.tags || []).map((t: string) => String(t).toLowerCase()));
-      const category = String(problem.category || "").toLowerCase();
-      const domain = String(problem.domain || "").toLowerCase();
-
-      for (const pi of primaryInterests) {
-        if (!pi) continue;
-        if (tags.has(pi)) score += 3;
-        if (category === pi) score += 2;
-        if (domain === pi) score += 1;
-      }
-
-      for (const pc of preferredClouds) {
-        if (!pc) continue;
-        if (tags.has(pc) || category === pc || domain === pc) score += 1;
-      }
-
-      if (experience) {
-        const diff = String(problem.difficulty || "").toLowerCase();
-        if (experience === "beginner" && diff === "easy") score += 1;
-        if (
-          experience === "intermediate" &&
-          (diff === "medium" || diff === "easy")
-        )
-          score += 1;
-        if (
-          experience === "advanced" &&
-          (diff === "hard" || diff === "very hard")
-        )
-          score += 1;
-      }
-
-      return {
+    const scored = filteredProblems.map((problem, originalIndex) => ({
+      problem,
+      score: scoreProblem(
         problem,
-        score,
-        originalIndex: idx,
-        attempted: attemptedProblems.has(problem.id),
-      };
-    });
+        primaryInterests,
+        preferredClouds,
+        experience,
+      ),
+      originalIndex,
+      attempted: attemptedProblems.has(problem.id),
+    }));
 
-    scored.sort((a, b) => {
-      const aAttempt = a.attempted ? 1 : 0;
-      const bAttempt = b.attempted ? 1 : 0;
-      if (aAttempt !== bAttempt) return bAttempt - aAttempt; // attempted first
-      if (a.score !== b.score) return b.score - a.score; // higher score first
-      return a.originalIndex - b.originalIndex; // stable order
-    });
-
-    return scored;
+    return scored.sort(comparePrioritizedProblems);
   }, [filteredProblems, user?.preferences, attemptedProblems]);
 
   const [columnCount, setColumnCount] = useState(1);

@@ -15,8 +15,8 @@ export const getCollaboratorColor = (userId: string): string => {
   ];
 
   let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+  for (const character of userId) {
+    hash = (character.codePointAt(0) ?? 0) + ((hash << 5) - hash);
   }
 
   return colors[Math.abs(hash) % colors.length];

@@ -14,7 +14,7 @@ function ExerciseRunner({
 
   const parseNumber = (s?: string) => {
     if (!s) return Number.NaN;
-    const cleaned = s.replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
+    const cleaned = s.replaceAll(",", "").match(/-?\d+(?:\.\d+)?/);
     return cleaned ? Number.parseFloat(cleaned[0]) : Number.NaN;
   };
 
