@@ -3,10 +3,10 @@ import { useLearningProgress } from "../../hooks/useLearningProgress";
 export default function ProgressTracker({
   pathId,
   totalLessons,
-}: {
+}: Readonly<{
   pathId: string;
   totalLessons?: number;
-}) {
+}>) {
   const { completed } = useLearningProgress(pathId);
   const pct =
     totalLessons && totalLessons > 0

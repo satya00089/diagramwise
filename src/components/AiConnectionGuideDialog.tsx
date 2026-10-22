@@ -26,9 +26,9 @@ const connectionDetails = {
   },
 } as const;
 
-type AiConnectionGuideDialogProps = {
+type AiConnectionGuideDialogProps = Readonly<{
   onClose: () => void;
-};
+}>;
 
 export default function AiConnectionGuideDialog({
   onClose,

@@ -239,7 +239,7 @@ const AnimatedTextarea: React.FC<AnimatedTextareaProps> = ({
     };
   }, [isFullscreen]);
 
-  if (!editor || !editor.schema) return null;
+  if (!editor?.schema) return null;
 
   // build a compact list of buttons to render which reduces branching inside JSX
   const inlineButtons = [

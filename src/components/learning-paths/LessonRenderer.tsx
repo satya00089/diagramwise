@@ -95,7 +95,7 @@ function ExerciseRunner({
     validateString(q, user);
   };
 
-  if (!exercise || !exercise.questions || exercise.questions.length === 0) {
+  if (!exercise?.questions?.length) {
     return <div className="text-sm text-muted">No exercises available.</div>;
   }
 

@@ -83,9 +83,7 @@ const ModuleList: React.FC<Props> = ({
                           aria-label={
                             isDone ? "Mark as incomplete" : "Mark as complete"
                           }
-                          onClick={() =>
-                            onToggleCompleted && onToggleCompleted(lesson.id)
-                          }
+                          onClick={() => onToggleCompleted?.(lesson.id)}
                           className={`flex h-8 w-8 items-center justify-center rounded-full border shadow-sm transition-colors ${
                             isDone
                               ? "border-emerald-600 bg-emerald-600 text-white"

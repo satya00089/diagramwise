@@ -140,7 +140,7 @@ const STEP_TYPE_CONFIG: Record<
 
 export type ApplyStepPayload = GuidedStep;
 
-type GuidedHelpPanelProps = {
+type GuidedHelpPanelProps = Readonly<{
   problemId: string | null;
   onApplyStep: (step: ApplyStepPayload) => boolean | void;
   /** Optional controlled current step index (0-based) */
@@ -148,7 +148,7 @@ type GuidedHelpPanelProps = {
   /** Called when the user changes the current step */
   onStepChange?: (index: number) => void;
   appliedGuidedStepIds?: string[];
-};
+}>;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 

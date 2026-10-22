@@ -222,7 +222,7 @@ const TiptapAnswerEditor: React.FC<TiptapAnswerEditorProps> = ({
 
   const isRecordingOrTranscribing = isRecording || isTranscribing;
 
-  if (!editor || !editor.schema) return null;
+  if (!editor?.schema) return null;
 
   const inlineButtons = [
     {

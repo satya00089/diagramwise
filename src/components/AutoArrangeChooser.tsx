@@ -40,10 +40,10 @@ const choices = [
   },
 ] as const;
 
-type Props = {
+type Props = Readonly<{
   onArrange: (options: AutoArrangeOptions) => void;
   onDone: () => void;
-};
+}>;
 
 export default function AutoArrangeChooser({
   onArrange,
