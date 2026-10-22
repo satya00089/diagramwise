@@ -15,12 +15,6 @@ vi.mock("react", () => ({
 import { getAnalyticsBatchUrl, useAnalytics } from "./useAnalytics";
 
 describe("useAnalytics provider lifecycle", () => {
-  it("uses the documented API URL before the legacy assessment URL", () => {
-    expect(
-      getAnalyticsBatchUrl("https://api.example.com/", "https://legacy.example.com"),
-    ).toBe("https://api.example.com/api/v1/analytics/batch");
-  });
-
   beforeEach(() => {
     reactEffects.callbacks.length = 0;
     vi.useFakeTimers();
@@ -42,6 +36,12 @@ describe("useAnalytics provider lifecycle", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+
+  it("uses the documented API URL before the legacy assessment URL", () => {
+    expect(
+      getAnalyticsBatchUrl("https://api.example.com/", "https://legacy.example.com"),
+    ).toBe("https://api.example.com/api/v1/analytics/batch");
   });
 
   it("does not queue a page-exit event for app-wide providers", () => {

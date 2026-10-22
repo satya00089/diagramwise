@@ -314,7 +314,7 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
 }
 
 .app-modal__close:focus-visible,
-.app-modal__field:focus-visible,
+.app-modal .app-modal__field:focus-visible,
 .app-modal__secondary:focus-visible,
 .app-modal__primary:focus-visible {
   outline: 2px solid var(--accent);
@@ -348,13 +348,13 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   letter-spacing: 0.01em;
 }
 
-.app-modal__field {
+.app-modal .app-modal__field {
   min-height: 42px;
   padding: 9px 12px;
-  border: 1px solid var(--border) !important;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--bg) !important;
-  color: var(--text) !important;
+  background: var(--bg);
+  color: var(--text);
   font: inherit;
   font-size: 14px;
   transition:
@@ -386,12 +386,12 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   bottom: calc(100% + 8px);
 }
 
-.app-modal__field:hover {
-  border-color: color-mix(in srgb, var(--accent) 48%, var(--border)) !important;
+.app-modal .app-modal__field:hover {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
 }
 
-.app-modal__field:focus-visible {
-  border-color: var(--accent) !important;
+.app-modal .app-modal__field:focus-visible {
+  border-color: var(--accent);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
@@ -624,7 +624,7 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
 }
 
 .home-page .landing-accent-copy {
-  color: var(--product-accent) !important;
+  color: var(--product-accent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1067,12 +1067,12 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   box-shadow: 0 12px 30px rgb(0 0 0 / 4%);
 }
 
-.dashboard-search-input {
-  border-color: var(--border) !important;
+.dashboard-filter-shell .dashboard-search-input {
+  border-color: var(--border);
 }
 
-.dashboard-search-input:hover {
-  border-color: color-mix(in srgb, var(--text) 45%, var(--border)) !important;
+.dashboard-filter-shell .dashboard-search-input:hover {
+  border-color: color-mix(in srgb, var(--text) 45%, var(--border));
 }
 
 .dashboard-select-wrapper {

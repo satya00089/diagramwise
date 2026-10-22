@@ -114,14 +114,16 @@ export const useReorderableRows = <T extends IdentifiedItem, G>(
 
         event.preventDefault();
         event.stopPropagation();
-        const position =
-          dropTarget?.id === id
-            ? dropTarget.position
-            : event.clientY <
-                event.currentTarget.getBoundingClientRect().top +
-                  event.currentTarget.getBoundingClientRect().height / 2
-              ? "before"
-              : "after";
+        let position: "before" | "after" = "after";
+        if (dropTarget?.id === id) {
+          position = dropTarget.position;
+        } else if (
+          event.clientY <
+          event.currentTarget.getBoundingClientRect().top +
+            event.currentTarget.getBoundingClientRect().height / 2
+        ) {
+          position = "before";
+        }
         onReorder(sourceId, id, position);
         activeId.current = null;
         setDropTarget(null);

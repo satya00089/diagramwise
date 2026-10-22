@@ -114,14 +114,17 @@ const TableNode: React.FC<Props> = React.memo(
     }, [editingAttrId]);
 
     const displayLabel = data.componentName || data.label;
-    const actionLabel =
-      data.componentId === "weak-entity"
-        ? "Weak Entity"
-        : data.componentId === "entity" || data.componentId === "er-entity"
-          ? "Entity"
-          : data.componentId === "er-view"
-            ? "View"
-            : displayLabel || "Table";
+    let actionLabel = displayLabel || "Table";
+    if (data.componentId === "weak-entity") {
+      actionLabel = "Weak Entity";
+    } else if (
+      data.componentId === "entity" ||
+      data.componentId === "er-entity"
+    ) {
+      actionLabel = "Entity";
+    } else if (data.componentId === "er-view") {
+      actionLabel = "View";
+    }
     const subtitle = data.subtitle || data.description;
     const Icon = typeof data.icon === "function" ? data.icon : undefined;
     const isContentSizedTable = isContentSizedTableNode(data);
@@ -569,6 +572,13 @@ const TableNode: React.FC<Props> = React.memo(
       }
     }, [contextMenu.visible, closeContextMenu]);
 
+    let tableWidthClass = "max-h-[500px]";
+    if (isERTable) {
+      tableWidthClass = "w-[440px] min-w-[440px] max-w-[440px]";
+    } else if (isContentSizedTable) {
+      tableWidthClass = "w-[360px] min-w-[360px] max-w-[360px]";
+    }
+
     return (
       <>
         <motion.div
@@ -576,7 +586,7 @@ const TableNode: React.FC<Props> = React.memo(
           whileHover={{ y: -1, boxShadow: "0 12px 30px rgba(0,0,0,0.12)" }}
           whileTap={{ scale: 0.985 }}
           transition={{ type: "spring", stiffness: 320, damping: 28 }}
-          className={`min-w-[220px] ${isERTable ? "w-[440px] min-w-[440px] max-w-[440px]" : isContentSizedTable ? "w-[360px] min-w-[360px] max-w-[360px]" : "max-h-[500px]"} bg-surface border-2 border-theme text-theme text-sm shadow-lg cursor-grab relative rounded-lg overflow-visible flex flex-col`}
+          className={`min-w-[220px] ${tableWidthClass} bg-surface border-2 border-theme text-theme text-sm shadow-lg cursor-grab relative rounded-lg overflow-visible flex flex-col`}
           style={{
             ...(backgroundColor ? { backgroundColor } : {}),
             ...(borderColor ? { borderColor } : {}),
