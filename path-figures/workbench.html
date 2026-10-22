@@ -630,7 +630,7 @@ var HL = (() => {
       }
     }
     const style = doc.createElement("style");
-    style.setAttribute("data-hairline-style", "");
+    style.dataset.hairlineStyle = "";
     style.textContent = text;
     (root.nodeType === 9 ? doc.head ?? doc.documentElement : root).appendChild(style);
   }
@@ -682,7 +682,7 @@ var HL = (() => {
     const at = (i) => Math.round((i <= 0.5 ? lo + (i / 0.5) * (mid - lo) : mid + ((i - 0.5) / 0.5) * (hi - mid)) * 1000) / 1000;
 
     HL.inject(document);
-    stage.setAttribute("data-hairline", figure.name);
+    stage.dataset.hairline = figure.name;
     stage.setAttribute("role", "img");
     stage.setAttribute("aria-label", figure.means);
     const svg = HL.mk("svg", { viewBox: "0 0 400 320", "aria-hidden": "true" }, stage);
