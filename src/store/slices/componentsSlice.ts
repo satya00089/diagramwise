@@ -41,6 +41,7 @@ interface ComponentsState {
   minimalComponents: MinimalComponent[];
   // Full components cache (loaded on demand)
   fullComponentsCache: Record<string, CanvasComponent>;
+  fullComponentsLoading: Record<string, boolean>;
   // UI state
   selectedProviders: string[]; // Array to support multiple providers
   searchQuery: string;
@@ -52,6 +53,7 @@ const initialState: ComponentsState = {
   minimalComponentsByProvider: {},
   minimalComponents: [],
   fullComponentsCache: {},
+  fullComponentsLoading: {},
   selectedProviders: ["all"],
   searchQuery: "",
   loading: false,
@@ -145,6 +147,15 @@ export const fetchFullComponent = createAsyncThunk(
     );
     return mapComponentsToCanvas([response])[0];
   },
+  {
+    condition: (id, { getState }) => {
+      const state = getState() as { components: ComponentsState };
+      return (
+        !state.components.fullComponentsCache[id] &&
+        !state.components.fullComponentsLoading[id]
+      );
+    },
+  },
 );
 
 const componentsSlice = createSlice({
@@ -228,12 +239,17 @@ const componentsSlice = createSlice({
         state.error = action.error.message || "Failed to fetch components";
       })
       // Fetch full component
+      .addCase(fetchFullComponent.pending, (state, action) => {
+        state.fullComponentsLoading[action.meta.arg] = true;
+      })
       .addCase(fetchFullComponent.fulfilled, (state, action) => {
+        delete state.fullComponentsLoading[action.meta.arg];
         if (action.payload) {
           state.fullComponentsCache[action.payload.id] = action.payload;
         }
       })
       .addCase(fetchFullComponent.rejected, (state, action) => {
+        delete state.fullComponentsLoading[action.meta.arg];
         state.error =
           action.error.message || "Failed to fetch component details";
       });

@@ -192,6 +192,51 @@ export class ComponentProviderService {
   }
 
   /**
+   * Get multiple components in one request. Shared diagrams use this to restore
+   * icons without issuing one HTTP request for every component type.
+   */
+  async getComponentsByIds(
+    ids: string[],
+    minimal = false,
+  ): Promise<Array<Pick<ComponentDB, "id"> & Partial<ComponentDB>>> {
+    if (ids.length === 0) return [];
+
+    const uniqueIds = Array.from(new Set(ids));
+    const batches: string[][] = [];
+    for (let offset = 0; offset < uniqueIds.length; offset += 100) {
+      batches.push(uniqueIds.slice(offset, offset + 100));
+    }
+
+    const results = await Promise.all(
+      batches.map(async (batch) => {
+        try {
+          const response = await fetch(
+            `${this.baseUrl}/api/components/batch/by-ids`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ ids: batch, minimal }),
+            },
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const result = (await response.json()) as {
+            items: Array<Pick<ComponentDB, "id"> & Partial<ComponentDB>>;
+          };
+          return result.items;
+        } catch (error) {
+          console.error("Error fetching component batch by ID:", error);
+          return [];
+        }
+      }),
+    );
+    return results.flat();
+  }
+
+  /**
    * Increment usage count
    */
   async incrementUsageCount(id: string): Promise<void> {

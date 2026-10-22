@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -15,6 +15,7 @@ import {
   MdSmartToy,
   MdHelpOutline,
   MdMenuBook,
+  MdExpandMore,
 } from "react-icons/md";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import ProductHeader from "../components/ProductHeader";
@@ -85,6 +86,37 @@ const Dashboard: React.FC = () => {
 
   // Local UI state
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [openWalkthroughMenuId, setOpenWalkthroughMenuId] = useState<
+    string | null
+  >(null);
+  const walkthroughMenuRef = useRef<HTMLDivElement | null>(null);
+  const walkthroughMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!openWalkthroughMenuId) return;
+
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!walkthroughMenuRef.current?.contains(event.target as Node)) {
+        setOpenWalkthroughMenuId(null);
+      }
+    };
+    const closeOnScroll = () => setOpenWalkthroughMenuId(null);
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setOpenWalkthroughMenuId(null);
+      walkthroughMenuTriggerRef.current?.focus();
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("scroll", closeOnScroll, true);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("scroll", closeOnScroll, true);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [openWalkthroughMenuId]);
 
   // Redux state
   const filteredProblems = useAppSelector(selectFilteredProblems);
@@ -599,12 +631,21 @@ const Dashboard: React.FC = () => {
                             const score = entry.score;
                             const hasAttemptedProblem =
                               isAuth && attemptedProblems.has(problem.id);
-                            let primaryActionLabel = hasAttemptedProblem
+                            const primaryActionLabel = hasAttemptedProblem
                               ? "Continue Problem"
                               : "Start Problem";
-                            if (problem.has_guided_walkthrough) {
-                              primaryActionLabel = "Open walkthrough";
-                            }
+                            const problemCardKey =
+                              problem.id ?? getProblemSlug(problem);
+                            const walkthroughMenuOpen =
+                              openWalkthroughMenuId === problemCardKey;
+                            const problemHelpMenuId =
+                              `problem-help-${problemCardKey}`;
+                            const primaryCtaTone = hasAttemptedProblem
+                              ? "bg-blue-600 text-white hover:shadow-md"
+                              : "bg-[var(--brand)] text-[var(--bg)] hover:shadow-md";
+                            const primaryCtaShape = problem.has_guided_walkthrough
+                              ? "rounded-l-xl rounded-r-none"
+                              : "rounded-xl";
                             const delayClass =
                               ["delay-0", "delay-100", "delay-200"][index] ?? "";
                             return (
@@ -683,7 +724,7 @@ const Dashboard: React.FC = () => {
                                     )}
                                   </div>
 
-                                  <div className="mt-auto grid grid-cols-[5fr_7fr] gap-2">
+                                  <div className="mt-auto grid grid-cols-[2fr_5fr] gap-2">
                                     <Link
                                       to={`/problems/${getProblemSlug(problem)}/`}
                                       aria-label={`View problem details for ${problem.title}`}
@@ -691,59 +732,113 @@ const Dashboard: React.FC = () => {
                                     >
                                       Details
                                     </Link>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (!problem.id) {
-                                          navigate(
-                                            `/problems/${getProblemSlug(problem)}/`,
-                                          );
-                                          return;
-                                        }
-                                        if (!isAuth) {
-                                          setShowAuthModal(true);
-                                          return;
-                                        }
-                                        const playgroundUrl = `/playground/${problem.id}`;
-                                        navigate(
-                                          problem.has_guided_walkthrough
-                                            ? `${playgroundUrl}?tab=guide`
-                                            : playgroundUrl,
-                                        );
-                                      }}
-                                      aria-label={
-                                        problem.has_guided_walkthrough
-                                          ? `Open guided walkthrough for ${problem.title}`
-                                          : `Start ${problem.title}`
+                                    <div
+                                      ref={
+                                        walkthroughMenuOpen
+                                          ? walkthroughMenuRef
+                                          : null
                                       }
-                                      className={`dashboard-primary-cta w-full px-3 py-3 text-sm font-semibold rounded-xl transition-all duration-300 cursor-pointer ${
-                                        hasAttemptedProblem
-                                          ? "bg-blue-600 text-white hover:shadow-md"
-                                          : "bg-[var(--brand)] text-[var(--bg)] hover:shadow-md"
-                                      }`}
+                                      className="relative flex min-w-0"
                                     >
-                                      <span className="flex items-center justify-center gap-2">
-                                        {hasAttemptedProblem && (
-                                          <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            className="h-4 w-4"
-                                            fill="none"
-                                            viewBox="0 0 24 24"
-                                            stroke="currentColor"
-                                            strokeWidth={2.5}
+                                      <button
+                                        type="button"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          setOpenWalkthroughMenuId(null);
+                                          if (!problem.id) {
+                                            navigate(
+                                              `/problems/${getProblemSlug(problem)}/`,
+                                            );
+                                            return;
+                                          }
+                                          if (!isAuth) {
+                                            setShowAuthModal(true);
+                                            return;
+                                          }
+                                          navigate(`/playground/${problem.id}`);
+                                        }}
+                                        aria-label={`${primaryActionLabel} for ${problem.title}`}
+                                        className={`dashboard-primary-cta min-w-0 flex-1 cursor-pointer ${primaryCtaShape} px-2 py-3 text-sm font-semibold transition-all duration-300 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)] ${primaryCtaTone}`}
+                                      >
+                                        <span className="whitespace-nowrap">
+                                          {primaryActionLabel}
+                                        </span>
+                                      </button>
+                                      {problem.has_guided_walkthrough && (
+                                        <>
+                                          <button
+                                            ref={
+                                              walkthroughMenuOpen
+                                                ? walkthroughMenuTriggerRef
+                                                : null
+                                            }
+                                            type="button"
+                                            aria-label={`Help options for ${problem.title}`}
+                                            aria-expanded={walkthroughMenuOpen}
+                                            aria-controls={problemHelpMenuId}
+                                            onClick={(event) => {
+                                              event.stopPropagation();
+                                              setOpenWalkthroughMenuId(
+                                                walkthroughMenuOpen
+                                                  ? null
+                                                  : problemCardKey,
+                                              );
+                                            }}
+                                            className={`dashboard-primary-cta inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-l-none rounded-r-xl border-l border-white/20 px-2 py-3 text-sm font-semibold transition-all duration-300 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)] ${primaryCtaTone}`}
                                           >
-                                            <path
-                                              strokeLinecap="round"
-                                              strokeLinejoin="round"
-                                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                            <span className="hidden xl:inline">
+                                              Help
+                                            </span>
+                                            <MdExpandMore
+                                              aria-hidden="true"
+                                              className={`h-4 w-4 transition-transform ${walkthroughMenuOpen ? "rotate-180" : ""}`}
                                             />
-                                          </svg>
-                                        )}
-                                        {primaryActionLabel}{" "}
-                                        →
-                                      </span>
-                                    </button>
+                                          </button>
+                                          <div
+                                            id={problemHelpMenuId}
+                                            role="group"
+                                            aria-label="Problem help options"
+                                            hidden={!walkthroughMenuOpen}
+                                            className="absolute bottom-full right-0 z-50 mb-2 w-64 rounded-xl border border-theme bg-surface p-2 text-theme shadow-xl"
+                                          >
+                                            <button
+                                              type="button"
+                                              onClick={(event) => {
+                                                event.stopPropagation();
+                                                setOpenWalkthroughMenuId(null);
+                                                if (!problem.id) {
+                                                  navigate(
+                                                    `/problems/${getProblemSlug(problem)}/`,
+                                                  );
+                                                  return;
+                                                }
+                                                if (!isAuth) {
+                                                  setShowAuthModal(true);
+                                                  return;
+                                                }
+                                                navigate(
+                                                  `/playground/${problem.id}?tab=guide`,
+                                                );
+                                              }}
+                                              className="flex w-full items-start gap-2 rounded-lg px-3 py-2.5 text-left transition hover:bg-[var(--bg-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]"
+                                            >
+                                              <MdMenuBook
+                                                className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand)]"
+                                                aria-hidden="true"
+                                              />
+                                              <span className="flex flex-col gap-0.5">
+                                                <span className="text-sm font-semibold">
+                                                  Open guided walkthrough
+                                                </span>
+                                                <span className="text-xs text-muted">
+                                                  Step-by-step help if you get stuck
+                                                </span>
+                                              </span>
+                                            </button>
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
