@@ -797,7 +797,10 @@ function mountToolkit({stage,svg,read},value,kind){
     miniature(staticG,27,40,8,0.8);
   }
   function render(p){
-    const key=p.toFixed(4);if(last===key)return;last=key;liveG.replaceChildren();
+    const key=p.toFixed(4);
+    if(last===key){return;}
+    last=key;
+    liveG.replaceChildren();
     if(kind==='library'){
       const lift=8+15*p;
       line(liveG,[[85,46,4],[85,46,4+lift]],'nf lo dash');
@@ -841,7 +844,9 @@ function mountToolkit({stage,svg,read},value,kind){
   bag.add(B.unregister);
   const names={library:'component selected',annotate:'note expanded',assessment:'finding opened',share:'diagram copied'};
   function activate(next){
-    if(active===next)return;active=next;tset(t,next?1:0,performance.now(),0);
+    if(active===next){return;}
+    active=next;
+    tset(t,next?1:0,performance.now(),0);
     read.textContent=next?names[kind]:'rest';B.wake();
   }
   const move=()=>activate(true),reset=()=>activate(false);
