@@ -110,8 +110,8 @@ class BackendPersistence implements IDiagramPersistence {
  */
 export class AutoSaveManager {
   private timeout: ReturnType<typeof setTimeout> | null = null;
-  private persistence: IDiagramPersistence;
-  private interval: number;
+  private readonly persistence: IDiagramPersistence;
+  private readonly interval: number;
 
   constructor(persistence: IDiagramPersistence, intervalMs: number = 30000) {
     this.persistence = persistence;
