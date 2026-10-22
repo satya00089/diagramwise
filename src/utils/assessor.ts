@@ -322,10 +322,8 @@ export function fingerprintAssessmentPayload(
     }),
   );
   let hash = 2166136261;
-  for (const character of input) {
-    const codePoint = character.codePointAt(0) ?? 0;
-    hash = Math.imul(hash ^ codePoint, 16777619);
-  }
+  for (const character of input)
+    hash = Math.imul(hash ^ character.charCodeAt(0), 16777619);
   return `design-v1-${(hash >>> 0).toString(16).padStart(8, "0")}`;
 }
 

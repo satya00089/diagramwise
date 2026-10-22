@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Dispatch, FormEvent, RefObject, SetStateAction } from "react";
+import type { FormEvent } from "react";
 import DOMPurify from "dompurify";
 import {
   MdAdminPanelSettings,
@@ -199,572 +199,6 @@ const FeedbackRow = ({
     </article>
   );
 };
-
-type AdminStatsStripProps = { overview: AdminOverview };
-
-const AdminStatsStrip = ({ overview }: AdminStatsStripProps) => (
-    <section
-      className="admin-stat-strip"
-      aria-label="Product health summary"
-    >
-      <div className="admin-stat">
-        <span>Tracked events</span>
-        <strong>
-          {formatNumber(overview.analytics.totalEvents)}
-        </strong>
-        <small>
-          {overview.fromDate} – {overview.toDate}
-        </small>
-      </div>
-      <div className="admin-stat">
-        <span>Page views</span>
-        <strong>{formatNumber(overview.analytics.pageViews)}</strong>
-        <small>First-party analytics</small>
-      </div>
-      <div className="admin-stat">
-        <span>Feedback received</span>
-        <strong>{formatNumber(overview.feedback.total)}</strong>
-        <small>{overview.feedback.new} need review</small>
-      </div>
-      <div className="admin-stat">
-        <span>Average rating</span>
-        <strong>
-          {overview.feedback.averageRating?.toFixed(1) ?? "—"}
-          <small className="admin-stat__suffix"> / 5</small>
-        </strong>
-        <small>From submitted ratings</small>
-      </div>
-      <div className="admin-stat">
-        <span>Helpful rate</span>
-        <strong>
-          {overview.feedback.helpfulRate != null
-            ? `${Math.round(overview.feedback.helpfulRate * 100)}%`
-            : "—"}
-        </strong>
-        <small>Assessment and global feedback</small>
-      </div>
-    </section>
-);
-
-type ApiLatencyPanelProps = { apiLatency: AdminApiLatencyReport | null; apiLatencyLoading: boolean; apiLatencyError: string | null };
-
-const ApiLatencyPanel = ({ apiLatency, apiLatencyLoading, apiLatencyError }: ApiLatencyPanelProps) => (
-    <section
-      className="admin-panel admin-latency-panel"
-      aria-labelledby="api-latency-title"
-      aria-busy={apiLatencyLoading}
-    >
-      <div className="admin-panel__header">
-        <div>
-          <h2 id="api-latency-title">API performance</h2>
-          <p className="admin-panel__description">
-            Server response-time estimates for the selected period.
-          </p>
-        </div>
-        <div className="admin-panel__header-actions">
-          {apiLatency && (
-            <span className="admin-panel__count">
-              {formatNumber(apiLatency.sampleCount)} requests
-            </span>
-          )}
-          <MdSpeed
-            className="admin-panel__icon"
-            aria-hidden="true"
-          />
-        </div>
-      </div>
-      {apiLatencyLoading ? (
-        <div className="admin-latency-loading" role="status">
-          Loading API performance…
-        </div>
-      ) : apiLatencyError ? (
-        <p className="admin-empty" role="alert">
-          {apiLatencyError} Use the dashboard refresh button to try
-          again.
-        </p>
-      ) : apiLatency ? (
-        <>
-          <dl className="admin-latency-metrics">
-            <div>
-              <dt>p50 · typical</dt>
-              <dd>{formatLatency(apiLatency.p50Ms)}</dd>
-            </div>
-            <div>
-              <dt>p95 · slower requests</dt>
-              <dd>{formatLatency(apiLatency.p95Ms)}</dd>
-            </div>
-            <div>
-              <dt>p99 · slowest tail</dt>
-              <dd>{formatLatency(apiLatency.p99Ms)}</dd>
-            </div>
-          </dl>
-          {apiLatency.routes.length > 0 && (
-            <div className="admin-latency-routes">
-              <div className="admin-latency-routes__header">
-                <h3>Route breakdown</h3>
-                <span>Requests / p95 latency</span>
-              </div>
-              {apiLatency.routes.map((route) => (
-                <div className="admin-latency-route" key={route.route}>
-                  <code>{route.route}</code>
-                  <span>{formatNumber(route.sampleCount)} req</span>
-                  <strong>{formatLatency(route.p95Ms)}</strong>
-                </div>
-              ))}
-            </div>
-          )}
-          {apiLatency.sampleCount === 0 ? (
-            <p className="admin-empty">
-              {apiLatency.collectionEnabled
-                ? "No API requests have been recorded for this period yet."
-                : "Latency collection is off because REDIS_URI is not configured."}
-            </p>
-          ) : (
-            <p className="admin-latency-note">
-              Estimates use fixed histogram buckets. p95 needs at
-              least 20 requests and p99 needs at least 100; no raw
-              URLs, query strings, or user details are stored.
-            </p>
-          )}
-        </>
-      ) : null}
-    </section>
-);
-
-type ActivityPanelProps = { overview: AdminOverview; dailyActivity: AdminOverview["analytics"]["daily"]; dateRange: AdminDateRange; maximumDailyEvents: number; chartLabelInterval: number; chartScrollRef: RefObject<HTMLDivElement | null>; canScrollToOlderActivity: boolean; canScrollToNewestActivity: boolean; syncChartNavigation: () => void; scrollActivity: (direction: "older" | "newest") => void };
-
-const ActivityPanel = ({ overview, dailyActivity, dateRange, maximumDailyEvents, chartLabelInterval, chartScrollRef, canScrollToOlderActivity, canScrollToNewestActivity, syncChartNavigation, scrollActivity }: ActivityPanelProps) => (
-    <div className="admin-overview-grid">
-      <section
-        className="admin-panel admin-panel--chart"
-        aria-labelledby="usage-title"
-      >
-        <div className="admin-panel__header">
-          <div>
-            <h2 id="usage-title">Product activity</h2>
-            <p className="admin-panel__description">
-              First-party events captured across the product.
-            </p>
-          </div>
-          <MdInsights
-            className="admin-panel__icon"
-            aria-hidden="true"
-          />
-        </div>
-        <div className="admin-chart-carousel">
-          <div
-            ref={chartScrollRef}
-            className="admin-chart-scroll"
-            aria-label="Daily product activity chart. Scroll horizontally to explore older dates."
-            onScroll={syncChartNavigation}
-          >
-            {dailyActivity.length ? (
-              <div
-                className="admin-chart"
-                id="admin-activity-chart"
-                role="img"
-                aria-label={`Daily tracked events for ${dateRange.toLowerCase()}`}
-                style={{
-                  gridTemplateColumns: `repeat(${dailyActivity.length}, minmax(0, 1fr))`,
-                  minWidth: `${dailyActivity.length * 12}px`,
-                }}
-              >
-                {dailyActivity.map((day, index) => {
-                  const chartDate = new Date(`${day.date}T00:00:00`);
-                  const dateLabel = chartDate.toLocaleDateString(
-                    "en-IN",
-                    {
-                      day: "numeric",
-                      month: "short",
-                    },
-                  );
-                  const tooltipDateLabel =
-                    chartDate.toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    });
-                  const showDate =
-                    index % chartLabelInterval === 0 ||
-                    index === dailyActivity.length - 1;
-                  return (
-                    <div
-                      className="admin-chart__column"
-                      key={day.date}
-                    >
-                      <div className="admin-chart__bar-wrap">
-                        <div
-                          className="admin-chart__bar"
-                          style={{
-                            height: `${Math.max((day.events / maximumDailyEvents) * 100, day.events ? 7 : 2)}%`,
-                          }}
-                          data-tooltip={`${day.events} ${day.events === 1 ? "event" : "events"} · ${tooltipDateLabel}`}
-                          data-tooltip-placement="top"
-                        />
-                      </div>
-                      <span aria-hidden="true">
-                        {showDate ? dateLabel : ""}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p className="admin-empty">
-                No events were recorded in this period.
-              </p>
-            )}
-          </div>
-          {canScrollToOlderActivity && (
-            <button
-              className="admin-chart-nav admin-chart-nav--older"
-              type="button"
-              aria-label="Show older product activity"
-              aria-controls="admin-activity-chart"
-              onClick={() => scrollActivity("older")}
-            >
-              <MdChevronLeft aria-hidden="true" />
-            </button>
-          )}
-          {canScrollToNewestActivity && (
-            <button
-              className="admin-chart-nav admin-chart-nav--newest"
-              type="button"
-              aria-label="Return to newest product activity"
-              aria-controls="admin-activity-chart"
-              onClick={() => scrollActivity("newest")}
-            >
-              <MdChevronRight aria-hidden="true" />
-            </button>
-          )}
-        </div>
-        <div className="admin-list-split">
-          <div>
-            <h3>Top events</h3>
-            {overview.analytics.topEvents.slice(0, 5).map((event) => (
-              <div className="admin-ranking" key={event.name}>
-                <span>{event.name}</span>
-                <strong>{formatNumber(event.count)}</strong>
-              </div>
-            ))}
-          </div>
-          <div>
-            <h3>Top routes</h3>
-            {overview.analytics.topRoutes.slice(0, 5).map((route) => (
-              <div className="admin-ranking" key={route.route}>
-                <span>{route.route}</span>
-                <strong>{formatNumber(route.count)}</strong>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    </div>
-);
-
-type GoogleAnalyticsPanelProps = { googleAnalytics: AdminGoogleAnalyticsReport | null; googleAnalyticsLoading: boolean; cityScrollRef: RefObject<HTMLDivElement | null>; syncCityNavigation: () => void; scrollCities: (direction: "earlier" | "later") => void; hasScrollableCities: boolean; canScrollToEarlierCities: boolean; canScrollToLaterCities: boolean };
-
-const GoogleAnalyticsPanel = ({ googleAnalytics, googleAnalyticsLoading, cityScrollRef, syncCityNavigation, scrollCities, hasScrollableCities, canScrollToEarlierCities, canScrollToLaterCities }: GoogleAnalyticsPanelProps) => (
-    <section
-      className="admin-panel admin-panel--acquisition"
-      aria-labelledby="acquisition-title"
-    >
-      <div className="admin-panel__header">
-        <div>
-          <h2 id="acquisition-title">Google Analytics</h2>
-          <p className="admin-panel__description">
-            Traffic sources and approximate visitor locations for the
-            selected period.
-          </p>
-        </div>
-        <div className="admin-panel__header-actions">
-          {googleAnalytics?.status === "connected" && (
-            <span className="admin-panel__count">Connected</span>
-          )}
-          <MdTrendingUp
-            className="admin-panel__icon"
-            aria-hidden="true"
-          />
-        </div>
-      </div>
-      {googleAnalyticsLoading ? (
-        <div
-          className="admin-ga-loading"
-          role="status"
-          aria-label="Loading Google Analytics report"
-        >
-          <span />
-          <span />
-        </div>
-      ) : googleAnalytics?.status === "connected" ? (
-        <div className="admin-ga-content">
-          <dl className="admin-ga-metrics">
-            <div>
-              <dt>Active users</dt>
-              <dd>
-                {formatNumber(googleAnalytics.activeUsers ?? 0)}
-              </dd>
-            </div>
-            <div>
-              <dt>New users</dt>
-              <dd>{formatNumber(googleAnalytics.newUsers ?? 0)}</dd>
-            </div>
-            <div>
-              <dt>Sessions</dt>
-              <dd>{formatNumber(googleAnalytics.sessions ?? 0)}</dd>
-            </div>
-            <div>
-              <dt>Page views</dt>
-              <dd>
-                {formatNumber(googleAnalytics.screenPageViews ?? 0)}
-              </dd>
-            </div>
-          </dl>
-          <div className="admin-ga-breakdowns">
-            <section className="admin-ga-breakdown">
-              <h3>Sessions by channel</h3>
-              <p className="admin-ga-breakdown__description">
-                Sessions grouped by Google Analytics’ default
-                channels.
-              </p>
-              {googleAnalytics.channelGroups.length ? (
-                googleAnalytics.channelGroups.map((channel) => (
-                  <div className="admin-ranking" key={channel.name}>
-                    <span>{channel.name}</span>
-                    <strong>{formatNumber(channel.sessions)}</strong>
-                  </div>
-                ))
-              ) : (
-                <p className="admin-empty">
-                  No channel data in this period.
-                </p>
-              )}
-            </section>
-            <section className="admin-ga-breakdown">
-              <h3>Top referral sources</h3>
-              <p className="admin-ga-breakdown__description">
-                Sessions attributed to links from other sites.
-              </p>
-              {googleAnalytics.referralSources?.length ? (
-                googleAnalytics.referralSources.map((source) => (
-                  <div
-                    className="admin-ranking"
-                    key={source.sourceMedium}
-                  >
-                    <span title={source.sourceMedium}>
-                      {source.sourceMedium}
-                    </span>
-                    <strong>{formatNumber(source.sessions)}</strong>
-                  </div>
-                ))
-              ) : (
-                <p className="admin-empty">
-                  No referral sessions in this period.
-                </p>
-              )}
-            </section>
-            <section className="admin-ga-breakdown">
-              <h3>Top cities</h3>
-              <p className="admin-ga-breakdown__description">
-                Approximate locations reported by Google Analytics.
-              </p>
-              <div
-                id="admin-city-list"
-                ref={cityScrollRef}
-                className="admin-ga-city-list"
-                role="region"
-                aria-label="Top cities"
-                onScroll={syncCityNavigation}
-              >
-                {googleAnalytics.cities?.length ? (
-                  googleAnalytics.cities.map((city) => (
-                    <div
-                      className="admin-ranking admin-ranking--city"
-                      key={`${city.country}-${city.region}-${city.city}`}
-                    >
-                      <span className="admin-ranking__place">
-                        <strong>{city.city}</strong>
-                        <small>
-                          {city.region} · {city.country}
-                        </small>
-                      </span>
-                      <strong>{formatNumber(city.sessions)}</strong>
-                    </div>
-                  ))
-                ) : (
-                  <p className="admin-empty">
-                    No city data in this period.
-                  </p>
-                )}
-              </div>
-              {hasScrollableCities && (
-                <div
-                  className="admin-city-navigation"
-                  role="group"
-                  aria-label="City list navigation"
-                >
-                  <button
-                    className="admin-city-navigation__button"
-                    type="button"
-                    aria-label="Scroll city list up"
-                    aria-controls="admin-city-list"
-                    disabled={!canScrollToEarlierCities}
-                    onClick={() => scrollCities("earlier")}
-                  >
-                    <MdKeyboardArrowUp aria-hidden="true" />
-                  </button>
-                  <button
-                    className="admin-city-navigation__button"
-                    type="button"
-                    aria-label="Scroll city list down"
-                    aria-controls="admin-city-list"
-                    disabled={!canScrollToLaterCities}
-                    onClick={() => scrollCities("later")}
-                  >
-                    <MdKeyboardArrowDown aria-hidden="true" />
-                  </button>
-                </div>
-              )}
-            </section>
-          </div>
-        </div>
-      ) : (
-        <div className="admin-connection-state">
-          <span
-            className={`admin-connection-state__badge${googleAnalytics?.status === "error" ? " admin-connection-state__badge--error" : ""}`}
-          >
-            {googleAnalytics?.status === "error"
-              ? "Connection issue"
-              : "Not connected"}
-          </span>
-          <div>
-            <strong>
-              {googleAnalytics?.status === "error"
-                ? "Google Analytics is unavailable"
-                : "Connect a GA4 property"}
-            </strong>
-            <p>
-              {googleAnalytics?.message ??
-                "Configure a GA4 property and credentials on the API server."}
-            </p>
-          </div>
-        </div>
-      )}
-      <div className="admin-source-note">
-        <MdCheckCircle aria-hidden="true" />
-        GA4 is queried read-only for the selected date range. City
-        values are approximate and may appear as “(not set)”.
-      </div>
-    </section>
-);
-
-type FeedbackPanelProps = { overview: AdminOverview; onStatusChange: (item: AdminFeedbackItem, status: FeedbackStatus) => void };
-
-const FeedbackPanel = ({ overview, onStatusChange }: FeedbackPanelProps) => (
-    <section className="admin-panel" aria-labelledby="feedback-title">
-      <div className="admin-panel__header">
-        <div>
-          <h2 id="feedback-title">Recent feedback</h2>
-          <p className="admin-panel__description">
-            Review what people shared and update its status.
-          </p>
-        </div>
-        <div className="admin-panel__header-actions">
-          <span className="admin-panel__count">
-            {overview.feedback.new} new
-          </span>
-          <MdFeedback
-            className="admin-panel__icon"
-            aria-hidden="true"
-          />
-        </div>
-      </div>
-      <div className="admin-feedback-list">
-        {overview.recentFeedback.length ? (
-          overview.recentFeedback.map((item) => (
-            <FeedbackRow
-              item={item}
-              onStatusChange={onStatusChange}
-              key={item.id}
-            />
-          ))
-        ) : (
-          <p className="admin-empty">
-            No feedback has arrived in this period.
-          </p>
-        )}
-      </div>
-    </section>
-);
-
-type AdminAccessPanelProps = { email: string; setEmail: Dispatch<SetStateAction<string>>; accessSaving: boolean; accessError: string | null; access: AdminAccessUser[]; userId: string; onGrantAccess: (event: FormEvent<HTMLFormElement>) => void; onRevokeAccess: (admin: AdminAccessUser) => void };
-
-const AdminAccessPanel = ({ email, setEmail, accessSaving, accessError, access, userId, onGrantAccess, onRevokeAccess }: AdminAccessPanelProps) => (
-    <section
-      className="admin-panel admin-access-panel"
-      aria-labelledby="access-title"
-    >
-      <div className="admin-panel__header">
-        <div>
-          <h2 id="access-title">Admin access</h2>
-          <p className="admin-panel__description">
-            Choose who can open this private console.
-          </p>
-        </div>
-        <MdAdminPanelSettings
-          className="admin-panel__icon"
-          aria-hidden="true"
-        />
-      </div>
-      <p className="admin-access-panel__description">
-        Admin access is stored with each user account. Add a verified
-        Diagramwise account when you want someone else to help review
-        product health.
-      </p>
-      <form className="admin-grant-form" onSubmit={onGrantAccess}>
-        <label htmlFor="admin-email">Grant super-admin access</label>
-        <div>
-          <input
-            id="admin-email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="person@example.com"
-            required
-          />
-          <button type="submit" disabled={accessSaving}>
-            {accessSaving ? "Granting…" : "Grant access"}
-          </button>
-        </div>
-      </form>
-      {accessError && (
-        <p className="admin-inline-error" role="alert">
-          {accessError}
-        </p>
-      )}
-      <div className="admin-access-list">
-        {access.map((admin) => (
-          <div className="admin-access-row" key={admin.id}>
-            <div>
-              <strong>{admin.name || admin.email}</strong>
-              {admin.name && <span>{admin.email}</span>}
-            </div>
-            <div className="admin-access-row__actions">
-              <span>Super-admin</span>
-              {admin.id !== userId && (
-                <button
-                  type="button"
-                  onClick={() => void onRevokeAccess(admin)}
-                >
-                  Revoke
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-);
 
 const SuperAdminDashboard = () => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -1029,18 +463,6 @@ const SuperAdminDashboard = () => {
     }
   };
 
-
-
-
-
-
-
-
-
-
-
-
-
   return (
     <div className="admin-theme-root">
       <Seo
@@ -1091,48 +513,547 @@ const SuperAdminDashboard = () => {
 
           {overview && (
             <>
-              <AdminStatsStrip overview={overview} />
-              <ApiLatencyPanel
-                apiLatency={apiLatency}
-                apiLatencyLoading={apiLatencyLoading}
-                apiLatencyError={apiLatencyError}
-              />
-              <ActivityPanel
-                overview={overview}
-                dailyActivity={dailyActivity}
-                dateRange={dateRange}
-                maximumDailyEvents={maximumDailyEvents}
-                chartLabelInterval={chartLabelInterval}
-                chartScrollRef={chartScrollRef}
-                canScrollToOlderActivity={canScrollToOlderActivity}
-                canScrollToNewestActivity={canScrollToNewestActivity}
-                syncChartNavigation={syncChartNavigation}
-                scrollActivity={scrollActivity}
-              />
-              <GoogleAnalyticsPanel
-                googleAnalytics={googleAnalytics}
-                googleAnalyticsLoading={googleAnalyticsLoading}
-                cityScrollRef={cityScrollRef}
-                syncCityNavigation={syncCityNavigation}
-                scrollCities={scrollCities}
-                hasScrollableCities={hasScrollableCities}
-                canScrollToEarlierCities={canScrollToEarlierCities}
-                canScrollToLaterCities={canScrollToLaterCities}
-              />
-              <FeedbackPanel
-                overview={overview}
-                onStatusChange={handleStatusChange}
-              />
-              <AdminAccessPanel
-                email={email}
-                setEmail={setEmail}
-                accessSaving={accessSaving}
-                accessError={accessError}
-                access={access}
-                userId={user.id}
-                onGrantAccess={handleGrantAccess}
-                onRevokeAccess={handleRevokeAccess}
-              />
+              <section
+                className="admin-stat-strip"
+                aria-label="Product health summary"
+              >
+                <div className="admin-stat">
+                  <span>Tracked events</span>
+                  <strong>
+                    {formatNumber(overview.analytics.totalEvents)}
+                  </strong>
+                  <small>
+                    {overview.fromDate} – {overview.toDate}
+                  </small>
+                </div>
+                <div className="admin-stat">
+                  <span>Page views</span>
+                  <strong>{formatNumber(overview.analytics.pageViews)}</strong>
+                  <small>First-party analytics</small>
+                </div>
+                <div className="admin-stat">
+                  <span>Feedback received</span>
+                  <strong>{formatNumber(overview.feedback.total)}</strong>
+                  <small>{overview.feedback.new} need review</small>
+                </div>
+                <div className="admin-stat">
+                  <span>Average rating</span>
+                  <strong>
+                    {overview.feedback.averageRating?.toFixed(1) ?? "—"}
+                    <small className="admin-stat__suffix"> / 5</small>
+                  </strong>
+                  <small>From submitted ratings</small>
+                </div>
+                <div className="admin-stat">
+                  <span>Helpful rate</span>
+                  <strong>
+                    {overview.feedback.helpfulRate != null
+                      ? `${Math.round(overview.feedback.helpfulRate * 100)}%`
+                      : "—"}
+                  </strong>
+                  <small>Assessment and global feedback</small>
+                </div>
+              </section>
+
+              <section
+                className="admin-panel admin-latency-panel"
+                aria-labelledby="api-latency-title"
+                aria-busy={apiLatencyLoading}
+              >
+                <div className="admin-panel__header">
+                  <div>
+                    <h2 id="api-latency-title">API performance</h2>
+                    <p className="admin-panel__description">
+                      Server response-time estimates for the selected period.
+                    </p>
+                  </div>
+                  <div className="admin-panel__header-actions">
+                    {apiLatency && (
+                      <span className="admin-panel__count">
+                        {formatNumber(apiLatency.sampleCount)} requests
+                      </span>
+                    )}
+                    <MdSpeed
+                      className="admin-panel__icon"
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+                {apiLatencyLoading ? (
+                  <div className="admin-latency-loading" role="status">
+                    Loading API performance…
+                  </div>
+                ) : apiLatencyError ? (
+                  <p className="admin-empty" role="alert">
+                    {apiLatencyError} Use the dashboard refresh button to try
+                    again.
+                  </p>
+                ) : apiLatency ? (
+                  <>
+                    <dl className="admin-latency-metrics">
+                      <div>
+                        <dt>p50 · typical</dt>
+                        <dd>{formatLatency(apiLatency.p50Ms)}</dd>
+                      </div>
+                      <div>
+                        <dt>p95 · slower requests</dt>
+                        <dd>{formatLatency(apiLatency.p95Ms)}</dd>
+                      </div>
+                      <div>
+                        <dt>p99 · slowest tail</dt>
+                        <dd>{formatLatency(apiLatency.p99Ms)}</dd>
+                      </div>
+                    </dl>
+                    {apiLatency.routes.length > 0 && (
+                      <div className="admin-latency-routes">
+                        <div className="admin-latency-routes__header">
+                          <h3>Route breakdown</h3>
+                          <span>Requests / p95 latency</span>
+                        </div>
+                        {apiLatency.routes.map((route) => (
+                          <div className="admin-latency-route" key={route.route}>
+                            <code>{route.route}</code>
+                            <span>{formatNumber(route.sampleCount)} req</span>
+                            <strong>{formatLatency(route.p95Ms)}</strong>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {apiLatency.sampleCount === 0 ? (
+                      <p className="admin-empty">
+                        {apiLatency.collectionEnabled
+                          ? "No API requests have been recorded for this period yet."
+                          : "Latency collection is off because REDIS_URI is not configured."}
+                      </p>
+                    ) : (
+                      <p className="admin-latency-note">
+                        Estimates use fixed histogram buckets. p95 needs at
+                        least 20 requests and p99 needs at least 100; no raw
+                        URLs, query strings, or user details are stored.
+                      </p>
+                    )}
+                  </>
+                ) : null}
+              </section>
+
+              <div className="admin-overview-grid">
+                <section
+                  className="admin-panel admin-panel--chart"
+                  aria-labelledby="usage-title"
+                >
+                  <div className="admin-panel__header">
+                    <div>
+                      <h2 id="usage-title">Product activity</h2>
+                      <p className="admin-panel__description">
+                        First-party events captured across the product.
+                      </p>
+                    </div>
+                    <MdInsights
+                      className="admin-panel__icon"
+                      aria-hidden="true"
+                    />
+                  </div>
+                  <div className="admin-chart-carousel">
+                    <div
+                      ref={chartScrollRef}
+                      className="admin-chart-scroll"
+                      aria-label="Daily product activity chart. Scroll horizontally to explore older dates."
+                      onScroll={syncChartNavigation}
+                    >
+                      {dailyActivity.length ? (
+                        <div
+                          className="admin-chart"
+                          id="admin-activity-chart"
+                          role="img"
+                          aria-label={`Daily tracked events for ${dateRange.toLowerCase()}`}
+                          style={{
+                            gridTemplateColumns: `repeat(${dailyActivity.length}, minmax(0, 1fr))`,
+                            minWidth: `${dailyActivity.length * 12}px`,
+                          }}
+                        >
+                          {dailyActivity.map((day, index) => {
+                            const chartDate = new Date(`${day.date}T00:00:00`);
+                            const dateLabel = chartDate.toLocaleDateString(
+                              "en-IN",
+                              {
+                                day: "numeric",
+                                month: "short",
+                              },
+                            );
+                            const tooltipDateLabel =
+                              chartDate.toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              });
+                            const showDate =
+                              index % chartLabelInterval === 0 ||
+                              index === dailyActivity.length - 1;
+                            return (
+                              <div
+                                className="admin-chart__column"
+                                key={day.date}
+                              >
+                                <div className="admin-chart__bar-wrap">
+                                  <div
+                                    className="admin-chart__bar"
+                                    style={{
+                                      height: `${Math.max((day.events / maximumDailyEvents) * 100, day.events ? 7 : 2)}%`,
+                                    }}
+                                    data-tooltip={`${day.events} ${day.events === 1 ? "event" : "events"} · ${tooltipDateLabel}`}
+                                    data-tooltip-placement="top"
+                                  />
+                                </div>
+                                <span aria-hidden="true">
+                                  {showDate ? dateLabel : ""}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="admin-empty">
+                          No events were recorded in this period.
+                        </p>
+                      )}
+                    </div>
+                    {canScrollToOlderActivity && (
+                      <button
+                        className="admin-chart-nav admin-chart-nav--older"
+                        type="button"
+                        aria-label="Show older product activity"
+                        aria-controls="admin-activity-chart"
+                        onClick={() => scrollActivity("older")}
+                      >
+                        <MdChevronLeft aria-hidden="true" />
+                      </button>
+                    )}
+                    {canScrollToNewestActivity && (
+                      <button
+                        className="admin-chart-nav admin-chart-nav--newest"
+                        type="button"
+                        aria-label="Return to newest product activity"
+                        aria-controls="admin-activity-chart"
+                        onClick={() => scrollActivity("newest")}
+                      >
+                        <MdChevronRight aria-hidden="true" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="admin-list-split">
+                    <div>
+                      <h3>Top events</h3>
+                      {overview.analytics.topEvents.slice(0, 5).map((event) => (
+                        <div className="admin-ranking" key={event.name}>
+                          <span>{event.name}</span>
+                          <strong>{formatNumber(event.count)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                    <div>
+                      <h3>Top routes</h3>
+                      {overview.analytics.topRoutes.slice(0, 5).map((route) => (
+                        <div className="admin-ranking" key={route.route}>
+                          <span>{route.route}</span>
+                          <strong>{formatNumber(route.count)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <section
+                className="admin-panel admin-panel--acquisition"
+                aria-labelledby="acquisition-title"
+              >
+                <div className="admin-panel__header">
+                  <div>
+                    <h2 id="acquisition-title">Google Analytics</h2>
+                    <p className="admin-panel__description">
+                      Traffic sources and approximate visitor locations for the
+                      selected period.
+                    </p>
+                  </div>
+                  <div className="admin-panel__header-actions">
+                    {googleAnalytics?.status === "connected" && (
+                      <span className="admin-panel__count">Connected</span>
+                    )}
+                    <MdTrendingUp
+                      className="admin-panel__icon"
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+                {googleAnalyticsLoading ? (
+                  <div
+                    className="admin-ga-loading"
+                    role="status"
+                    aria-label="Loading Google Analytics report"
+                  >
+                    <span />
+                    <span />
+                  </div>
+                ) : googleAnalytics?.status === "connected" ? (
+                  <div className="admin-ga-content">
+                    <dl className="admin-ga-metrics">
+                      <div>
+                        <dt>Active users</dt>
+                        <dd>
+                          {formatNumber(googleAnalytics.activeUsers ?? 0)}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>New users</dt>
+                        <dd>{formatNumber(googleAnalytics.newUsers ?? 0)}</dd>
+                      </div>
+                      <div>
+                        <dt>Sessions</dt>
+                        <dd>{formatNumber(googleAnalytics.sessions ?? 0)}</dd>
+                      </div>
+                      <div>
+                        <dt>Page views</dt>
+                        <dd>
+                          {formatNumber(googleAnalytics.screenPageViews ?? 0)}
+                        </dd>
+                      </div>
+                    </dl>
+                    <div className="admin-ga-breakdowns">
+                      <section className="admin-ga-breakdown">
+                        <h3>Sessions by channel</h3>
+                        <p className="admin-ga-breakdown__description">
+                          Sessions grouped by Google Analytics’ default
+                          channels.
+                        </p>
+                        {googleAnalytics.channelGroups.length ? (
+                          googleAnalytics.channelGroups.map((channel) => (
+                            <div className="admin-ranking" key={channel.name}>
+                              <span>{channel.name}</span>
+                              <strong>{formatNumber(channel.sessions)}</strong>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="admin-empty">
+                            No channel data in this period.
+                          </p>
+                        )}
+                      </section>
+                      <section className="admin-ga-breakdown">
+                        <h3>Top referral sources</h3>
+                        <p className="admin-ga-breakdown__description">
+                          Sessions attributed to links from other sites.
+                        </p>
+                        {googleAnalytics.referralSources?.length ? (
+                          googleAnalytics.referralSources.map((source) => (
+                            <div
+                              className="admin-ranking"
+                              key={source.sourceMedium}
+                            >
+                              <span title={source.sourceMedium}>
+                                {source.sourceMedium}
+                              </span>
+                              <strong>{formatNumber(source.sessions)}</strong>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="admin-empty">
+                            No referral sessions in this period.
+                          </p>
+                        )}
+                      </section>
+                      <section className="admin-ga-breakdown">
+                        <h3>Top cities</h3>
+                        <p className="admin-ga-breakdown__description">
+                          Approximate locations reported by Google Analytics.
+                        </p>
+                        <div
+                          id="admin-city-list"
+                          ref={cityScrollRef}
+                          className="admin-ga-city-list"
+                          role="region"
+                          aria-label="Top cities"
+                          onScroll={syncCityNavigation}
+                        >
+                          {googleAnalytics.cities?.length ? (
+                            googleAnalytics.cities.map((city) => (
+                              <div
+                                className="admin-ranking admin-ranking--city"
+                                key={`${city.country}-${city.region}-${city.city}`}
+                              >
+                                <span className="admin-ranking__place">
+                                  <strong>{city.city}</strong>
+                                  <small>
+                                    {city.region} · {city.country}
+                                  </small>
+                                </span>
+                                <strong>{formatNumber(city.sessions)}</strong>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="admin-empty">
+                              No city data in this period.
+                            </p>
+                          )}
+                        </div>
+                        {hasScrollableCities && (
+                          <div
+                            className="admin-city-navigation"
+                            role="group"
+                            aria-label="City list navigation"
+                          >
+                            <button
+                              className="admin-city-navigation__button"
+                              type="button"
+                              aria-label="Scroll city list up"
+                              aria-controls="admin-city-list"
+                              disabled={!canScrollToEarlierCities}
+                              onClick={() => scrollCities("earlier")}
+                            >
+                              <MdKeyboardArrowUp aria-hidden="true" />
+                            </button>
+                            <button
+                              className="admin-city-navigation__button"
+                              type="button"
+                              aria-label="Scroll city list down"
+                              aria-controls="admin-city-list"
+                              disabled={!canScrollToLaterCities}
+                              onClick={() => scrollCities("later")}
+                            >
+                              <MdKeyboardArrowDown aria-hidden="true" />
+                            </button>
+                          </div>
+                        )}
+                      </section>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="admin-connection-state">
+                    <span
+                      className={`admin-connection-state__badge${googleAnalytics?.status === "error" ? " admin-connection-state__badge--error" : ""}`}
+                    >
+                      {googleAnalytics?.status === "error"
+                        ? "Connection issue"
+                        : "Not connected"}
+                    </span>
+                    <div>
+                      <strong>
+                        {googleAnalytics?.status === "error"
+                          ? "Google Analytics is unavailable"
+                          : "Connect a GA4 property"}
+                      </strong>
+                      <p>
+                        {googleAnalytics?.message ??
+                          "Configure a GA4 property and credentials on the API server."}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                <div className="admin-source-note">
+                  <MdCheckCircle aria-hidden="true" />
+                  GA4 is queried read-only for the selected date range. City
+                  values are approximate and may appear as “(not set)”.
+                </div>
+              </section>
+
+              <section className="admin-panel" aria-labelledby="feedback-title">
+                <div className="admin-panel__header">
+                  <div>
+                    <h2 id="feedback-title">Recent feedback</h2>
+                    <p className="admin-panel__description">
+                      Review what people shared and update its status.
+                    </p>
+                  </div>
+                  <div className="admin-panel__header-actions">
+                    <span className="admin-panel__count">
+                      {overview.feedback.new} new
+                    </span>
+                    <MdFeedback
+                      className="admin-panel__icon"
+                      aria-hidden="true"
+                    />
+                  </div>
+                </div>
+                <div className="admin-feedback-list">
+                  {overview.recentFeedback.length ? (
+                    overview.recentFeedback.map((item) => (
+                      <FeedbackRow
+                        item={item}
+                        onStatusChange={handleStatusChange}
+                        key={item.id}
+                      />
+                    ))
+                  ) : (
+                    <p className="admin-empty">
+                      No feedback has arrived in this period.
+                    </p>
+                  )}
+                </div>
+              </section>
+
+              <section
+                className="admin-panel admin-access-panel"
+                aria-labelledby="access-title"
+              >
+                <div className="admin-panel__header">
+                  <div>
+                    <h2 id="access-title">Admin access</h2>
+                    <p className="admin-panel__description">
+                      Choose who can open this private console.
+                    </p>
+                  </div>
+                  <MdAdminPanelSettings
+                    className="admin-panel__icon"
+                    aria-hidden="true"
+                  />
+                </div>
+                <p className="admin-access-panel__description">
+                  Admin access is stored with each user account. Add a verified
+                  Diagramwise account when you want someone else to help review
+                  product health.
+                </p>
+                <form className="admin-grant-form" onSubmit={handleGrantAccess}>
+                  <label htmlFor="admin-email">Grant super-admin access</label>
+                  <div>
+                    <input
+                      id="admin-email"
+                      type="email"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      placeholder="person@example.com"
+                      required
+                    />
+                    <button type="submit" disabled={accessSaving}>
+                      {accessSaving ? "Granting…" : "Grant access"}
+                    </button>
+                  </div>
+                </form>
+                {accessError && (
+                  <p className="admin-inline-error" role="alert">
+                    {accessError}
+                  </p>
+                )}
+                <div className="admin-access-list">
+                  {access.map((admin) => (
+                    <div className="admin-access-row" key={admin.id}>
+                      <div>
+                        <strong>{admin.name || admin.email}</strong>
+                        {admin.name && <span>{admin.email}</span>}
+                      </div>
+                      <div className="admin-access-row__actions">
+                        <span>Super-admin</span>
+                        {admin.id !== user?.id && (
+                          <button
+                            type="button"
+                            onClick={() => void handleRevokeAccess(admin)}
+                          >
+                            Revoke
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
             </>
           )}
         </div>

@@ -31,283 +31,6 @@ type PathProgress = {
   error: boolean;
 };
 
-type ProfilePathSummary = LearningPath & {
-  completed: number;
-  total: number;
-  percent: number;
-};
-
-type LearningProgressSectionProps = {
-  loading: boolean;
-  loadError: boolean;
-  pathSummaries: ProfilePathSummary[];
-  activePathSummaries: ProfilePathSummary[];
-  progress: Record<string, PathProgress>;
-  completedLessonCount: number;
-  startedPathCount: number;
-  onRetry: () => void;
-};
-
-function LearningProgressHeading({
-  completedLessonCount,
-  startedPathCount,
-}: Pick<
-  LearningProgressSectionProps,
-  "completedLessonCount" | "startedPathCount"
->) {
-  const pathSummary =
-    startedPathCount > 0
-      ? ` across ${startedPathCount} learning path${startedPathCount === 1 ? "" : "s"}`
-      : "";
-
-  return (
-    <div className="profile-section-heading">
-      <div>
-        <h2 id="progress-title">Learning progress</h2>
-        <p>
-          {completedLessonCount} lesson
-          {completedLessonCount === 1 ? "" : "s"} completed{pathSummary}
-        </p>
-      </div>
-      <Link to="/learning-paths/" className="profile-text-link">
-        Explore paths <HiArrowUpRight aria-hidden="true" />
-      </Link>
-    </div>
-  );
-}
-
-function LearningProgressSkeleton() {
-  return (
-    <div
-      className="profile-progress-skeleton"
-      aria-label="Loading your learning progress"
-      aria-busy="true"
-    >
-      {Array.from({ length: 3 }, (_, index) => (
-        <div className="profile-progress-skeleton-row" key={index}>
-          <span />
-          <span />
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function NoLearningPathsEmptyState({
-  loadError,
-  onRetry,
-}: Pick<LearningProgressSectionProps, "loadError" | "onRetry">) {
-  const message = loadError
-    ? "Learning progress is unavailable right now."
-    : "Learning paths will appear here when they’re available.";
-
-  return (
-    <div className="profile-empty">
-      <p>{message}</p>
-      {loadError && (
-        <button
-          className="profile-secondary-button"
-          type="button"
-          onClick={onRetry}
-        >
-          Try again
-        </button>
-      )}
-    </div>
-  );
-}
-
-function NoActivePathsEmptyState({
-  loadError,
-  onRetry,
-}: Pick<LearningProgressSectionProps, "loadError" | "onRetry">) {
-  const message = loadError
-    ? "Your progress couldn’t be loaded just now."
-    : "Complete your first lesson and your learning progress will appear here.";
-
-  return (
-    <div className="profile-empty profile-progress-empty">
-      <p>{message}</p>
-      {loadError ? (
-        <button
-          className="profile-secondary-button"
-          type="button"
-          onClick={onRetry}
-        >
-          Try again
-        </button>
-      ) : (
-        <Link className="profile-secondary-button" to="/learning-paths/">
-          Browse learning paths
-          <HiArrowUpRight aria-hidden="true" />
-        </Link>
-      )}
-    </div>
-  );
-}
-
-function LearningPathProgressRow({
-  path,
-  hasError,
-}: {
-  path: ProfilePathSummary;
-  hasError: boolean;
-}) {
-  const isComplete = path.total > 0 && path.completed >= path.total;
-  const pathDescription = hasError
-    ? "Progress couldn’t be loaded"
-    : isComplete
-      ? "Path complete"
-      : path.completed > 0
-        ? `${path.completed} of ${path.total} lessons complete`
-        : "Not started yet";
-
-  return (
-    <Link
-      className="profile-path-row"
-      to={`/learning-paths/${path.slug}`}
-    >
-      <span className="profile-path-copy">
-        <strong>{path.title}</strong>
-        <span>{pathDescription}</span>
-      </span>
-      <span className="profile-path-progress">
-        <span
-          className="profile-progress-track"
-          role="progressbar"
-          aria-label={`${path.title} progress`}
-          aria-valuemin={0}
-          aria-valuemax={Math.max(1, path.total)}
-          aria-valuenow={Math.min(path.completed, Math.max(1, path.total))}
-        >
-          <span style={{ width: `${path.percent}%` }} />
-        </span>
-        <span className="profile-path-count">
-          {hasError ? "—" : `${path.percent}%`}
-        </span>
-      </span>
-      {isComplete && (
-        <MdCheckCircle
-          className="profile-complete-icon"
-          aria-hidden="true"
-        />
-      )}
-    </Link>
-  );
-}
-
-function LearningPathProgressList({
-  paths,
-  progress,
-}: Pick<LearningProgressSectionProps, "progress"> & {
-  paths: ProfilePathSummary[];
-}) {
-  return (
-    <div className="profile-path-list">
-      {paths.map((path) => (
-        <LearningPathProgressRow
-          key={path.slug}
-          path={path}
-          hasError={Boolean(progress[path.slug]?.error)}
-        />
-      ))}
-    </div>
-  );
-}
-
-function LearningProgressContent({
-  loading,
-  loadError,
-  pathSummaries,
-  activePathSummaries,
-  progress,
-  onRetry,
-}: Pick<
-  LearningProgressSectionProps,
-  | "loading"
-  | "loadError"
-  | "pathSummaries"
-  | "activePathSummaries"
-  | "progress"
-  | "onRetry"
->) {
-  if (loading) return <LearningProgressSkeleton />;
-  if (pathSummaries.length === 0) {
-    return <NoLearningPathsEmptyState loadError={loadError} onRetry={onRetry} />;
-  }
-  if (activePathSummaries.length === 0) {
-    return <NoActivePathsEmptyState loadError={loadError} onRetry={onRetry} />;
-  }
-  return (
-    <LearningPathProgressList
-      paths={activePathSummaries}
-      progress={progress}
-    />
-  );
-}
-
-function LearningProgressSection({
-  loading,
-  loadError,
-  pathSummaries,
-  activePathSummaries,
-  progress,
-  completedLessonCount,
-  startedPathCount,
-  onRetry,
-}: LearningProgressSectionProps) {
-  return (
-    <section className="profile-section" aria-labelledby="progress-title">
-      <LearningProgressHeading
-        completedLessonCount={completedLessonCount}
-        startedPathCount={startedPathCount}
-      />
-      <LearningProgressContent
-        loading={loading}
-        loadError={loadError}
-        pathSummaries={pathSummaries}
-        activePathSummaries={activePathSummaries}
-        progress={progress}
-        onRetry={onRetry}
-      />
-      {!loading && pathSummaries.length > 0 && loadError && (
-        <p className="profile-inline-note" role="status">
-          Some progress could not be loaded. You can still open each path and
-          continue learning.
-        </p>
-      )}
-    </section>
-  );
-}
-
-async function fetchProfileLearningProgress() {
-  let catalog: LearningPath[];
-  try {
-    catalog = await fetchLearningPaths();
-    if (catalog.length === 0) catalog = getEmbeddedLearningPaths();
-  } catch {
-    catalog = getEmbeddedLearningPaths();
-    if (catalog.length === 0) throw new Error("Learning paths unavailable");
-  }
-
-  const results = await Promise.all(
-    catalog.map(async (path) => {
-      try {
-        const completed = await apiService.getLearningProgress(path.slug);
-        return [path.slug, { completed, error: false }] as const;
-      } catch {
-        return [path.slug, { completed: [], error: true }] as const;
-      }
-    }),
-  );
-
-  return {
-    paths: catalog,
-    progress: Object.fromEntries(results),
-    hasErrors: results.some(([, result]) => result.error),
-  };
-}
-
 const preferenceLabels: Array<[string, string]> = [
   ["role", "Role"],
   ["experience_level", "Experience"],
@@ -383,11 +106,31 @@ const Profile: React.FC = () => {
     if (!user) return;
     setLoading(true);
     setLoadError(false);
+
     try {
-      const result = await fetchProfileLearningProgress();
-      setPaths(result.paths);
-      setProgress(result.progress);
-      setLoadError(result.hasErrors);
+      let catalog: LearningPath[];
+      try {
+        catalog = await fetchLearningPaths();
+        if (catalog.length === 0) catalog = getEmbeddedLearningPaths();
+      } catch {
+        catalog = getEmbeddedLearningPaths();
+        if (catalog.length === 0) throw new Error("Learning paths unavailable");
+      }
+
+      const results = await Promise.all(
+        catalog.map(async (path) => {
+          try {
+            const completed = await apiService.getLearningProgress(path.slug);
+            return [path.slug, { completed, error: false }] as const;
+          } catch {
+            return [path.slug, { completed: [], error: true }] as const;
+          }
+        }),
+      );
+
+      setPaths(catalog);
+      setProgress(Object.fromEntries(results));
+      setLoadError(results.some(([, result]) => result.error));
     } catch {
       setLoadError(true);
       setPaths([]);
@@ -727,16 +470,144 @@ const Profile: React.FC = () => {
 
           <div className="profile-layout">
             <div className="profile-primary">
-              <LearningProgressSection
-                loading={loading}
-                loadError={loadError}
-                pathSummaries={pathSummaries}
-                activePathSummaries={activePathSummaries}
-                progress={progress}
-                completedLessonCount={completedLessonCount}
-                startedPathCount={startedPathCount}
-                onRetry={() => void loadProgress()}
-              />
+              <section
+                className="profile-section"
+                aria-labelledby="progress-title"
+              >
+                <div className="profile-section-heading">
+                  <div>
+                    <h2 id="progress-title">Learning progress</h2>
+                    <p>
+                      {completedLessonCount} lesson
+                      {completedLessonCount === 1 ? "" : "s"} completed
+                      {startedPathCount > 0
+                        ? ` across ${startedPathCount} learning path${startedPathCount === 1 ? "" : "s"}`
+                        : ""}
+                    </p>
+                  </div>
+                  <Link to="/learning-paths/" className="profile-text-link">
+                    Explore paths <HiArrowUpRight aria-hidden="true" />
+                  </Link>
+                </div>
+
+                {loading ? (
+                  <div
+                    className="profile-progress-skeleton"
+                    aria-label="Loading your learning progress"
+                    aria-busy="true"
+                  >
+                    {Array.from({ length: 3 }, (_, index) => (
+                      <div
+                        className="profile-progress-skeleton-row"
+                        key={index}
+                      >
+                        <span />
+                        <span />
+                      </div>
+                    ))}
+                  </div>
+                ) : pathSummaries.length === 0 ? (
+                  <div className="profile-empty">
+                    <p>
+                      {loadError
+                        ? "Learning progress is unavailable right now."
+                        : "Learning paths will appear here when they’re available."}
+                    </p>
+                    {loadError && (
+                      <button
+                        className="profile-secondary-button"
+                        type="button"
+                        onClick={() => void loadProgress()}
+                      >
+                        Try again
+                      </button>
+                    )}
+                  </div>
+                ) : activePathSummaries.length === 0 ? (
+                  <div className="profile-empty profile-progress-empty">
+                    <p>
+                      {loadError
+                        ? "Your progress couldn’t be loaded just now."
+                        : "Complete your first lesson and your learning progress will appear here."}
+                    </p>
+                    {loadError ? (
+                      <button
+                        className="profile-secondary-button"
+                        type="button"
+                        onClick={() => void loadProgress()}
+                      >
+                        Try again
+                      </button>
+                    ) : (
+                      <Link
+                        className="profile-secondary-button"
+                        to="/learning-paths/"
+                      >
+                        Browse learning paths
+                        <HiArrowUpRight aria-hidden="true" />
+                      </Link>
+                    )}
+                  </div>
+                ) : (
+                  <div className="profile-path-list">
+                    {activePathSummaries.map((path) => {
+                      const pathError = progress[path.slug]?.error;
+                      const isComplete =
+                        path.total > 0 && path.completed >= path.total;
+                      return (
+                        <Link
+                          className="profile-path-row"
+                          key={path.slug}
+                          to={`/learning-paths/${path.slug}`}
+                        >
+                          <span className="profile-path-copy">
+                            <strong>{path.title}</strong>
+                            <span>
+                              {pathError
+                                ? "Progress couldn’t be loaded"
+                                : isComplete
+                                  ? "Path complete"
+                                  : path.completed > 0
+                                    ? `${path.completed} of ${path.total} lessons complete`
+                                    : "Not started yet"}
+                            </span>
+                          </span>
+                          <span className="profile-path-progress">
+                            <span
+                              className="profile-progress-track"
+                              role="progressbar"
+                              aria-label={`${path.title} progress`}
+                              aria-valuemin={0}
+                              aria-valuemax={Math.max(1, path.total)}
+                              aria-valuenow={Math.min(
+                                path.completed,
+                                Math.max(1, path.total),
+                              )}
+                            >
+                              <span style={{ width: `${path.percent}%` }} />
+                            </span>
+                            <span className="profile-path-count">
+                              {pathError ? "—" : `${path.percent}%`}
+                            </span>
+                          </span>
+                          {isComplete && (
+                            <MdCheckCircle
+                              className="profile-complete-icon"
+                              aria-hidden="true"
+                            />
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+                {!loading && pathSummaries.length > 0 && loadError && (
+                  <p className="profile-inline-note" role="status">
+                    Some progress could not be loaded. You can still open each
+                    path and continue learning.
+                  </p>
+                )}
+              </section>
 
               <section
                 className="profile-section"

@@ -302,37 +302,6 @@ const CredentialsForm: React.FC<{
   );
 };
 
-function VerificationNotice({
-  email,
-  isLoading,
-  resendMessage,
-  onResend,
-}: {
-  email: string;
-  isLoading: boolean;
-  resendMessage: string;
-  onResend: () => void;
-}) {
-  return (
-    <div className="space-y-4 rounded-xl border border-[var(--brand)]/30 bg-[var(--brand)]/10 p-5 text-center">
-      <h3 className="text-lg font-bold text-theme">Check your inbox</h3>
-      <p className="text-sm text-muted">
-        We sent an activation link to <strong className="text-theme">{email}</strong>.
-        Open it within 20 minutes, then sign in.
-      </p>
-      <button
-        type="button"
-        disabled={isLoading}
-        onClick={onResend}
-        className="text-sm font-medium text-[var(--brand)] hover:underline disabled:opacity-50"
-      >
-        Resend activation email
-      </button>
-      {resendMessage && <p className="text-xs text-muted">{resendMessage}</p>}
-    </div>
-  );
-}
-
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
@@ -428,23 +397,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  const handleResendActivation = async () => {
-    setIsLoading(true);
-    setError("");
-    try {
-      const response = await apiService.resendVerification(verificationEmail);
-      setResendMessage(response.message);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Unable to resend activation email",
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const switchMode = () => {
     setMode((m) => (m === "login" ? "signup" : "login"));
     setError("");
@@ -478,7 +430,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return createPortal(
     <AnimatePresence>
-      <div
+      {isOpen && (
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center overflow-x-hidden overflow-y-auto bg-black/50 px-2 py-4 sm:px-2 sm:py-6"
           style={modalThemeStyles}
         >
@@ -528,12 +481,43 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             )}
 
             {verificationEmail ? (
-              <VerificationNotice
-                email={verificationEmail}
-                isLoading={isLoading}
-                resendMessage={resendMessage}
-                onResend={handleResendActivation}
-              />
+              <div className="space-y-4 rounded-xl border border-[var(--brand)]/30 bg-[var(--brand)]/10 p-5 text-center">
+                <h3 className="text-lg font-bold text-theme">
+                  Check your inbox
+                </h3>
+                <p className="text-sm text-muted">
+                  We sent an activation link to{" "}
+                  <strong className="text-theme">{verificationEmail}</strong>.
+                  Open it within 20 minutes, then sign in.
+                </p>
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  onClick={async () => {
+                    setIsLoading(true);
+                    setError("");
+                    try {
+                      const response =
+                        await apiService.resendVerification(verificationEmail);
+                      setResendMessage(response.message);
+                    } catch (err) {
+                      setError(
+                        err instanceof Error
+                          ? err.message
+                          : "Unable to resend activation email",
+                      );
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }}
+                  className="text-sm font-medium text-[var(--brand)] hover:underline disabled:opacity-50"
+                >
+                  Resend activation email
+                </button>
+                {resendMessage && (
+                  <p className="text-xs text-muted">{resendMessage}</p>
+                )}
+              </div>
             ) : (
               <CredentialsForm
                 mode={mode}
@@ -559,7 +543,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               />
             )}
           </motion.div>
-      </div>
+        </div>
+      )}
     </AnimatePresence>,
     modalRoot,
   );

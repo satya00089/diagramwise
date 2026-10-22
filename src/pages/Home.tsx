@@ -732,15 +732,11 @@ const Home: React.FC = () => {
               aria-hidden="true"
             />
             {/* Particle network canvas */}
-            <div
-              className="absolute inset-0 pointer-events-none"
+            <canvas
+              ref={canvasRef}
+              className="absolute inset-0 w-full h-full pointer-events-none"
               aria-hidden="true"
-            >
-              <canvas
-                ref={canvasRef}
-                className="absolute inset-0 w-full h-full pointer-events-none"
-              />
-            </div>
+            />
             {/* Animated decorative graph */}
             <div className="absolute inset-0 pointer-events-none">
               {/* SVG connection lines */}

@@ -32,29 +32,6 @@ import {
   MdStop,
 } from "react-icons/md";
 
-function useFullscreenEscapeKey(
-  isFullscreen: boolean,
-  setIsFullscreen: React.Dispatch<React.SetStateAction<boolean>>,
-) {
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && isFullscreen) setIsFullscreen(false);
-    };
-
-    if (isFullscreen) {
-      document.addEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-
-    return () => {
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = "";
-    };
-  }, [isFullscreen, setIsFullscreen]);
-}
-
 export interface AnimatedTextareaProps {
   id: string;
   label?: string;
@@ -157,8 +134,6 @@ const AnimatedTextarea: React.FC<AnimatedTextareaProps> = ({
     setIsFullscreen(!isFullscreen);
   };
 
-  useFullscreenEscapeKey(isFullscreen, setIsFullscreen);
-
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -241,6 +216,28 @@ const AnimatedTextarea: React.FC<AnimatedTextareaProps> = ({
       editor.chain().focus().insertContent(text).run();
     },
   });
+
+  // Handle ESC key to exit fullscreen
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    };
+
+    if (isFullscreen) {
+      document.addEventListener("keydown", handleKeyDown);
+      // Prevent body scroll when in fullscreen
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [isFullscreen]);
 
   if (!editor || !editor.schema) return null;
 

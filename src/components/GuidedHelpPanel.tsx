@@ -164,102 +164,274 @@ function StepTypeBadge({ type }: { type: GuidedStepType }) {
   );
 }
 
-function getWalkthroughError(
-  error: string | null,
-): "not_found" | "error" | null {
-  if (!error) return null;
-  return error === "NOT_FOUND" ? "not_found" : "error";
-}
+// ── Main component ────────────────────────────────────────────────────────────
 
-function hasApplyAction(
-  step: GuidedStep | null,
-): step is GuidedStep {
-  return Boolean(
-    step &&
-      (step.type === "add_component" ||
-        step.type === "add_connection" ||
-        step.componentUpdate),
+const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
+  problemId,
+  onApplyStep,
+  currentStep: currentStepProp,
+  onStepChange,
+  appliedGuidedStepIds,
+}) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const walkthrough = useSelector((state: RootState) =>
+    selectWalkthrough(state, problemId ?? ""),
   );
-}
+  const loading = useSelector((state: RootState) =>
+    selectWalkthroughLoading(state, problemId ?? ""),
+  );
+  const rawError = useSelector((state: RootState) =>
+    selectWalkthroughError(state, problemId ?? ""),
+  );
+  const error: "not_found" | "error" | null = !rawError
+    ? null
+    : rawError === "NOT_FOUND"
+      ? "not_found"
+      : "error";
 
-function countAppliedActions(steps: GuidedStep[], appliedIds: Set<string>) {
-  const actionSteps = steps.filter(hasApplyAction);
-  return {
-    actionCount: actionSteps.length,
-    completedCount: actionSteps.filter((item) => appliedIds.has(item.id)).length,
-  };
-}
+  const [currentStep, setCurrentStep] = useState<number>(currentStepProp ?? 0); // 0-indexed
+  const [appliedSteps, setAppliedSteps] = useState<Set<string>>(new Set());
+  const [applyError, setApplyError] = useState<string | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
-const NoProblemState = () => (
-  <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
-    <svg
-      className="w-10 h-10 text-muted/30"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-      />
-    </svg>
-    <p className="text-xs text-muted/60">
-      Open a problem to view its guided walkthrough.
-    </p>
-  </div>
-);
+  // Sync controlled prop -> local state when provided
+  useEffect(() => {
+    if (currentStepProp !== undefined) {
+      setCurrentStep(currentStepProp);
+    }
+  }, [currentStepProp]);
 
-const LoadingState = () => (
-  <div className="flex flex-col items-center justify-center h-full gap-3">
-    <div className="w-5 h-5 border-2 border-[var(--brand)]/30 border-t-[var(--brand)] rounded-full animate-spin" />
-    <p className="text-xs text-muted/60">Loading walkthrough…</p>
-  </div>
-);
+  // Dispatch fetch (Redux condition guard prevents duplicate calls)
+  useEffect(() => {
+    if (!problemId) return;
+    dispatch(fetchWalkthrough(problemId));
+  }, [problemId, dispatch]);
 
-const NotFoundState = () => (
-  <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
-    <svg
-      className="w-10 h-10 text-muted/30"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-      />
-    </svg>
-    <p className="text-sm font-medium text-muted">
-      Guided walkthrough coming soon
-    </p>
-    <p className="text-xs text-muted/60">
-      Step-by-step guidance for this problem is being authored. Check back
-      soon.
-    </p>
-  </div>
-);
+  // Reset step position when problem changes
+  useEffect(() => {
+    if (onStepChange) {
+      onStepChange(0);
+    } else {
+      setCurrentStep(0);
+    }
+    setAppliedSteps(new Set());
+  }, [problemId, onStepChange]);
 
-const LoadErrorState: React.FC<{ onRetry: () => void }> = ({ onRetry }) => (
-  <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
-    <p className="text-sm font-medium text-red-400">Failed to load walkthrough</p>
-    <button
-      type="button"
-      onClick={onRetry}
-      className="text-xs text-[var(--brand)] hover:underline"
-    >
-      Try again
-    </button>
-  </div>
-);
+  // Scroll content to top whenever the step changes
+  useEffect(() => {
+    contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    // Notify parent if controlled
+    if (onStepChange) onStepChange(currentStep);
+  }, [currentStep, onStepChange]);
 
-const GuidedStepAttachments: React.FC<{ step: GuidedStep }> = ({ step }) => (
-  <>
+  const step = walkthrough?.steps[currentStep] ?? null;
+  const total = walkthrough?.totalSteps ?? 0;
+
+  // Derive current phase index
+  const phaseIndex =
+    walkthrough?.phases.findIndex(
+      (p) =>
+        step &&
+        step.stepNumber >= p.stepRange[0] &&
+        step.stepNumber <= p.stepRange[1],
+    ) ?? 0;
+
+  const handleApply = useCallback(() => {
+    if (!step) return;
+    if (onApplyStep?.(step) === false) {
+      setApplyError(
+        "Add the components from the earlier steps before applying this decision or connection.",
+      );
+      return;
+    }
+    setApplyError(null);
+    setAppliedSteps((prev) => new Set(prev).add(step.id));
+  }, [step, onApplyStep]);
+
+  useEffect(() => setApplyError(null), [currentStep, problemId]);
+
+  const effectiveAppliedSteps = appliedGuidedStepIds
+    ? new Set(appliedGuidedStepIds)
+    : appliedSteps;
+  const canApply =
+    step &&
+    (step.type === "add_component" ||
+      step.type === "add_connection" ||
+      !!step.componentUpdate) &&
+    !effectiveAppliedSteps.has(step.id);
+
+  const alreadyApplied =
+    step &&
+    (step.type === "add_component" ||
+      step.type === "add_connection" ||
+      !!step.componentUpdate) &&
+    effectiveAppliedSteps.has(step.id);
+  const actionSteps =
+    walkthrough?.steps.filter(
+      (item) =>
+        item.type === "add_component" ||
+        item.type === "add_connection" ||
+        !!item.componentUpdate,
+    ) ?? [];
+  const completedActions = actionSteps.filter((item) =>
+    effectiveAppliedSteps.has(item.id),
+  ).length;
+
+  // ── Render states ──────────────────────────────────────────────────────────
+
+  if (!problemId) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
+        <svg
+          className="w-10 h-10 text-muted/30"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+          />
+        </svg>
+        <p className="text-xs text-muted/60">
+          Open a problem to view its guided walkthrough.
+        </p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3">
+        <div className="w-5 h-5 border-2 border-[var(--brand)]/30 border-t-[var(--brand)] rounded-full animate-spin" />
+        <p className="text-xs text-muted/60">Loading walkthrough…</p>
+      </div>
+    );
+  }
+
+  if (error === "not_found") {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
+        <svg
+          className="w-10 h-10 text-muted/30"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          aria-hidden="true"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+          />
+        </svg>
+        <p className="text-sm font-medium text-muted">
+          Guided walkthrough coming soon
+        </p>
+        <p className="text-xs text-muted/60">
+          Step-by-step guidance for this problem is being authored. Check back
+          soon.
+        </p>
+      </div>
+    );
+  }
+
+  if (error === "error") {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 px-4 text-center">
+        <p className="text-sm font-medium text-red-400">
+          Failed to load walkthrough
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            if (problemId) dispatch(fetchWalkthrough(problemId));
+          }}
+          className="text-xs text-[var(--brand)] hover:underline"
+        >
+          Try again
+        </button>
+      </div>
+    );
+  }
+
+  if (!walkthrough || !step) return null;
+
+  // ── Full panel ─────────────────────────────────────────────────────────────
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Phase tabs */}
+      <div className="flex-shrink-0 px-3 pt-2 pb-1">
+        <div className="flex gap-1 flex-wrap">
+          {walkthrough.phases.map((phase, idx) => (
+            <button
+              key={phase.name}
+              type="button"
+              onClick={() => {
+                const targetIdx =
+                  walkthrough.steps.findIndex(
+                    (s) => s.stepNumber === phase.stepRange[0],
+                  ) ?? 0;
+                if (targetIdx >= 0) setCurrentStep(targetIdx);
+              }}
+              className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
+                idx === phaseIndex
+                  ? "bg-[var(--brand)]/15 text-[var(--brand)] border-[var(--brand)]/30 font-semibold"
+                  : "text-muted/50 border-[var(--border)] hover:text-muted hover:border-[var(--border-hover)]"
+              }`}
+              data-tooltip={phase.description}
+            >
+              {idx + 1}. {phase.name.replace(/^Phase \d+: /, "")}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Progress bar */}
+      <div className="flex-shrink-0 px-3 pb-2">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[10px] text-muted/50">
+            Lesson step {step.stepNumber} of {total}
+          </span>
+          <span className="text-[10px] text-muted/50">
+            {completedActions} / {actionSteps.length} design actions applied
+          </span>
+        </div>
+        <div className="h-1 bg-[var(--border)] rounded-full overflow-hidden">
+          <div
+            className="h-full bg-[var(--brand)] rounded-full transition-all duration-300"
+            style={{ width: `${(step.stepNumber / total) * 100}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Step card — scrollable */}
+      <div
+        ref={contentRef}
+        className="flex-1 overflow-y-auto px-3 pb-2 space-y-3 min-h-0 node-properties-scroll"
+      >
+        {/* Header */}
+        <div className="space-y-1.5">
+          <StepTypeBadge type={step.type as GuidedStepType} />
+          <h3 className="text-sm font-semibold text-foreground leading-snug">
+            {step.title}
+          </h3>
+        </div>
+
+        {/* Main markdown content */}
+        <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed text-xs [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-3 [&_h2]:mb-1.5 [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:text-foreground [&_ul]:space-y-0.5 [&_li]:leading-relaxed [&_strong]:text-foreground [&_code]:bg-[var(--surface-2)] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[10px] [&_table]:text-[10px] [&_th]:text-foreground [&_th]:font-semibold [&_td]:py-0.5">
+          <div
+            dangerouslySetInnerHTML={{
+              __html: DOMPurify.sanitize(marked.parse(step.content || "")),
+            }}
+          />
+        </div>
+
         {/* Component card */}
         {step.type === "add_component" && step.component && (
           <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3 space-y-2.5">
@@ -300,7 +472,7 @@ const GuidedStepAttachments: React.FC<{ step: GuidedStep }> = ({ step }) => (
             {Object.keys(step.component.properties).length > 0 && (
               <div className="space-y-2">
                 <p className="text-[10px] text-muted/50 uppercase tracking-wide font-medium">
-                  Properties{" "}
+                  Properties
                   <span className="ml-1 normal-case font-normal opacity-60">
                     — tap a row to learn why
                   </span>
@@ -535,201 +707,6 @@ const GuidedStepAttachments: React.FC<{ step: GuidedStep }> = ({ step }) => (
             </div>
           </div>
         )}
-  </>
-);
-
-// ── Main component ────────────────────────────────────────────────────────────
-
-const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
-  problemId,
-  onApplyStep,
-  currentStep: currentStepProp,
-  onStepChange,
-  appliedGuidedStepIds,
-}) => {
-  const dispatch = useDispatch<AppDispatch>();
-  const walkthrough = useSelector((state: RootState) =>
-    selectWalkthrough(state, problemId ?? ""),
-  );
-  const loading = useSelector((state: RootState) =>
-    selectWalkthroughLoading(state, problemId ?? ""),
-  );
-  const rawError = useSelector((state: RootState) =>
-    selectWalkthroughError(state, problemId ?? ""),
-  );
-  const error = getWalkthroughError(rawError);
-
-  const [currentStep, setCurrentStep] = useState<number>(currentStepProp ?? 0); // 0-indexed
-  const [appliedSteps, setAppliedSteps] = useState<Set<string>>(new Set());
-  const [applyError, setApplyError] = useState<string | null>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  // Sync controlled prop -> local state when provided
-  useEffect(() => {
-    if (currentStepProp !== undefined) {
-      setCurrentStep(currentStepProp);
-    }
-  }, [currentStepProp]);
-
-  // Dispatch fetch (Redux condition guard prevents duplicate calls)
-  useEffect(() => {
-    if (!problemId) return;
-    dispatch(fetchWalkthrough(problemId));
-  }, [problemId, dispatch]);
-
-  // Reset step position when problem changes
-  useEffect(() => {
-    if (onStepChange) {
-      onStepChange(0);
-    } else {
-      setCurrentStep(0);
-    }
-    setAppliedSteps(new Set());
-  }, [problemId, onStepChange]);
-
-  // Scroll content to top whenever the step changes
-  useEffect(() => {
-    contentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
-    // Notify parent if controlled
-    if (onStepChange) onStepChange(currentStep);
-  }, [currentStep, onStepChange]);
-
-  const step = walkthrough?.steps[currentStep] ?? null;
-  const total = walkthrough?.totalSteps ?? 0;
-
-  // Derive current phase index
-  const phaseIndex =
-    walkthrough?.phases.findIndex(
-      (p) =>
-        step &&
-        step.stepNumber >= p.stepRange[0] &&
-        step.stepNumber <= p.stepRange[1],
-    ) ?? 0;
-
-  const handleApply = useCallback(() => {
-    if (!step) return;
-    if (onApplyStep?.(step) === false) {
-      setApplyError(
-        "Add the components from the earlier steps before applying this decision or connection.",
-      );
-      return;
-    }
-    setApplyError(null);
-    setAppliedSteps((prev) => new Set(prev).add(step.id));
-  }, [step, onApplyStep]);
-
-  useEffect(() => setApplyError(null), [currentStep, problemId]);
-
-  const effectiveAppliedSteps = appliedGuidedStepIds
-    ? new Set(appliedGuidedStepIds)
-    : appliedSteps;
-  const canApply =
-    hasApplyAction(step) && !effectiveAppliedSteps.has(step.id);
-  const alreadyApplied =
-    hasApplyAction(step) && effectiveAppliedSteps.has(step.id);
-  const actionProgress = countAppliedActions(
-    walkthrough?.steps ?? [],
-    effectiveAppliedSteps,
-  );
-
-  // ── Render states ──────────────────────────────────────────────────────────
-
-  if (!problemId) {
-    return <NoProblemState />;
-  }
-
-  if (loading) {
-    return <LoadingState />;
-  }
-
-  if (error === "not_found") {
-    return <NotFoundState />;
-  }
-
-  if (error === "error") {
-    return (
-      <LoadErrorState
-        onRetry={() => {
-          if (problemId) dispatch(fetchWalkthrough(problemId));
-        }}
-      />
-    );
-  }
-
-  if (!walkthrough || !step) return null;
-
-  // ── Full panel ─────────────────────────────────────────────────────────────
-
-  return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Phase tabs */}
-      <div className="flex-shrink-0 px-3 pt-2 pb-1">
-        <div className="flex gap-1 flex-wrap">
-          {walkthrough.phases.map((phase, idx) => (
-            <button
-              key={phase.name}
-              type="button"
-              onClick={() => {
-                const targetIdx =
-                  walkthrough.steps.findIndex(
-                    (s) => s.stepNumber === phase.stepRange[0],
-                  ) ?? 0;
-                if (targetIdx >= 0) setCurrentStep(targetIdx);
-              }}
-              className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
-                idx === phaseIndex
-                  ? "bg-[var(--brand)]/15 text-[var(--brand)] border-[var(--brand)]/30 font-semibold"
-                  : "text-muted/50 border-[var(--border)] hover:text-muted hover:border-[var(--border-hover)]"
-              }`}
-              data-tooltip={phase.description}
-            >
-              {idx + 1}. {phase.name.replace(/^Phase \d+: /, "")}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      <div className="flex-shrink-0 px-3 pb-2">
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-[10px] text-muted/50">
-            Lesson step {step.stepNumber} of {total}
-          </span>
-          <span className="text-[10px] text-muted/50">
-            {actionProgress.completedCount} / {actionProgress.actionCount} design actions applied
-          </span>
-        </div>
-        <div className="h-1 bg-[var(--border)] rounded-full overflow-hidden">
-          <div
-            className="h-full bg-[var(--brand)] rounded-full transition-all duration-300"
-            style={{ width: `${(step.stepNumber / total) * 100}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Step card — scrollable */}
-      <div
-        ref={contentRef}
-        className="flex-1 overflow-y-auto px-3 pb-2 space-y-3 min-h-0 node-properties-scroll"
-      >
-        {/* Header */}
-        <div className="space-y-1.5">
-          <StepTypeBadge type={step.type as GuidedStepType} />
-          <h3 className="text-sm font-semibold text-foreground leading-snug">
-            {step.title}
-          </h3>
-        </div>
-
-        {/* Main markdown content */}
-        <div className="prose prose-sm dark:prose-invert max-w-none leading-relaxed text-xs [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:text-foreground [&_h2]:mt-3 [&_h2]:mb-1.5 [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:text-foreground [&_ul]:space-y-0.5 [&_li]:leading-relaxed [&_strong]:text-foreground [&_code]:bg-[var(--surface-2)] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-[10px] [&_table]:text-[10px] [&_th]:text-foreground [&_th]:font-semibold [&_td]:py-0.5">
-          <div
-            dangerouslySetInnerHTML={{
-              __html: DOMPurify.sanitize(marked.parse(step.content || "")),
-            }}
-          />
-        </div>
-
-        <GuidedStepAttachments step={step} />
       </div>
 
       {/* Footer — Apply + Navigation */}

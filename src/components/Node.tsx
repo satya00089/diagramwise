@@ -64,386 +64,6 @@ type Props = {
   disableProviderSprites?: boolean;
 };
 
-const NODE_PROPERTY_EXCLUDED_KEYS = new Set([
-  "label",
-  "icon",
-  "iconUrl",
-  "subtitle",
-  "componentId",
-  "componentName",
-  "properties",
-  "_customProperties",
-  "backgroundColor",
-  "borderColor",
-  "textColor",
-]);
-
-function isEmptyNodeProperty(value: unknown): boolean {
-  if (value === undefined || value === null || value === "") return true;
-  if (typeof value !== "string") return false;
-  const stripped = value
-    .split("<")
-    .map((part) => part.slice(part.indexOf(">") + 1))
-    .join("")
-    .trim();
-  return stripped === "";
-}
-
-const NodePropertiesPanel: React.FC<{
-  id: string;
-  displayLabel: string;
-  data: NodeData;
-}> = ({ id, displayLabel, data }) => {
-  const properties = Object.entries(data).filter(
-    ([key, value]) =>
-      !NODE_PROPERTY_EXCLUDED_KEYS.has(key) && !isEmptyNodeProperty(value),
-  );
-  const customProperties = data._customProperties ?? [];
-
-  return (
-    <motion.div
-      id={`node-properties-${id}`}
-      role="region"
-      aria-label={`${displayLabel} properties`}
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.2 }}
-      className="mt-3 pt-3 border-t border-theme/10 nowheel"
-    >
-      <div className="text-xs space-y-2">
-        {properties.length === 0 && customProperties.length === 0 && (
-          <div className="opacity-60 text-center py-2">No properties</div>
-        )}
-        {properties.length > 0 && (
-          <div className="space-y-2">
-            <div className="text-xs font-semibold opacity-60 uppercase tracking-wide">
-              Standard Properties
-            </div>
-            {properties.map(([key, value]) => (
-              <NodePropertyDisplay key={key} propertyKey={key} value={value} />
-            ))}
-          </div>
-        )}
-        {customProperties.length > 0 && (
-          <div className="space-y-2">
-            <div className="text-xs font-semibold opacity-60 uppercase tracking-wide">
-              Custom Properties
-            </div>
-            {customProperties.map((customProp) => (
-              <NodePropertyDisplay
-                key={customProp.id}
-                propertyKey={customProp.label || customProp.key}
-                value={customProp.value}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    </motion.div>
-  );
-};
-
-type NodeContextMenuProps = {
-  id: string;
-  displayLabel: string;
-  isInGroup: boolean;
-  contextMenu: { visible: boolean; x: number; y: number };
-  menuRef: React.RefObject<HTMLDivElement | null>;
-  firstMenuItemRef: React.RefObject<HTMLButtonElement | null>;
-  onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
-  onToggle: (event: React.MouseEvent) => void;
-  onCopy: (event: React.MouseEvent) => void;
-  onDelete: (event: React.MouseEvent) => void;
-  onDetach: (event: React.MouseEvent) => void;
-  onClose: () => void;
-};
-
-const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
-  id,
-  displayLabel,
-  isInGroup,
-  contextMenu,
-  menuRef,
-  firstMenuItemRef,
-  onKeyDown,
-  onToggle,
-  onCopy,
-  onDelete,
-  onDetach,
-  onClose,
-}) => {
-  if (!contextMenu.visible) return null;
-  return ReactDOM.createPortal(
-    <motion.div
-      ref={menuRef}
-      data-context-menu
-      id={`node-actions-${id}`}
-      role="menu"
-      aria-label={`${displayLabel} actions`}
-      onKeyDown={onKeyDown}
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      transition={{ type: "spring", stiffness: 400, damping: 25 }}
-      className="node-context-menu fixed z-[10000] w-[208px] rounded-xl border border-theme bg-[var(--surface)] py-1 shadow-xl pointer-events-auto"
-      style={{ left: contextMenu.x, top: contextMenu.y }}
-    >
-      <button
-        ref={firstMenuItemRef}
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          onToggle(event);
-          onClose();
-        }}
-        role="menuitem"
-        className="node-context-menu-item flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)] focus-visible:bg-[var(--bg-hover)] focus-visible:outline-none"
-      >
-        <MdTune className="h-4 w-4" aria-hidden="true" />
-        Open properties
-      </button>
-      <hr className="my-1 border-0 border-t border-theme/60" />
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          globalThis.dispatchEvent(
-            new CustomEvent("diagram:node-to-front", { detail: { id } }),
-          );
-          onClose();
-        }}
-        role="menuitem"
-        className="node-context-menu-item flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)] focus-visible:bg-[var(--bg-hover)] focus-visible:outline-none"
-      >
-        <MdOutlineVerticalAlignTop className="w-4 h-4" />
-        Bring to Front
-      </button>
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          globalThis.dispatchEvent(
-            new CustomEvent("diagram:node-to-back", { detail: { id } }),
-          );
-          onClose();
-        }}
-        role="menuitem"
-        className="node-context-menu-item flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)] focus-visible:bg-[var(--bg-hover)] focus-visible:outline-none"
-      >
-        <MdOutlineVerticalAlignBottom className="w-4 h-4" />
-        Send to Back
-      </button>
-      {isInGroup && (
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-            onDetach(event);
-            onClose();
-          }}
-          role="menuitem"
-          className="node-context-menu-item flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm text-orange-500 transition-colors hover:bg-[var(--bg-hover)] focus-visible:bg-[var(--bg-hover)] focus-visible:outline-none"
-        >
-          <FiUnlock className="w-4 h-4" />
-          Detach from Group
-        </button>
-      )}
-      <hr className="my-1 border-0 border-t border-theme/60" />
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          onCopy(event);
-          onClose();
-        }}
-        role="menuitem"
-        className="node-context-menu-item flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)] focus-visible:bg-[var(--bg-hover)] focus-visible:outline-none"
-      >
-        <IoDuplicateOutline className="w-4 h-4" />
-        Duplicate
-      </button>
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          onDelete(event);
-          onClose();
-        }}
-        role="menuitem"
-        className="node-context-menu-item flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-[var(--bg-hover)] focus-visible:bg-[var(--bg-hover)] focus-visible:outline-none"
-      >
-        <MdDelete className="w-4 h-4" />
-        Delete
-      </button>
-    </motion.div>,
-    document.body,
-  );
-};
-
-function useNodeContextMenu(
-  isInGroup: boolean,
-  nodeRef: React.RefObject<HTMLFieldSetElement | null>,
-) {
-  const [contextMenu, setContextMenu] = React.useState({
-    visible: false,
-    x: 0,
-    y: 0,
-  });
-  const menuRef = React.useRef<HTMLDivElement>(null);
-  const menuTriggerRef = React.useRef<HTMLButtonElement>(null);
-  const firstMenuItemRef = React.useRef<HTMLButtonElement>(null);
-  const returnFocusToTrigger = React.useRef(false);
-
-  const getContextMenuPosition = React.useCallback(
-    (x: number, y: number) => {
-      const menuHeight = isInGroup ? 304 : 264;
-      const maxX = Math.max(
-        CONTEXT_MENU_GUTTER,
-        window.innerWidth - CONTEXT_MENU_WIDTH - CONTEXT_MENU_GUTTER,
-      );
-      const maxY = Math.max(
-        CONTEXT_MENU_GUTTER,
-        window.innerHeight - menuHeight - CONTEXT_MENU_GUTTER,
-      );
-      return {
-        x: Math.min(Math.max(x, CONTEXT_MENU_GUTTER), maxX),
-        y: Math.min(Math.max(y, CONTEXT_MENU_GUTTER), maxY),
-      };
-    },
-    [isInGroup],
-  );
-
-  const closeContextMenu = React.useCallback(() => {
-    setContextMenu({ visible: false, x: 0, y: 0 });
-    if (returnFocusToTrigger.current) {
-      returnFocusToTrigger.current = false;
-      window.requestAnimationFrame(() => menuTriggerRef.current?.focus());
-    }
-  }, []);
-
-  const openContextMenu = React.useCallback(
-    (x: number, y: number, restoreFocus: boolean) => {
-      returnFocusToTrigger.current = restoreFocus;
-      setContextMenu({
-        visible: true,
-        ...getContextMenuPosition(x, y),
-      });
-    },
-    [getContextMenuPosition],
-  );
-
-  const handleContextMenu = React.useCallback(
-    (event: React.MouseEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      openContextMenu(event.clientX, event.clientY, false);
-    },
-    [openContextMenu],
-  );
-
-  const handleMenuButtonClick = React.useCallback(
-    (event: React.MouseEvent) => {
-      event.stopPropagation();
-      if (contextMenu.visible) {
-        closeContextMenu();
-        return;
-      }
-      const triggerRect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-      const nodeRect = nodeRef.current?.getBoundingClientRect();
-      const rightSideX = nodeRect
-        ? nodeRect.right + CONTEXT_MENU_GUTTER
-        : triggerRect.right - CONTEXT_MENU_WIDTH;
-      const leftSideX = nodeRect
-        ? nodeRect.left - CONTEXT_MENU_WIDTH - CONTEXT_MENU_GUTTER
-        : triggerRect.right - CONTEXT_MENU_WIDTH;
-      const hasRoomOnRight =
-        rightSideX + CONTEXT_MENU_WIDTH + CONTEXT_MENU_GUTTER <=
-        window.innerWidth;
-      const hasRoomOnLeft = leftSideX >= CONTEXT_MENU_GUTTER;
-      const menuX = hasRoomOnRight
-        ? rightSideX
-        : hasRoomOnLeft
-          ? leftSideX
-          : triggerRect.right - CONTEXT_MENU_WIDTH;
-      openContextMenu(menuX, triggerRect.top, true);
-    },
-    [closeContextMenu, contextMenu.visible, nodeRef, openContextMenu],
-  );
-
-  React.useEffect(() => {
-    if (!contextMenu.visible) return;
-    const handleClick = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        closeContextMenu();
-      }
-    };
-    document.addEventListener("click", handleClick);
-    document.addEventListener("contextmenu", handleClick);
-    return () => {
-      document.removeEventListener("click", handleClick);
-      document.removeEventListener("contextmenu", handleClick);
-    };
-  }, [contextMenu.visible, closeContextMenu]);
-
-  React.useEffect(() => {
-    if (!contextMenu.visible) return;
-    const frame = window.requestAnimationFrame(() => firstMenuItemRef.current?.focus());
-    const closeOnViewportChange = () => closeContextMenu();
-    window.addEventListener("resize", closeOnViewportChange);
-    window.addEventListener("scroll", closeOnViewportChange, true);
-    return () => {
-      window.cancelAnimationFrame(frame);
-      window.removeEventListener("resize", closeOnViewportChange);
-      window.removeEventListener("scroll", closeOnViewportChange, true);
-    };
-  }, [contextMenu.visible, closeContextMenu]);
-
-  const handleContextMenuKeyDown = React.useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>) => {
-      event.stopPropagation();
-      const menuItems = Array.from(
-        event.currentTarget.querySelectorAll<HTMLButtonElement>(
-          '[role="menuitem"]',
-        ),
-      );
-      const activeIndex = menuItems.indexOf(
-        document.activeElement as HTMLButtonElement,
-      );
-      if (event.key === "Escape" || event.key === "Tab") {
-        event.preventDefault();
-        closeContextMenu();
-        return;
-      }
-      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-        event.preventDefault();
-        const direction = event.key === "ArrowDown" ? 1 : -1;
-        const nextIndex =
-          (activeIndex + direction + menuItems.length) % menuItems.length;
-        menuItems[nextIndex]?.focus();
-      } else if (event.key === "Home") {
-        event.preventDefault();
-        menuItems[0]?.focus();
-      } else if (event.key === "End") {
-        event.preventDefault();
-        menuItems.at(-1)?.focus();
-      }
-    },
-    [closeContextMenu],
-  );
-
-  return {
-    contextMenu,
-    menuRef,
-    menuTriggerRef,
-    firstMenuItemRef,
-    closeContextMenu,
-    handleContextMenu,
-    handleMenuButtonClick,
-    handleContextMenuKeyDown,
-  };
-}
-
 const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disableProviderSprites = false }) => {
   const dispatch = useAppDispatch();
   const spriteIcons = useAppSelector((state) => state.sprites.allIcons);
@@ -484,6 +104,11 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
     dispatch(loadSpriteManifest(p));
   }, [componentId, disableProviderSprites, dispatch]);
 
+  const [contextMenu, setContextMenu] = React.useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+  }>({ visible: false, x: 0, y: 0 });
   const [isHovered, setIsHovered] = React.useState(false);
   const [isFocused, setIsFocused] = React.useState(false);
   const [showProperties, setShowProperties] = React.useState(false);
@@ -493,16 +118,10 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
     top: number;
   } | null>(null);
   const nodeRef = React.useRef<HTMLFieldSetElement>(null);
-  const {
-    contextMenu,
-    menuRef,
-    menuTriggerRef,
-    firstMenuItemRef,
-    closeContextMenu,
-    handleContextMenu,
-    handleMenuButtonClick,
-    handleContextMenuKeyDown,
-  } = useNodeContextMenu(Boolean(isInGroup), nodeRef);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+  const menuTriggerRef = React.useRef<HTMLButtonElement>(null);
+  const firstMenuItemRef = React.useRef<HTMLButtonElement>(null);
+  const returnFocusToTrigger = React.useRef(false);
 
   const displayLabel = getNodeDisplayLabel(data);
   const defaultMermaidSubtitle = componentId
@@ -554,6 +173,86 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
     [id],
   );
 
+  const getContextMenuPosition = React.useCallback(
+    (x: number, y: number) => {
+      const menuHeight = isInGroup ? 304 : 264;
+      const maxX = Math.max(
+        CONTEXT_MENU_GUTTER,
+        window.innerWidth - CONTEXT_MENU_WIDTH - CONTEXT_MENU_GUTTER,
+      );
+      const maxY = Math.max(
+        CONTEXT_MENU_GUTTER,
+        window.innerHeight - menuHeight - CONTEXT_MENU_GUTTER,
+      );
+
+      return {
+        x: Math.min(Math.max(x, CONTEXT_MENU_GUTTER), maxX),
+        y: Math.min(Math.max(y, CONTEXT_MENU_GUTTER), maxY),
+      };
+    },
+    [isInGroup],
+  );
+
+  const openContextMenu = React.useCallback(
+    (x: number, y: number, restoreFocus: boolean) => {
+      const position = getContextMenuPosition(x, y);
+      returnFocusToTrigger.current = restoreFocus;
+      setContextMenu({ visible: true, ...position });
+    },
+    [getContextMenuPosition],
+  );
+
+  const handleContextMenu = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openContextMenu(e.clientX, e.clientY, false);
+    },
+    [openContextMenu],
+  );
+
+  const closeContextMenu = React.useCallback(() => {
+    setContextMenu({ visible: false, x: 0, y: 0 });
+    if (returnFocusToTrigger.current) {
+      returnFocusToTrigger.current = false;
+      window.requestAnimationFrame(() => menuTriggerRef.current?.focus());
+    }
+  }, []);
+
+  const handleMenuButtonClick = React.useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (contextMenu.visible) {
+        closeContextMenu();
+        return;
+      }
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const nodeRect = nodeRef.current?.getBoundingClientRect();
+      const rightSideX = nodeRect
+        ? nodeRect.right + CONTEXT_MENU_GUTTER
+        : rect.right - CONTEXT_MENU_WIDTH;
+      const leftSideX = nodeRect
+        ? nodeRect.left - CONTEXT_MENU_WIDTH - CONTEXT_MENU_GUTTER
+        : rect.right - CONTEXT_MENU_WIDTH;
+      const hasRoomOnRight =
+        rightSideX + CONTEXT_MENU_WIDTH + CONTEXT_MENU_GUTTER <=
+        window.innerWidth;
+      const hasRoomOnLeft = leftSideX >= CONTEXT_MENU_GUTTER;
+      let menuX = rect.right - CONTEXT_MENU_WIDTH;
+      if (hasRoomOnRight) {
+        menuX = rightSideX;
+      } else if (hasRoomOnLeft) {
+        menuX = leftSideX;
+      }
+      openContextMenu(
+        menuX,
+        rect.top,
+        true,
+      );
+    },
+    [closeContextMenu, contextMenu.visible, openContextMenu],
+  );
+
   const showNodeActions =
     isHovered || isFocused || contextMenu.visible || showProperties;
 
@@ -562,6 +261,75 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
     setShowProperties((prev) => !prev);
     closeContextMenu();
   }, [closeContextMenu]);
+
+  // Close menu on outside click
+  React.useEffect(() => {
+    if (contextMenu.visible) {
+      const handleClick = (e: MouseEvent) => {
+        if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+          closeContextMenu();
+        }
+      };
+      document.addEventListener("click", handleClick);
+      document.addEventListener("contextmenu", handleClick);
+      return () => {
+        document.removeEventListener("click", handleClick);
+        document.removeEventListener("contextmenu", handleClick);
+      };
+    }
+  }, [contextMenu.visible, closeContextMenu]);
+
+  React.useEffect(() => {
+    if (!contextMenu.visible) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      firstMenuItemRef.current?.focus();
+    });
+    const closeOnViewportChange = () => closeContextMenu();
+    window.addEventListener("resize", closeOnViewportChange);
+    window.addEventListener("scroll", closeOnViewportChange, true);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", closeOnViewportChange);
+      window.removeEventListener("scroll", closeOnViewportChange, true);
+    };
+  }, [contextMenu.visible, closeContextMenu]);
+
+  const handleContextMenuKeyDown = React.useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      event.stopPropagation();
+      const menuItems = Array.from(
+        event.currentTarget.querySelectorAll<HTMLButtonElement>(
+          '[role="menuitem"]',
+        ),
+      );
+      const activeIndex = menuItems.indexOf(
+        document.activeElement as HTMLButtonElement,
+      );
+
+      if (event.key === "Escape" || event.key === "Tab") {
+        event.preventDefault();
+        closeContextMenu();
+        return;
+      }
+
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        const direction = event.key === "ArrowDown" ? 1 : -1;
+        const nextIndex =
+          (activeIndex + direction + menuItems.length) % menuItems.length;
+        menuItems[nextIndex]?.focus();
+      } else if (event.key === "Home") {
+        event.preventDefault();
+        menuItems[0]?.focus();
+      } else if (event.key === "End") {
+        event.preventDefault();
+        menuItems.at(-1)?.focus();
+      }
+    },
+    [closeContextMenu],
+  );
 
   let nodeIcon: React.ReactNode;
   if (showIconUrl) {
@@ -933,8 +701,105 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
           </div>
         </div>
 
+        {/* Properties Section - Toggleable */}
         {showProperties && (
-          <NodePropertiesPanel id={id} displayLabel={displayLabel} data={data} />
+          <motion.div
+            id={`node-properties-${id}`}
+            role="region"
+            aria-label={`${displayLabel} properties`}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mt-3 pt-3 border-t border-theme/10 nowheel"
+          >
+            <div className="text-xs space-y-2">
+              {/* Display all node properties except system ones */}
+              {(() => {
+                const excludeKeys = new Set([
+                  "label",
+                  "icon",
+                  "iconUrl",
+                  "subtitle",
+                  "componentId",
+                  "componentName",
+                  "properties",
+                  "_customProperties",
+                  "backgroundColor",
+                  "borderColor",
+                  "textColor",
+                ]);
+                const isEmptyValue = (val: unknown): boolean => {
+                  if (val === undefined || val === null || val === "")
+                    return true;
+                  if (typeof val === "string") {
+                    const stripped = val
+                      .split("<")
+                      .map((part) => part.slice(part.indexOf(">") + 1))
+                      .join("")
+                      .trim();
+                    return stripped === "";
+                  }
+                  return false;
+                };
+                const properties = Object.entries(data).filter(
+                  ([key, val]) => !excludeKeys.has(key) && !isEmptyValue(val),
+                );
+
+                if (
+                  properties.length === 0 &&
+                  (!data._customProperties ||
+                    !Array.isArray(data._customProperties) ||
+                    data._customProperties.length === 0)
+                ) {
+                  return (
+                    <div className="opacity-60 text-center py-2">
+                      No properties
+                    </div>
+                  );
+                }
+
+                return (
+                  <>
+                    {properties.length > 0 && (
+                      <div className="space-y-2">
+                        <div className="text-xs font-semibold opacity-60 uppercase tracking-wide">
+                          Standard Properties
+                        </div>
+                        {properties.map(([key, value]) => (
+                          <NodePropertyDisplay
+                            key={key}
+                            propertyKey={key}
+                            value={value}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Display custom properties last */}
+                    {data._customProperties &&
+                      Array.isArray(data._customProperties) &&
+                      data._customProperties.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="text-xs font-semibold opacity-60 uppercase tracking-wide">
+                            Custom Properties
+                          </div>
+                          {data._customProperties.map(
+                            (customProp: CustomProperty) => (
+                              <NodePropertyDisplay
+                                key={customProp.id}
+                                propertyKey={customProp.label || customProp.key}
+                                value={customProp.value}
+                              />
+                            ),
+                          )}
+                        </div>
+                      )}
+                  </>
+                );
+              })()}
+            </div>
+          </motion.div>
         )}
       </motion.fieldset>
 
@@ -955,20 +820,116 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
           document.body,
         )}
 
-      <NodeContextMenu
-        id={id}
-        displayLabel={displayLabel}
-        isInGroup={!!isInGroup}
-        contextMenu={contextMenu}
-        menuRef={menuRef}
-        firstMenuItemRef={firstMenuItemRef}
-        onKeyDown={handleContextMenuKeyDown}
-        onToggle={onToggle}
-        onCopy={handleCopy}
-        onDelete={onDelete}
-        onDetach={handleDetach}
-        onClose={closeContextMenu}
-      />
+      {/* Context Menu Portal */}
+      {contextMenu.visible &&
+        ReactDOM.createPortal(
+          <motion.div
+            ref={menuRef}
+            data-context-menu
+            id={`node-actions-${id}`}
+            role="menu"
+            aria-label={`${displayLabel} actions`}
+            onKeyDown={handleContextMenuKeyDown}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="node-context-menu fixed z-[10000] w-[208px] rounded-xl border border-theme bg-[var(--surface)] py-1 shadow-xl pointer-events-auto"
+            style={{
+              left: contextMenu.x,
+              top: contextMenu.y,
+            }}
+          >
+            <button
+              ref={firstMenuItemRef}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggle(e);
+                closeContextMenu();
+              }}
+              role="menuitem"
+              className="node-context-menu-item flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)] focus-visible:bg-[var(--bg-hover)] focus-visible:outline-none"
+            >
+              <MdTune className="h-4 w-4" aria-hidden="true" />
+              Open properties
+            </button>
+            <hr className="my-1 border-0 border-t border-theme/60" />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                globalThis.dispatchEvent(
+                  new CustomEvent("diagram:node-to-front", { detail: { id } }),
+                );
+                closeContextMenu();
+              }}
+              role="menuitem"
+              className="node-context-menu-item flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)] focus-visible:bg-[var(--bg-hover)] focus-visible:outline-none"
+            >
+              <MdOutlineVerticalAlignTop className="w-4 h-4" />
+              Bring to Front
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                globalThis.dispatchEvent(
+                  new CustomEvent("diagram:node-to-back", { detail: { id } }),
+                );
+                closeContextMenu();
+              }}
+              role="menuitem"
+              className="node-context-menu-item flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)] focus-visible:bg-[var(--bg-hover)] focus-visible:outline-none"
+            >
+              <MdOutlineVerticalAlignBottom className="w-4 h-4" />
+              Send to Back
+            </button>
+            {isInGroup && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDetach(e);
+                  closeContextMenu();
+                }}
+                role="menuitem"
+                className="node-context-menu-item flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm text-orange-500 transition-colors hover:bg-[var(--bg-hover)] focus-visible:bg-[var(--bg-hover)] focus-visible:outline-none"
+              >
+                <FiUnlock className="w-4 h-4" />
+                Detach from Group
+              </button>
+            )}
+            <hr className="my-1 border-0 border-t border-theme/60" />
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCopy(e);
+                closeContextMenu();
+              }}
+              role="menuitem"
+              className="node-context-menu-item flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-[var(--bg-hover)] focus-visible:bg-[var(--bg-hover)] focus-visible:outline-none"
+            >
+              <IoDuplicateOutline className="w-4 h-4" />
+              Duplicate
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(e);
+                closeContextMenu();
+              }}
+              role="menuitem"
+              className="node-context-menu-item flex min-h-10 w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 transition-colors hover:bg-[var(--bg-hover)] focus-visible:bg-[var(--bg-hover)] focus-visible:outline-none"
+            >
+              <MdDelete className="w-4 h-4" />
+              Delete
+            </button>
+          </motion.div>,
+          document.body,
+        )}
     </>
   );
 });

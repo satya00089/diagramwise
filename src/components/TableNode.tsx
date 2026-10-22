@@ -56,98 +56,6 @@ const getEntityRowHoverBackground = (
 ) =>
   `color-mix(in srgb, ${backgroundColor} 88%, ${textColor || "var(--text)"} 12%)`;
 
-function parseTableAttributes(value: TableNodeData["attributes"]): TableAttribute[] {
-  if (!value) return [];
-  if (Array.isArray(value)) return value;
-  if (typeof value !== "string") return [];
-  try {
-    const parsed: unknown = JSON.parse(value);
-    return Array.isArray(parsed) ? (parsed as TableAttribute[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function getTableColumns(renderConfig?: NodeRenderConfig): TableColumn[] {
-  if (renderConfig?.columns?.length) return renderConfig.columns;
-  return [
-    { key: "isPrimaryKey", label: "PK", width: "w-7", type: "boolean" },
-    { key: "isForeignKey", label: "FK", width: "w-7", type: "boolean" },
-    {
-      key: "name",
-      label: "Column Name",
-      width: "flex-1",
-      type: "text",
-      editable: true,
-    },
-    {
-      key: "type",
-      label: "Data Type",
-      width: "w-24",
-      type: "text",
-      editable: true,
-    },
-    { key: "actions", label: "", width: "w-8", type: "readonly" },
-  ];
-}
-
-function getTableActionLabel(componentId: string | undefined, label: string) {
-  if (componentId === "weak-entity") return "Weak Entity";
-  if (componentId === "entity" || componentId === "er-entity") return "Entity";
-  if (componentId === "er-view") return "View";
-  return label || "Table";
-}
-
-function useTableAttributePorts(
-  attributes: TableAttribute[],
-  scrollRef: React.RefObject<HTMLDivElement | null>,
-  rowRefs: React.RefObject<Map<string, HTMLDivElement>>,
-  editingAttrId: string | null,
-) {
-  const [positions, setPositions] = useState<
-    Array<{ id: string; top: number; visible: boolean }>
-  >([]);
-  const [layer, setLayer] = useState({ top: 0, height: 0 });
-
-  const updatePositions = useCallback(() => {
-    const scrollElement = scrollRef.current;
-    if (!scrollElement) return;
-    const viewportHeight = scrollElement.clientHeight;
-    setLayer({ top: scrollElement.offsetTop, height: viewportHeight });
-    const nextPositions = attributes.map((attribute) => {
-      const row = rowRefs.current?.get(attribute.id);
-      if (!row) return null;
-      const top =
-        row.offsetTop -
-        scrollElement.offsetTop -
-        scrollElement.scrollTop +
-        row.offsetHeight / 2;
-      return {
-        id: attribute.id,
-        top,
-        visible: top >= -12 && top <= viewportHeight + 12,
-      };
-    });
-    setPositions(
-      nextPositions.filter(
-        (position): position is NonNullable<typeof position> =>
-          position !== null,
-      ),
-    );
-  }, [attributes, rowRefs, scrollRef]);
-
-  React.useLayoutEffect(() => {
-    updatePositions();
-    const scrollElement = scrollRef.current;
-    if (!scrollElement || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(updatePositions);
-    observer.observe(scrollElement);
-    return () => observer.disconnect();
-  }, [editingAttrId, scrollRef, updatePositions]);
-
-  return { positions, layer, updatePositions };
-}
-
 type Props = {
   id: string;
   data: TableNodeData;
@@ -178,325 +86,6 @@ function BooleanCellContent({
   return null;
 }
 
-type EditingValue = { name: string; type: string };
-
-type ColumnCellProps = {
-  col: TableColumn;
-  attr: TableAttribute;
-  isEditing: boolean;
-  editingValue: EditingValue;
-  editingInputRef: React.RefObject<HTMLInputElement | null>;
-  textColor?: string;
-  onToggleBoolean: (attributeId: string, key: string) => void;
-  onChangeValue: React.Dispatch<React.SetStateAction<EditingValue>>;
-  onStartEdit: (attribute: TableAttribute, event: React.SyntheticEvent) => void;
-  onSaveEdit: () => void;
-  onCancelEdit: () => void;
-  onDeleteAttribute: (attributeId: string) => void;
-};
-
-function renderBooleanColumnCell({ col, attr, onToggleBoolean }: ColumnCellProps) {
-  const cellClassName = col.width || "flex-1";
-  const value = Boolean(attr[col.key as keyof TableAttribute]);
-  const displayValue = col.key === "isNullable" ? !value : value;
-  const icon = displayValue ? col.icon?.active : col.icon?.inactive;
-  const colorClass = displayValue ? col.color?.active : col.color?.inactive;
-  return (
-    <button
-      key={col.key}
-      type="button"
-      onClick={() => onToggleBoolean(attr.id, col.key)}
-      className={`${cellClassName} flex items-center justify-center ${colorClass || ""}`}
-      aria-label={col.label}
-      data-tooltip={col.label}
-      aria-pressed={displayValue}
-    >
-      <BooleanCellContent
-        columnKey={col.key}
-        displayValue={displayValue}
-        icon={icon}
-      />
-    </button>
-  );
-}
-
-function renderEditableColumnCell({
-  col,
-  attr,
-  isEditing,
-  editingValue,
-  editingInputRef,
-  textColor,
-  onChangeValue,
-  onStartEdit,
-  onSaveEdit,
-  onCancelEdit,
-}: ColumnCellProps) {
-  const cellClassName = col.width || "flex-1";
-  const attrValue = attr[col.key as keyof TableAttribute];
-  if (isEditing) {
-    return (
-      <input
-        key={col.key}
-        ref={col.key === "name" ? editingInputRef : undefined}
-        type="text"
-        value={String(editingValue[col.key as keyof EditingValue] ?? attrValue ?? "")}
-        onChange={(event) => onChangeValue({ ...editingValue, [col.key]: event.target.value })}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") onSaveEdit();
-          if (event.key === "Escape") onCancelEdit();
-        }}
-        className={`${cellClassName} px-1 py-0.5 bg-surface border border-theme/40 rounded text-xs`}
-        onClick={(event) => event.stopPropagation()}
-      />
-    );
-  }
-
-  let textColorClass = "text-xs cursor-pointer";
-  if (col.key === "name") {
-    if (attr.isPrimaryKey) {
-      textColorClass += " font-semibold text-yellow-600 dark:text-yellow-400";
-    } else if (attr.isForeignKey) {
-      textColorClass += " text-blue-600 dark:text-blue-400";
-    }
-  } else if (col.key === "type") {
-    textColorClass += " text-muted";
-  }
-
-  return (
-    <button
-      key={col.key}
-      type="button"
-      className={`${cellClassName} truncate ${textColorClass} text-left bg-transparent border-none p-0`}
-      style={textColor ? { color: textColor } : undefined}
-      onDoubleClick={(event) => onStartEdit(attr, event)}
-      onKeyDown={(event) => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        onStartEdit(attr, event);
-      }}
-      data-tooltip="Double-click or press Enter to edit"
-    >
-      {String(attrValue || "")}
-    </button>
-  );
-}
-
-function renderReadonlyColumnCell({
-  col,
-  attr,
-  isEditing,
-  onSaveEdit,
-  onDeleteAttribute,
-}: ColumnCellProps) {
-  const cellClassName = col.width || "flex-1";
-  if (isEditing) {
-    return (
-      <button
-        key="actions"
-        type="button"
-        onClick={onSaveEdit}
-        className={`${cellClassName} text-green-600 hover:text-green-700 text-xs`}
-        aria-label="Save attribute"
-        data-tooltip="Save"
-      >
-        ✓
-      </button>
-    );
-  }
-  return (
-    <button
-      key="actions"
-      type="button"
-      onClick={() => onDeleteAttribute(attr.id)}
-      className={`${cellClassName} opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-700 transition-opacity`}
-      aria-label="Delete attribute"
-      data-tooltip="Delete attribute"
-    >
-      <MdDelete className="w-3 h-3" />
-    </button>
-  );
-}
-
-function renderTableColumnCell(props: ColumnCellProps): React.ReactNode {
-  const { col, attr } = props;
-  const attrValue = attr[col.key as keyof TableAttribute];
-  if (col.type === "boolean") return renderBooleanColumnCell(props);
-  if (col.type === "text" && col.editable) {
-    return renderEditableColumnCell(props);
-  }
-  if (col.type === "readonly" && col.key === "actions") {
-    return renderReadonlyColumnCell(props);
-  }
-  return (
-    <span key={col.key} className={col.width || "flex-1"}>
-      {String(attrValue || "")}
-    </span>
-  );
-}
-
-function useTableNodeInteractions({
-  id,
-  data,
-  onCopy,
-  editingAttrId,
-  editingValue,
-  setEditingAttrId,
-  setEditingValue,
-  contextMenu,
-  setContextMenu,
-}: {
-  id: string;
-  data: TableNodeData;
-  onCopy?: (id: string, data: TableNodeData) => void;
-  editingAttrId: string | null;
-  editingValue: EditingValue;
-  setEditingAttrId: React.Dispatch<React.SetStateAction<string | null>>;
-  setEditingValue: React.Dispatch<React.SetStateAction<EditingValue>>;
-  contextMenu: { visible: boolean; x: number; y: number };
-  setContextMenu: React.Dispatch<
-    React.SetStateAction<{ visible: boolean; x: number; y: number }>
-  >;
-}) {
-  const onDelete = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    globalThis.dispatchEvent(
-      new CustomEvent("diagram:node-delete", { detail: { id } }),
-    );
-  }, [id]);
-
-  const onToggle = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    globalThis.dispatchEvent(
-      new CustomEvent("diagram:node-toggle", { detail: { id } }),
-    );
-  }, [id]);
-
-  const handleCollapseToggle = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    globalThis.dispatchEvent(
-      new CustomEvent("diagram:table-collapse-toggle", { detail: { id } }),
-    );
-  }, [id]);
-
-  const handleCopy = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    onCopy?.(id, data);
-  }, [id, data, onCopy]);
-
-  const handleDetach = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    globalThis.dispatchEvent(
-      new CustomEvent("diagram:node-detach", { detail: { id } }),
-    );
-  }, [id]);
-
-  const handleContextMenu = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    setContextMenu({ visible: true, x: event.clientX, y: event.clientY });
-  }, [setContextMenu]);
-
-  const closeContextMenu = useCallback(() => {
-    setContextMenu({ visible: false, x: 0, y: 0 });
-  }, [setContextMenu]);
-
-  const handleDeleteAttribute = useCallback((attributeId: string) => {
-    globalThis.dispatchEvent(
-      new CustomEvent("diagram:table-attribute-delete", {
-        detail: { nodeId: id, attributeId },
-      }),
-    );
-  }, [id]);
-
-  const handleAddAttribute = useCallback((event: React.MouseEvent) => {
-    event.stopPropagation();
-    const isUMLClass = data.componentId?.startsWith("uml-");
-    const attribute: TableAttribute = isUMLClass
-      ? {
-          id: `attr-${Date.now()}`,
-          name: "+ newMethod()",
-          type: "void",
-          isNullable: false,
-        }
-      : {
-          id: `attr-${Date.now()}`,
-          name: "newColumn",
-          type: "VARCHAR(255)",
-          isNullable: true,
-        };
-    globalThis.dispatchEvent(
-      new CustomEvent("diagram:table-attribute-add", {
-        detail: { nodeId: id, attribute },
-      }),
-    );
-  }, [id, data.componentId]);
-
-  const handleStartEdit = useCallback(
-    (attribute: TableAttribute, event: React.SyntheticEvent) => {
-      event.stopPropagation();
-      setEditingAttrId(attribute.id);
-      setEditingValue({ name: attribute.name, type: attribute.type });
-    },
-    [setEditingAttrId, setEditingValue],
-  );
-
-  const handleSaveEdit = useCallback(() => {
-    if (!editingAttrId) return;
-    globalThis.dispatchEvent(
-      new CustomEvent("diagram:table-attribute-update", {
-        detail: {
-          nodeId: id,
-          attributeId: editingAttrId,
-          name: editingValue.name,
-          type: editingValue.type,
-        },
-      }),
-    );
-    setEditingAttrId(null);
-  }, [id, editingAttrId, editingValue, setEditingAttrId]);
-
-  const handleCancelEdit = useCallback(() => setEditingAttrId(null), [setEditingAttrId]);
-
-  const handleToggleBoolean = useCallback((attributeId: string, key: string) => {
-    globalThis.dispatchEvent(
-      new CustomEvent("diagram:table-attribute-toggle", {
-        detail: { nodeId: id, attributeId, key },
-      }),
-    );
-  }, [id]);
-
-  useEffect(() => {
-    if (!contextMenu.visible) return;
-    const handleClick = (event: MouseEvent) => {
-      const menu = document.querySelector("[data-context-menu]");
-      if (menu && !menu.contains(event.target as Node)) closeContextMenu();
-    };
-    document.addEventListener("click", handleClick);
-    document.addEventListener("contextmenu", handleClick);
-    return () => {
-      document.removeEventListener("click", handleClick);
-      document.removeEventListener("contextmenu", handleClick);
-    };
-  }, [contextMenu.visible, closeContextMenu]);
-
-  return {
-    onDelete,
-    onToggle,
-    handleCollapseToggle,
-    handleCopy,
-    handleDetach,
-    handleContextMenu,
-    closeContextMenu,
-    handleDeleteAttribute,
-    handleAddAttribute,
-    handleStartEdit,
-    handleSaveEdit,
-    handleCancelEdit,
-    handleToggleBoolean,
-  };
-}
-
 const TableNode: React.FC<Props> = React.memo(
   ({ id, data, onCopy, isInGroup }) => {
     const [contextMenu, setContextMenu] = useState<{
@@ -512,14 +101,27 @@ const TableNode: React.FC<Props> = React.memo(
     const updateNodeInternals = useUpdateNodeInternals();
     const attributeScrollRef = React.useRef<HTMLDivElement | null>(null);
     const attributeRowRefs = React.useRef(new Map<string, HTMLDivElement>());
-
+    const [attributePortPositions, setAttributePortPositions] = useState<
+      Array<{ id: string; top: number; visible: boolean }>
+    >([]);
+    const [attributePortLayer, setAttributePortLayer] = useState({
+      top: 0,
+      height: 0,
+    });
 
     useEffect(() => {
       if (editingAttrId) editingInputRef.current?.focus();
     }, [editingAttrId]);
 
     const displayLabel = data.componentName || data.label;
-    const actionLabel = getTableActionLabel(data.componentId, displayLabel);
+    const actionLabel =
+      data.componentId === "weak-entity"
+        ? "Weak Entity"
+        : data.componentId === "entity" || data.componentId === "er-entity"
+          ? "Entity"
+          : data.componentId === "er-view"
+            ? "View"
+            : displayLabel || "Table";
     const subtitle = data.subtitle || data.description;
     const Icon = typeof data.icon === "function" ? data.icon : undefined;
     const isContentSizedTable = isContentSizedTableNode(data);
@@ -547,20 +149,19 @@ const TableNode: React.FC<Props> = React.memo(
         : undefined;
 
     // Parse attributes - it might be a JSON string or already an array
-    const attributes = React.useMemo(
-      () => parseTableAttributes(data.attributes),
-      [data.attributes],
-    );
-    const {
-      positions: attributePortPositions,
-      layer: attributePortLayer,
-      updatePositions: updateAttributePortPositions,
-    } = useTableAttributePorts(
-      attributes,
-      attributeScrollRef,
-      attributeRowRefs,
-      editingAttrId,
-    );
+    const attributes = React.useMemo(() => {
+      if (!data.attributes) return [];
+      if (Array.isArray(data.attributes)) return data.attributes;
+      if (typeof data.attributes === "string") {
+        try {
+          const parsed = JSON.parse(data.attributes);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    }, [data.attributes]);
 
     const reorderAttributes = useCallback(
       (sourceId: string, targetId: string, position: "before" | "after") => {
@@ -578,41 +179,395 @@ const TableNode: React.FC<Props> = React.memo(
       reorderAttributes,
     );
 
+    const updateAttributePortPositions = useCallback(() => {
+      const scrollElement = attributeScrollRef.current;
+      if (!scrollElement) return;
+
+      const viewportHeight = scrollElement.clientHeight;
+      setAttributePortLayer({
+        top: scrollElement.offsetTop,
+        height: viewportHeight,
+      });
+      const nextPositions = attributes.map((attribute) => {
+        const row = attributeRowRefs.current.get(attribute.id);
+        if (!row) return null;
+
+        const top =
+          row.offsetTop -
+          scrollElement.offsetTop -
+          scrollElement.scrollTop +
+          row.offsetHeight / 2;
+        return {
+          id: attribute.id,
+          top,
+          visible: top >= -12 && top <= viewportHeight + 12,
+        };
+      });
+
+      setAttributePortPositions(
+        nextPositions.filter(
+          (position): position is NonNullable<typeof position> =>
+            position !== null,
+        ),
+      );
+    }, [attributes]);
+
+    React.useLayoutEffect(() => {
+      updateAttributePortPositions();
+
+      const scrollElement = attributeScrollRef.current;
+      if (!scrollElement || typeof ResizeObserver === "undefined") return;
+
+      const observer = new ResizeObserver(updateAttributePortPositions);
+      observer.observe(scrollElement);
+      return () => observer.disconnect();
+    }, [editingAttrId, updateAttributePortPositions]);
+
     React.useLayoutEffect(() => {
       updateNodeInternals(id);
     }, [attributePortPositions, id, isCollapsed, updateNodeInternals]);
 
     // Get column configuration from renderConfig or use defaults
-    const columns = React.useMemo(
-      () => getTableColumns(data.renderConfig),
-      [data.renderConfig],
+    const columns = React.useMemo<TableColumn[]>(() => {
+      if (data.renderConfig?.columns && data.renderConfig.columns.length > 0) {
+        return data.renderConfig.columns;
+      }
+      // Default columns for database table
+      return [
+        { key: "isPrimaryKey", label: "PK", width: "w-7", type: "boolean" },
+        { key: "isForeignKey", label: "FK", width: "w-7", type: "boolean" },
+        {
+          key: "name",
+          label: "Column Name",
+          width: "flex-1",
+          type: "text",
+          editable: true,
+        },
+        {
+          key: "type",
+          label: "Data Type",
+          width: "w-24",
+          type: "text",
+          editable: true,
+        },
+        { key: "actions", label: "", width: "w-8", type: "readonly" },
+      ];
+    }, [data.renderConfig]);
+
+    const onDelete = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        globalThis.dispatchEvent(
+          new CustomEvent("diagram:node-delete", { detail: { id } }),
+        );
+      },
+      [id],
     );
 
-    const {
-      onDelete,
-      onToggle,
-      handleCollapseToggle,
-      handleCopy,
-      handleDetach,
-      handleContextMenu,
-      closeContextMenu,
-      handleDeleteAttribute,
-      handleAddAttribute,
-      handleStartEdit,
-      handleSaveEdit,
-      handleCancelEdit,
-      handleToggleBoolean,
-    } = useTableNodeInteractions({
-      id,
-      data,
-      onCopy,
-      editingAttrId,
-      editingValue,
-      setEditingAttrId,
-      setEditingValue,
-      contextMenu,
-      setContextMenu,
-    });
+    const onToggle = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        globalThis.dispatchEvent(
+          new CustomEvent("diagram:node-toggle", { detail: { id } }),
+        );
+      },
+      [id],
+    );
+
+    const handleCollapseToggle = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        globalThis.dispatchEvent(
+          new CustomEvent("diagram:table-collapse-toggle", {
+            detail: { id },
+          }),
+        );
+      },
+      [id],
+    );
+
+    const handleCopy = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        onCopy?.(id, data);
+      },
+      [id, data, onCopy],
+    );
+
+    const handleDetach = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        globalThis.dispatchEvent(
+          new CustomEvent("diagram:node-detach", { detail: { id } }),
+        );
+      },
+      [id],
+    );
+
+    const handleContextMenu = useCallback((e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setContextMenu({
+        visible: true,
+        x: e.clientX,
+        y: e.clientY,
+      });
+    }, []);
+
+    const closeContextMenu = useCallback(() => {
+      setContextMenu({ visible: false, x: 0, y: 0 });
+    }, []);
+
+    const handleDeleteAttribute = useCallback(
+      (attrId: string) => {
+        globalThis.dispatchEvent(
+          new CustomEvent("diagram:table-attribute-delete", {
+            detail: { nodeId: id, attributeId: attrId },
+          }),
+        );
+      },
+      [id],
+    );
+
+    // Add new attribute
+    const handleAddAttribute = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        // Determine if this is a UML Class or Entity based on componentId
+        const isUMLClass = data.componentId?.startsWith("uml-");
+
+        const newAttr: TableAttribute = isUMLClass
+          ? {
+              id: `attr-${Date.now()}`,
+              name: "+ newMethod()",
+              type: "void",
+              isNullable: false,
+            }
+          : {
+              id: `attr-${Date.now()}`,
+              name: "newColumn",
+              type: "VARCHAR(255)",
+              isNullable: true,
+            };
+
+        globalThis.dispatchEvent(
+          new CustomEvent("diagram:table-attribute-add", {
+            detail: { nodeId: id, attribute: newAttr },
+          }),
+        );
+      },
+      [id, data.componentId],
+    );
+
+    // Start editing attribute
+    const handleStartEdit = useCallback(
+      (attr: TableAttribute, e: React.SyntheticEvent) => {
+        e.stopPropagation();
+        setEditingAttrId(attr.id);
+        setEditingValue({ name: attr.name, type: attr.type });
+      },
+      [],
+    );
+
+    // Save attribute edit
+    const handleSaveEdit = useCallback(() => {
+      if (editingAttrId) {
+        globalThis.dispatchEvent(
+          new CustomEvent("diagram:table-attribute-update", {
+            detail: {
+              nodeId: id,
+              attributeId: editingAttrId,
+              name: editingValue.name,
+              type: editingValue.type,
+            },
+          }),
+        );
+        setEditingAttrId(null);
+      }
+    }, [id, editingAttrId, editingValue]);
+
+    // Cancel edit
+    const handleCancelEdit = useCallback(() => {
+      setEditingAttrId(null);
+    }, []);
+
+    // Generic toggle handler for boolean columns
+    const handleToggleBoolean = useCallback(
+      (attrId: string, key: string) => {
+        globalThis.dispatchEvent(
+          new CustomEvent("diagram:table-attribute-toggle", {
+            detail: { nodeId: id, attributeId: attrId, key },
+          }),
+        );
+      },
+      [id],
+    );
+
+    // Render individual column cell based on column configuration
+    const renderColumnCell = useCallback(
+      (col: (typeof columns)[0], attr: TableAttribute, isEditing: boolean) => {
+        const cellClassName = col.width || "flex-1";
+        const attrValue = attr[col.key as keyof TableAttribute];
+
+        // Boolean type - render as toggle button
+        if (col.type === "boolean") {
+          const boolValue = Boolean(attrValue);
+          // For isNullable, we invert the logic (unchecked = nullable, checked = NOT NULL)
+          const isInverted = col.key === "isNullable";
+          const displayValue = isInverted ? !boolValue : boolValue;
+          const icon = displayValue ? col.icon?.active : col.icon?.inactive;
+          const colorClass = displayValue
+            ? col.color?.active
+            : col.color?.inactive;
+
+          return (
+            <button
+              key={col.key}
+              type="button"
+              onClick={() => handleToggleBoolean(attr.id, col.key)}
+              className={`${cellClassName} flex items-center justify-center ${colorClass || ""}`}
+              aria-label={col.label}
+              data-tooltip={col.label}
+              aria-pressed={displayValue}
+            >
+              {
+                <BooleanCellContent
+                  columnKey={col.key}
+                  displayValue={displayValue}
+                  icon={icon}
+                />
+              }
+            </button>
+          );
+        }
+
+        // Text type - editable field
+        if (col.type === "text" && col.editable) {
+          if (isEditing) {
+            return (
+              <input
+                key={col.key}
+                ref={col.key === "name" ? editingInputRef : undefined}
+                type="text"
+                value={String(
+                  editingValue[col.key as keyof typeof editingValue] ??
+                    attrValue ??
+                    "",
+                )}
+                onChange={(e) =>
+                  setEditingValue({
+                    ...editingValue,
+                    [col.key]: e.target.value,
+                  })
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSaveEdit();
+                  if (e.key === "Escape") handleCancelEdit();
+                }}
+                className={`${cellClassName} px-1 py-0.5 bg-surface border border-theme/40 rounded text-xs`}
+                onClick={(e) => e.stopPropagation()}
+              />
+            );
+          }
+
+          // Determine color based on attribute properties
+          let textColorClass = "text-xs cursor-pointer";
+          if (col.key === "name") {
+            if (attr.isPrimaryKey) {
+              textColorClass +=
+                " font-semibold text-yellow-600 dark:text-yellow-400";
+            } else if (attr.isForeignKey) {
+              textColorClass += " text-blue-600 dark:text-blue-400";
+            }
+          } else if (col.key === "type") {
+            textColorClass += " text-muted";
+          }
+
+          return (
+            <button
+              key={col.key}
+              type="button"
+              className={`${cellClassName} truncate ${textColorClass} text-left bg-transparent border-none p-0`}
+              style={textColor ? { color: textColor } : undefined}
+              onDoubleClick={(e) => handleStartEdit(attr, e)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleStartEdit(attr, e);
+                }
+              }}
+              data-tooltip="Double-click or press Enter to edit"
+            >
+              {String(attrValue || "")}
+            </button>
+          );
+        }
+
+        // Readonly type - actions column
+        if (col.type === "readonly" && col.key === "actions") {
+          if (isEditing) {
+            return (
+              <button
+                key="actions"
+                type="button"
+                onClick={handleSaveEdit}
+                className={`${cellClassName} text-green-600 hover:text-green-700 text-xs`}
+                aria-label="Save attribute"
+                data-tooltip="Save"
+              >
+                ✓
+              </button>
+            );
+          }
+          return (
+            <button
+              key="actions"
+              type="button"
+              onClick={() => handleDeleteAttribute(attr.id)}
+              className={`${cellClassName} opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-700 transition-opacity`}
+              aria-label="Delete attribute"
+              data-tooltip="Delete attribute"
+            >
+              <MdDelete className="w-3 h-3" />
+            </button>
+          );
+        }
+
+        // Default fallback
+        return (
+          <span key={col.key} className={cellClassName}>
+            {String(attrValue || "")}
+          </span>
+        );
+      },
+      [
+        handleToggleBoolean,
+        handleDeleteAttribute,
+        handleStartEdit,
+        handleSaveEdit,
+        handleCancelEdit,
+        editingValue,
+        textColor,
+      ],
+    );
+
+    React.useEffect(() => {
+      if (contextMenu.visible) {
+        const handleClick = (e: MouseEvent) => {
+          const menu = document.querySelector("[data-context-menu]");
+          if (menu && !menu.contains(e.target as Node)) {
+            closeContextMenu();
+          }
+        };
+        document.addEventListener("click", handleClick);
+        document.addEventListener("contextmenu", handleClick);
+        return () => {
+          document.removeEventListener("click", handleClick);
+          document.removeEventListener("contextmenu", handleClick);
+        };
+      }
+    }, [contextMenu.visible, closeContextMenu]);
 
     return (
       <>
@@ -862,20 +817,7 @@ const TableNode: React.FC<Props> = React.memo(
                           />
                         </button>
                         {columns.map((col) =>
-                          renderTableColumnCell({
-                            col,
-                            attr,
-                            isEditing,
-                            editingValue,
-                            editingInputRef,
-                            textColor,
-                            onToggleBoolean: handleToggleBoolean,
-                            onChangeValue: setEditingValue,
-                            onStartEdit: handleStartEdit,
-                            onSaveEdit: handleSaveEdit,
-                            onCancelEdit: handleCancelEdit,
-                            onDeleteAttribute: handleDeleteAttribute,
-                          }),
+                          renderColumnCell(col, attr, isEditing),
                         )}
                       </div>
                     );

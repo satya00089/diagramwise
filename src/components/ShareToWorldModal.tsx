@@ -325,260 +325,48 @@ const ShareToWorldModal: React.FC<ShareToWorldModalProps> = ({
     );
   }, [copyText, defaultPost, publicUrl, sharedTitle]);
 
-  const renderPreviewContent = () => {
-    let previewContent: React.ReactNode;
-    if (previewUrl) {
-      previewContent = (
-        <img
-          src={previewUrl}
-          alt={`Preview of ${sharedTitle}`}
-          className="h-full w-full object-contain"
-        />
-      );
-    } else if (previewLoading) {
-      previewContent = (
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted"
-          aria-live="polite"
-        >
-          <span className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
-          <span className="text-sm">Building a quick preview…</span>
-        </div>
-      );
-    } else {
-      previewContent = (
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center text-muted">
-          <MdImage size={30} aria-hidden />
-          <div>
-            <p className="text-sm font-semibold text-theme">Preview skipped</p>
-            <p className="mt-1 text-xs leading-relaxed">
-              Publishing is ready, and the interactive public canvas will still be
-              available.
-            </p>
-          </div>
-          {previewError && (
-            <button
-              type="button"
-              onClick={() => void capturePreview()}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--brand)] hover:bg-[var(--brand)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-            >
-              <MdRefresh aria-hidden /> Retry preview
-            </button>
-          )}
-        </div>
-      );
-    }
-    return previewContent;
-  };
-
-  const renderPrivateOptions = () => (
-    <>
-      <div className="space-y-4">
-        <div className="flex gap-3 rounded-xl bg-[var(--bg)] p-4">
-          <MdPublic
-            className="mt-0.5 flex-shrink-0 text-[var(--brand)]"
-            size={20}
-            aria-hidden
-          />
-          <div>
-            <p className="text-sm font-semibold text-theme">
-              Anyone with the link can view
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-muted">
-              Viewers can pan and zoom, but they cannot edit your
-              original design. You can unpublish at any time.
-            </p>
-          </div>
-        </div>
-
-        {error && (
-          <div
-            role="alert"
-            className="rounded-xl bg-red-500/10 px-4 py-3 text-sm leading-relaxed text-red-700 dark:text-red-300"
-          >
-            <p className="font-semibold">
-              Publishing did not complete
-            </p>
-            <p className="mt-1 text-xs">{error}</p>
-          </div>
-        )}
+  let previewContent: React.ReactNode;
+  if (previewUrl) {
+    previewContent = (
+      <img
+        src={previewUrl}
+        alt={`Preview of ${sharedTitle}`}
+        className="h-full w-full object-contain"
+      />
+    );
+  } else if (previewLoading) {
+    previewContent = (
+      <div
+        className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted"
+        aria-live="polite"
+      >
+        <span className="h-7 w-7 animate-spin rounded-full border-2 border-[var(--brand)] border-t-transparent" />
+        <span className="text-sm">Building a quick preview…</span>
       </div>
-
-      <div className="mt-auto pt-6">
-        <button
-          type="button"
-          onClick={() => void handlePublish()}
-          disabled={!mode || phase === "publishing"}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-5 py-3 text-sm font-bold text-[var(--bg)] shadow-[0_8px_24px_rgba(79,70,229,0.24)] transition-[transform,background-color,box-shadow] hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:bg-[var(--muted)] disabled:text-[var(--bg)] disabled:opacity-100 disabled:hover:translate-y-0 disabled:hover:brightness-100"
-        >
-          {phase === "publishing" ? (
-            <>
-              <span
-                className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--bg)]/40 border-t-[var(--bg)]"
-                aria-hidden
-              />
-              <span>Publishing…</span>
-            </>
-          ) : (
-            <>
-              <MdPublic size={18} aria-hidden /> Publish design
-            </>
-          )}
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          disabled={isBusy}
-          className="mt-2 w-full rounded-lg py-2 text-sm font-medium text-muted hover:bg-[var(--bg-hover)] hover:text-theme focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-        >
-          Keep private
-        </button>
-      </div>
-    </>
-  );
-
-  const renderPublishedOptions = () => (
-    <>
-      <div aria-live="polite">
-        <label
-          htmlFor="public-design-link"
-          className="text-xs font-semibold text-theme"
-        >
-          Public link
-        </label>
-        <div className="mt-2 flex min-w-0 items-center gap-2 rounded-xl bg-[var(--bg)] p-2">
-          <input
-            id="public-design-link"
-            readOnly
-            value={publicUrl ?? ""}
-            onFocus={(event) => event.currentTarget.select()}
-            className="min-w-0 flex-1 bg-transparent px-2 text-xs text-theme outline-none"
-          />
-          <button
-            type="button"
-            onClick={() => void handleCopyLink()}
-            className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-[var(--brand)] px-3 py-2 text-xs font-bold text-[var(--bg)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]"
-          >
-            {linkCopied ? (
-              <MdCheck aria-hidden />
-            ) : (
-              <MdContentCopy aria-hidden />
-            )}
-            {linkCopied ? "Copied" : "Copy link"}
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <a
-          href={publicUrl ?? "#"}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--bg)] px-3 py-2.5 text-sm font-semibold text-theme hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-        >
-          <MdOpenInNew aria-hidden /> Open page
-        </a>
-        <button
-          type="button"
-          onClick={() => void handleCopyLink()}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--bg)] px-3 py-2.5 text-sm font-semibold text-theme hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-        >
-          <MdContentCopy aria-hidden /> Copy again
-        </button>
-      </div>
-
-      <div className="mt-6">
-        <p className="text-xs font-semibold text-theme">
-          Share your work
-        </p>
-        <div className="mt-2 grid grid-cols-3 gap-2">
-          <button
-            type="button"
-            onClick={() => void handleLinkedIn()}
-            className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-[#0A66C2] px-2 py-3 text-xs font-semibold text-white hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A66C2] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
-          >
-            <FaLinkedin size={18} aria-hidden /> LinkedIn
-          </button>
-          <button
-            type="button"
-            onClick={handleTwitter}
-            className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-slate-950 px-2 py-3 text-xs font-semibold text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-700 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)] dark:bg-white dark:text-black dark:hover:text-white"
-          >
-            <FaXTwitter size={17} aria-hidden /> X
-          </button>
-          <button
-            type="button"
-            onClick={() => void handleMedium()}
-            className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-emerald-700 px-2 py-3 text-xs font-semibold text-white hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
-          >
-            <SiMedium size={18} aria-hidden /> Medium
-          </button>
-        </div>
-        {messageCopied && (
-          <p
-            className="mt-2 text-center text-xs font-medium text-emerald-700 dark:text-emerald-300"
-            aria-live="polite"
-          >
-            {messageCopied}. Paste it into the new window.
+    );
+  } else {
+    previewContent = (
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center text-muted">
+        <MdImage size={30} aria-hidden />
+        <div>
+          <p className="text-sm font-semibold text-theme">Preview skipped</p>
+          <p className="mt-1 text-xs leading-relaxed">
+            Publishing is ready, and the interactive public canvas will still be
+            available.
           </p>
-        )}
-      </div>
-
-      {error && (
-        <p
-          role="alert"
-          className="mt-4 rounded-xl bg-red-500/10 px-3 py-2 text-xs leading-relaxed text-red-700 dark:text-red-300"
-        >
-          {error}
-        </p>
-      )}
-
-      <div className="mt-auto pt-6">
-        {confirmUnpublish ? (
-          <div className="rounded-xl bg-red-500/10 p-3">
-            <p className="text-xs leading-relaxed text-red-800 dark:text-red-200">
-              The public link will stop working. Your saved design
-              will not be deleted.
-            </p>
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={() => void handleUnpublish()}
-                disabled={phase === "unpublishing"}
-                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 disabled:opacity-50"
-              >
-                {phase === "unpublishing" ? (
-                  <span
-                    className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"
-                    aria-hidden
-                  />
-                ) : (
-                  <MdVisibilityOff aria-hidden />
-                )}
-                Unpublish
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmUnpublish(false)}
-                disabled={phase === "unpublishing"}
-                className="flex-1 rounded-lg px-3 py-2 text-xs font-semibold text-theme hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        ) : (
+        </div>
+        {previewError && (
           <button
             type="button"
-            onClick={() => setConfirmUnpublish(true)}
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold text-muted hover:bg-red-500/10 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:hover:text-red-300"
+            onClick={() => void capturePreview()}
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-[var(--brand)] hover:bg-[var(--brand)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
           >
-            <MdVisibilityOff aria-hidden /> Manage visibility
+            <MdRefresh aria-hidden /> Retry preview
           </button>
         )}
       </div>
-    </>
-  );
+    );
+  }
 
   if (!isOpen) return null;
 
@@ -671,7 +459,7 @@ const ShareToWorldModal: React.FC<ShareToWorldModalProps> = ({
           <div className="grid min-h-0 flex-1 overflow-y-auto lg:grid-cols-[minmax(0,1.08fr)_minmax(280px,0.92fr)]">
             <section className="border-b border-[var(--border)] p-5 sm:p-6 lg:border-b-0 lg:border-r">
               <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-[var(--bg)]">
-                {renderPreviewContent()}
+                {previewContent}
               </div>
 
               <div className="mt-4 min-w-0">
@@ -697,7 +485,212 @@ const ShareToWorldModal: React.FC<ShareToWorldModalProps> = ({
             </section>
 
             <section className="flex min-h-[260px] flex-col p-5 sm:p-6">
-              {isPublished ? renderPublishedOptions() : renderPrivateOptions()}
+              {!isPublished ? (
+                <>
+                  <div className="space-y-4">
+                    <div className="flex gap-3 rounded-xl bg-[var(--bg)] p-4">
+                      <MdPublic
+                        className="mt-0.5 flex-shrink-0 text-[var(--brand)]"
+                        size={20}
+                        aria-hidden
+                      />
+                      <div>
+                        <p className="text-sm font-semibold text-theme">
+                          Anyone with the link can view
+                        </p>
+                        <p className="mt-1 text-xs leading-relaxed text-muted">
+                          Viewers can pan and zoom, but they cannot edit your
+                          original design. You can unpublish at any time.
+                        </p>
+                      </div>
+                    </div>
+
+                    {error && (
+                      <div
+                        role="alert"
+                        className="rounded-xl bg-red-500/10 px-4 py-3 text-sm leading-relaxed text-red-700 dark:text-red-300"
+                      >
+                        <p className="font-semibold">
+                          Publishing did not complete
+                        </p>
+                        <p className="mt-1 text-xs">{error}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-auto pt-6">
+                    <button
+                      type="button"
+                      onClick={() => void handlePublish()}
+                      disabled={!mode || phase === "publishing"}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-5 py-3 text-sm font-bold text-[var(--bg)] shadow-[0_8px_24px_rgba(79,70,229,0.24)] transition-[transform,background-color,box-shadow] hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)] disabled:cursor-not-allowed disabled:bg-[var(--muted)] disabled:text-[var(--bg)] disabled:opacity-100 disabled:hover:translate-y-0 disabled:hover:brightness-100"
+                    >
+                      {phase === "publishing" ? (
+                        <>
+                          <span
+                            className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--bg)]/40 border-t-[var(--bg)]"
+                            aria-hidden
+                          />
+                          <span>Publishing…</span>
+                        </>
+                      ) : (
+                        <>
+                          <MdPublic size={18} aria-hidden /> Publish design
+                        </>
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      disabled={isBusy}
+                      className="mt-2 w-full rounded-lg py-2 text-sm font-medium text-muted hover:bg-[var(--bg-hover)] hover:text-theme focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+                    >
+                      Keep private
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div aria-live="polite">
+                    <label
+                      htmlFor="public-design-link"
+                      className="text-xs font-semibold text-theme"
+                    >
+                      Public link
+                    </label>
+                    <div className="mt-2 flex min-w-0 items-center gap-2 rounded-xl bg-[var(--bg)] p-2">
+                      <input
+                        id="public-design-link"
+                        readOnly
+                        value={publicUrl ?? ""}
+                        onFocus={(event) => event.currentTarget.select()}
+                        className="min-w-0 flex-1 bg-transparent px-2 text-xs text-theme outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void handleCopyLink()}
+                        className="inline-flex flex-shrink-0 items-center gap-1.5 rounded-lg bg-[var(--brand)] px-3 py-2 text-xs font-bold text-[var(--bg)] hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)]"
+                      >
+                        {linkCopied ? (
+                          <MdCheck aria-hidden />
+                        ) : (
+                          <MdContentCopy aria-hidden />
+                        )}
+                        {linkCopied ? "Copied" : "Copy link"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <a
+                      href={publicUrl ?? "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--bg)] px-3 py-2.5 text-sm font-semibold text-theme hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+                    >
+                      <MdOpenInNew aria-hidden /> Open page
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => void handleCopyLink()}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--bg)] px-3 py-2.5 text-sm font-semibold text-theme hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+                    >
+                      <MdContentCopy aria-hidden /> Copy again
+                    </button>
+                  </div>
+
+                  <div className="mt-6">
+                    <p className="text-xs font-semibold text-theme">
+                      Share your work
+                    </p>
+                    <div className="mt-2 grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleLinkedIn()}
+                        className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-[#0A66C2] px-2 py-3 text-xs font-semibold text-white hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0A66C2] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
+                      >
+                        <FaLinkedin size={18} aria-hidden /> LinkedIn
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleTwitter}
+                        className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-slate-950 px-2 py-3 text-xs font-semibold text-white hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-700 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)] dark:bg-white dark:text-black dark:hover:text-white"
+                      >
+                        <FaXTwitter size={17} aria-hidden /> X
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handleMedium()}
+                        className="flex flex-col items-center justify-center gap-1.5 rounded-xl bg-emerald-700 px-2 py-3 text-xs font-semibold text-white hover:bg-emerald-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
+                      >
+                        <SiMedium size={18} aria-hidden /> Medium
+                      </button>
+                    </div>
+                    {messageCopied && (
+                      <p
+                        className="mt-2 text-center text-xs font-medium text-emerald-700 dark:text-emerald-300"
+                        aria-live="polite"
+                      >
+                        {messageCopied}. Paste it into the new window.
+                      </p>
+                    )}
+                  </div>
+
+                  {error && (
+                    <p
+                      role="alert"
+                      className="mt-4 rounded-xl bg-red-500/10 px-3 py-2 text-xs leading-relaxed text-red-700 dark:text-red-300"
+                    >
+                      {error}
+                    </p>
+                  )}
+
+                  <div className="mt-auto pt-6">
+                    {confirmUnpublish ? (
+                      <div className="rounded-xl bg-red-500/10 p-3">
+                        <p className="text-xs leading-relaxed text-red-800 dark:text-red-200">
+                          The public link will stop working. Your saved design
+                          will not be deleted.
+                        </p>
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void handleUnpublish()}
+                            disabled={phase === "unpublishing"}
+                            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 disabled:opacity-50"
+                          >
+                            {phase === "unpublishing" ? (
+                              <span
+                                className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                                aria-hidden
+                              />
+                            ) : (
+                              <MdVisibilityOff aria-hidden />
+                            )}
+                            Unpublish
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmUnpublish(false)}
+                            disabled={phase === "unpublishing"}
+                            className="flex-1 rounded-lg px-3 py-2 text-xs font-semibold text-theme hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmUnpublish(true)}
+                        className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold text-muted hover:bg-red-500/10 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:hover:text-red-300"
+                      >
+                        <MdVisibilityOff aria-hidden /> Manage visibility
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
             </section>
           </div>
         </motion.div>
