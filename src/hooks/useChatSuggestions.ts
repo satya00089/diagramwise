@@ -152,6 +152,25 @@ export const useChatSuggestions = (
       return fallbackSuggestions;
     }
 
+    const createComponentSuggestion = (
+      id: string,
+      title: string,
+      description: string,
+      icon: string,
+      priority: number,
+      componentId: string,
+    ): Suggestion => ({
+      id,
+      title,
+      description,
+      action: () => {}, // Will be handled by parent
+      icon,
+      category: "component",
+      priority,
+      componentId,
+      actionType: "add-component",
+    });
+
     // Pattern detection from user intent
     const intentText = userIntent
       ? `${userIntent.title} ${userIntent.description}`.toLowerCase()
@@ -164,28 +183,22 @@ export const useChatSuggestions = (
       intentText.includes("er ")
     ) {
       fallbackSuggestions.push(
-        {
-          id: "er-entity",
-          title: "Add Entity",
-          description: "Create a database entity with attributes",
-          action: () => {}, // Will be handled by parent
-          icon: "📦",
-          category: "component",
-          priority: 10,
-          componentId: "er-entity",
-          actionType: "add-component",
-        },
-        {
-          id: "er-relationship",
-          title: "Add Relationship",
-          description: "Connect entities with relationships",
-          action: () => {},
-          icon: "🔗",
-          category: "component",
-          priority: 9,
-          componentId: "er-relationship",
-          actionType: "add-component",
-        },
+        createComponentSuggestion(
+          "er-entity",
+          "Add Entity",
+          "Create a database entity with attributes",
+          "📦",
+          10,
+          "er-entity",
+        ),
+        createComponentSuggestion(
+          "er-relationship",
+          "Add Relationship",
+          "Connect entities with relationships",
+          "🔗",
+          9,
+          "er-relationship",
+        ),
       );
     }
 
@@ -197,28 +210,22 @@ export const useChatSuggestions = (
       intentText.includes("object-oriented")
     ) {
       fallbackSuggestions.push(
-        {
-          id: "uml-class",
-          title: "Add Class",
-          description: "Create a UML class with methods and properties",
-          action: () => {},
-          icon: "🎓",
-          category: "component",
-          priority: 10,
-          componentId: "uml-class",
-          actionType: "add-component",
-        },
-        {
-          id: "uml-interface",
-          title: "Add Interface",
-          description: "Define an interface for your design",
-          action: () => {},
-          icon: "📋",
-          category: "component",
-          priority: 8,
-          componentId: "uml-interface",
-          actionType: "add-component",
-        },
+        createComponentSuggestion(
+          "uml-class",
+          "Add Class",
+          "Create a UML class with methods and properties",
+          "🎓",
+          10,
+          "uml-class",
+        ),
+        createComponentSuggestion(
+          "uml-interface",
+          "Add Interface",
+          "Define an interface for your design",
+          "📋",
+          8,
+          "uml-interface",
+        ),
       );
     }
 
@@ -230,39 +237,30 @@ export const useChatSuggestions = (
       intentText.includes("api")
     ) {
       fallbackSuggestions.push(
-        {
-          id: "api-gateway",
-          title: "Add API Gateway",
-          description: "Central entry point for your services",
-          action: () => {},
-          icon: "🚪",
-          category: "component",
-          priority: 10,
-          componentId: "api-gateway",
-          actionType: "add-component",
-        },
-        {
-          id: "load-balancer",
-          title: "Add Load Balancer",
-          description: "Distribute traffic across servers",
-          action: () => {},
-          icon: "⚖️",
-          category: "component",
-          priority: 9,
-          componentId: "loadbalancer",
-          actionType: "add-component",
-        },
-        {
-          id: "database",
-          title: "Add Database",
-          description: "Add a database to store your data",
-          action: () => {},
-          icon: "💾",
-          category: "component",
-          priority: 8,
-          componentId: "database",
-          actionType: "add-component",
-        },
+        createComponentSuggestion(
+          "api-gateway",
+          "Add API Gateway",
+          "Central entry point for your services",
+          "🚪",
+          10,
+          "api-gateway",
+        ),
+        createComponentSuggestion(
+          "load-balancer",
+          "Add Load Balancer",
+          "Distribute traffic across servers",
+          "⚖️",
+          9,
+          "loadbalancer",
+        ),
+        createComponentSuggestion(
+          "database",
+          "Add Database",
+          "Add a database to store your data",
+          "💾",
+          8,
+          "database",
+        ),
       );
     }
 
@@ -272,17 +270,16 @@ export const useChatSuggestions = (
       intentText.includes("redis") ||
       intentText.includes("performance")
     ) {
-      fallbackSuggestions.push({
-        id: "cache",
-        title: "Add Cache Layer",
-        description: "Improve performance with caching",
-        action: () => {},
-        icon: "⚡",
-        category: "component",
-        priority: 9,
-        componentId: "cache",
-        actionType: "add-component",
-      });
+      fallbackSuggestions.push(
+        createComponentSuggestion(
+          "cache",
+          "Add Cache Layer",
+          "Improve performance with caching",
+          "⚡",
+          9,
+          "cache",
+        ),
+      );
     }
 
     // Message Queue patterns
@@ -292,17 +289,16 @@ export const useChatSuggestions = (
       intentText.includes("message") ||
       intentText.includes("event")
     ) {
-      fallbackSuggestions.push({
-        id: "message-queue",
-        title: "Add Message Queue",
-        description: "Enable asynchronous communication",
-        action: () => {},
-        icon: "📬",
-        category: "component",
-        priority: 9,
-        componentId: "queue",
-        actionType: "add-component",
-      });
+      fallbackSuggestions.push(
+        createComponentSuggestion(
+          "message-queue",
+          "Add Message Queue",
+          "Enable asynchronous communication",
+          "📬",
+          9,
+          "queue",
+        ),
+      );
     }
 
     // Context-based suggestions (canvas state)
