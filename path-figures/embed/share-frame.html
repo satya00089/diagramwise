@@ -616,10 +616,10 @@ function toolkitDrawing(svg){
   const P=proj(C),front=facing(C),root=mk('g',{},svg);
   const path=(g,d,cls='nf')=>mk('path',{d,class:cls},g);
   const line=(g,points,cls='nf')=>path(g,open(points.map(q=>P(...q))),cls);
-  const flat=(g,x,y,w,h,z,cls='sil',r=2)=>path(g,poly(ringAt(P,rrect(x,y,x+w,y+h,r,7),z)),cls);
-  function box(g,x,y,w,h,z,d,cls='sil'){
+  const flat=(g,x,y,w,h,z,{cls='sil',r=2}={})=>path(g,poly(ringAt(P,rrect(x,y,x+w,y+h,r,7),z)),cls);
+  function box(g,x,y,w,h,z,{depth,cls='sil'}={}){
     const [outer,inner]=rings(x,y,x+w,y+h,2.4,0.9),el=solid(g);
-    put(el,prism(P,front,outer,inner,z,z+d));el.sil.setAttribute('class',cls);
+    put(el,prism(P,front,outer,inner,z,z+depth));el.sil.setAttribute('class',cls);
   }
   function panel(g,x,y,z,w,h,cls='sil'){
     const ring=rrect(0,0,w,h,2,8);
@@ -630,7 +630,7 @@ function toolkitDrawing(svg){
     const q=P(x,y,z);mk('circle',{cx:q[0],cy:q[1],r,class:cls},g);
   }
   function server(g,x,y,z,active=false,w=25,h=17){
-    box(g,x,y,w,h,z,11,active?'sil hi':'sil');
+    box(g,x,y,w,h,z,{depth:11,cls:active?'sil hi':'sil'});
     line(g,[[x+4,y+h,z+7],[x+w-8,y+h,z+7]],'nf');
     line(g,[[x+4,y+h,z+4],[x+w-11,y+h,z+4]],'nf lo');
     dot(g,x+w-5,y+h,z+5,0.7,active?'dot':'dot m');
@@ -648,18 +648,18 @@ function mountToolkit({stage,svg,read},value,kind){
   const bag=disposer(),D=toolkitDrawing(svg),staticG=mk('g',{},D.root),liveG=mk('g',{},D.root);
   const t=tween(0,clamp(900-value*6,480,760));let active=false,last='';
   const {line,flat,box,panel,dot,server,database}=D;
-  function base(){box(staticG,7,15,166,77,0,3);flat(staticG,10,18,160,71,3.2,'nf lo',3);}
+  function base(){box(staticG,7,15,166,77,0,{depth:3});flat(staticG,10,18,160,71,3.2,{cls:'nf lo',r:3});}
   function miniature(g,x,y,z,s=1){
-    box(g,x,y,15*s,10*s,z,5*s);
-    box(g,x+31*s,y+4*s,16*s,10*s,z,5*s);
+    box(g,x,y,15*s,10*s,z,{depth:5*s});
+    box(g,x+31*s,y+4*s,16*s,10*s,z,{depth:5*s});
     line(g,[[x+15*s,y+7*s,z+2*s],[x+31*s,y+9*s,z+2*s]],'nf lo');
     dot(g,x+23*s,y+8*s,z+2*s,0.7);
   }
   if(kind==='library'){
     base();
-    [16,66,116].forEach(x=>flat(staticG,x,34,39,35,3.5,'nf lo',2));
+    [16,66,116].forEach(x=>flat(staticG,x,34,39,35,3.5,{cls:'nf lo',r:2}));
     server(staticG,22,43,4,false,25,17);
-    box(staticG,124,42,23,24,4,2);
+    box(staticG,124,42,23,24,4,{depth:2});
     [0,1,2].forEach(i=>line(staticG,[[128,47+i*6,6.3],[143-i*2,47+i*6,6.3]],'nf lo'));
   }
   if(kind==='annotate'){
@@ -684,12 +684,15 @@ function mountToolkit({stage,svg,read},value,kind){
     miniature(staticG,27,40,8,0.8);
   }
   function render(p){
-    const key=p.toFixed(4);if(last===key)return;last=key;liveG.replaceChildren();
+    const key=p.toFixed(4);
+    if(last===key){return;}
+    last=key;
+    liveG.replaceChildren();
     if(kind==='library'){
       const lift=8+15*p;
       line(liveG,[[85,46,4],[85,46,4+lift]],'nf lo dash');
       database(liveG,85+14*p,52-5*p,4+lift,9,19,true);
-      flat(liveG,73,41,25,22,4,'nf dash',2);
+      flat(liveG,73,41,25,22,4,{cls:'nf dash',r:2});
     }
     if(kind==='annotate'){
       const h=19+22*p;
@@ -716,7 +719,7 @@ function mountToolkit({stage,svg,read},value,kind){
     }
     if(kind==='share'){
       const x=27+79*p,z=12+15*Math.sin(Math.PI*p);
-      flat(liveG,x,50,42,28,z,'sil hi',2);
+      flat(liveG,x,50,42,28,z,{cls:'sil hi',r:2});
       miniature(liveG,x+4,55,z+0.2,0.65);
       if(p>0.7){
         line(liveG,[[116,64,8],[151,64,8]],'nf lo');
@@ -728,7 +731,9 @@ function mountToolkit({stage,svg,read},value,kind){
   bag.add(B.unregister);
   const names={library:'component selected',annotate:'note expanded',assessment:'finding opened',share:'diagram copied'};
   function activate(next){
-    if(active===next)return;active=next;tset(t,next?1:0,performance.now(),0);
+    if(active===next){return;}
+    active=next;
+    tset(t,next?1:0,performance.now(),0);
     read.textContent=next?names[kind]:'rest';B.wake();
   }
   const move=()=>activate(true),reset=()=>activate(false);
