@@ -39,44 +39,60 @@ const clearLegacyToken = (): void => {
   }
 };
 
-const initializeBrowserSession = (): Promise<User | null> => {
-  if (!sessionBootstrap) {
-    sessionBootstrap = (async () => {
-      let legacyToken: string | null = null;
-      try {
-        legacyToken = localStorage.getItem("auth_token");
-      } catch {
-        // Continue with the HttpOnly cookie when storage is unavailable.
-      }
-
-      try {
-        const user = legacyToken
-          ? (await apiService.upgradeSession(legacyToken)).user
-          : await apiService.getCurrentUser();
-        clearLegacyToken();
-        if (legacyToken) notifyAuthChanged();
-        return user;
-      } catch (error) {
-        if (!legacyToken) return null;
-        try {
-          // Another tab may already have upgraded and revoked the old bearer.
-          const user = await apiService.getCurrentUser();
-          clearLegacyToken();
-          if (legacyToken) notifyAuthChanged();
-          return user;
-        } catch {
-          const status =
-            error && typeof error === "object" && "status" in error
-              ? error.status
-              : undefined;
-          if (status === 401) clearLegacyToken();
-          // Keep a token after a transient failure so a reload can retry the
-          // upgrade instead of permanently signing the user out.
-          return null;
-        }
-      }
-    })();
+const readLegacyToken = (): string | null => {
+  try {
+    return localStorage.getItem("auth_token");
+  } catch {
+    // Continue with the HttpOnly cookie when storage is unavailable.
+    return null;
   }
+};
+
+const getCurrentUserOrNull = async (): Promise<User | null> => {
+  try {
+    return await apiService.getCurrentUser();
+  } catch {
+    return null;
+  }
+};
+
+const getErrorStatus = (error: unknown): unknown =>
+  error && typeof error === "object" && "status" in error
+    ? error.status
+    : undefined;
+
+const restoreSessionAfterUpgradeFailure = async (
+  error: unknown,
+): Promise<User | null> => {
+  // Another tab may already have upgraded and revoked the old bearer.
+  const user = await getCurrentUserOrNull();
+  if (user) {
+    clearLegacyToken();
+    notifyAuthChanged();
+    return user;
+  }
+
+  if (getErrorStatus(error) === 401) clearLegacyToken();
+  // Keep the token after a transient failure so a reload can retry the upgrade.
+  return null;
+};
+
+const loadBrowserSession = async (): Promise<User | null> => {
+  const legacyToken = readLegacyToken();
+  if (!legacyToken) return getCurrentUserOrNull();
+
+  try {
+    const user = (await apiService.upgradeSession(legacyToken)).user;
+    clearLegacyToken();
+    notifyAuthChanged();
+    return user;
+  } catch (error) {
+    return restoreSessionAfterUpgradeFailure(error);
+  }
+};
+
+const initializeBrowserSession = (): Promise<User | null> => {
+  sessionBootstrap ??= loadBrowserSession();
   return sessionBootstrap;
 };
 
