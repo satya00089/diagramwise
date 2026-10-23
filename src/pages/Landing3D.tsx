@@ -571,15 +571,104 @@ export default function Landing3D() {
         </section>
 
         <section
+          id="features"
+          className="systema-product-features systema-container"
+          aria-labelledby="systema-product-features-title"
+        >
+          <div className="systema-product-features-heading">
+            <span>FEATURES</span>
+            <h2 id="systema-product-features-title">
+              More support when
+              <br />
+              <span>you need it.</span>
+            </h2>
+            <p>
+              Learn the fundamentals, get help on a tough design, review your
+              decisions, and bring your team into the work.
+            </p>
+          </div>
+          <div className="systema-product-feature-list">
+            <article className="systema-product-feature">
+              <div className="systema-product-feature-copy">
+                <span>01 / GUIDED PRACTICE</span>
+                <h3>Step-by-step walkthroughs for supported problems.</h3>
+                <p>
+                  When you get stuck, follow structured prompts that explain
+                  the reasoning behind each design decision while leaving room
+                  for you to think it through.
+                </p>
+                <Link className="systema-text-link" to="/problems/">
+                  Find a problem with a walkthrough <HiArrowUpRight />
+                </Link>
+              </div>
+              <div className="systema-product-feature-visual">
+                <FeatureArt type="review" />
+              </div>
+            </article>
+            <article className="systema-product-feature systema-product-feature--reverse">
+              <div className="systema-product-feature-copy">
+                <span>02 / LEARNING PATHS</span>
+                <h3>Build your system design skills in sequence.</h3>
+                <p>
+                  Follow curated modules and hands-on lessons that take you
+                  from core concepts to applying them in realistic design
+                  problems.
+                </p>
+                <Link className="systema-text-link" to="/learning-paths/">
+                  Browse learning paths <HiArrowUpRight />
+                </Link>
+              </div>
+              <div className="systema-product-feature-visual">
+                <FeatureArt type="reason" />
+              </div>
+            </article>
+            <article className="systema-product-feature">
+              <div className="systema-product-feature-copy">
+                <span>03 / DESIGN REVIEW</span>
+                <h3>Turn an architecture into clear next steps.</h3>
+                <p>
+                  Get structured AI feedback on requirement coverage,
+                  scalability, reliability, data design, and trade-offs so you
+                  can see what to strengthen next.
+                </p>
+                <Link className="systema-text-link" to="/playground/free">
+                  Try a design review <HiArrowUpRight />
+                </Link>
+              </div>
+              <div className="systema-product-feature-visual">
+                <FeatureArt type="assessment" />
+              </div>
+            </article>
+            <article className="systema-product-feature systema-product-feature--reverse">
+              <div className="systema-product-feature-copy">
+                <span>04 / TEAMWORK</span>
+                <h3>Design together on a shared canvas.</h3>
+                <p>
+                  Save a design and sign in to invite teammates to collaborate
+                  in real time. Export the architecture or share a live link
+                  when you are ready.
+                </p>
+                <Link className="systema-text-link" to="/playground/free">
+                  Open Design Studio <HiArrowUpRight />
+                </Link>
+              </div>
+              <div className="systema-product-feature-visual">
+                <FeatureArt type="share" />
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section
           className="systema-toolkit systema-container"
           aria-labelledby="systema-toolkit-title"
         >
           <div className="systema-toolkit-heading">
-            <span>THE TOOLKIT</span>
+            <span>DIAGRAM TOOLS</span>
             <h2 id="systema-toolkit-title">
-              Powerful features.
+              Make each diagram
               <br />
-              <span>Useful when decisions get hard.</span>
+              <span>clearer to reason about.</span>
             </h2>
           </div>
           <div className="systema-toolkit-grid">
@@ -599,25 +688,6 @@ export default function Landing3D() {
               <p>
                 Draw labeled data flows and attach notes, metadata, and custom
                 fields to explain every important decision.
-              </p>
-            </article>
-            <article>
-              <span className="systema-toolkit-index">03</span>
-              <FeatureArt type="assessment" />
-              <h3>Structured AI assessment</h3>
-              <p>
-                See what is strong, what is risky, and what to improve next,
-                with interview follow-up questions tailored to your design.
-              </p>
-            </article>
-            <article>
-              <span className="systema-toolkit-index">04</span>
-              <FeatureArt type="share" />
-              <h3>Collaborate, export, and share</h3>
-              <p>
-                Once a design is saved and you’re signed in, invite teammates
-                to work on the canvas in real time, then export the architecture
-                or share a live link.
               </p>
             </article>
           </div>

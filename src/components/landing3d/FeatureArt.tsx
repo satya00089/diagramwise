@@ -38,7 +38,7 @@ export default function FeatureArt({
   useEffect(() => {
     const frame = frameRef.current;
     const card = frame?.closest<HTMLElement>(
-      ".systema-feature, .systema-toolkit-grid article",
+      ".systema-feature, .systema-toolkit-grid article, .systema-product-feature",
     );
     if (!frame || !card) return;
     const move = (event: PointerEvent) => {
