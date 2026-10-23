@@ -5470,7 +5470,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       />
       <div className="design-studio-page h-screen flex flex-col overflow-hidden bg-theme">
         {/* Header */}
-        <header className="relative z-50 bg-[var(--brand)] shadow-md overflow-visible">
+        <header
+          className="relative z-50 bg-[var(--brand)] shadow-md overflow-visible"
+          style={{ marginTop: "var(--announcement-h, 0px)" }}
+        >
           <div className="max-w-full mx-auto px-4 sm:px-6 overflow-visible">
             <div className="flex flex-wrap items-center justify-between min-h-14 gap-y-2 py-2 md:h-14 md:flex-nowrap md:py-0 overflow-visible">
               {/* Left side - Logo and Title */}
