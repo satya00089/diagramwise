@@ -73,8 +73,11 @@ const formatLatency = (value: number | null | undefined) =>
 const getDateRangeDays = (range: AdminDateRange) =>
   Number(range.match(/\d+/)?.[0] ?? 30);
 
-const getDateRangePeriod = (range: AdminDateRange) =>
-  range === "Today" ? "today" : range === "Yesterday" ? "yesterday" : undefined;
+const getDateRangePeriod = (range: AdminDateRange) => {
+  if (range === "Today") return "today";
+  if (range === "Yesterday") return "yesterday";
+  return undefined;
+};
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat("en-IN", {
@@ -127,13 +130,17 @@ const FeedbackRow = ({
 }) => {
   const [avatarFailed, setAvatarFailed] = useState(false);
   const authorEmail = item.authorEmail || item.contactEmail;
-  const authorName =
-    item.authorName?.trim() ||
-    (item.authorEmail
-      ? "Diagramwise user"
-      : item.contactEmail
-        ? "Feedback visitor"
-        : "Anonymous visitor");
+  const trimmedAuthorName = item.authorName?.trim();
+  let authorName: string;
+  if (trimmedAuthorName) {
+    authorName = trimmedAuthorName;
+  } else if (item.authorEmail) {
+    authorName = "Diagramwise user";
+  } else if (item.contactEmail) {
+    authorName = "Feedback visitor";
+  } else {
+    authorName = "Anonymous visitor";
+  }
   const avatarInitials = getFeedbackInitials(
     item.authorName || authorEmail || authorName,
   );

@@ -52,7 +52,6 @@ function ExerciseRunner({
           message: ok ? "Correct" : `Incorrect — expected "${val}"`,
         },
       }));
-      return;
     }
   };
 

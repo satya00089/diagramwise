@@ -96,23 +96,23 @@ class ApiService {
         msg?: unknown;
       };
 
-      const message =
-        "detail" in error && typeof error.detail === "string"
-          ? error.detail
-          : "detail" in error && Array.isArray(error.detail)
-            ? error.detail
-                .map((entry: unknown) =>
-                  entry &&
-                  typeof entry === "object" &&
-                  typeof (entry as DetailEntry).msg === "string"
-                    ? (entry as DetailEntry).msg
-                    : null,
-                )
-                .filter((msg: string | null): msg is string => Boolean(msg))
-                .join(", ")
-            : "message" in error && typeof error.message === "string"
-              ? error.message
-              : null;
+      let message: string | null = null;
+      if ("detail" in error && typeof error.detail === "string") {
+        message = error.detail;
+      } else if ("detail" in error && Array.isArray(error.detail)) {
+        message = error.detail
+          .map((entry: unknown) =>
+            entry &&
+            typeof entry === "object" &&
+            typeof (entry as DetailEntry).msg === "string"
+              ? (entry as DetailEntry).msg
+              : null,
+          )
+          .filter((msg: string | null): msg is string => Boolean(msg))
+          .join(", ");
+      } else if ("message" in error && typeof error.message === "string") {
+        message = error.message;
+      }
 
       if (message?.trim()) {
         return message;

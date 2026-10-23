@@ -9,7 +9,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useOnboarding } from "../hooks/useOnboarding";
 import { useTour } from "../hooks/useTour";
 import { useToast } from "../hooks/useToast";
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import { ToastContainer } from "../components/Toast";
 import { apiService } from "../services/api";
 import type { SavedDiagramSummary } from "../types/auth";
@@ -602,9 +602,25 @@ const MyDesigns: React.FC = () => {
     };
   }, [filterBy, savedDiagrams, searchTerm, sortBy]);
 
+  let emptyStateIcon = <HiPencilSquare className="w-16 h-16" />;
+  let emptyStateTitle = "No designs yet";
+  let emptyStateDescription = "Create your first design to get started.";
+
+  if (filterBy === "shared") {
+    emptyStateIcon = <HiUserGroup className="w-16 h-16" />;
+    emptyStateTitle = "Nothing shared with you yet";
+    emptyStateDescription = "Designs shared with you will show up here.";
+  }
+
+  if (searchTerm) {
+    emptyStateIcon = <MdSearchOff className="w-16 h-16" />;
+    emptyStateTitle = "No designs match your search";
+    emptyStateDescription = "Try a different search term.";
+  }
+
   return (
     <>
-      <SEO
+      <Seo
         title="My Designs | Diagramwise"
         description="View and manage your saved system design projects and diagrams shared with you"
         image="https://diagramwise.com/og/diagrams.png"
@@ -777,27 +793,13 @@ const MyDesigns: React.FC = () => {
                 {filteredFamilies.length === 0 && (
                   <div className="text-center py-20">
                     <div className="flex justify-center mb-6 text-[var(--brand)]/40">
-                      {searchTerm ? (
-                        <MdSearchOff className="w-16 h-16" />
-                      ) : filterBy === "shared" ? (
-                        <HiUserGroup className="w-16 h-16" />
-                      ) : (
-                        <HiPencilSquare className="w-16 h-16" />
-                      )}
+                      {emptyStateIcon}
                     </div>
                     <div className="text-theme text-2xl font-bold mb-2">
-                      {searchTerm
-                        ? "No designs match your search"
-                        : filterBy === "shared"
-                          ? "Nothing shared with you yet"
-                          : "No designs yet"}
+                      {emptyStateTitle}
                     </div>
                     <div className="text-muted text-lg mb-6">
-                      {searchTerm
-                        ? "Try a different search term."
-                        : filterBy === "shared"
-                          ? "Designs shared with you will show up here."
-                          : "Create your first design to get started."}
+                      {emptyStateDescription}
                     </div>
                     {!searchTerm && filterBy !== "shared" && (
                       <button

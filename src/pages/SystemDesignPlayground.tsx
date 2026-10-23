@@ -133,7 +133,7 @@ import {
 } from "../components/shared/AnimatedInputFields";
 
 // UI Components - Layout
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import AccountMenu from "../components/AccountMenu";
 import { ToastContainer } from "../components/Toast";
@@ -632,6 +632,15 @@ const createFreeformNodeWithCopyHandler = (
       <FreeformNodeWithCopy {...props} onCopy={onCopy} isInGroup={isInGroup} />
     );
   };
+};
+
+const getPlaygroundDifficultyClass = (
+  difficulty: string | undefined,
+): string => {
+  if (difficulty === "Easy") return "playground-difficulty--easy";
+  if (difficulty === "Medium") return "playground-difficulty--medium";
+  if (difficulty === "Very Hard") return "playground-difficulty--very-hard";
+  return "playground-difficulty--hard";
 };
 
 const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
@@ -2101,21 +2110,26 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       ...(targetFieldId ? { targetFieldId } : {}),
     };
 
+    let edgeData: Record<string, unknown>;
+    if (isERConnection) {
+      edgeData = {
+        label: "",
+        hasLabel: false,
+        cardinality: "one-to-many",
+        ...(sourceFieldId ? { sourceFieldId } : {}),
+        ...(targetFieldId ? { targetFieldId } : {}),
+      };
+    } else if (isDocumentConnection) {
+      edgeData = fieldConnectionData;
+    } else {
+      edgeData = { label: "", hasLabel: false };
+    }
+
     // Use ER relationship edge for ER diagrams, custom edge for others
     const newEdge = {
       ...connection,
       type: isERConnection ? "erRelationship" : "customEdge",
-      data: isERConnection
-        ? {
-            label: "",
-            hasLabel: false,
-            cardinality: "one-to-many",
-            ...(sourceFieldId ? { sourceFieldId } : {}),
-            ...(targetFieldId ? { targetFieldId } : {}),
-          }
-        : isDocumentConnection
-          ? fieldConnectionData
-          : { label: "", hasLabel: false },
+      data: edgeData,
     } as unknown as Edge;
     setEdges((eds) => addEdge(newEdge, eds));
   };
@@ -4861,11 +4875,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
     try {
       // Custom problems stored in localStorage (custom-...)
-      if (
-        idFromUrl &&
-        idFromUrl.startsWith &&
-        idFromUrl.startsWith("custom-")
-      ) {
+      if (idFromUrl?.startsWith("custom-")) {
         localStorage.removeItem(`custom-problem-${idFromUrl}`);
       } else if (diagramIdFromUrl && currentDiagramId) {
         // Viewing a diagram by URL: delete user's diagram if authenticated
@@ -5445,7 +5455,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
   return (
     <>
-      <SEO
+      <Seo
         title={pageTitle}
         description={pageDescription}
         keywords={`system design playground, ${problem?.title || "free canvas"}, architecture diagram tool, ${problem?.category || "design tool"}`}
@@ -5486,13 +5496,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                     <>
                       <span
                         className={`playground-difficulty px-2 py-1 rounded text-xs font-medium ${
-                          problem.difficulty === "Easy"
-                            ? "playground-difficulty--easy"
-                            : problem.difficulty === "Medium"
-                              ? "playground-difficulty--medium"
-                              : problem.difficulty === "Very Hard"
-                                ? "playground-difficulty--very-hard"
-                                : "playground-difficulty--hard"
+                          getPlaygroundDifficultyClass(problem.difficulty)
                         }`}
                       >
                         {problem.difficulty}

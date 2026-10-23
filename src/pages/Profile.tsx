@@ -7,7 +7,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useTheme } from "../hooks/useTheme";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import ProductHeader from "../components/ProductHeader";
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import UserAvatar from "../components/UserAvatar";
 import {
   BLOBATAR_AVATAR_BATCH_SIZE,
@@ -419,7 +419,7 @@ const Profile: React.FC = () => {
 
   return (
     <>
-      <SEO
+      <Seo
         title="Your profile | Diagramwise"
         description="Review your learning progress and update your Diagramwise preferences."
         url="https://diagramwise.com/profile"

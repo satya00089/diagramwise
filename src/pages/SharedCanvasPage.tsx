@@ -24,7 +24,7 @@ import ThemeSwitcher from "../components/ThemeSwitcher";
 import CustomEdge from "../components/CustomEdge";
 import ERRelationshipEdge from "../components/ERRelationshipEdge";
 import AssessmentFindings from "../components/AssessmentFindings";
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import type { ValidationResult } from "../types/systemDesign";
 import { COMPONENTS } from "../config/components";
 import { getNodeDisplayLabel } from "../utils/nodePresentation";
@@ -46,6 +46,8 @@ import {
   MdTune,
   MdWarning,
 } from "react-icons/md";
+
+type CaptureReady = "true" | "false" | undefined;
 
 // ---------------------------------------------------------------------------
 // Constants mirrored from InspectorPanel
@@ -1469,9 +1471,18 @@ const SharedCanvasPage: React.FC = () => {
     );
   }
 
+  let captureReady: CaptureReady;
+  if (captureMode) {
+    if (publicIconLoading || !captureCanvasReady) {
+      captureReady = "false";
+    } else {
+      captureReady = "true";
+    }
+  }
+
   return (
     <>
-      <SEO
+      <Seo
         title={pageTitle}
         description={
           data.kind === "attempt"
@@ -1487,13 +1498,7 @@ const SharedCanvasPage: React.FC = () => {
           captureMode ? " diagramwise-capture-root" : ""
         }`}
         data-diagramwise-capture-root={captureMode ? "true" : undefined}
-        data-diagramwise-capture-ready={
-          captureMode
-            ? publicIconLoading || !captureCanvasReady
-              ? "false"
-              : "true"
-            : undefined
-        }
+        data-diagramwise-capture-ready={captureReady}
         aria-label={
           captureMode ? `${data.title} Diagramwise architecture preview` : undefined
         }

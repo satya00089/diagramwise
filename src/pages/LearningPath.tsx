@@ -5,7 +5,7 @@ import { AuthModal } from "../components/AuthModal";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import ProductHeader from "../components/ProductHeader";
 import { useTheme } from "../hooks/useTheme";
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import { fetchLearningPathBySlug } from "../services/contentLoader";
 import type { LearningPath as LPType, Lesson } from "../services/contentLoader";
 import LessonRenderer from "../components/learning-paths/LessonRenderer.tsx";
@@ -69,7 +69,7 @@ const LearningPath: React.FC = () => {
 
   return (
     <>
-      <SEO
+      <Seo
         title={
           path
             ? `${path.title} | Learning Path | Diagramwise`

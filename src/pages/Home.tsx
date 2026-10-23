@@ -5,7 +5,7 @@ import AccountMenu from "../components/AccountMenu";
 import UserAvatar from "../components/UserAvatar";
 import RollingNavLabel from "../components/RollingNavLabel";
 import { useTheme } from "../hooks/useTheme";
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import { useAuth } from "../hooks/useAuth";
 import { useOnboarding } from "../hooks/useOnboarding";
 import { useTour } from "../hooks/useTour";
@@ -617,7 +617,7 @@ const Home: React.FC = () => {
 
   return (
     <>
-      <SEO
+      <Seo
         title="Diagramwise — Design architectures. Get them reviewed."
         description="Practice system design by building architectures visually, explaining your assumptions, and getting structured feedback on scalability, reliability, data design, and trade-offs."
         keywords="system design, architecture diagram, system design interview, software architecture, distributed systems, scalable architecture, system design tool, architecture playground, cloud architecture, microservices design, ER diagram, entity relationship diagram, UML diagram, class diagram, database design"

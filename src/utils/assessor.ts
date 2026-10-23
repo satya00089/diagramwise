@@ -464,12 +464,12 @@ export function transformApiResponse(apiResult: unknown): ValidationResult {
     assessment_id?: string;
     trace_id?: string;
     score_available?: boolean;
-    verdict?: ValidationResult["verdict"];
+    verdict?: NonNullable<ValidationResult["verdict"]>;
     rubric_version?: string;
     requirement_revision?: string;
     model_version?: string;
     requirement_coverage?: RequirementCoverage[];
-    structural_checks?: ValidationResult["structuralChecks"];
+    structural_checks?: NonNullable<ValidationResult["structuralChecks"]>;
   };
 
   const feedback: ValidationFeedback[] = (result.feedback || []).map((fb) => ({

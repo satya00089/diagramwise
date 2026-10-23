@@ -331,10 +331,10 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
 }
 
 .admin-stat__suffix {
-  display: inline !important;
+  display: inline;
   margin: 0;
   color: var(--muted);
-  font-size: 0.8rem !important;
+  font-size: 0.8rem;
   letter-spacing: 0;
 }
 
@@ -650,6 +650,7 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
 
 .admin-ga-city-list::-webkit-scrollbar {
   display: none;
+  width: 6px;
 }
 
 .admin-city-navigation {
@@ -696,10 +697,6 @@ html.dark:has(.admin-theme-root)::-webkit-scrollbar-thumb {
   border-radius: 3px;
   outline: 2px solid var(--brand);
   outline-offset: 3px;
-}
-
-.admin-ga-city-list::-webkit-scrollbar {
-  width: 6px;
 }
 
 .admin-ga-city-list::-webkit-scrollbar-track {

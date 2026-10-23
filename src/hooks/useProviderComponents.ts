@@ -12,7 +12,7 @@ import { componentProviderService } from "../services/componentProviderService";
 import { mapComponentsToCanvas } from "../utils/componentMapper";
 
 interface UseProviderComponentsOptions {
-  provider?: ComponentProvider | "all";
+  provider?: ComponentProvider;
   category?: ComponentCategory;
   enabled?: boolean;
 }
