@@ -1271,6 +1271,7 @@ html:has(.systema-page[data-theme="dark"]) {
 .systema-product-feature-copy {
   grid-column: 1;
   grid-row: 1;
+  min-width: 0;
 }
 .systema-product-feature-visual {
   display: flex;

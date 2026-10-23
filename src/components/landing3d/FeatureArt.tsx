@@ -23,7 +23,11 @@ const figures = {
 
 export default function FeatureArt({
   type,
-}: Readonly<{ type: keyof typeof figures }>) {
+  variant,
+}: Readonly<{
+  type: keyof typeof figures;
+  variant?: "toolkit";
+}>) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const stateRef = useRef({ active: false, x: 200 });
   const { flowColorMode } = useTheme();
@@ -81,7 +85,7 @@ export default function FeatureArt({
     <iframe
       ref={frameRef}
       className={
-        type in { library: true, annotate: true, assessment: true, share: true }
+        variant === "toolkit"
           ? "systema-feature-art systema-toolkit-art"
           : "systema-feature-art"
       }
