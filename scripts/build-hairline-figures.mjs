@@ -13,6 +13,15 @@ const toolkitNames = new Set([
   "assessment-sheet",
   "share-frame",
 ]);
+// Keep the feature artwork centered in its 5:4 frame; tool cards use a shallow crop.
+const productionViewBoxes = {
+  "switchback": "0 25 400 320",
+  "inspection-stack": "0 40 400 320",
+  "component-rack": "0 65 400 230",
+  "annotation-bridge": "0 65 400 230",
+  "assessment-sheet": "0 30 400 320",
+  "share-frame": "0 30 400 320",
+};
 
 await mkdir(outputRoot, { recursive: true });
 await mkdir(embedRoot, { recursive: true });
@@ -40,8 +49,9 @@ for (const name of [...names, ...toolkitNames]) {
   const figure = `/* ${license.replace(/\s+/g, " ")} */\n${shared}\n${scene}\n`;
   // Preserve the skill's fixed bench; the production host is a separate template.
   await writeFile(rawOut, inject(bench, figure), "utf8");
-  const productionHost = toolkitNames.has(name)
-    ? embed.replace('viewBox="0 0 400 320"', 'viewBox="0 65 400 230"')
+  const viewBox = productionViewBoxes[name];
+  const productionHost = viewBox
+    ? embed.replace('viewBox="0 0 400 320"', `viewBox="${viewBox}"`)
     : embed;
   await writeFile(
     join(embedRoot, `${name}.html`),

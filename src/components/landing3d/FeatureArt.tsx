@@ -89,7 +89,7 @@ export default function FeatureArt({
           ? "systema-feature-art systema-toolkit-art"
           : "systema-feature-art"
       }
-      src={`/path-figures/embed/${name}.html?theme=${flowColorMode}&v=2`}
+      src={`/path-figures/embed/${name}.html?theme=${flowColorMode}&v=3`}
       title={label}
       aria-hidden="true"
       tabIndex={-1}
