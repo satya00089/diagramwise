@@ -1184,11 +1184,18 @@ html:has(.systema-page[data-theme="dark"]) {
   gap: 16px;
 }
 .systema-feature {
+  display: flex;
   background: var(--systema-surface);
   color: var(--systema-text);
-  padding: 20px 28px 28px;
+  min-height: 185px;
+  padding: 24px 28px 28px;
   border-radius: 7px;
   transition: background 200ms;
+}
+.systema-feature > div {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
 }
 .systema-feature:hover {
   background: #e4e2dc;
