@@ -1285,9 +1285,9 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   background: var(--bg-hover);
 }
 
-.dashboard-primary-cta {
-  background: var(--text) !important;
-  color: var(--bg) !important;
+.dashboard-page .dashboard-primary-cta {
+  background: var(--text);
+  color: var(--bg);
 }
 
 .dashboard-primary-cta:hover {
@@ -1419,25 +1419,25 @@ html.dark:has(.learning-paths-page) {
   background: var(--bg-hover);
 }
 
-.learning-path-difficulty {
-  border-color: var(--border) !important;
+.learning-paths-page .learning-path-difficulty {
+  border-color: var(--border);
   background: transparent;
   color: var(--muted);
 }
 
-.learning-path-difficulty--easy {
-  border-color: #6a9b79 !important;
+.learning-paths-page .learning-path-difficulty--easy {
+  border-color: #6a9b79;
   color: #3f704f;
 }
 
-.learning-path-difficulty--medium {
-  border-color: #b9914c !important;
+.learning-paths-page .learning-path-difficulty--medium {
+  border-color: #b9914c;
   color: #8b672d;
 }
 
-.learning-path-difficulty--hard,
-.learning-path-difficulty--very-hard {
-  border-color: #bd6d66 !important;
+.learning-paths-page .learning-path-difficulty--hard,
+.learning-paths-page .learning-path-difficulty--very-hard {
+  border-color: #bd6d66;
   color: #994b44;
 }
 
@@ -1828,8 +1828,8 @@ html.dark:has(.design-studio-page) {
 
 .design-studio-page > header {
   border-bottom: 1px solid var(--border);
-  background: var(--bg) !important;
-  box-shadow: none !important;
+  background: var(--bg);
+  box-shadow: none;
   color: var(--text);
 }
 
@@ -1842,11 +1842,11 @@ html.dark:has(.design-studio-page) {
 
 .design-studio-page > header .text-white,
 .design-studio-page > header [class*="text-white/"] {
-  color: var(--text) !important;
+  color: var(--text);
 }
 
 .design-studio-page > header [class*="border-white/"] {
-  border-color: var(--border) !important;
+  border-color: var(--border);
 }
 
 /* Difficulty badges sit on the theme-aware playground header, so the generic
@@ -1900,32 +1900,32 @@ html.dark:has(.design-studio-page) {
 }
 
 .design-studio-page > header button:hover {
-  background: var(--bg-hover) !important;
+  background: var(--bg-hover);
 }
 
 .design-studio-page > header .product-sign-in:hover {
-  background: var(--text) !important;
-  color: var(--bg) !important;
+  background: var(--text);
+  color: var(--bg);
   opacity: 0.84;
 }
 
 .design-studio-page > header .bg-white\/20,
 .design-studio-page > header .bg-white\/15 {
-  background: var(--bg-hover) !important;
+  background: var(--bg-hover);
 }
 
 .design-studio-page > header .bg-emerald-500 {
-  background: #3f704f !important;
-  color: #fff !important;
+  background: #3f704f;
+  color: #fff;
 }
 
 .design-studio-page > header .bg-emerald-500:hover {
-  background: #518761 !important;
+  background: #518761;
 }
 
 .design-studio-page > header .bg-gray-100 {
-  background: var(--surface) !important;
-  color: var(--text) !important;
+  background: var(--surface);
+  color: var(--text);
 }
 
 /* Keep the shared brand mark inside Design Studio's compact 56px header. */
@@ -2006,6 +2006,7 @@ html.dark:has(.design-studio-page) {
   border-right: 0;
   border-bottom: 6px solid transparent;
   border-left: 6px solid rgba(249, 250, 251, 0.98);
+  border-left-color: var(--text);
   transform: translateY(-50%) translateX(4px);
 }
 
@@ -2026,11 +2027,6 @@ html.dark:has(.design-studio-page) {
     [data-tooltip=""]
   ):focus-visible::after {
   transform: translateY(-50%) translateX(0);
-}
-
-.design-studio-page
-  [data-tour="inspector-toggle"][data-tooltip]:not([data-tooltip=""])::after {
-  border-left-color: var(--text);
 }
 
 @media (max-width: 899px) {
