@@ -26,6 +26,9 @@ import {
   buildSystemDesignSolution,
 } from "../utils/designReviewContext";
 import { runCapacitySimulationInWorker } from "../utils/simulationWorker";
+import { apiService } from "../services/api";
+import type { SimulationSavedRun } from "../services/api";
+import { useAuth } from "../hooks/useAuth";
 
 type SimulationPanelProps = {
   nodes: Node[];
@@ -75,6 +78,19 @@ const ROLE_LABELS: Record<SimulationCapacityRole, string> = {
 
 const formatRate = (value: number) =>
   new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(value);
+
+const fingerprintValue = (value: unknown): string => {
+  const serialized = JSON.stringify(value) ?? "";
+  return [0x811c9dc5, 0x9e3779b9, 0x85ebca6b, 0xc2b2ae35]
+    .map((seed) => {
+      let hash = seed;
+      for (let index = 0; index < serialized.length; index += 1) {
+        hash = Math.imul(hash ^ serialized.charCodeAt(index), 0x01000193);
+      }
+      return (hash >>> 0).toString(16).padStart(8, "0");
+    })
+    .join("");
+};
 
 const provenanceLabel = (source: SimulationInputProvenance) =>
   source === "user" ? "your override" : "educational default";
@@ -279,6 +295,7 @@ function MetricRow({ metric }: { metric: SimulationResult["nodeMetrics"][number]
 
 const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem }) => {
   const { setCenter } = useReactFlow();
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const reasoningContext = useMemo<DesignReasoningContext>(
     () => buildProvidedReasoningContext(problem, nodes, edges),
     [problem, nodes, edges],
@@ -317,7 +334,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
         properties,
       }))
       .sort((a, b) => a.id.localeCompare(b.id));
-    return JSON.stringify({
+    return fingerprintValue({
       components,
       connections,
       problem: problem
@@ -347,6 +364,12 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
   const [currentRun, setCurrentRun] = useState<SimulationRunSnapshot | null>(null);
   const [baseline, setBaseline] = useState<SimulationRunSnapshot | null>(null);
   const [running, setRunning] = useState(false);
+  const [simulatorEnabled, setSimulatorEnabled] = useState<boolean | null>(null);
+  const [savedRuns, setSavedRuns] = useState<SimulationSavedRun[]>([]);
+  const [loadingSavedRuns, setLoadingSavedRuns] = useState(false);
+  const [savingRun, setSavingRun] = useState(false);
+  const [deletingRunId, setDeletingRunId] = useState<string | null>(null);
+  const [savedRunError, setSavedRunError] = useState<string | null>(null);
 
   const isPreparedForCurrentGraph =
     preparation?.status === "ready" && preparedFor === graphFingerprint;
@@ -385,6 +408,12 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
     }
   }, [graphFingerprint, preparedFor]);
 
+  useEffect(() => {
+    if (currentRun && currentRun.exerciseId !== (problem?.id ?? null)) {
+      setCurrentRun(null);
+    }
+  }, [currentRun, problem?.id]);
+
   useEffect(
     () => () => {
       preparationController.current?.abort();
@@ -392,6 +421,37 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
     },
     [],
   );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    apiService.getSimulationStatus(controller.signal)
+      .then((status) => setSimulatorEnabled(status.enabled))
+      .catch(() => setSimulatorEnabled(false));
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (isAuthLoading || !isAuthenticated || !problem?.id) {
+      setSavedRuns([]);
+      setSavedRunError(null);
+      return;
+    }
+    const controller = new AbortController();
+    setSavedRuns([]);
+    setSavedRunError(null);
+    setLoadingSavedRuns(true);
+    apiService.getSimulationRuns(
+      problem.id,
+      controller.signal,
+    ).then(setSavedRuns).catch((error) => {
+      if (!controller.signal.aborted) {
+        setSavedRunError(error instanceof Error ? error.message : "Saved runs could not be loaded.");
+      }
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoadingSavedRuns(false);
+    });
+    return () => controller.abort();
+  }, [isAuthenticated, isAuthLoading, problem?.id]);
 
   const handlePrepare = useCallback(async () => {
     preparationController.current?.abort();
@@ -404,6 +464,11 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
     setErrorMessage(null);
     setCurrentRun(null);
     try {
+      const status = await apiService.getSimulationStatus(controller.signal);
+      if (!status.enabled) {
+        setSimulatorEnabled(false);
+        throw new Error("Capacity simulation has been disabled. Try again later.");
+      }
       const prepared = await prepareSimulation(solution, problem, controller.signal);
       if (controller.signal.aborted) return;
       setPreparation(prepared);
@@ -468,6 +533,11 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
     setCurrentRun(null);
     setErrorMessage(null);
     try {
+      const status = await apiService.getSimulationStatus(controller.signal);
+      if (!status.enabled) {
+        setSimulatorEnabled(false);
+        throw new Error("Capacity simulation has been disabled. Try again later.");
+      }
       const result = await runCapacitySimulationInWorker(
         solution,
         preparation,
@@ -502,6 +572,47 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
     }
   };
 
+  const handleSaveRun = async () => {
+    if (!currentRun || !problem?.id || !isAuthenticated) return;
+    setSavingRun(true);
+    setSavedRunError(null);
+    try {
+      const saved = await apiService.saveSimulationRun(
+        problem.id,
+        problem.requirementSpec?.revision ?? null,
+        currentRun,
+      );
+      setSavedRuns((previous) => [saved, ...previous.filter((run) => run.runId !== saved.runId)].slice(0, 50));
+    } catch (error) {
+      setSavedRunError(error instanceof Error ? error.message : "This run could not be saved.");
+    } finally {
+      setSavingRun(false);
+    }
+  };
+
+  const handleLoadSavedRun = (run: SimulationSavedRun) => {
+    setCurrentRun(run.snapshot);
+    setInput(copyInput(run.snapshot.input));
+    setPreparation(null);
+    setPreparedFor(null);
+    setRoutesReviewedFor(null);
+    setErrorMessage(null);
+    setSavedRunError(null);
+  };
+
+  const handleDeleteSavedRun = async (runId: string) => {
+    setDeletingRunId(runId);
+    setSavedRunError(null);
+    try {
+      await apiService.deleteSimulationRun(runId);
+      setSavedRuns((previous) => previous.filter((run) => run.runId !== runId));
+    } catch (error) {
+      setSavedRunError(error instanceof Error ? error.message : "This saved run could not be deleted.");
+    } finally {
+      setDeletingRunId(null);
+    }
+  };
+
   const handleFocusBottleneck = () => {
     const component = solution.components.find(
       (item) => item.id === currentRun?.result.limitingNodeId,
@@ -528,6 +639,9 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
         baseline.result.estimatedCapacityAtMixRequestsPerSecond
       : 0;
   const inputSources = input.provenance;
+  const showDetachedRun = Boolean(
+    currentRun && (!simulatorEnabled || !isPreparedForCurrentGraph || !preparation),
+  );
 
   return (
     <section
@@ -570,6 +684,17 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
           <p className="mt-1 text-sm leading-5 text-muted">
             Draw a client path through application logic to a database, then prepare the
             redirect and create-link routes.
+          </p>
+        </div>
+      ) : simulatorEnabled === null ? (
+        <div className="rounded-lg border border-[var(--border)] p-4 text-sm text-muted" role="status">
+          Checking capacity simulator availability…
+        </div>
+      ) : !simulatorEnabled ? (
+        <div className="rounded-lg border border-amber-700/35 bg-amber-700/5 p-4" role="status">
+          <h3 className="text-sm font-semibold text-theme">Capacity simulation is temporarily unavailable</h3>
+          <p className="mt-1 text-sm leading-5 text-muted">
+            Your saved run history remains available below. Try again later for new path checks and capacity estimates.
           </p>
         </div>
       ) : (
@@ -884,7 +1009,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
                     <dd className="text-right font-medium tabular-nums text-theme">
                       {formatRate(currentRun.result.linkCreationsPerSecond)} req/s
                     </dd>
-                    {hasRedirectCache && (
+                    {snapshotHasRedirectCache(currentRun) && (
                       <>
                         <dt className="text-muted">Cache hits / misses</dt>
                         <dd className="text-right font-medium tabular-nums text-theme">
@@ -937,6 +1062,20 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
                     >
                       {baseline ? "Set this run as new baseline" : "Set current run as baseline"}
                     </button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {isAuthenticated ? (
+                      <button
+                        type="button"
+                        onClick={handleSaveRun}
+                        disabled={savingRun || !simulatorEnabled}
+                        className="min-h-9 rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-theme hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)] disabled:cursor-wait disabled:opacity-60"
+                      >
+                        {savingRun ? "Saving…" : "Save this run"}
+                      </button>
+                    ) : !isAuthLoading ? (
+                      <p className="text-xs text-muted">Sign in to save this run to your account.</p>
+                    ) : null}
                   </div>
                 </div>
               )}
@@ -1011,7 +1150,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
                   </details>
                   {currentRun && !isComparable && (
                     <p className="mt-2 text-xs text-muted">
-                      This baseline uses a different scenario or model version, so its capacity estimate cannot be compared.
+                      This baseline uses a different exercise, requirements revision, scenario, or model version, so its capacity estimate cannot be compared.
                     </p>
                   )}
                   {!currentRun && (
@@ -1052,6 +1191,124 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
             </div>
           )}
         </>
+      )}
+
+      {showDetachedRun && currentRun && (
+        <div className="flex flex-col gap-3 rounded-lg border border-[var(--border)] p-3" aria-live="polite">
+          <div>
+            <h3 className="text-sm font-semibold text-theme">Run snapshot</h3>
+            <p className="mt-1 text-sm leading-5 text-muted">
+              Estimated capacity: about {formatRate(currentRun.result.estimatedCapacityAtMixRequestsPerSecond)} requests/s at this workload mix. The limiting modeled component is {currentRun.result.nodeMetrics.find((metric) => metric.nodeId === currentRun.result.limitingNodeId)?.label ?? currentRun.result.limitingNodeId}.
+            </p>
+          </div>
+          <p className="text-xs leading-5 text-muted">
+            {formatRate(currentRun.input.requestRate)} req/s · {formatRate(currentRun.input.redirectSharePercent)}% redirects · {snapshotHasRedirectCache(currentRun) ? `${formatRate(currentRun.input.cacheHitPercent)}% assumed redirect cache hits` : "no redirect cache"} · {currentRun.input.modelVersion}
+          </p>
+          <details className="text-xs text-muted">
+            <summary className="cursor-pointer font-medium underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]">
+              Show paths and component results
+            </summary>
+            <ul className="mt-2 flex flex-col gap-2">
+              {currentRun.preparedRoutes.map((route) => (
+                <li key={route.operation}>
+                  <span className="font-semibold capitalize text-theme">{route.operation === "create-link" ? "Create link" : route.operation}</span>
+                  <span className="mt-0.5 block break-words">{route.nodeLabels.join(" → ")}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full min-w-[24rem] text-left">
+                <thead>
+                  <tr>
+                    <th className="pb-1 pr-3 font-medium text-theme">Component</th>
+                    <th className="pb-1 pr-3 text-right font-medium text-theme">Demand</th>
+                    <th className="pb-1 text-right font-medium text-theme">Capacity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentRun.result.nodeMetrics.map((metric) => (
+                    <tr key={metric.nodeId}>
+                      <td className="py-1 pr-3">{metric.label}</td>
+                      <td className="py-1 pr-3 text-right tabular-nums">{formatRate(metric.demandPerSecond)} {metric.unit}</td>
+                      <td className="py-1 text-right tabular-nums">{formatRate(metric.capacityPerSecond)} {metric.unit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </details>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setBaseline(currentRun)}
+              className="min-h-9 rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-theme hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]"
+            >
+              Use as comparison baseline
+            </button>
+            {currentRun.graphFingerprint === graphFingerprint && (
+              <button
+                type="button"
+                onClick={handleFocusBottleneck}
+                className="min-h-9 rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-theme hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]"
+              >
+                View on canvas
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {problem?.id && (
+        <section className="flex flex-col gap-2 border-t border-[var(--border)] pt-4" aria-labelledby="simulation-saved-runs-title">
+          <div>
+            <h3 id="simulation-saved-runs-title" className="text-sm font-semibold text-theme">Saved runs</h3>
+            <p className="mt-0.5 text-xs leading-5 text-muted">Up to 50 runs per account, retained for 90 days.</p>
+          </div>
+          {isAuthLoading ? (
+            <p className="text-sm text-muted" role="status">Checking account…</p>
+          ) : !isAuthenticated ? (
+            <p className="text-sm text-muted">Sign in to save and view runs on this exercise.</p>
+          ) : loadingSavedRuns ? (
+            <p className="text-sm text-muted" role="status">Loading saved runs…</p>
+          ) : savedRuns.length === 0 ? (
+            <p className="text-sm text-muted">No saved runs for this exercise yet.</p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {savedRuns.map((run) => (
+                <li key={run.runId} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--border)] p-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-theme">
+                      About {formatRate(run.snapshot.result.estimatedCapacityAtMixRequestsPerSecond)} requests/s
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(new Date(run.createdAt))} · {formatRate(run.snapshot.input.requestRate)} offered req/s · {run.snapshot.input.modelVersion}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleLoadSavedRun(run)}
+                      className="min-h-9 rounded-md border border-[var(--border)] px-3 py-1.5 text-sm font-medium text-theme hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]"
+                    >
+                      Load snapshot
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteSavedRun(run.runId)}
+                      disabled={deletingRunId !== null}
+                      className="min-h-9 rounded-md px-2 py-1.5 text-sm font-medium text-muted underline underline-offset-4 hover:text-theme focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)] disabled:cursor-wait disabled:opacity-60"
+                    >
+                      {deletingRunId === run.runId ? "Deleting…" : "Delete"}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          {savedRunError && (
+            <p role="alert" className="text-sm text-red-700 dark:text-red-300">{savedRunError}</p>
+          )}
+        </section>
       )}
     </section>
   );

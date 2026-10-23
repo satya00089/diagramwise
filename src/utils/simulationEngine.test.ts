@@ -129,11 +129,11 @@ describe("runCapacitySimulation", () => {
     const cache = result.nodeMetrics.find((metric) => metric.nodeId === "cache");
     const database = result.nodeMetrics.find((metric) => metric.nodeId === "db");
     expect(cache?.redirectDemandPerSecond).toBe(950);
-    expect(database?.redirectDemandPerSecond).toBe(95);
+    expect(database?.redirectDemandPerSecond).toBeCloseTo(95, 10);
     expect(database?.createLinkDemandPerSecond).toBe(50);
     expect(result.cacheHitsPerSecond).toBe(855);
-    expect(result.cacheMissesPerSecond).toBe(95);
-    expect(result.databaseRedirectReadsPerSecond).toBe(95);
+    expect(result.cacheMissesPerSecond).toBeCloseTo(95, 10);
+    expect(result.databaseRedirectReadsPerSecond).toBeCloseTo(95, 10);
     expect(result.bottleneckNodeId).toBeNull();
   });
 
