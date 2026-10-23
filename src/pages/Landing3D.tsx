@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  HiArrowDown,
   HiArrowRight,
   HiArrowUpRight,
   HiBars2,
@@ -525,8 +524,9 @@ export default function Landing3D() {
                   Practice system design <HiArrowUpRight />
                 </h3>
                 <p>
-                  Choose a realistic architecture prompt with requirements,
-                  constraints, and a workspace for your answer.
+                  Choose a realistic prompt—from AI/ML systems to core
+                  infrastructure—with clear requirements, constraints, and a
+                  workspace for your answer.
                 </p>
               </div>
             </Link>
@@ -542,18 +542,18 @@ export default function Landing3D() {
                 </p>
               </div>
             </Link>
-            <a href="#how-it-works" className="systema-feature">
+            <Link to="/problems/" className="systema-feature">
               <FeatureArt type="review" />
               <div>
                 <h3>
-                  Review your architecture <HiArrowDown />
+                  Get a guided walkthrough <HiArrowUpRight />
                 </h3>
                 <p>
-                  Get feedback on scalability, reliability, data design,
-                  performance, security, and trade-offs.
+                  Follow step-by-step guidance on supported problems and learn
+                  the reasoning behind each design decision.
                 </p>
               </div>
-            </a>
+            </Link>
             <Link to="/playground/free" className="systema-feature">
               <FeatureArt type="canvas" />
               <div>
@@ -561,8 +561,9 @@ export default function Landing3D() {
                   Start from a blank canvas <HiArrowUpRight />
                 </h3>
                 <p>
-                  Sketch freely when you already know what you want to explore.
-                  Save and share when you are ready.
+                  Sketch freely. Once your design is saved and you’re signed
+                  in, invite teammates to collaborate in real time and share a
+                  live link.
                 </p>
               </div>
             </Link>
@@ -612,10 +613,11 @@ export default function Landing3D() {
             <article>
               <span className="systema-toolkit-index">04</span>
               <FeatureArt type="share" />
-              <h3>Export and share</h3>
+              <h3>Collaborate, export, and share</h3>
               <p>
-                Export the architecture as an image or share a live link with
-                teammates when the conversation moves beyond the canvas.
+                Once a design is saved and you’re signed in, invite teammates
+                to work on the canvas in real time, then export the architecture
+                or share a live link.
               </p>
             </article>
           </div>
