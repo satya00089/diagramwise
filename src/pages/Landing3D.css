@@ -1193,9 +1193,10 @@ html:has(.systema-page[data-theme="dark"]) {
   transition: background 200ms;
 }
 .systema-feature > div {
-  display: flex;
+  display: grid;
   flex: 1;
-  flex-direction: column;
+  grid-template-rows: minmax(2.7em, auto) auto;
+  align-content: start;
 }
 .systema-feature:hover {
   background: #e4e2dc;
@@ -1214,11 +1215,12 @@ html:has(.systema-page[data-theme="dark"]) {
 }
 .systema-feature h3 {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 15px;
   font-size: 17px;
   font-weight: 400;
+  line-height: 1.35;
   letter-spacing: -0.025em;
 }
 .systema-feature h3 svg {
@@ -1271,8 +1273,11 @@ html:has(.systema-page[data-theme="dark"]) {
   grid-row: 1;
 }
 .systema-product-feature-visual {
+  display: flex;
   grid-column: 2;
   grid-row: 1;
+  align-items: center;
+  justify-content: center;
   min-width: 0;
 }
 .systema-product-feature--reverse .systema-product-feature-copy {
@@ -1305,7 +1310,8 @@ html:has(.systema-page[data-theme="dark"]) {
   margin-top: 22px;
 }
 .systema-product-feature-visual .systema-feature-art {
-  max-height: 310px;
+  max-width: 430px;
+  margin-inline: auto;
 }
 .systema-toolkit {
   border-top: 1px solid var(--systema-line);
@@ -1762,7 +1768,10 @@ html:has(.systema-page[data-theme="dark"]) {
     font-size: 25px;
   }
   .systema-product-feature-visual .systema-feature-art {
-    max-height: 240px;
+    max-width: 100%;
+  }
+  .systema-feature > div {
+    display: block;
   }
   .systema-value {
     gap: 36px;
