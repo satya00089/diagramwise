@@ -7,7 +7,7 @@ import type {
 import { CanvasVersionConflictError } from "../types/multiCanvas";
 import type {
   User,
-  AuthResponse,
+  SessionAuthResponse,
   SignupPendingResponse,
   LoginCredentials,
   SignupCredentials,
@@ -46,6 +46,9 @@ const API_BASE_URL = getApiBaseUrl(
   import.meta.env.VITE_ASSESSMENT_API_URL,
 );
 
+const apiFetch = (input: RequestInfo | URL, init: RequestInit = {}) =>
+  fetch(input, { ...init, credentials: "include" });
+
 export const GOOGLE_LOGIN_REDIRECT_URI =
   getGoogleLoginRedirectUri(API_BASE_URL);
 export const GOOGLE_LOGIN_START_URI = getGoogleLoginStartUri(API_BASE_URL);
@@ -74,11 +77,7 @@ class ApiService {
   }
 
   private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem("auth_token");
-    return {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
+    return { "Content-Type": "application/json" };
   }
 
   private async getErrorMessage(
@@ -123,8 +122,8 @@ class ApiService {
   }
 
   // Authentication endpoints
-  async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
+  async login(credentials: LoginCredentials): Promise<SessionAuthResponse> {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/session/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),
@@ -137,13 +136,23 @@ class ApiService {
     return response.json();
   }
 
-  async logout(token: string): Promise<void> {
+  async upgradeSession(token: string): Promise<SessionAuthResponse> {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/session/upgrade`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      throw await this.createApiError(response, "Could not restore this session");
+    }
+    return response.json();
+  }
+
+  async logout(): Promise<void> {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 5000);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/session/logout`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
         signal: controller.signal,
       });
       // An expired or already revoked token cannot be used again.
@@ -157,7 +166,7 @@ class ApiService {
   }
 
   async signup(credentials: SignupCredentials): Promise<SignupPendingResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/signup`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -179,7 +188,7 @@ class ApiService {
     userId: string,
     token: string,
   ): Promise<SignupPendingResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/verify-email`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/verify-email`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, token }),
@@ -193,7 +202,7 @@ class ApiService {
   }
 
   async resendVerification(email: string): Promise<SignupPendingResponse> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/auth/resend-verification`,
       {
         method: "POST",
@@ -212,8 +221,8 @@ class ApiService {
     return response.json();
   }
 
-  async googleLogin(credential: string): Promise<AuthResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/google`, {
+  async googleLogin(credential: string): Promise<SessionAuthResponse> {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/session/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ credential }),
@@ -228,9 +237,9 @@ class ApiService {
     return response.json();
   }
 
-  async exchangeGoogleLoginHandoff(code: string): Promise<AuthResponse> {
-    const response = await fetch(
-      `${API_BASE_URL}/api/v1/auth/google/redirect/exchange`,
+  async exchangeGoogleLoginHandoff(code: string): Promise<SessionAuthResponse> {
+    const response = await apiFetch(
+      `${API_BASE_URL}/api/v1/auth/session/google/redirect/exchange`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -251,7 +260,7 @@ class ApiService {
   }
 
   async getCurrentUser(): Promise<User> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/me`, {
       headers: this.getAuthHeaders(),
     });
 
@@ -266,7 +275,7 @@ class ApiService {
     firstName: string;
     lastName: string;
   }): Promise<User> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/me/profile`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/me/profile`, {
       method: "PATCH",
       headers: this.getAuthHeaders(),
       body: JSON.stringify(profile),
@@ -282,7 +291,7 @@ class ApiService {
   }
 
   async updateAvatar(avatarKey: string | null): Promise<User> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/me/avatar`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/me/avatar`, {
       method: "PATCH",
       headers: this.getAuthHeaders(),
       body: JSON.stringify({ avatarKey }),
@@ -299,7 +308,7 @@ class ApiService {
 
   // User preferences endpoints
   async getPreferences(): Promise<Record<string, unknown> | null> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/me/preferences`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/me/preferences`, {
       headers: this.getAuthHeaders(),
     });
 
@@ -312,7 +321,7 @@ class ApiService {
   async updatePreferences(
     preferences: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/auth/me/preferences`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/me/preferences`, {
       method: "PATCH",
       headers: this.getAuthHeaders(),
       body: JSON.stringify(preferences),
@@ -329,7 +338,7 @@ class ApiService {
 
   // Diagram management endpoints
   async saveDiagram(payload: SaveDiagramPayload): Promise<SavedDiagram> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/diagrams`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/diagrams`, {
       method: "POST",
       headers: this.getAuthHeaders(),
       body: JSON.stringify(payload),
@@ -348,7 +357,7 @@ class ApiService {
     id: string,
     payload: SaveDiagramPayload,
   ): Promise<SavedDiagram> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/diagrams/${id}`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/diagrams/${id}`, {
       method: "PUT",
       headers: this.getAuthHeaders(),
       body: JSON.stringify(payload),
@@ -372,7 +381,7 @@ class ApiService {
       reasoningContext: SaveDiagramPayload["reasoningContext"];
     },
   ): Promise<SavedDiagram> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/diagrams/${id}`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/diagrams/${id}`, {
       method: "PUT",
       headers: this.getAuthHeaders(),
       body: JSON.stringify(payload),
@@ -392,7 +401,7 @@ class ApiService {
     const params = new URLSearchParams({ limit: String(limit) });
     if (cursor) params.set("cursor", cursor);
 
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/diagrams?${params.toString()}`,
       {
         headers: this.getAuthHeaders(),
@@ -412,7 +421,7 @@ class ApiService {
   }
 
   async getDiagram(id: string): Promise<SavedDiagram> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/diagrams/${id}`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/diagrams/${id}`, {
       headers: this.getAuthHeaders(),
     });
 
@@ -426,7 +435,7 @@ class ApiService {
   async getDiagramWorkspace(
     id: string,
   ): Promise<CanvasWorkspaceBootstrapResponse> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/diagrams/${encodeURIComponent(id)}/workspace`,
       { headers: this.getAuthHeaders() },
     );
@@ -437,7 +446,7 @@ class ApiService {
   }
 
   async getPublicDiagram(id: string): Promise<SavedDiagram> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/diagrams/${id}/public`,
       {
         headers: { "Content-Type": "application/json" },
@@ -452,7 +461,7 @@ class ApiService {
   }
 
   async deleteDiagram(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/diagrams/${id}`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/diagrams/${id}`, {
       method: "DELETE",
       headers: this.getAuthHeaders(),
     });
@@ -464,7 +473,7 @@ class ApiService {
 
   // Canvas (tab) endpoints for multi-canvas workspaces
   async listCanvases(workspaceId: string): Promise<CanvasListResponse> {
-    const response = await fetch(this.canvasCollectionUrl(workspaceId), {
+    const response = await apiFetch(this.canvasCollectionUrl(workspaceId), {
       headers: this.getAuthHeaders(),
     });
     if (!response.ok) {
@@ -477,7 +486,7 @@ class ApiService {
     workspaceId: string,
     canvasId: string,
   ): Promise<CanvasDetail> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${this.canvasCollectionUrl(workspaceId)}/${encodeURIComponent(canvasId)}`,
       { headers: this.getAuthHeaders() },
     );
@@ -491,7 +500,7 @@ class ApiService {
     workspaceId: string,
     body: { name: string; kind: CanvasKind },
   ): Promise<CanvasDetail> {
-    const response = await fetch(this.canvasCollectionUrl(workspaceId), {
+    const response = await apiFetch(this.canvasCollectionUrl(workspaceId), {
       method: "POST",
       headers: this.getAuthHeaders(),
       body: JSON.stringify(body),
@@ -508,7 +517,7 @@ class ApiService {
     canvasId: string,
     body: { nodes: unknown[]; edges: unknown[]; version: number },
   ): Promise<CanvasDetail> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${this.canvasCollectionUrl(workspaceId)}/${encodeURIComponent(canvasId)}`,
       {
         method: "PUT",
@@ -532,7 +541,7 @@ class ApiService {
     canvasId: string,
     body: { name?: string; kind?: CanvasKind },
   ): Promise<CanvasDetail> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${this.canvasCollectionUrl(workspaceId)}/${encodeURIComponent(canvasId)}`,
       {
         method: "PATCH",
@@ -550,7 +559,7 @@ class ApiService {
     workspaceId: string,
     orderedIds: string[],
   ): Promise<CanvasListResponse> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${this.canvasCollectionUrl(workspaceId)}/reorder`,
       {
         method: "POST",
@@ -568,7 +577,7 @@ class ApiService {
     workspaceId: string,
     canvasId: string,
   ): Promise<CanvasDetail> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${this.canvasCollectionUrl(workspaceId)}/${encodeURIComponent(canvasId)}/duplicate`,
       { method: "POST", headers: this.getAuthHeaders() },
     );
@@ -579,7 +588,7 @@ class ApiService {
   }
 
   async deleteCanvas(workspaceId: string, canvasId: string): Promise<void> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${this.canvasCollectionUrl(workspaceId)}/${encodeURIComponent(canvasId)}`,
       { method: "DELETE", headers: this.getAuthHeaders() },
     );
@@ -594,7 +603,7 @@ class ApiService {
     email: string,
     permission: "read" | "edit",
   ): Promise<void> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/diagrams/${diagramId}/share`,
       {
         method: "POST",
@@ -611,7 +620,7 @@ class ApiService {
   }
 
   async getCollaborators(diagramId: string): Promise<Collaborator[]> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/diagrams/${diagramId}/collaborators`,
       {
         headers: this.getAuthHeaders(),
@@ -630,7 +639,7 @@ class ApiService {
     collaboratorId: string,
     permission: "read" | "edit",
   ): Promise<void> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/diagrams/${diagramId}/collaborators/${collaboratorId}`,
       {
         method: "PUT",
@@ -650,7 +659,7 @@ class ApiService {
     diagramId: string,
     collaboratorId: string,
   ): Promise<void> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/diagrams/${diagramId}/collaborators/${collaboratorId}`,
       {
         method: "DELETE",
@@ -665,7 +674,7 @@ class ApiService {
 
   // Problem attempts tracking
   async getAttemptedProblems(): Promise<string[]> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/problems/attempted`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/problems/attempted`, {
       headers: this.getAuthHeaders(),
     });
 
@@ -693,7 +702,7 @@ class ApiService {
     interviewSession?: InterviewSession;
     addressedFindingIds?: string[];
   }): Promise<unknown> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/attempts`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/attempts`, {
       method: "POST",
       headers: this.getAuthHeaders(),
       body: JSON.stringify(payload),
@@ -710,7 +719,7 @@ class ApiService {
   }
 
   async getUserAttempts(): Promise<unknown[]> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/attempts`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/attempts`, {
       headers: this.getAuthHeaders(),
     });
 
@@ -722,7 +731,7 @@ class ApiService {
   }
 
   async getAttemptByProblem(problemId: string): Promise<unknown> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/attempts/problem/${problemId}`,
       {
         headers: this.getAuthHeaders(),
@@ -741,7 +750,7 @@ class ApiService {
   }
 
   async deleteAttempt(problemId: string): Promise<void> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/attempts/problem/${problemId}`,
       {
         method: "DELETE",
@@ -832,7 +841,7 @@ class ApiService {
       max_suggestions: payload.maxSuggestions || 5,
     };
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/recommendations`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/recommendations`, {
       method: "POST",
       headers: this.getAuthHeaders(),
       body: JSON.stringify(requestPayload),
@@ -888,7 +897,7 @@ class ApiService {
   async publishAttempt(
     attemptId: string,
   ): Promise<{ publicUrl: string; publishedAt: string; attemptId: string }> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/attempts/${encodeURIComponent(attemptId)}/publish`,
       {
         method: "POST",
@@ -902,7 +911,7 @@ class ApiService {
   }
 
   async unpublishAttempt(attemptId: string): Promise<void> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/attempts/${encodeURIComponent(attemptId)}/unpublish`,
       {
         method: "POST",
@@ -927,7 +936,7 @@ class ApiService {
     viewCount: number;
     elapsedTime: number;
   }> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/solutions/${encodeURIComponent(attemptId)}`,
     );
     if (!response.ok)
@@ -945,7 +954,7 @@ class ApiService {
       elapsedTime: number;
     }>
   > {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/problems/${encodeURIComponent(problemId)}/leaderboard`,
     );
     if (!response.ok) return [];
@@ -966,7 +975,7 @@ class ApiService {
     twitterPost: string;
     mediumArticle: string;
   }> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/share/generate-article`,
       {
         method: "POST",
@@ -987,7 +996,7 @@ class ApiService {
     publicUrl: string;
     publishedAt: string;
   }> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/diagrams/${encodeURIComponent(diagramId)}/publish`,
       {
         method: "POST",
@@ -1001,7 +1010,7 @@ class ApiService {
   }
 
   async unpublishDiagram(diagramId: string): Promise<void> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/diagrams/${encodeURIComponent(diagramId)}/unpublish`,
       {
         method: "POST",
@@ -1025,7 +1034,7 @@ class ApiService {
     familyId?: string | null;
     sourceDiagramId?: string | null;
   }> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/public/diagrams/${encodeURIComponent(diagramId)}`,
     );
     if (!response.ok)
@@ -1036,7 +1045,7 @@ class ApiService {
   async getWalkthrough(
     problemId: string,
   ): Promise<import("../types/systemDesign").GuidedWalkthrough> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/problem/${encodeURIComponent(problemId)}/walkthrough`,
     );
     if (response.status === 404) {
@@ -1070,7 +1079,7 @@ class ApiService {
       graph_edge_count: number;
     }>;
   }): Promise<void> {
-    await fetch(`${API_BASE_URL}/api/v1/events/batch`, {
+    await apiFetch(`${API_BASE_URL}/api/v1/events/batch`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -1095,7 +1104,7 @@ class ApiService {
       time_on_page_ms?: number;
     }>;
   }): Promise<void> {
-    await fetch(`${API_BASE_URL}/api/v1/analytics/event`, {
+    await apiFetch(`${API_BASE_URL}/api/v1/analytics/event`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -1116,7 +1125,7 @@ class ApiService {
       time_on_page_ms?: number;
     }>;
   }): Promise<void> {
-    await fetch(`${API_BASE_URL}/api/v1/analytics/batch`, {
+    await apiFetch(`${API_BASE_URL}/api/v1/analytics/batch`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -1129,7 +1138,7 @@ class ApiService {
     period?: AdminAnalyticsPeriod,
   ): Promise<AdminOverview> {
     const dateRange = period ? `period=${period}` : `days=${days}`;
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/admin/overview?${dateRange}`,
       { headers: this.getAuthHeaders() },
     );
@@ -1147,7 +1156,7 @@ class ApiService {
     period?: AdminAnalyticsPeriod,
   ): Promise<AdminGoogleAnalyticsReport> {
     const dateRange = period ? `period=${period}` : `days=${days}`;
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/admin/google-analytics?${dateRange}`,
       { headers: this.getAuthHeaders() },
     );
@@ -1165,7 +1174,7 @@ class ApiService {
     period?: AdminAnalyticsPeriod,
   ): Promise<AdminApiLatencyReport> {
     const dateRange = period ? `period=${period}` : `days=${days}`;
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/admin/api-latency?${dateRange}`,
       { headers: this.getAuthHeaders() },
     );
@@ -1179,7 +1188,7 @@ class ApiService {
   }
 
   async getAdminAccess(): Promise<AdminAccessUser[]> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/admin/access`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/admin/access`, {
       headers: this.getAuthHeaders(),
     });
     if (!response.ok) {
@@ -1189,7 +1198,7 @@ class ApiService {
   }
 
   async grantAdminAccess(email: string): Promise<AdminAccessUser> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/admin/access`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/admin/access`, {
       method: "POST",
       headers: this.getAuthHeaders(),
       body: JSON.stringify({ email }),
@@ -1201,7 +1210,7 @@ class ApiService {
   }
 
   async revokeAdminAccess(userId: string): Promise<void> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/admin/access/${userId}`,
       {
         method: "DELETE",
@@ -1220,7 +1229,7 @@ class ApiService {
     feedbackId: string,
     status: "new" | "reviewing" | "resolved",
   ): Promise<AdminFeedbackItem> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/admin/feedback/${feedbackId}`,
       {
         method: "PATCH",
@@ -1237,7 +1246,7 @@ class ApiService {
   // Durable product feedback. Unlike analytics, written feedback is stored
   // as an individual item so it can be triaged and acted on later.
   async submitFeedback(payload: FeedbackSubmission): Promise<FeedbackResponse> {
-    const response = await fetch(`${API_BASE_URL}/api/v1/feedback`, {
+    const response = await apiFetch(`${API_BASE_URL}/api/v1/feedback`, {
       method: "POST",
       headers: this.getAuthHeaders(),
       body: JSON.stringify(payload),
@@ -1257,7 +1266,7 @@ class ApiService {
 
   // Retrieve learning progress for a path
   async getLearningProgress(pathId: string): Promise<string[]> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/learning-paths/${pathId}/progress`,
       {
         headers: this.getAuthHeaders(),
@@ -1283,7 +1292,7 @@ class ApiService {
     pathId: string,
     completed: string[],
   ): Promise<Record<string, unknown>> {
-    const response = await fetch(
+    const response = await apiFetch(
       `${API_BASE_URL}/api/v1/learning-paths/${pathId}/progress`,
       {
         method: "POST",

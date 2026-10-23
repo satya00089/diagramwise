@@ -63,6 +63,16 @@ A design or problem attempt is a **workspace**. Its tabs are **canvases** (up to
 - **Overflow to S3** only if measurements show canvases still exceed the limit after compression.
 - **Slim the saved node data** by dropping React Flow runtime fields (`width`, `height`, `selected`, `dragging`, `positionAbsolute`) before saving.
 
+## Security roadmap
+
+**Status (2026-10-23):** Cookie-based browser authentication is implemented in the frontend and API source. Deploy the API first, then the frontend. The API temporarily retains legacy bearer endpoints and WebSocket query-token support so already-open older clients keep working during rollout; remove those paths after the frontend migration is complete. Existing browser sessions rotate to a new cookie session when the updated frontend starts.
+
+- **Cookie and UI behavior.** Password login, Google Sign-In, redirect exchange, `/auth/me`, and logout now use a host-only `Secure`, `HttpOnly` cookie. Secure deployments use `SameSite=None` because the allowed `diagrammatic.next-zen.dev` frontend is cross-site from `api.diagramwise.com`; local HTTP development uses `SameSite=Lax`. The UI gets the user and roles from the response and `/auth/me`; no JWT is held in React state. API calls include credentials.
+- **Existing sessions.** The frontend upgrades a stored legacy bearer once, rotates and revokes it through the API, then removes `auth_token`. Initial loading waits for `/auth/me` or the upgrade so signed-in controls do not briefly appear signed out. Cross-tab changes use `BroadcastChannel` and each tab refreshes `/auth/me`.
+- **Request protection.** Cookie-authenticated state changes and browser login exchanges require an exact allowed `Origin`; WebSocket connections check `Origin` and prefer cookie authentication.
+- **Before production rollout.** Deploy the API first, then the frontend. Verify email/password and both Google flows, reload persistence, logout and revocation, multiple tabs, admin visibility, and rejection of foreign origins. Set `AUTH_COOKIE_SECURE=false` only for local HTTP development.
+- **After the frontend rollout.** Remove the temporary legacy bearer login/exchange routes and WebSocket query-token fallback once old clients have refreshed.
+
 ## Decisions still open
 
 - Should background preference be per design or per browser? It is per browser today.
