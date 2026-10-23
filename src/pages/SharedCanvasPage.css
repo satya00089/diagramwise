@@ -391,15 +391,15 @@
 }
 
 .shared-panel-body .bg-\[var\(--surface\)\] {
-  background: var(--shared-surface-raised) !important;
+  background: var(--shared-surface-raised);
 }
 
 .shared-panel-body .bg-\[var\(--bg\)\] {
-  background: var(--shared-bg) !important;
+  background: var(--shared-bg);
 }
 
 .shared-panel-body [class*="border-[var(--border)]"] {
-  border-color: var(--shared-line) !important;
+  border-color: var(--shared-line);
 }
 
 .shared-panel-body [class*="rounded-xl"] {
@@ -414,13 +414,13 @@
   min-height: 46px;
   border: 1px solid var(--shared-text);
   border-radius: 5px;
-  background: var(--shared-text) !important;
-  color: var(--shared-bg) !important;
+  background: var(--shared-text);
+  color: var(--shared-bg);
   letter-spacing: 0.01em;
 }
 
 .shared-panel-footer a:hover {
-  background: color-mix(in srgb, var(--shared-text) 84%, var(--shared-bg)) !important;
+  background: color-mix(in srgb, var(--shared-text) 84%, var(--shared-bg));
   filter: none;
 }
 

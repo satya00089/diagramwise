@@ -634,6 +634,15 @@ const createFreeformNodeWithCopyHandler = (
   };
 };
 
+const getPlaygroundDifficultyClass = (
+  difficulty: string | undefined,
+): string => {
+  if (difficulty === "Easy") return "playground-difficulty--easy";
+  if (difficulty === "Medium") return "playground-difficulty--medium";
+  if (difficulty === "Very Hard") return "playground-difficulty--very-hard";
+  return "playground-difficulty--hard";
+};
+
 const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   useTheme();
   const navigate = useNavigate();
@@ -2101,21 +2110,26 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       ...(targetFieldId ? { targetFieldId } : {}),
     };
 
+    let edgeData: Record<string, unknown>;
+    if (isERConnection) {
+      edgeData = {
+        label: "",
+        hasLabel: false,
+        cardinality: "one-to-many",
+        ...(sourceFieldId ? { sourceFieldId } : {}),
+        ...(targetFieldId ? { targetFieldId } : {}),
+      };
+    } else if (isDocumentConnection) {
+      edgeData = fieldConnectionData;
+    } else {
+      edgeData = { label: "", hasLabel: false };
+    }
+
     // Use ER relationship edge for ER diagrams, custom edge for others
     const newEdge = {
       ...connection,
       type: isERConnection ? "erRelationship" : "customEdge",
-      data: isERConnection
-        ? {
-            label: "",
-            hasLabel: false,
-            cardinality: "one-to-many",
-            ...(sourceFieldId ? { sourceFieldId } : {}),
-            ...(targetFieldId ? { targetFieldId } : {}),
-          }
-        : isDocumentConnection
-          ? fieldConnectionData
-          : { label: "", hasLabel: false },
+      data: edgeData,
     } as unknown as Edge;
     setEdges((eds) => addEdge(newEdge, eds));
   };
@@ -5486,13 +5500,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                     <>
                       <span
                         className={`playground-difficulty px-2 py-1 rounded text-xs font-medium ${
-                          problem.difficulty === "Easy"
-                            ? "playground-difficulty--easy"
-                            : problem.difficulty === "Medium"
-                              ? "playground-difficulty--medium"
-                              : problem.difficulty === "Very Hard"
-                                ? "playground-difficulty--very-hard"
-                                : "playground-difficulty--hard"
+                          getPlaygroundDifficultyClass(problem.difficulty)
                         }`}
                       >
                         {problem.difficulty}
