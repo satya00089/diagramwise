@@ -237,23 +237,23 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   gap: 28px;
 }
 
-/* Compact product update. The announcement shares the editorial page surface
-   so it reads as part of the product header, not a separate notification skin. */
+/* Product updates use the same paper-and-ink surface at every viewport size. */
 .announcement-bar {
-  min-height: 54px;
+  display: flex;
   align-items: center;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   color: var(--text);
+  box-shadow: 0 8px 24px rgb(17 24 39 / 8%);
 }
 
 .announcement-bar__inner {
   display: flex;
   width: min(1280px, calc(100% - 64px));
-  min-height: 54px;
+  min-height: 64px;
   margin: 0 auto;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 /* Shared editorial popup primitives. New modal surfaces should compose these
@@ -314,7 +314,7 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
 }
 
 .app-modal__close:focus-visible,
-.app-modal__field:focus-visible,
+.app-modal .app-modal__field:focus-visible,
 .app-modal__secondary:focus-visible,
 .app-modal__primary:focus-visible {
   outline: 2px solid var(--accent);
@@ -348,13 +348,13 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   letter-spacing: 0.01em;
 }
 
-.app-modal__field {
+.app-modal .app-modal__field {
   min-height: 42px;
   padding: 9px 12px;
-  border: 1px solid var(--border) !important;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--bg) !important;
-  color: var(--text) !important;
+  background: var(--bg);
+  color: var(--text);
   font: inherit;
   font-size: 14px;
   transition:
@@ -386,12 +386,12 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   bottom: calc(100% + 8px);
 }
 
-.app-modal__field:hover {
-  border-color: color-mix(in srgb, var(--accent) 48%, var(--border)) !important;
+.app-modal .app-modal__field:hover {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
 }
 
-.app-modal__field:focus-visible {
-  border-color: var(--accent) !important;
+.app-modal .app-modal__field:focus-visible {
+  border-color: var(--accent);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
@@ -457,25 +457,32 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   flex: none;
   align-items: center;
   justify-content: center;
-  color: var(--accent);
+  color: var(--product-accent);
 }
 
 .announcement-bar__content {
-  display: flex;
+  display: grid;
   min-width: 0;
   flex: 1;
-  align-items: center;
+  gap: 4px;
+}
+
+.announcement-bar__heading {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
   gap: 10px;
 }
 
 .announcement-bar__badge {
   flex: none;
-  padding: 3px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--accent) 48%, var(--border));
-  color: var(--accent);
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--product-accent);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
   line-height: 1;
   text-transform: uppercase;
 }
@@ -484,11 +491,19 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   min-width: 0;
   overflow: hidden;
   color: var(--text);
-  font-family: "Instrument Serif", Georgia, serif;
-  font-size: 17px;
-  font-weight: 400;
-  letter-spacing: -0.02em;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.announcement-bar__description {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -499,21 +514,24 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   flex: none;
   align-items: center;
   justify-content: center;
-  padding: 7px 16px;
-  border: 1px solid var(--text);
-  border-radius: 9px;
-  background: var(--text);
-  color: var(--bg);
+  padding: 8px 13px;
+  border: 1px solid var(--product-accent);
+  border-radius: 8px;
+  background: var(--product-accent);
+  color: var(--product-accent-contrast);
   font-size: 12px;
   font-weight: 650;
   line-height: 1;
+  cursor: pointer;
   transition:
-    background-color 180ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
     transform 180ms ease;
 }
 
 .announcement-bar__cta:hover {
-  background: color-mix(in srgb, var(--text) 86%, var(--accent));
+  border-color: var(--product-accent-hover);
+  background: var(--product-accent-hover);
 }
 
 .announcement-bar__cta:active {
@@ -529,6 +547,7 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   justify-content: center;
   border-radius: 8px;
   color: var(--muted);
+  cursor: pointer;
   transition:
     background-color 180ms ease,
     color 180ms ease;
@@ -546,13 +565,84 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
 
 .announcement-bar__cta:focus-visible,
 .announcement-bar__dismiss:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--product-accent);
   outline-offset: 3px;
 }
 
 @media (max-width: 899px) {
   .announcement-bar__inner {
-    width: calc(100% - 40px);
+    width: calc(100% - 32px);
+    gap: 12px;
+  }
+
+  .announcement-bar__heading {
+    gap: 8px;
+  }
+
+  .announcement-bar__description {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 767px) {
+  .announcement-bar__inner {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) 32px;
+    grid-template-areas:
+      "icon content dismiss"
+      ". cta .";
+    align-items: start;
+    gap: 8px 10px;
+    padding: 12px 0;
+  }
+
+  .announcement-bar__icon {
+    grid-area: icon;
+    width: 24px;
+    height: 24px;
+    margin-top: 1px;
+  }
+
+  .announcement-bar__content {
+    grid-area: content;
+    gap: 5px;
+  }
+
+  .announcement-bar__heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .announcement-bar__title {
+    overflow: visible;
+    white-space: normal;
+  }
+
+  .announcement-bar__description {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .announcement-bar__cta {
+    grid-area: cta;
+    justify-self: start;
+    min-height: 30px;
+    padding: 7px 11px;
+  }
+
+  .announcement-bar__dismiss {
+    grid-area: dismiss;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .announcement-bar__cta,
+  .announcement-bar__dismiss {
+    transition-duration: 1ms;
   }
 }
 
@@ -624,7 +714,7 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
 }
 
 .home-page .landing-accent-copy {
-  color: var(--product-accent) !important;
+  color: var(--product-accent);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1067,12 +1157,12 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   box-shadow: 0 12px 30px rgb(0 0 0 / 4%);
 }
 
-.dashboard-search-input {
-  border-color: var(--border) !important;
+.dashboard-filter-shell .dashboard-search-input {
+  border-color: var(--border);
 }
 
-.dashboard-search-input:hover {
-  border-color: color-mix(in srgb, var(--text) 45%, var(--border)) !important;
+.dashboard-filter-shell .dashboard-search-input:hover {
+  border-color: color-mix(in srgb, var(--text) 45%, var(--border));
 }
 
 .dashboard-select-wrapper {
@@ -1219,10 +1309,10 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   transform: translateY(-4px);
 }
 
-.dashboard-guided-banner {
-  border-bottom: 1px solid var(--border);
-  background: var(--bg-hover);
-  color: var(--text);
+.dashboard-walkthrough-chip {
+  border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
+  background: color-mix(in srgb, var(--brand) 10%, transparent);
+  color: var(--brand);
 }
 
 .dashboard-recommended {
@@ -1285,9 +1375,9 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   background: var(--bg-hover);
 }
 
-.dashboard-primary-cta {
-  background: var(--text) !important;
-  color: var(--bg) !important;
+.dashboard-page .dashboard-primary-cta {
+  background: var(--text);
+  color: var(--bg);
 }
 
 .dashboard-primary-cta:hover {
@@ -1419,25 +1509,25 @@ html.dark:has(.learning-paths-page) {
   background: var(--bg-hover);
 }
 
-.learning-path-difficulty {
-  border-color: var(--border) !important;
+.learning-paths-page .learning-path-difficulty {
+  border-color: var(--border);
   background: transparent;
   color: var(--muted);
 }
 
-.learning-path-difficulty--easy {
-  border-color: #6a9b79 !important;
+.learning-paths-page .learning-path-difficulty--easy {
+  border-color: #6a9b79;
   color: #3f704f;
 }
 
-.learning-path-difficulty--medium {
-  border-color: #b9914c !important;
+.learning-paths-page .learning-path-difficulty--medium {
+  border-color: #b9914c;
   color: #8b672d;
 }
 
-.learning-path-difficulty--hard,
-.learning-path-difficulty--very-hard {
-  border-color: #bd6d66 !important;
+.learning-paths-page .learning-path-difficulty--hard,
+.learning-paths-page .learning-path-difficulty--very-hard {
+  border-color: #bd6d66;
   color: #994b44;
 }
 
@@ -1828,8 +1918,8 @@ html.dark:has(.design-studio-page) {
 
 .design-studio-page > header {
   border-bottom: 1px solid var(--border);
-  background: var(--bg) !important;
-  box-shadow: none !important;
+  background: var(--bg);
+  box-shadow: none;
   color: var(--text);
 }
 
@@ -1842,11 +1932,11 @@ html.dark:has(.design-studio-page) {
 
 .design-studio-page > header .text-white,
 .design-studio-page > header [class*="text-white/"] {
-  color: var(--text) !important;
+  color: var(--text);
 }
 
 .design-studio-page > header [class*="border-white/"] {
-  border-color: var(--border) !important;
+  border-color: var(--border);
 }
 
 /* Difficulty badges sit on the theme-aware playground header, so the generic
@@ -1900,32 +1990,32 @@ html.dark:has(.design-studio-page) {
 }
 
 .design-studio-page > header button:hover {
-  background: var(--bg-hover) !important;
+  background: var(--bg-hover);
 }
 
 .design-studio-page > header .product-sign-in:hover {
-  background: var(--text) !important;
-  color: var(--bg) !important;
+  background: var(--text);
+  color: var(--bg);
   opacity: 0.84;
 }
 
 .design-studio-page > header .bg-white\/20,
 .design-studio-page > header .bg-white\/15 {
-  background: var(--bg-hover) !important;
+  background: var(--bg-hover);
 }
 
 .design-studio-page > header .bg-emerald-500 {
-  background: #3f704f !important;
-  color: #fff !important;
+  background: #3f704f;
+  color: #fff;
 }
 
 .design-studio-page > header .bg-emerald-500:hover {
-  background: #518761 !important;
+  background: #518761;
 }
 
 .design-studio-page > header .bg-gray-100 {
-  background: var(--surface) !important;
-  color: var(--text) !important;
+  background: var(--surface);
+  color: var(--text);
 }
 
 /* Keep the shared brand mark inside Design Studio's compact 56px header. */
@@ -2006,6 +2096,7 @@ html.dark:has(.design-studio-page) {
   border-right: 0;
   border-bottom: 6px solid transparent;
   border-left: 6px solid rgba(249, 250, 251, 0.98);
+  border-left-color: var(--text);
   transform: translateY(-50%) translateX(4px);
 }
 
@@ -2026,11 +2117,6 @@ html.dark:has(.design-studio-page) {
     [data-tooltip=""]
   ):focus-visible::after {
   transform: translateY(-50%) translateX(0);
-}
-
-.design-studio-page
-  [data-tour="inspector-toggle"][data-tooltip]:not([data-tooltip=""])::after {
-  border-left-color: var(--text);
 }
 
 @media (max-width: 899px) {
@@ -2263,7 +2349,7 @@ h6 {
 
 /* Typography: ensure Tailwind 'prose' uses theme variables for light/dark */
 .prose {
-  color: var(--text) !important;
+  color: var(--text);
 }
 .prose p,
 .prose li,
@@ -2277,7 +2363,7 @@ h6 {
 .prose code,
 .prose strong,
 .prose em {
-  color: inherit !important;
+  color: inherit;
 }
 .prose h1,
 .prose h2,
@@ -2285,21 +2371,21 @@ h6 {
 .prose h4,
 .prose h5,
 .prose h6 {
-  color: var(--text) !important;
+  color: var(--text);
 }
 .prose a {
   color: var(--brand) !important;
 }
 .prose table {
-  border-color: var(--border) !important;
+  border-color: var(--border);
 }
 .prose th {
-  color: var(--text) !important;
+  color: var(--text);
 }
 
 /* Ensure 'prose-invert' still relies on variables (dark mode) */
 .prose.prose-invert {
-  color: var(--text) !important;
+  color: var(--text);
 }
 
 /* Utility classes */

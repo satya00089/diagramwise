@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useWindowVirtualizer } from "@tanstack/react-virtual";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -14,6 +14,8 @@ import {
   MdSearchOff,
   MdSmartToy,
   MdHelpOutline,
+  MdMenuBook,
+  MdExpandMore,
 } from "react-icons/md";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import ProductHeader from "../components/ProductHeader";
@@ -24,7 +26,7 @@ import { useOnboarding } from "../hooks/useOnboarding";
 import { useTour } from "../hooks/useTour";
 import useAnalytics from "../hooks/useAnalytics";
 import { AuthModal } from "../components/AuthModal";
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   fetchProblems,
@@ -84,6 +86,37 @@ const Dashboard: React.FC = () => {
 
   // Local UI state
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [openWalkthroughMenuId, setOpenWalkthroughMenuId] = useState<
+    string | null
+  >(null);
+  const walkthroughMenuRef = useRef<HTMLDivElement | null>(null);
+  const walkthroughMenuTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!openWalkthroughMenuId) return;
+
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!walkthroughMenuRef.current?.contains(event.target as Node)) {
+        setOpenWalkthroughMenuId(null);
+      }
+    };
+    const closeOnScroll = () => setOpenWalkthroughMenuId(null);
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setOpenWalkthroughMenuId(null);
+      walkthroughMenuTriggerRef.current?.focus();
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("scroll", closeOnScroll, true);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("scroll", closeOnScroll, true);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [openWalkthroughMenuId]);
 
   // Redux state
   const filteredProblems = useAppSelector(selectFilteredProblems);
@@ -347,7 +380,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <>
-      <SEO
+      <Seo
         title="System Design & AI/ML Practice Problems | Diagramwise"
         description="Practice infrastructure, application, AI/ML, and MLOps architecture problems with clear requirements, interactive diagrams, and feedback on the decisions behind your design."
         keywords="system design problems, AI ML design problems, machine learning architecture, MLOps, AIOps, recommendation systems, fraud detection, NLP, computer vision, distributed systems, scalable architecture, system design interview prep, infrastructure design, application architecture"
@@ -596,6 +629,23 @@ const Dashboard: React.FC = () => {
                               virtualRow.index * columnCount + columnIndex;
                             const problem = entry.problem;
                             const score = entry.score;
+                            const hasAttemptedProblem =
+                              isAuth && attemptedProblems.has(problem.id);
+                            const primaryActionLabel = hasAttemptedProblem
+                              ? "Continue Problem"
+                              : "Start Problem";
+                            const problemCardKey =
+                              problem.id ?? getProblemSlug(problem);
+                            const walkthroughMenuOpen =
+                              openWalkthroughMenuId === problemCardKey;
+                            const problemHelpMenuId =
+                              `problem-help-${problemCardKey}`;
+                            const primaryCtaTone = hasAttemptedProblem
+                              ? "bg-blue-600 text-white hover:shadow-md"
+                              : "bg-[var(--brand)] text-[var(--bg)] hover:shadow-md";
+                            const primaryCtaShape = problem.has_guided_walkthrough
+                              ? "rounded-l-xl rounded-r-none"
+                              : "rounded-xl";
                             const delayClass =
                               ["delay-0", "delay-100", "delay-200"][index] ?? "";
                             return (
@@ -606,14 +656,21 @@ const Dashboard: React.FC = () => {
                                 }
                                 className={`dashboard-problem-card group elevated-card-bg backdrop-blur-md rounded-2xl transition-all duration-500 relative h-full flex flex-col ${delayClass}`}
                               >
-                                {problem.has_guided_walkthrough ? (
-                                  <div className="dashboard-guided-banner flex items-center justify-between px-4 py-2 rounded-t-2xl">
-                                    <div className="flex items-center gap-3 text-sm font-semibold tracking-wide">
-                                      <span>🗺️</span>
-                                      <span>Guided Walkthrough</span>
+                                <div className="relative p-6 flex flex-col flex-1">
+                                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                                    <div className="flex flex-wrap items-center gap-2">
                                       {score > 0 && (
-                                        <span className="dashboard-recommended inline-block px-2 py-0.5 text-xs font-semibold rounded">
+                                        <span className="dashboard-recommended inline-block px-2 py-1 text-xs font-semibold rounded">
                                           Recommended
+                                        </span>
+                                      )}
+                                      {problem.has_guided_walkthrough && (
+                                        <span className="dashboard-walkthrough-chip inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full">
+                                          <MdMenuBook
+                                            className="h-3.5 w-3.5"
+                                            aria-hidden="true"
+                                          />
+                                          Guided walkthrough
                                         </span>
                                       )}
                                     </div>
@@ -623,21 +680,6 @@ const Dashboard: React.FC = () => {
                                       {problem.difficulty}
                                     </span>
                                   </div>
-                                ) : null}
-                                <div className="relative p-6 flex flex-col flex-1">
-                                  {!problem.has_guided_walkthrough &&
-                                    score > 0 && (
-                                      <div className="flex items-center justify-between mb-3">
-                                        <span className="dashboard-recommended inline-block px-2 py-1 text-xs font-semibold rounded">
-                                          Recommended
-                                        </span>
-                                        <span
-                                          className={`px-2.5 py-0.5 text-xs font-semibold rounded-full ${getDifficultyColor(problem.difficulty)}`}
-                                        >
-                                          {problem.difficulty}
-                                        </span>
-                                      </div>
-                                    )}
                                   <div className="flex items-start justify-between mb-4">
                                     <h3 className="text-lg font-bold text-theme group-hover:text-[var(--brand)] transition-colors duration-300 line-clamp-2 flex-1 pr-2">
                                       <Link
@@ -647,16 +689,6 @@ const Dashboard: React.FC = () => {
                                         {problem.title}
                                       </Link>
                                     </h3>
-                                    {!problem.has_guided_walkthrough &&
-                                      score === 0 && (
-                                        <div className="flex-shrink-0 ml-2">
-                                          <span
-                                            className={`px-3 py-1 text-xs font-semibold rounded-full ${getDifficultyColor(problem.difficulty)}`}
-                                          >
-                                            {problem.difficulty}
-                                          </span>
-                                        </div>
-                                      )}
                                   </div>
 
                                   <p className="text-muted text-sm mb-4 line-clamp-3 leading-relaxed">
@@ -692,63 +724,121 @@ const Dashboard: React.FC = () => {
                                     )}
                                   </div>
 
-                                  <div className="mt-auto grid grid-cols-[5fr_7fr] gap-2">
+                                  <div className="mt-auto grid grid-cols-[2fr_5fr] gap-2">
                                     <Link
                                       to={`/problems/${getProblemSlug(problem)}/`}
-                                      aria-label={`View guide for ${problem.title}`}
+                                      aria-label={`View problem details for ${problem.title}`}
                                       className="dashboard-secondary-cta inline-flex w-full items-center justify-center rounded-xl border px-3 py-3 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]"
                                     >
-                                      View guide
+                                      Details
                                     </Link>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (!problem.id) {
-                                          navigate(
-                                            `/problems/${getProblemSlug(problem)}/`,
-                                          );
-                                          return;
-                                        }
-                                        if (!isAuth) {
-                                          setShowAuthModal(true);
-                                          return;
-                                        }
-                                        navigate(`/playground/${problem.id}`);
-                                      }}
-                                      aria-label={`Start ${problem.title}`}
-                                      className={`dashboard-primary-cta w-full px-3 py-3 text-sm font-semibold rounded-xl transition-all duration-300 cursor-pointer ${
-                                        isAuth &&
-                                        attemptedProblems.has(problem.id)
-                                          ? "bg-blue-600 text-white hover:shadow-md"
-                                          : "bg-[var(--brand)] text-[var(--bg)] hover:shadow-md"
-                                      }`}
+                                    <div
+                                      ref={
+                                        walkthroughMenuOpen
+                                          ? walkthroughMenuRef
+                                          : null
+                                      }
+                                      className="relative flex min-w-0"
                                     >
-                                      <span className="flex items-center justify-center gap-2">
-                                        {isAuth &&
-                                          attemptedProblems.has(problem.id) && (
-                                            <svg
-                                              xmlns="http://www.w3.org/2000/svg"
-                                              className="h-4 w-4"
-                                              fill="none"
-                                              viewBox="0 0 24 24"
-                                              stroke="currentColor"
-                                              strokeWidth={2.5}
+                                      <button
+                                        type="button"
+                                        onClick={(event) => {
+                                          event.stopPropagation();
+                                          setOpenWalkthroughMenuId(null);
+                                          if (!problem.id) {
+                                            navigate(
+                                              `/problems/${getProblemSlug(problem)}/`,
+                                            );
+                                            return;
+                                          }
+                                          if (!isAuth) {
+                                            setShowAuthModal(true);
+                                            return;
+                                          }
+                                          navigate(`/playground/${problem.id}`);
+                                        }}
+                                        aria-label={`${primaryActionLabel} for ${problem.title}`}
+                                        className={`dashboard-primary-cta min-w-0 flex-1 cursor-pointer ${primaryCtaShape} px-2 py-3 text-sm font-semibold transition-all duration-300 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)] ${primaryCtaTone}`}
+                                      >
+                                        <span className="whitespace-nowrap">
+                                          {primaryActionLabel}
+                                        </span>
+                                      </button>
+                                      {problem.has_guided_walkthrough && (
+                                        <>
+                                          <button
+                                            ref={
+                                              walkthroughMenuOpen
+                                                ? walkthroughMenuTriggerRef
+                                                : null
+                                            }
+                                            type="button"
+                                            aria-label={`Help options for ${problem.title}`}
+                                            aria-expanded={walkthroughMenuOpen}
+                                            aria-controls={problemHelpMenuId}
+                                            onClick={(event) => {
+                                              event.stopPropagation();
+                                              setOpenWalkthroughMenuId(
+                                                walkthroughMenuOpen
+                                                  ? null
+                                                  : problemCardKey,
+                                              );
+                                            }}
+                                            className={`dashboard-primary-cta inline-flex shrink-0 cursor-pointer items-center gap-1 rounded-l-none rounded-r-xl border-l border-white/20 px-2 py-3 text-sm font-semibold transition-all duration-300 focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)] ${primaryCtaTone}`}
+                                          >
+                                            <span className="hidden xl:inline">
+                                              Help
+                                            </span>
+                                            <MdExpandMore
+                                              aria-hidden="true"
+                                              className={`h-4 w-4 transition-transform ${walkthroughMenuOpen ? "rotate-180" : ""}`}
+                                            />
+                                          </button>
+                                          <div
+                                            id={problemHelpMenuId}
+                                            role="group"
+                                            aria-label="Problem help options"
+                                            hidden={!walkthroughMenuOpen}
+                                            className="absolute bottom-full right-0 z-50 mb-2 w-64 rounded-xl border border-theme bg-surface p-2 text-theme shadow-xl"
+                                          >
+                                            <button
+                                              type="button"
+                                              onClick={(event) => {
+                                                event.stopPropagation();
+                                                setOpenWalkthroughMenuId(null);
+                                                if (!problem.id) {
+                                                  navigate(
+                                                    `/problems/${getProblemSlug(problem)}/`,
+                                                  );
+                                                  return;
+                                                }
+                                                if (!isAuth) {
+                                                  setShowAuthModal(true);
+                                                  return;
+                                                }
+                                                navigate(
+                                                  `/playground/${problem.id}?tab=guide`,
+                                                );
+                                              }}
+                                              className="flex w-full items-start gap-2 rounded-lg px-3 py-2.5 text-left transition hover:bg-[var(--bg-hover)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)]"
                                             >
-                                              <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                              <MdMenuBook
+                                                className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand)]"
+                                                aria-hidden="true"
                                               />
-                                            </svg>
-                                          )}
-                                        {isAuth &&
-                                        attemptedProblems.has(problem.id)
-                                          ? "Continue Problem"
-                                          : "Start Problem"}{" "}
-                                        →
-                                      </span>
-                                    </button>
+                                              <span className="flex flex-col gap-0.5">
+                                                <span className="text-sm font-semibold">
+                                                  Open guided walkthrough
+                                                </span>
+                                                <span className="text-xs text-muted">
+                                                  Step-by-step help if you get stuck
+                                                </span>
+                                              </span>
+                                            </button>
+                                          </div>
+                                        </>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>

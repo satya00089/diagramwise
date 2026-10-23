@@ -5,6 +5,11 @@ import { useModalDialog } from "../hooks/useModalDialog";
 const providers = ["chatgpt", "claude", "gemini"] as const;
 type Provider = (typeof providers)[number];
 type GeminiClient = "apps" | "cli";
+const providerLabels: Record<Provider, string> = {
+  chatgpt: "ChatGPT",
+  claude: "Claude",
+  gemini: "Gemini",
+};
 
 const connectionDetails = {
   chatgpt: {
@@ -26,9 +31,9 @@ const connectionDetails = {
   },
 } as const;
 
-type AiConnectionGuideDialogProps = {
+type AiConnectionGuideDialogProps = Readonly<{
   onClose: () => void;
-};
+}>;
 
 export default function AiConnectionGuideDialog({
   onClose,
@@ -52,7 +57,7 @@ export default function AiConnectionGuideDialog({
 
   const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
     const currentIndex = providers.indexOf(provider);
-    let nextIndex = currentIndex;
+    let nextIndex: number;
     if (event.key === "ArrowRight")
       nextIndex = (currentIndex + 1) % providers.length;
     else if (event.key === "ArrowLeft")
@@ -109,12 +114,7 @@ export default function AiConnectionGuideDialog({
           aria-label="AI provider"
         >
           {providers.map((item, index) => {
-            const label =
-              item === "chatgpt"
-                ? "ChatGPT"
-                : item === "claude"
-                  ? "Claude"
-                  : "Gemini";
+            const label = providerLabels[item];
             return (
               <button
                 key={item}
@@ -162,7 +162,7 @@ export default function AiConnectionGuideDialog({
                   aria-pressed={geminiClient === "cli"}
                   onClick={() => selectGeminiClient("cli")}
                 >
-                  Gemini CLI
+                  Gemini CLI{" "}
                   <span className="systema-ai-tab-status">Soon</span>
                 </button>
               </div>

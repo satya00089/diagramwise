@@ -94,11 +94,12 @@ const ShareToWorldModal: React.FC<ShareToWorldModalProps> = ({
     captureCanvasPngRef.current = captureCanvasPng;
   }, [captureCanvasPng]);
 
-  const mode: "attempt" | "diagram" | null = savedAttemptId
-    ? "attempt"
-    : diagramId
-      ? "diagram"
-      : null;
+  let mode: "attempt" | "diagram" | null = null;
+  if (savedAttemptId) {
+    mode = "attempt";
+  } else if (diagramId) {
+    mode = "diagram";
+  }
   const entityId = savedAttemptId ?? diagramId ?? null;
   const sharedTitle =
     mode === "attempt"

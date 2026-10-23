@@ -92,7 +92,7 @@ const HeadingSelect: React.FC<{
       data-tooltip="Heading level"
       value={headingValue}
       onChange={(e) => {
-        const level = parseInt(e.target.value, 10);
+        const level = Number.parseInt(e.target.value, 10);
         if (level === 0) {
           editor.chain().focus().setParagraph().run();
         } else {
@@ -239,7 +239,7 @@ const AnimatedTextarea: React.FC<AnimatedTextareaProps> = ({
     };
   }, [isFullscreen]);
 
-  if (!editor || !editor.schema) return null;
+  if (!editor?.schema) return null;
 
   // build a compact list of buttons to render which reduces branching inside JSX
   const inlineButtons = [

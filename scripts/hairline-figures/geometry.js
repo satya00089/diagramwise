@@ -9,10 +9,10 @@ function drawing(svg) {
   const P = proj(C), front = facing(C), root = mk('g', {}, svg);
   const path = (g, d, cls='nf') => mk('path', {d, class:cls}, g);
   const line = (g, pts, cls='nf') => path(g, open(pts.map(p=>P(...p))), cls);
-  const flat = (g,x,y,w,h,z,cls='sil',r=2) => path(g, poly(ringAt(P,rrect(x,y,x+w,y+h,r,7),z)),cls);
-  function box(g,x,y,w,h,z,d,cls='sil') {
+  const flat = (g,x,y,w,h,z,{cls='sil',r=2}={}) => path(g, poly(ringAt(P,rrect(x,y,x+w,y+h,r,7),z)),cls);
+  function box(g,x,y,w,h,z,{depth,cls='sil'}={}) {
     const [outer,inner]=rings(x,y,x+w,y+h,2.4,0.9), el=solid(g);
-    put(el,prism(P,front,outer,inner,z,z+d)); el.sil.setAttribute('class',cls); return el;
+    put(el,prism(P,front,outer,inner,z,z+depth)); el.sil.setAttribute('class',cls); return el;
   }
   function dot(g,x,y,z,r=0.65,cls='dot off') { const p=P(x,y,z); return mk('circle',{cx:p[0],cy:p[1],r,class:cls},g); }
   function panel(g,x,y,z,w,h,cls='sil') {
@@ -24,19 +24,19 @@ function drawing(svg) {
     for(let x=x0;x<=x1;x+=12) for(let y=y0;y<=y1;y+=12) dot(g,x,y,3.8,0.42);
   }
   function board(g,editor=false) {
-    box(g,0,0,180,105,0,3.5); flat(g,3,3,174,99,3.55,'nf lo',4);
+    box(g,0,0,180,105,0,{depth:3.5}); flat(g,3,3,174,99,3.55,{cls:'nf lo',r:4});
     grid(g,editor?39:9,editor?24:12);
     if(editor) {
       line(g,[[3,16,3.8],[177,16,3.8]],'nf lo');
       line(g,[[31,16,3.8],[31,101,3.8]],'nf lo');
       [9,17,25].forEach(x=>dot(g,x,9,3.8,1,'dot m'));
-      box(g,9,27,15,11,4,3); database(g,16.5,52,4,5,9);
+      box(g,9,27,15,11,4,{depth:3}); database(g,16.5,52,4,5,9);
       line(g,[[10,77,4],[15,77,4],[15,86,4],[24,86,4]],'nf');
       dot(g,10,77,4,1,'dot m');dot(g,24,86,4,1,'dot m');
     }
   }
   function server(g,x,y,z,active=false,w=25,h=16) {
-    box(g,x,y,w,h,z,12,active?'sil hi':'sil');
+    box(g,x,y,w,h,z,{depth:12,cls:active?'sil hi':'sil'});
     line(g,[[x+4,y+h,z+7],[x+w-9,y+h,z+7]],'nf');
     line(g,[[x+4,y+h,z+4],[x+w-13,y+h,z+4]],'nf lo');
     dot(g,x+w-5,y+h,z+5,0.7,active?'dot':'dot m');
@@ -48,7 +48,7 @@ function drawing(svg) {
     [0.34,0.67].forEach(t=>path(g,open(ringAt(P,run(circle,front),z+h*t)),'nf lo'));
   }
   function monitor(g,x,y,z) {
-    box(g,x+5,y-3,14,10,z,1.5);
+    box(g,x+5,y-3,14,10,z,{depth:1.5});
     line(g,[[x+12,y+2,z+2],[x+12,y+2,z+10]],'nf');
     panel(g,x,y+2,z+9,25,22);panel(g,x+2,y+2.05,z+11,21,18,'nf lo');
   }
@@ -74,18 +74,18 @@ function mountScene({stage,svg,read},value,kind) {
   const staticG=mk('g',{},D.root), liveG=mk('g',{},D.root);
   const progress=tween(0), choice=[0,0,0.55,0].map(v=>tween(v));
   const tracking=spring(0); let amount=value, active=false, selected=2, last='', demo=false, demoTime=0;
-  const {P,line,flat,box,dot,board,server,database,monitor,brief,cursor,check,path,panel}=D;
+  const {P,line,flat,box,board,server,database,monitor,brief,cursor,check,path}=D;
   const setup={
     practice(){board(staticG);brief(staticG,7,15,5);},
     learn(){},
     review(){board(staticG);brief(staticG,125,10,8,true);},
-    canvas(){board(staticG,true);flat(staticG,91,56,25,16,4,'nf dash',2);}
+    canvas(){board(staticG,true);flat(staticG,91,56,25,16,4,{cls:'nf dash',r:2});}
   }; setup[kind]();
 
   function circuit(g,p=0,review=false){
     line(g,[[32,73,4],[157,73,4]],'nf lo');
     if(!review) {
-      flat(g,65,64,25,16,4,'nf dash');
+      flat(g,65,64,25,16,4,{cls:'nf dash'});
       line(g,[[65,64,4],[65,64,4+18*(1-p)],[90,64,4+18*(1-p)]],'nf lo dash');
     }
     monitor(g,13,72,4);
@@ -99,12 +99,12 @@ function mountScene({stage,svg,read},value,kind) {
   }
   function book(g,i,opening){
     const x=5+i*44,y=38,z=4;
-    box(g,x,y,34,49,z,2);
-    flat(g,x+1.5,y+1.5,31,46,z+2.1,'sil');
+    box(g,x,y,34,49,z,{depth:2});
+    flat(g,x+1.5,y+1.5,31,46,z+2.1,{cls:'sil'});
     line(g,[[x+5,y+36,z+2.2],[x+28,y+36,z+2.2]],'nf');
     line(g,[[x+5,y+40,z+2.2],[x+23,y+40,z+2.2]],'nf lo');
     if(i%2===0){
-      [[7,12],[22,20],[7,27]].forEach(([u,v])=>flat(g,x+u,y+v,7,5,z+2.2,'nf',0.8));
+      [[7,12],[22,20],[7,27]].forEach(([u,v])=>flat(g,x+u,y+v,7,5,z+2.2,{cls:'nf',r:0.8}));
       line(g,[[x+14,y+14,z+2.2],[x+25,y+14,z+2.2],[x+25,y+20,z+2.2]],'nf lo');
     }else{database(g,x+16,y+18,z+2.2,5,8);}
     const angle=opening*1.82;
@@ -119,7 +119,9 @@ function mountScene({stage,svg,read},value,kind) {
     if(i<2)check(g,x+23,y+8,z+3.2);
   }
   function render(p,opens,track){
-    const key=[p,...opens,track].map(v=>v.toFixed(4)).join(',');if(key===last)return;last=key;
+    const key=[p,...opens,track].map(v=>v.toFixed(4)).join(',');
+    if(key===last){return;}
+    last=key;
     liveG.replaceChildren();
     if(kind==='practice')circuit(liveG,p);
     if(kind==='learn'){
@@ -151,7 +153,11 @@ function mountScene({stage,svg,read},value,kind) {
       demoTime+=dt;
       const t=clamp(demoTime/1.5,0,1), e=HL.EASE_LIFT(t);
       const p=demoTime<2.5?e:1-HL.EASE_LIFT(clamp((demoTime-2.5)/1.5,0,1));
-      const op=choice.map((_,i)=>i===2?lerp(0.55,1,p):p*(i===1?0.16:0.07));
+      const op=choice.map((_,i)=>{
+        if(i===2)return lerp(0.55,1,p);
+        const factor=i===1?0.16:0.07;
+        return p*factor;
+      });
       render(p,op,p);
       if(demoTime>=4.1){demo=false;active=false;read.textContent='rest';render(0,[0,0,0.55,0],0);}
       return demo;
@@ -163,7 +169,13 @@ function mountScene({stage,svg,read},value,kind) {
   function activate(next=true,index=2,location=0.8){
     demo=false;active=next;selected=next?index:2;const now=performance.now();
     tset(progress,next?1:0,now,0);
-    choice.forEach((t,i)=>tset(t,next?(i===index?1:0.12/Math.max(1,Math.abs(i-index))):(i===2?0.55:0),now,Math.abs(i-index)*amount));
+    choice.forEach((t,i)=>{
+      let target=0;
+      if(next&&i===index)target=1;
+      else if(next)target=0.12/Math.max(1,Math.abs(i-index));
+      else if(i===2)target=0.55;
+      tset(t,target,now,Math.abs(i-index)*amount);
+    });
     tracking.t=next?clamp(location,-1,1):0;
     read.textContent=next?({practice:'component placed',learn:`lesson ${index+1}`,review:'connection inspected',canvas:'first node'})[kind]:'rest';
     last='';B.wake();

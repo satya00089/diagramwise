@@ -24,7 +24,12 @@ const STEP_TYPE_CONFIG: Record<
     label: "Explanation",
     color: "bg-blue-500/15 text-blue-400 border-blue-500/30",
     icon: (
-      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+      <svg
+        className="w-3 h-3"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+        aria-hidden="true"
+      >
         <path
           fillRule="evenodd"
           d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -43,6 +48,7 @@ const STEP_TYPE_CONFIG: Record<
         viewBox="0 0 24 24"
         stroke="currentColor"
         strokeWidth={2}
+        aria-hidden="true"
       >
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
       </svg>
@@ -58,6 +64,7 @@ const STEP_TYPE_CONFIG: Record<
         viewBox="0 0 24 24"
         stroke="currentColor"
         strokeWidth={2}
+        aria-hidden="true"
       >
         <path
           strokeLinecap="round"
@@ -82,6 +89,7 @@ const STEP_TYPE_CONFIG: Record<
         viewBox="0 0 24 24"
         stroke="currentColor"
         strokeWidth={2}
+        aria-hidden="true"
       >
         <path
           strokeLinecap="round"
@@ -100,6 +108,7 @@ const STEP_TYPE_CONFIG: Record<
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
+        aria-hidden="true"
       >
         <path d="m5 12 4 4L19 6" strokeWidth={2} />
       </svg>
@@ -115,6 +124,7 @@ const STEP_TYPE_CONFIG: Record<
         viewBox="0 0 24 24"
         stroke="currentColor"
         strokeWidth={2}
+        aria-hidden="true"
       >
         <path
           strokeLinecap="round"
@@ -130,7 +140,7 @@ const STEP_TYPE_CONFIG: Record<
 
 export type ApplyStepPayload = GuidedStep;
 
-type GuidedHelpPanelProps = {
+type GuidedHelpPanelProps = Readonly<{
   problemId: string | null;
   onApplyStep: (step: ApplyStepPayload) => boolean | void;
   /** Optional controlled current step index (0-based) */
@@ -138,11 +148,11 @@ type GuidedHelpPanelProps = {
   /** Called when the user changes the current step */
   onStepChange?: (index: number) => void;
   appliedGuidedStepIds?: string[];
-};
+}>;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function StepTypeBadge({ type }: { type: GuidedStepType }) {
+function StepTypeBadge({ type }: Readonly<{ type: GuidedStepType }>) {
   const cfg = STEP_TYPE_CONFIG[type] ?? STEP_TYPE_CONFIG.explanation;
   return (
     <span
@@ -173,11 +183,10 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
   const rawError = useSelector((state: RootState) =>
     selectWalkthroughError(state, problemId ?? ""),
   );
-  const error: "not_found" | "error" | null = !rawError
-    ? null
-    : rawError === "NOT_FOUND"
-      ? "not_found"
-      : "error";
+  let error: "not_found" | "error" | null = null;
+  if (rawError) {
+    error = rawError === "NOT_FOUND" ? "not_found" : "error";
+  }
 
   const [currentStep, setCurrentStep] = useState<number>(currentStepProp ?? 0); // 0-indexed
   const [appliedSteps, setAppliedSteps] = useState<Set<string>>(new Set());
@@ -278,6 +287,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
           viewBox="0 0 24 24"
           stroke="currentColor"
           strokeWidth={1.5}
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"
@@ -310,6 +320,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
           viewBox="0 0 24 24"
           stroke="currentColor"
           strokeWidth={1.5}
+          aria-hidden="true"
         >
           <path
             strokeLinecap="round"
@@ -431,6 +442,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                   strokeWidth={2}
+                  aria-hidden="true"
                 >
                   <rect x="3" y="3" width="7" height="7" />
                   <rect x="14" y="3" width="7" height="7" />
@@ -459,8 +471,8 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
             {Object.keys(step.component.properties).length > 0 && (
               <div className="space-y-2">
                 <p className="text-[10px] text-muted/50 uppercase tracking-wide font-medium">
-                  Properties
-                  <span className="ml-1 normal-case font-normal opacity-60">
+                  Properties{" "}
+                  <span className="normal-case font-normal opacity-60">
                     — tap a row to learn why
                   </span>
                 </p>
@@ -513,6 +525,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                   strokeWidth={2}
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
@@ -540,6 +553,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
                 viewBox="0 0 24 24"
                 stroke="currentColor"
                 strokeWidth={2}
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -601,6 +615,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
                     className="w-3 h-3 text-amber-400"
                     fill="currentColor"
                     viewBox="0 0 20 20"
+                    aria-hidden="true"
                   >
                     <path
                       fillRule="evenodd"
@@ -653,6 +668,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                   strokeWidth={2}
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
@@ -717,6 +733,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
                   className="w-3.5 h-3.5"
                   fill="currentColor"
                   viewBox="0 0 20 20"
+                  aria-hidden="true"
                 >
                   <path
                     fillRule="evenodd"
@@ -734,6 +751,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                   strokeWidth={2}
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
@@ -765,6 +783,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
               viewBox="0 0 24 24"
               stroke="currentColor"
               strokeWidth={2}
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -790,6 +809,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
               viewBox="0 0 24 24"
               stroke="currentColor"
               strokeWidth={2}
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { UserIntent } from "../types/chatBot";
 
@@ -27,6 +27,40 @@ export const ProjectIntentDialog: React.FC<ProjectIntentDialogProps> = ({
 }) => {
   const [title, setTitle] = useState(initialTitle);
   const [description, setDescription] = useState(initialDescription);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement &&
+      document.activeElement !== document.body
+        ? document.activeElement
+        : null;
+    titleInputRef.current?.focus();
+
+    return () => {
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
+    };
+  }, []);
+
+  const handleDialogKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Tab") return;
+
+    const focusableElements = dialogRef.current?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (!focusableElements?.length) return;
+
+    const first = focusableElements[0];
+    const last = focusableElements[focusableElements.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,6 +78,11 @@ export const ProjectIntentDialog: React.FC<ProjectIntentDialogProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
       <motion.div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="project-intent-heading"
+        onKeyDown={handleDialogKeyDown}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
@@ -52,7 +91,12 @@ export const ProjectIntentDialog: React.FC<ProjectIntentDialogProps> = ({
         <form onSubmit={handleSubmit}>
           {/* Header */}
           <div className="px-6 py-4 border-b border-theme/10">
-            <h2 className="text-xl font-bold text-theme">{heading}</h2>
+            <h2
+              id="project-intent-heading"
+              className="text-xl font-bold text-theme"
+            >
+              {heading}
+            </h2>
             <p className="text-sm text-muted mt-1">{subheading}</p>
           </div>
 
@@ -66,6 +110,7 @@ export const ProjectIntentDialog: React.FC<ProjectIntentDialogProps> = ({
                 {titleLabel}{titleRequired ? " *" : ""}
               </label>
               <input
+                ref={titleInputRef}
                 id="project-title"
                 type="text"
                 required={titleRequired}
@@ -76,7 +121,6 @@ export const ProjectIntentDialog: React.FC<ProjectIntentDialogProps> = ({
                   bg-theme text-theme
                   focus:ring-2 focus:ring-accent/50 focus:border-transparent
                   placeholder:text-muted"
-                autoFocus
               />
             </div>
 

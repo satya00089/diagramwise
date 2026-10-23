@@ -32,7 +32,10 @@ interface OnboardingState {
   completedQuickSetupUsers: string[];
   dismissedTips: string[];
   completedTasks: string[];
+  /** Legacy, browser-wide announcement dismissals retained for anonymous visitors. */
   seenAnnouncements: string[];
+  /** Dismissals for signed-in accounts, so one account does not affect another. */
+  seenAnnouncementsByUser: Record<string, string[]>;
 }
 
 interface OnboardingContextType {
@@ -48,8 +51,8 @@ interface OnboardingContextType {
   dismissTip: (tipId: string) => void;
   isTaskCompleted: (taskId: string) => boolean;
   completeTask: (taskId: string) => void;
-  isAnnouncementSeen: (id: string) => boolean;
-  dismissAnnouncement: (id: string) => void;
+  isAnnouncementSeen: (id: string, userId?: string) => boolean;
+  dismissAnnouncement: (id: string, userId?: string) => void;
   /** Wipe all onboarding state back to defaults (useful for testing / dev) */
   resetAll: () => void;
   visits: Record<PageId, PageVisit>;
@@ -82,6 +85,7 @@ const INITIAL_STATE: OnboardingState = {
   dismissedTips: [],
   completedTasks: [],
   seenAnnouncements: [],
+  seenAnnouncementsByUser: {},
 };
 
 // ---------------------------------------------------------------------------
@@ -99,8 +103,9 @@ function loadState(): OnboardingState {
       ...parsed,
       visits: {
         ...INITIAL_STATE.visits,
-        ...(parsed.visits ?? {}),
+        ...parsed.visits,
       },
+      seenAnnouncementsByUser: parsed.seenAnnouncementsByUser ?? {},
     };
   } catch {
     return INITIAL_STATE;
@@ -168,8 +173,13 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const isAnnouncementSeen = useCallback(
-    (id: string) => state.seenAnnouncements.includes(id),
-    [state.seenAnnouncements],
+    (id: string, userId?: string) => {
+      const seenAnnouncements = userId
+        ? (state.seenAnnouncementsByUser[userId] ?? [])
+        : state.seenAnnouncements;
+      return seenAnnouncements.includes(id);
+    },
+    [state.seenAnnouncements, state.seenAnnouncementsByUser],
   );
 
   // ---- Mutating helpers ----------------------------------------------------
@@ -228,13 +238,27 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({
     }));
   }, []);
 
-  const dismissAnnouncement = useCallback((id: string) => {
-    setState((prev) => ({
-      ...prev,
-      seenAnnouncements: prev.seenAnnouncements.includes(id)
-        ? prev.seenAnnouncements
-        : [...prev.seenAnnouncements, id],
-    }));
+  const dismissAnnouncement = useCallback((id: string, userId?: string) => {
+    setState((prev) => {
+      if (userId) {
+        const seenAnnouncements = prev.seenAnnouncementsByUser[userId] ?? [];
+        if (seenAnnouncements.includes(id)) return prev;
+        return {
+          ...prev,
+          seenAnnouncementsByUser: {
+            ...prev.seenAnnouncementsByUser,
+            [userId]: [...seenAnnouncements, id],
+          },
+        };
+      }
+
+      return {
+        ...prev,
+        seenAnnouncements: prev.seenAnnouncements.includes(id)
+          ? prev.seenAnnouncements
+          : [...prev.seenAnnouncements, id],
+      };
+    });
   }, []);
 
   const resetAll = useCallback(() => {

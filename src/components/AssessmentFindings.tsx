@@ -110,11 +110,13 @@ const AssessmentFindings: React.FC<AssessmentFindingsProps> = ({
   const renderFinding = (finding: ReviewFinding, optionalFinding = false) => {
     const findingId = getReviewFindingId(finding);
     const changed = addressedFindingIds.includes(findingId);
-    const severity = optionalFinding
-      ? "improvement"
-      : positives.includes(finding)
-        ? "positive"
-        : finding.severity;
+    let severity = finding.severity;
+    if (positives.includes(finding)) severity = "positive";
+    if (optionalFinding) severity = "improvement";
+    let recommendationPrefix = "What to change: ";
+    if (finding.kind === "clarification")
+      recommendationPrefix = "What to clarify: ";
+    if (severity === "positive") recommendationPrefix = "Keep: ";
     return (
       <article
         key={findingId}
@@ -138,11 +140,7 @@ const AssessmentFindings: React.FC<AssessmentFindingsProps> = ({
           {finding.recommendation && (
             <p>
               <span className="font-semibold">
-                {severity === "positive"
-                  ? "Keep: "
-                  : finding.kind === "clarification"
-                    ? "What to clarify: "
-                    : "What to change: "}
+                {recommendationPrefix}
               </span>
               {finding.recommendation}
             </p>

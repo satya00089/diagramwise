@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import { useTheme } from "../hooks/useTheme";
 import AnimatedTextarea from "../components/shared/AnimatedTextarea";
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import type { Requirement, RequirementSpec } from "../types/requirements";
 import {
   HiDocumentText,
@@ -193,7 +193,7 @@ const CreateProblem: React.FC = () => {
 
   return (
     <>
-      <SEO
+      <Seo
         title="Create Custom System Design Problem | Diagramwise"
         description="Create and share custom system design problems with your students or team. Define requirements, constraints, and evaluation criteria for personalized learning experiences."
         keywords="create system design problem, custom architecture challenge, teaching system design, system design assignment creator"
@@ -642,6 +642,7 @@ const CreateProblem: React.FC = () => {
                                 className="h-4 w-4"
                                 viewBox="0 0 20 20"
                                 fill="currentColor"
+                                aria-hidden="true"
                               >
                                 <path
                                   fillRule="evenodd"

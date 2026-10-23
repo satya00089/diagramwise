@@ -9,7 +9,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useOnboarding } from "../hooks/useOnboarding";
 import { useTour } from "../hooks/useTour";
 import { useToast } from "../hooks/useToast";
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import { ToastContainer } from "../components/Toast";
 import { apiService } from "../services/api";
 import type { SavedDiagramSummary } from "../types/auth";
@@ -345,7 +345,7 @@ const MyDesigns: React.FC = () => {
         setLoadingDiagrams(false);
       }
     };
-    loadDiagrams();
+    void loadDiagrams();
   }, [isAuth]);
 
   const loadMoreDiagrams = useCallback(async () => {
@@ -602,9 +602,25 @@ const MyDesigns: React.FC = () => {
     };
   }, [filterBy, savedDiagrams, searchTerm, sortBy]);
 
+  let emptyStateIcon = <HiPencilSquare className="w-16 h-16" />;
+  let emptyStateTitle = "No designs yet";
+  let emptyStateDescription = "Create your first design to get started.";
+
+  if (filterBy === "shared") {
+    emptyStateIcon = <HiUserGroup className="w-16 h-16" />;
+    emptyStateTitle = "Nothing shared with you yet";
+    emptyStateDescription = "Designs shared with you will show up here.";
+  }
+
+  if (searchTerm) {
+    emptyStateIcon = <MdSearchOff className="w-16 h-16" />;
+    emptyStateTitle = "No designs match your search";
+    emptyStateDescription = "Try a different search term.";
+  }
+
   return (
     <>
-      <SEO
+      <Seo
         title="My Designs | Diagramwise"
         description="View and manage your saved system design projects and diagrams shared with you"
         image="https://diagramwise.com/og/diagrams.png"
@@ -777,29 +793,13 @@ const MyDesigns: React.FC = () => {
                 {filteredFamilies.length === 0 && (
                   <div className="text-center py-20">
                     <div className="flex justify-center mb-6 text-[var(--brand)]/40">
-                      {searchTerm ? (
-                        <MdSearchOff className="w-16 h-16" />
-                      ) : filterBy === "shared" ? (
-                        <HiUserGroup className="w-16 h-16" />
-                      ) : (
-                        <HiPencilSquare className="w-16 h-16" />
-                      )}
+                      {emptyStateIcon}
                     </div>
                     <div className="text-theme text-2xl font-bold mb-2">
-                      {searchTerm
-                        ? "No designs match your search"
-                        : filterBy === "shared"
-                          ? "Nothing shared with you yet"
-                          : filterBy === "owned"
-                            ? "No designs yet"
-                            : "No designs yet"}
+                      {emptyStateTitle}
                     </div>
                     <div className="text-muted text-lg mb-6">
-                      {searchTerm
-                        ? "Try a different search term."
-                        : filterBy === "shared"
-                          ? "Designs shared with you will show up here."
-                          : "Create your first design to get started."}
+                      {emptyStateDescription}
                     </div>
                     {!searchTerm && filterBy !== "shared" && (
                       <button
@@ -823,15 +823,18 @@ const MyDesigns: React.FC = () => {
                         className={`my-designs-card group elevated-card-bg rounded-2xl transition-all duration-500 overflow-hidden ${CARD_DELAY_CLASSES[index] ?? ""}`}
                       >
                         <div className="relative p-6">
-                          <div
-                            className="cursor-pointer"
-                            onClick={() => handleOpenDiagram(diagram.id)}
-                          >
+                          <div>
                             <div className="flex items-start justify-between mb-4">
                               <div className="flex-1 pr-8">
                                 <div className="flex items-start gap-2 mb-2">
                                   <h3 className="text-lg font-bold text-theme group-hover:text-[var(--brand)] transition-colors duration-300 line-clamp-2 flex-1">
-                                    {diagram.title}
+                                    <button
+                                      type="button"
+                                      className="w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+                                      onClick={() => handleOpenDiagram(diagram.id)}
+                                    >
+                                      {diagram.title}
+                                    </button>
                                   </h3>
                                 </div>
 
@@ -932,6 +935,7 @@ const MyDesigns: React.FC = () => {
                                   fill="none"
                                   viewBox="0 0 24 24"
                                   stroke="currentColor"
+                                  aria-hidden="true"
                                 >
                                   <path
                                     strokeLinecap="round"
@@ -950,6 +954,7 @@ const MyDesigns: React.FC = () => {
                                   fill="none"
                                   viewBox="0 0 24 24"
                                   stroke="currentColor"
+                                  aria-hidden="true"
                                 >
                                   <path
                                     strokeLinecap="round"

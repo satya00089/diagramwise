@@ -4,7 +4,7 @@ import GuidedHelpPanel from "./GuidedHelpPanel";
 import type { ApplyStepPayload } from "./GuidedHelpPanel";
 import AssessmentFindings from "./AssessmentFindings";
 import ProblemRequirements from "./ProblemRequirements";
-import type { RequirementSpec } from "../types/requirements";
+import type { Requirement, RequirementSpec } from "../types/requirements";
 import ReasoningPanel from "./ReasoningPanel";
 import type { DesignReasoningContext } from "../types/systemDesign";
 import {
@@ -316,50 +316,57 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
 
   if (!problem) return null;
 
-  const reviewSpec =
-    !assessmentResult?.requirementRevision ||
-    assessmentResult.requirementRevision === problem.requirementSpec?.revision
-      ? problem.requirementSpec
-      : assessmentResult.requirementRevision === reviewedRequirementSpec?.revision
-        ? reviewedRequirementSpec
-        : undefined;
+  let reviewSpec = problem.requirementSpec;
+  if (
+    assessmentResult?.requirementRevision &&
+    assessmentResult.requirementRevision !== problem.requirementSpec?.revision
+  ) {
+    if (
+      assessmentResult.requirementRevision === reviewedRequirementSpec?.revision
+    ) {
+      reviewSpec = reviewedRequirementSpec;
+    } else {
+      reviewSpec = undefined;
+    }
+  }
   const reviewUsesOlderBrief = Boolean(
     assessmentResult?.requirementRevision &&
       problem.requirementSpec &&
       assessmentResult.requirementRevision !== problem.requirementSpec.revision,
   );
+  const requirementsForReview: Requirement[] = [];
+  if (reviewSpec) {
+    requirementsForReview.push(
+      ...(reviewSpec.functional ?? []),
+      ...(reviewSpec.nonFunctional ?? []),
+    );
+  } else if (!problem.requirementSpec) {
+    requirementsForReview.push(
+      ...problem.requirements
+        .join(".\n")
+        .split("\n")
+        .map((text, index) => ({
+          id: `legacy-requirement:${index + 1}`,
+          text,
+          scope: "core" as const,
+        })),
+      ...problem.constraints
+        .join(".\n")
+        .split("\n")
+        .map((text, index) => ({
+          id: `legacy-constraint:${index + 1}`,
+          text,
+          scope: "core" as const,
+        })),
+      {
+        id: "problem-brief",
+        text: problem.description,
+        scope: "core",
+      },
+    );
+  }
   const knownRequirements = new Map(
-    (reviewSpec
-      ? [
-          ...(reviewSpec?.functional ?? []),
-          ...(reviewSpec?.nonFunctional ?? []),
-        ]
-      : !problem.requirementSpec
-        ? [
-            ...problem.requirements
-              .join(".\n")
-              .split("\n")
-              .map((text, index) => ({
-                id: `legacy-requirement:${index + 1}`,
-                text,
-                scope: "core" as const,
-              })),
-            ...problem.constraints
-              .join(".\n")
-              .split("\n")
-              .map((text, index) => ({
-                id: `legacy-constraint:${index + 1}`,
-                text,
-                scope: "core" as const,
-              })),
-            {
-              id: "problem-brief",
-              text: problem.description,
-              scope: "core" as const,
-            },
-          ]
-        : []
-    ).map((requirement) => [requirement.id, requirement]),
+    requirementsForReview.map((requirement) => [requirement.id, requirement]),
   );
   const isExtensionFinding = (
     finding: import("../types/systemDesign").ReviewFinding,
@@ -382,11 +389,20 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
     Number.isFinite(assessmentResult.score) &&
     assessmentResult.score >= 0 &&
     assessmentResult.score <= 100;
-  const verdict = !showAiScore
-    ? "unavailable"
-    : hasCriticalFinding
-      ? "needs_revision"
-      : (assessmentResult?.verdict ?? "more_context_needed");
+  let verdict = assessmentResult?.verdict ?? "more_context_needed";
+  if (!showAiScore) {
+    verdict = "unavailable";
+  } else if (hasCriticalFinding) {
+    verdict = "needs_revision";
+  }
+  let assessmentTabLabel = "Assessment";
+  if (assessmentResult && !showAiScore) {
+    if (assessmentResult.source === "rule_based") {
+      assessmentTabLabel = "Structure checks";
+    } else {
+      assessmentTabLabel = "Review unavailable";
+    }
+  }
   const verdictLabels = {
     strong_alignment: "Strong alignment",
     needs_revision: "Needs revision",
@@ -629,13 +645,7 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                     className="h-4 w-4 shrink-0"
                     aria-hidden="true"
                   />
-                  <span className="text-sm font-medium">
-                    {assessmentResult && !showAiScore
-                      ? assessmentResult.source === "rule_based"
-                        ? "Structure checks"
-                        : "Review unavailable"
-                      : "Assessment"}
-                  </span>
+                  <span className="text-sm font-medium">{assessmentTabLabel}</span>
                 </button>
               )}
 
@@ -1266,6 +1276,23 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                     previousScore !== null
                                       ? currentScore - previousScore
                                       : null;
+                                  let scoreLabel = "Unscored";
+                                  if (currentScore !== null) {
+                                    scoreLabel = `${currentScore}/100`;
+                                  } else if (entry.source === "rule_based") {
+                                    scoreLabel = "Structure check · unscored";
+                                  }
+                                  let deltaLabel: string;
+                                  if (delta === null) {
+                                    deltaLabel =
+                                      unchangedInput && comparable
+                                        ? "Same input · —"
+                                        : "Not comparable · —";
+                                  } else if (delta > 0) {
+                                    deltaLabel = `+${delta}`;
+                                  } else {
+                                    deltaLabel = String(delta);
+                                  }
                                   return (
                                     <div
                                       key={entry.id}
@@ -1279,20 +1306,10 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                                           1}
                                       </span>
                                       <span className="font-semibold text-theme">
-                                        {currentScore !== null
-                                          ? `${currentScore}/100`
-                                          : entry.source === "rule_based"
-                                            ? "Structure check · unscored"
-                                            : "Unscored"}
+                                        {scoreLabel}
                                       </span>
                                       <span className="text-muted">
-                                        {delta === null
-                                          ? unchangedInput && comparable
-                                            ? "Same input · —"
-                                            : "Not comparable · —"
-                                          : delta > 0
-                                            ? `+${delta}`
-                                            : String(delta)}
+                                        {deltaLabel}
                                       </span>
                                     </div>
                                   );

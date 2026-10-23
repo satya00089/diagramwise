@@ -7,12 +7,21 @@ const sourceRoot = join(here, "hairline-figures");
 const outputRoot = join(appRoot, "public", "path-figures");
 const embedRoot = join(outputRoot, "embed");
 const names = ["workbench", "switchback", "inspection-stack", "drafting-board"];
-const toolkitNames = [
+const toolkitNames = new Set([
   "component-rack",
   "annotation-bridge",
   "assessment-sheet",
   "share-frame",
-];
+]);
+// Keep the feature artwork centered in its 5:4 frame; tool cards use a shallow crop.
+const productionViewBoxes = {
+  "switchback": "0 25 400 320",
+  "inspection-stack": "0 40 400 320",
+  "component-rack": "0 65 400 230",
+  "annotation-bridge": "0 65 400 230",
+  "assessment-sheet": "0 30 400 320",
+  "share-frame": "0 30 400 320",
+};
 
 await mkdir(outputRoot, { recursive: true });
 await mkdir(embedRoot, { recursive: true });
@@ -33,14 +42,16 @@ const inject = (template, figure) =>
     .replace("/*FIGURE*/", () => `\n${figure.trim()}\n`);
 for (const name of [...names, ...toolkitNames]) {
   const rawOut = join(outputRoot, `${name}.html`);
-  const shared = toolkitNames.includes(name)
+  const shared = toolkitNames.has(name)
     ? await read("toolkit-geometry.js")
     : geometry;
-  const figure = `/* ${license.replace(/\s+/g, " ")} */\n${shared}\n${await read(`${name}.js`)}\n`;
+  const scene = await read(`${name}.js`);
+  const figure = `/* ${license.replace(/\s+/g, " ")} */\n${shared}\n${scene}\n`;
   // Preserve the skill's fixed bench; the production host is a separate template.
   await writeFile(rawOut, inject(bench, figure), "utf8");
-  const productionHost = toolkitNames.includes(name)
-    ? embed.replace('viewBox="0 0 400 320"', 'viewBox="0 65 400 230"')
+  const viewBox = productionViewBoxes[name];
+  const productionHost = viewBox
+    ? embed.replace('viewBox="0 0 400 320"', `viewBox="${viewBox}"`)
     : embed;
   await writeFile(
     join(embedRoot, `${name}.html`),

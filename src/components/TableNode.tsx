@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import ReactDOM from "react-dom";
 import { Handle, Position, useUpdateNodeInternals } from "@xyflow/react";
 import { motion } from "framer-motion";
@@ -96,6 +96,7 @@ const TableNode: React.FC<Props> = React.memo(
 
     const [editingAttrId, setEditingAttrId] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState({ name: "", type: "" });
+    const editingInputRef = React.useRef<HTMLInputElement | null>(null);
     const [isHovered, setIsHovered] = useState(false);
     const updateNodeInternals = useUpdateNodeInternals();
     const attributeScrollRef = React.useRef<HTMLDivElement | null>(null);
@@ -108,15 +109,22 @@ const TableNode: React.FC<Props> = React.memo(
       height: 0,
     });
 
+    useEffect(() => {
+      if (editingAttrId) editingInputRef.current?.focus();
+    }, [editingAttrId]);
+
     const displayLabel = data.componentName || data.label;
-    const actionLabel =
-      data.componentId === "weak-entity"
-        ? "Weak Entity"
-        : data.componentId === "entity" || data.componentId === "er-entity"
-          ? "Entity"
-          : data.componentId === "er-view"
-            ? "View"
-            : displayLabel || "Table";
+    let actionLabel = displayLabel || "Table";
+    if (data.componentId === "weak-entity") {
+      actionLabel = "Weak Entity";
+    } else if (
+      data.componentId === "entity" ||
+      data.componentId === "er-entity"
+    ) {
+      actionLabel = "Entity";
+    } else if (data.componentId === "er-view") {
+      actionLabel = "View";
+    }
     const subtitle = data.subtitle || data.description;
     const Icon = typeof data.icon === "function" ? data.icon : undefined;
     const isContentSizedTable = isContentSizedTableNode(data);
@@ -443,6 +451,7 @@ const TableNode: React.FC<Props> = React.memo(
             return (
               <input
                 key={col.key}
+                ref={col.key === "name" ? editingInputRef : undefined}
                 type="text"
                 value={String(
                   editingValue[col.key as keyof typeof editingValue] ??
@@ -460,7 +469,6 @@ const TableNode: React.FC<Props> = React.memo(
                   if (e.key === "Escape") handleCancelEdit();
                 }}
                 className={`${cellClassName} px-1 py-0.5 bg-surface border border-theme/40 rounded text-xs`}
-                autoFocus={col.key === "name"}
                 onClick={(e) => e.stopPropagation()}
               />
             );
@@ -564,6 +572,13 @@ const TableNode: React.FC<Props> = React.memo(
       }
     }, [contextMenu.visible, closeContextMenu]);
 
+    let tableWidthClass = "max-h-[500px]";
+    if (isERTable) {
+      tableWidthClass = "w-[440px] min-w-[440px] max-w-[440px]";
+    } else if (isContentSizedTable) {
+      tableWidthClass = "w-[360px] min-w-[360px] max-w-[360px]";
+    }
+
     return (
       <>
         <motion.div
@@ -571,7 +586,7 @@ const TableNode: React.FC<Props> = React.memo(
           whileHover={{ y: -1, boxShadow: "0 12px 30px rgba(0,0,0,0.12)" }}
           whileTap={{ scale: 0.985 }}
           transition={{ type: "spring", stiffness: 320, damping: 28 }}
-          className={`min-w-[220px] ${isERTable ? "w-[440px] min-w-[440px] max-w-[440px]" : isContentSizedTable ? "w-[360px] min-w-[360px] max-w-[360px]" : "max-h-[500px]"} bg-surface border-2 border-theme text-theme text-sm shadow-lg cursor-grab relative rounded-lg overflow-visible flex flex-col`}
+          className={`min-w-[220px] ${tableWidthClass} bg-surface border-2 border-theme text-theme text-sm shadow-lg cursor-grab relative rounded-lg overflow-visible flex flex-col`}
           style={{
             ...(backgroundColor ? { backgroundColor } : {}),
             ...(borderColor ? { borderColor } : {}),
@@ -787,21 +802,6 @@ const TableNode: React.FC<Props> = React.memo(
                         aria-label={
                           attr.name ? `Attribute ${attr.name}` : "Attribute row"
                         }
-                        tabIndex={0}
-                        onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
-                          // Only trigger when the div itself is the event target (not when typing in inputs)
-                          if (
-                            e.target === e.currentTarget &&
-                            !isEditing &&
-                            (e.key === "Enter" || e.key === " ")
-                          ) {
-                            e.preventDefault();
-                            handleStartEdit(
-                              attr,
-                              e as unknown as React.SyntheticEvent,
-                            );
-                          }
-                        }}
                         onBlur={
                           isEditing
                             ? (e: React.FocusEvent<HTMLDivElement>) => {

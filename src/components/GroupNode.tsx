@@ -44,6 +44,28 @@ const GroupNode: React.FC<GroupNodeProps> = ({
       : undefined;
   const useDirectIcon =
     shouldUseDirectIcon(data.componentId) && Boolean(data.iconUrl);
+  let groupIcon: React.ReactNode = null;
+  if (useDirectIcon) {
+    groupIcon = (
+      <img
+        src={data.iconUrl}
+        alt=""
+        style={{ width: "16px", height: "16px" }}
+      />
+    );
+  } else if (data.icon) {
+    groupIcon = React.createElement(data.icon, { size: 16 });
+  } else if (sprite) {
+    groupIcon = <SpriteIcon sprite={sprite} displaySize={16} alt="" />;
+  } else if (data.iconUrl) {
+    groupIcon = (
+      <img
+        src={data.iconUrl}
+        alt=""
+        style={{ width: "16px", height: "16px" }}
+      />
+    );
+  }
 
   // condition in the thunk deduplicates — safe to dispatch every mount.
   React.useEffect(() => {
@@ -155,23 +177,7 @@ const GroupNode: React.FC<GroupNodeProps> = ({
           boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
         }}
       >
-        {useDirectIcon ? (
-          <img
-            src={data.iconUrl}
-            alt=""
-            style={{ width: "16px", height: "16px" }}
-          />
-        ) : data.icon ? (
-          React.createElement(data.icon, { size: 16 })
-        ) : sprite ? (
-          <SpriteIcon sprite={sprite} displaySize={16} alt="" />
-        ) : data.iconUrl ? (
-          <img
-            src={data.iconUrl}
-            alt=""
-            style={{ width: "16px", height: "16px" }}
-          />
-        ) : null}
+        {groupIcon}
         <span>{data.label}</span>
       </div>
 

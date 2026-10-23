@@ -39,6 +39,7 @@ export const CollaboratorCursor: React.FC<CollaboratorCursorProps> = ({
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.2))" }}
+        aria-hidden="true"
       >
         <path
           d="M5.5 3.21V20.79L10.29 16L14 21.5L15.5 20.5L11.79 15L18.5 14L5.5 3.21Z"

@@ -47,10 +47,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({
 
   const [systemDark, setSystemDark] = useState(() => {
     if (typeof window === "undefined") return false;
-    return (
-      window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches
-    );
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches;
   });
 
   useLayoutEffect(() => {

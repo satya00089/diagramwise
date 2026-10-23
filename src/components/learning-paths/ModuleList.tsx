@@ -83,9 +83,7 @@ const ModuleList: React.FC<Props> = ({
                           aria-label={
                             isDone ? "Mark as incomplete" : "Mark as complete"
                           }
-                          onClick={() =>
-                            onToggleCompleted && onToggleCompleted(lesson.id)
-                          }
+                          onClick={() => onToggleCompleted?.(lesson.id)}
                           className={`flex h-8 w-8 items-center justify-center rounded-full border shadow-sm transition-colors ${
                             isDone
                               ? "border-emerald-600 bg-emerald-600 text-white"
@@ -98,6 +96,7 @@ const ModuleList: React.FC<Props> = ({
                               className="h-4 w-4"
                               viewBox="0 0 20 20"
                               fill="currentColor"
+                              aria-hidden="true"
                             >
                               <path
                                 fillRule="evenodd"
@@ -112,6 +111,7 @@ const ModuleList: React.FC<Props> = ({
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
+                              aria-hidden="true"
                             >
                               <path
                                 strokeLinecap="round"

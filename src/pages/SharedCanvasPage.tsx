@@ -24,7 +24,7 @@ import ThemeSwitcher from "../components/ThemeSwitcher";
 import CustomEdge from "../components/CustomEdge";
 import ERRelationshipEdge from "../components/ERRelationshipEdge";
 import AssessmentFindings from "../components/AssessmentFindings";
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import type { ValidationResult } from "../types/systemDesign";
 import { COMPONENTS } from "../config/components";
 import { getNodeDisplayLabel } from "../utils/nodePresentation";
@@ -46,6 +46,8 @@ import {
   MdTune,
   MdWarning,
 } from "react-icons/md";
+
+type CaptureReady = "true" | "false" | undefined;
 
 // ---------------------------------------------------------------------------
 // Constants mirrored from InspectorPanel
@@ -1296,23 +1298,18 @@ const SharedCanvasPage: React.FC = () => {
       return;
     }
 
-    const componentIds = Array.from(
-      new Set(
-        data.nodes
-          .map((node) =>
-            typeof node.data?.componentId === "string"
-              ? node.data.componentId
-              : null,
-          )
-          .filter((componentId): componentId is string => {
-            if (!componentId) return false;
-            const node = data.nodes.find(
-              (candidate) => candidate.data?.componentId === componentId,
-            );
-            return !node?.data?.iconUrl && shouldUseDirectIcon(componentId);
-          }),
-      ),
-    );
+    const componentIdSet = new Set<string>();
+    for (const node of data.nodes) {
+      const componentId = node.data?.componentId;
+      if (
+        typeof componentId === "string" &&
+        !node.data?.iconUrl &&
+        shouldUseDirectIcon(componentId)
+      ) {
+        componentIdSet.add(componentId);
+      }
+    }
+    const componentIds = Array.from(componentIdSet);
 
     if (componentIds.length === 0) {
       setPublicIconUrls({});
@@ -1324,33 +1321,22 @@ const SharedCanvasPage: React.FC = () => {
     setPublicIconUrls({});
     setPublicIconLoading(true);
 
-    Promise.all(
-      componentIds.map(async (componentId) => {
-        try {
-          const component =
-            await componentProviderService.getComponentById(componentId);
-          return component.iconUrl
-            ? ([componentId, component.iconUrl] as const)
-            : null;
-        } catch {
-          return null;
+    componentProviderService
+      .getComponentsByIds(componentIds, true)
+      .then((components) => {
+        if (cancelled) return;
+        const iconUrls: Record<string, string> = {};
+        for (const component of components) {
+          if (component.iconUrl) iconUrls[component.id] = component.iconUrl;
         }
-      }),
-    ).then((entries) => {
-      if (cancelled) return;
-      setPublicIconUrls(
-        Object.fromEntries(
-          entries.filter(
-            (entry): entry is readonly [string, string] => entry !== null,
-          ),
-        ),
-      );
-      setPublicIconLoading(false);
-    }).catch(() => {
-      if (cancelled) return;
-      setPublicIconUrls({});
-      setPublicIconLoading(false);
-    });
+        setPublicIconUrls(iconUrls);
+        setPublicIconLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setPublicIconUrls({});
+        setPublicIconLoading(false);
+      });
 
     return () => {
       cancelled = true;
@@ -1458,6 +1444,7 @@ const SharedCanvasPage: React.FC = () => {
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -1484,9 +1471,18 @@ const SharedCanvasPage: React.FC = () => {
     );
   }
 
+  let captureReady: CaptureReady;
+  if (captureMode) {
+    if (publicIconLoading || !captureCanvasReady) {
+      captureReady = "false";
+    } else {
+      captureReady = "true";
+    }
+  }
+
   return (
     <>
-      <SEO
+      <Seo
         title={pageTitle}
         description={
           data.kind === "attempt"
@@ -1502,13 +1498,7 @@ const SharedCanvasPage: React.FC = () => {
           captureMode ? " diagramwise-capture-root" : ""
         }`}
         data-diagramwise-capture-root={captureMode ? "true" : undefined}
-        data-diagramwise-capture-ready={
-          captureMode
-            ? publicIconLoading || !captureCanvasReady
-              ? "false"
-              : "true"
-            : undefined
-        }
+        data-diagramwise-capture-ready={captureReady}
         aria-label={
           captureMode ? `${data.title} Diagramwise architecture preview` : undefined
         }

@@ -7,8 +7,8 @@
  * else references the SVG, so it's never written to disk.
  * Run: node scripts/generate-og-images.cjs
  */
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 const puppeteer = require("puppeteer");
 
 const outDir = path.join(__dirname, "..", "public", "og");

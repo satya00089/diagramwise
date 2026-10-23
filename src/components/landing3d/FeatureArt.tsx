@@ -23,7 +23,11 @@ const figures = {
 
 export default function FeatureArt({
   type,
-}: Readonly<{ type: keyof typeof figures }>) {
+  variant,
+}: Readonly<{
+  type: keyof typeof figures;
+  variant?: "toolkit";
+}>) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const stateRef = useRef({ active: false, x: 200 });
   const { flowColorMode } = useTheme();
@@ -38,7 +42,7 @@ export default function FeatureArt({
   useEffect(() => {
     const frame = frameRef.current;
     const card = frame?.closest<HTMLElement>(
-      ".systema-feature, .systema-toolkit-grid article",
+      ".systema-feature, .systema-toolkit-grid article, .systema-product-feature",
     );
     if (!frame || !card) return;
     const move = (event: PointerEvent) => {
@@ -81,11 +85,11 @@ export default function FeatureArt({
     <iframe
       ref={frameRef}
       className={
-        type in { library: true, annotate: true, assessment: true, share: true }
+        variant === "toolkit"
           ? "systema-feature-art systema-toolkit-art"
           : "systema-feature-art"
       }
-      src={`/path-figures/embed/${name}.html?theme=${flowColorMode}&v=2`}
+      src={`/path-figures/embed/${name}.html?theme=${flowColorMode}&v=3`}
       title={label}
       aria-hidden="true"
       tabIndex={-1}

@@ -502,7 +502,7 @@
 .profile-form-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.75rem;
 }
 
@@ -563,10 +563,6 @@
   border-color: var(--accent);
   outline: 2px solid color-mix(in srgb, var(--accent) 24%, transparent);
   outline-offset: 1px;
-}
-
-.profile-form-actions {
-  justify-content: flex-end;
 }
 
 .profile-primary-button {

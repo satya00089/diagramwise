@@ -2,7 +2,11 @@ export interface AdminFeedbackItem {
   id: string;
   createdAt: string;
   updatedAt?: string | null;
-  status: "new" | "reviewing" | "resolved" | string;
+  status:
+    | "new"
+    | "reviewing"
+    | "resolved"
+    | (string & Record<never, never>);
   source: string;
   category: string;
   rating?: number | null;

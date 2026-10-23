@@ -5,7 +5,7 @@ import AccountMenu from "../components/AccountMenu";
 import UserAvatar from "../components/UserAvatar";
 import RollingNavLabel from "../components/RollingNavLabel";
 import { useTheme } from "../hooks/useTheme";
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import { useAuth } from "../hooks/useAuth";
 import { useOnboarding } from "../hooks/useOnboarding";
 import { useTour } from "../hooks/useTour";
@@ -198,6 +198,7 @@ const PermissionBadge: React.FC<{
         viewBox="0 0 24 24"
         stroke="currentColor"
         strokeWidth={2.5}
+        aria-hidden="true"
       >
         <PermissionIcon permission={permission} />
       </svg>
@@ -331,7 +332,7 @@ const Home: React.FC = () => {
       }
     };
 
-    loadDiagrams();
+    void loadDiagrams();
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -616,7 +617,7 @@ const Home: React.FC = () => {
 
   return (
     <>
-      <SEO
+      <Seo
         title="Diagramwise — Design architectures. Get them reviewed."
         description="Practice system design by building architectures visually, explaining your assumptions, and getting structured feedback on scalability, reliability, data design, and trade-offs."
         keywords="system design, architecture diagram, system design interview, software architecture, distributed systems, scalable architecture, system design tool, architecture playground, cloud architecture, microservices design, ER diagram, entity relationship diagram, UML diagram, class diagram, database design"
@@ -731,11 +732,15 @@ const Home: React.FC = () => {
               aria-hidden="true"
             />
             {/* Particle network canvas */}
-            <canvas
-              ref={canvasRef}
-              className="absolute inset-0 w-full h-full pointer-events-none"
+            <div
+              className="absolute inset-0 pointer-events-none"
               aria-hidden="true"
-            />
+            >
+              <canvas
+                ref={canvasRef}
+                className="absolute inset-0 w-full h-full pointer-events-none"
+              />
+            </div>
             {/* Animated decorative graph */}
             <div className="absolute inset-0 pointer-events-none">
               {/* SVG connection lines */}
@@ -831,6 +836,7 @@ const Home: React.FC = () => {
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -1180,6 +1186,7 @@ const Home: React.FC = () => {
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
+                      aria-hidden="true"
                     >
                       <path
                         strokeLinecap="round"
@@ -1269,6 +1276,7 @@ const Home: React.FC = () => {
                                         viewBox="0 0 24 24"
                                         stroke="currentColor"
                                         strokeWidth={3}
+                                        aria-hidden="true"
                                       >
                                         <path
                                           strokeLinecap="round"
@@ -1308,6 +1316,7 @@ const Home: React.FC = () => {
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
+                              aria-hidden="true"
                             >
                               <path
                                 strokeLinecap="round"
@@ -1325,6 +1334,7 @@ const Home: React.FC = () => {
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
+                              aria-hidden="true"
                             >
                               <path
                                 strokeLinecap="round"

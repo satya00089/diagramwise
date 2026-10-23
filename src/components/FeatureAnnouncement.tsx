@@ -1,12 +1,10 @@
-import React, { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useLayoutEffect, useRef, useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MdClose, MdMenuBook } from "react-icons/md";
 import { LuBrainCircuit } from "react-icons/lu";
-import { HiUserGroup } from "react-icons/hi2";
+import { useAuth } from "../hooks/useAuth";
 import { useOnboarding } from "../hooks/useOnboarding";
-import { FeatureFlags, isFeatureEnabled } from "../config/featureFlags";
-import type { FeatureFlag } from "../config/featureFlags";
 import type { PageId } from "../contexts/OnboardingContext";
 
 interface Announcement {
@@ -17,16 +15,15 @@ interface Announcement {
   description: string;
   ctaLabel: string;
   ctaHref?: string;
-  featureFlag?: FeatureFlag;
 }
 
-// ---------------------------------------------------------------------------
-// Add new feature announcements here. Each shows once then is dismissed forever.
-// ---------------------------------------------------------------------------
+const ANNOUNCEMENT_SESSION_KEY = "diagramwise_announcement_dismissed_session";
+
+// Add new feature announcements here. Dismissals are stored per account.
 const ANNOUNCEMENTS: Announcement[] = [
   {
     id: "aiml_problems_v1",
-    icon: <LuBrainCircuit className="h-6 w-6" aria-hidden="true" />,
+    icon: <LuBrainCircuit className="h-5 w-5" aria-hidden="true" />,
     badge: "New Domain",
     title: "AI & ML System Design Problems",
     description:
@@ -35,27 +32,34 @@ const ANNOUNCEMENTS: Announcement[] = [
     ctaHref: "/problems",
   },
   {
-    id: "realtime_collab_v1",
-    icon: <HiUserGroup className="h-6 w-6" aria-hidden="true" />,
-    badge: "New Feature",
-    title: "Real-Time Collaboration is Live",
+    id: "guided_walkthroughs_v1",
+    icon: <MdMenuBook className="h-5 w-5" aria-hidden="true" />,
+    badge: "Guided Help",
+    title: "Guided Walkthroughs for System Design Problems",
     description:
-      "Invite teammates to your design canvas. Changes sync instantly — just like Figma.",
-    ctaLabel: "Try It Now",
-    ctaHref: "/playground/free",
-  },
-  {
-    id: "learning_path_weekly_modules_v1",
-    icon: <MdMenuBook className="h-6 w-6" aria-hidden="true" />,
-    badge: "Weekly",
-    title: "Learning Paths Just Got Better",
-    description:
-      "New curated modules are added to Learning Paths every week — stay current with focused modules.",
-    ctaLabel: "Browse Learning Paths",
-    ctaHref: "/learning-paths/",
-    featureFlag: FeatureFlags.LEARNING_PATH_WEEKLY_MODULES,
+      "Get step-by-step guidance on supported problems while learning the reasoning behind each design decision.",
+    ctaLabel: "Find a walkthrough",
+    ctaHref: "/problems/",
   },
 ];
+
+const mapPathToPageId = (path: string): PageId | undefined => {
+  if (path === "/") return "home";
+  if (path.startsWith("/problems")) return "dashboard";
+  if (path.startsWith("/playground") || path.startsWith("/public"))
+    return "design_studio";
+  if (path.startsWith("/diagrams")) return "my_designs";
+  if (path.startsWith("/problems/play")) return "problem_playground";
+  return undefined;
+};
+
+const readSessionDismissal = (): boolean => {
+  try {
+    return sessionStorage.getItem(ANNOUNCEMENT_SESSION_KEY) === "true";
+  } catch {
+    return false;
+  }
+};
 
 const FeatureAnnouncement: React.FC = () => {
   const {
@@ -64,176 +68,129 @@ const FeatureAnnouncement: React.FC = () => {
     isNewToPage,
     isTourCompleted,
   } = useOnboarding();
-  const navigate = useNavigate();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const location = useLocation();
-
-  const mapPathToPageId = (path: string): PageId | undefined => {
-    if (path === "/") return "home";
-    if (path.startsWith("/problems")) return "dashboard";
-    if (path.startsWith("/playground") || path.startsWith("/public"))
-      return "design_studio";
-    if (path.startsWith("/diagrams")) return "my_designs";
-    if (path.startsWith("/problems/play")) return "problem_playground";
-    return undefined;
-  };
+  const shouldReduceMotion = useReducedMotion();
+  const announcementRef = useRef<HTMLElement>(null);
+  const [dismissedThisSession, setDismissedThisSession] =
+    useState(readSessionDismissal);
 
   const currentPage = mapPathToPageId(location.pathname);
   const deferForTour = Boolean(
     currentPage && isNewToPage(currentPage) && !isTourCompleted(currentPage),
   );
-  const announcement = deferForTour
-    ? undefined
-    : ANNOUNCEMENTS.find((a) => {
-        if (a.featureFlag && !isFeatureEnabled(a.featureFlag)) return false;
-        return !isAnnouncementSeen(a.id);
-      });
+  const announcement =
+    isAuthLoading || deferForTour || dismissedThisSession
+      ? undefined
+      : ANNOUNCEMENTS.find(
+          (item) => !isAnnouncementSeen(item.id, user?.id),
+        );
   const isVisible = Boolean(announcement);
 
-  // Set a CSS variable so fixed headers shift down on md+ screens
-  useEffect(() => {
+  // Keep fixed page headers below the strip without assuming a fixed height.
+  useLayoutEffect(() => {
     if (!isVisible) {
       document.documentElement.style.removeProperty("--announcement-h");
       return;
     }
-    const mq = window.matchMedia("(min-width: 768px)");
-    const apply = () => {
+
+    const updateHeight = () => {
+      const height = announcementRef.current?.getBoundingClientRect().height ?? 0;
       document.documentElement.style.setProperty(
         "--announcement-h",
-        mq.matches ? "54px" : "0px",
+        `${height}px`,
       );
     };
-    apply();
-    mq.addEventListener("change", apply);
+
+    updateHeight();
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? undefined
+        : new ResizeObserver(updateHeight);
+    if (observer && announcementRef.current) {
+      observer.observe(announcementRef.current);
+    }
+    window.addEventListener("resize", updateHeight);
+
     return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", updateHeight);
       document.documentElement.style.removeProperty("--announcement-h");
-      mq.removeEventListener("change", apply);
     };
   }, [isVisible]);
 
   if (!announcement) return null;
 
-  const handleDismiss = () => {
-    dismissAnnouncement(announcement.id);
-  };
-
-  const handleCta = () => {
-    dismissAnnouncement(announcement.id);
-    if (announcement.ctaHref) {
-      navigate(announcement.ctaHref);
+  const dismissForSession = () => {
+    setDismissedThisSession(true);
+    try {
+      sessionStorage.setItem(ANNOUNCEMENT_SESSION_KEY, "true");
+    } catch {
+      // The current component state still prevents announcements cascading.
     }
+    dismissAnnouncement(announcement.id, user?.id);
   };
 
   return (
     <AnimatePresence>
-      {/* ── Desktop / Tablet: fixed banner above the header ── */}
-      <motion.div
-        key="banner"
-        initial={{ opacity: 0, y: -48 }}
+      <motion.aside
+        key={announcement.id}
+        ref={announcementRef}
+        initial={shouldReduceMotion ? false : { opacity: 0, y: -16 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -48 }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
-        className="announcement-bar hidden md:flex fixed top-0 left-0 right-0 z-[60]"
+        exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -16 }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.2, ease: "easeOut" }}
+        className="announcement-bar fixed inset-x-0 top-0 z-[60]"
         role="region"
         aria-label="Featured update"
       >
         <div className="announcement-bar__inner">
-          <div className="announcement-bar__icon">{announcement.icon}</div>
+          <span className="announcement-bar__icon" aria-hidden="true">
+            {announcement.icon}
+          </span>
 
           <div className="announcement-bar__content">
-            <span className="announcement-bar__badge">
-              {announcement.badge}
-            </span>
-            <span className="announcement-bar__title">
-              {announcement.title}
-            </span>
+            <div className="announcement-bar__heading">
+              <span className="announcement-bar__badge">
+                {announcement.badge}
+              </span>
+              <span className="announcement-bar__title">
+                {announcement.title}
+              </span>
+            </div>
+            <p className="announcement-bar__description">
+              {announcement.description}
+            </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleCta}
-            className="announcement-bar__cta"
-          >
-            {announcement.ctaLabel}
-          </button>
+          {announcement.ctaHref ? (
+            <Link
+              to={announcement.ctaHref}
+              onClick={dismissForSession}
+              className="announcement-bar__cta"
+            >
+              {announcement.ctaLabel}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={dismissForSession}
+              className="announcement-bar__cta"
+            >
+              {announcement.ctaLabel}
+            </button>
+          )}
 
           <button
             type="button"
-            onClick={handleDismiss}
+            onClick={dismissForSession}
             className="announcement-bar__dismiss"
-            aria-label="Dismiss announcement"
+            aria-label={`Dismiss ${announcement.title} update`}
           >
             <MdClose aria-hidden="true" />
           </button>
         </div>
-      </motion.div>
-
-      {/* ── Mobile: modal overlay (unchanged) ── */}
-      <div
-        key="modal"
-        className="md:hidden fixed inset-0 z-50 flex items-center justify-center p-4"
-      >
-        {/* Backdrop */}
-        <motion.div
-          className="absolute inset-0 bg-black/60"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={handleDismiss}
-        />
-
-        {/* Card */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.94, y: 10 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96, y: 6 }}
-          transition={{ duration: 0.22 }}
-          className="relative z-10 w-full max-w-sm rounded-2xl border border-theme bg-[var(--surface)] shadow-2xl overflow-hidden"
-        >
-          <div className="h-1 w-full bg-[var(--accent)]" />
-          <button
-            type="button"
-            onClick={handleDismiss}
-            className="absolute top-3 right-3 text-muted hover:text-theme transition-colors cursor-pointer z-10"
-            aria-label="Dismiss announcement"
-          >
-            <MdClose className="h-5 w-5" />
-          </button>
-          <div className="p-6">
-            <div className="flex items-start gap-4 mb-4">
-              <div className="shrink-0 flex h-14 w-14 items-center justify-center rounded-xl bg-[var(--bg-hover)] border border-theme text-[var(--accent)]">
-                {announcement.icon}
-              </div>
-              <div className="pt-1">
-                <span className="inline-block text-[10px] font-bold uppercase tracking-widest text-[var(--accent)] mb-1">
-                  {announcement.badge}
-                </span>
-                <h2 className="text-base font-bold text-theme leading-snug">
-                  {announcement.title}
-                </h2>
-              </div>
-            </div>
-            <p className="text-sm text-muted leading-relaxed mb-5">
-              {announcement.description}
-            </p>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleCta}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-[var(--text)] text-[var(--bg)] text-sm font-semibold hover:opacity-90 transition-opacity cursor-pointer"
-              >
-                {announcement.ctaLabel}
-              </button>
-              <button
-                type="button"
-                onClick={handleDismiss}
-                className="px-4 py-2.5 rounded-xl border border-theme text-sm font-medium text-muted hover:text-theme transition-colors cursor-pointer"
-              >
-                Maybe later
-              </button>
-            </div>
-          </div>
-        </motion.div>
-      </div>
+      </motion.aside>
     </AnimatePresence>
   );
 };

@@ -134,7 +134,7 @@ import {
 } from "../components/shared/AnimatedInputFields";
 
 // UI Components - Layout
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import AccountMenu from "../components/AccountMenu";
 import { ToastContainer } from "../components/Toast";
@@ -636,6 +636,15 @@ const createFreeformNodeWithCopyHandler = (
   };
 };
 
+const getPlaygroundDifficultyClass = (
+  difficulty: string | undefined,
+): string => {
+  if (difficulty === "Easy") return "playground-difficulty--easy";
+  if (difficulty === "Medium") return "playground-difficulty--medium";
+  if (difficulty === "Very Hard") return "playground-difficulty--very-hard";
+  return "playground-difficulty--hard";
+};
+
 const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   useTheme();
   const navigate = useNavigate();
@@ -784,6 +793,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   const searchParams = new URLSearchParams(globalThis.location.search);
   const diagramIdFromUrl = searchParams.get("diagramId");
   const remixIdFromUrl = searchParams.get("remix");
+  const requestedTab = searchParams.get("tab");
 
   // State for problem data
   const [problem, setProblem] = useState<SystemDesignProblem | null>(null);
@@ -926,7 +936,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       }
     };
 
-    fetchProblem();
+    void fetchProblem();
   }, [idFromUrl, isSharedView]);
 
   useEffect(() => {
@@ -1662,7 +1672,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           }
         };
 
-        loadLastDiagram();
+        void loadLastDiagram();
       }
     } else if (idFromUrl && idFromUrl !== "free" && isAuthenticated) {
       // Load saved progress for problem-solving from database
@@ -1732,8 +1742,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
               ) {
                 setLastSuccessfulAssessment(attempt.lastAssessment);
               }
-              // Automatically open Assessment tab to show the assessment
-              setActiveRightTab("assessment");
+              // Respect a dashboard request to start directly in the guide.
+              if (requestedTab !== "guide") {
+                setActiveRightTab("assessment");
+              }
             }
             if (
               attempt.lastAssessmentCheck?.scoreAvailable === false ||
@@ -1776,7 +1788,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         }
       };
 
-      loadAttempt();
+      void loadAttempt();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -2100,21 +2112,26 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       ...(targetFieldId ? { targetFieldId } : {}),
     };
 
+    let edgeData: Record<string, unknown>;
+    if (isERConnection) {
+      edgeData = {
+        label: "",
+        hasLabel: false,
+        cardinality: "one-to-many",
+        ...(sourceFieldId ? { sourceFieldId } : {}),
+        ...(targetFieldId ? { targetFieldId } : {}),
+      };
+    } else if (isDocumentConnection) {
+      edgeData = fieldConnectionData;
+    } else {
+      edgeData = { label: "", hasLabel: false };
+    }
+
     // Use ER relationship edge for ER diagrams, custom edge for others
     const newEdge = {
       ...connection,
       type: isERConnection ? "erRelationship" : "customEdge",
-      data: isERConnection
-        ? {
-            label: "",
-            hasLabel: false,
-            cardinality: "one-to-many",
-            ...(sourceFieldId ? { sourceFieldId } : {}),
-            ...(targetFieldId ? { targetFieldId } : {}),
-          }
-        : isDocumentConnection
-          ? fieldConnectionData
-          : { label: "", hasLabel: false },
+      data: edgeData,
     } as unknown as Edge;
     setEdges((eds) => addEdge(newEdge, eds));
   };
@@ -2757,7 +2774,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         // Ensure full component metadata is fetched if it's a provider component
         if (
           comp.componentType &&
-          !COMPONENTS.find((c) => c.id === comp.componentType) &&
+          !COMPONENTS.some((c) => c.id === comp.componentType) &&
           !fullComponentsCache[comp.componentType] &&
           !isGenericComponentReference(comp.componentType)
         ) {
@@ -2787,7 +2804,13 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   // which tab is active in the right sidebar: 'details' or 'inspector'
   const [activeRightTab, setActiveRightTab] = useState<
     "details" | "inspector" | "assessment" | "guide" | "simulation"
-  >("details");
+  >(
+    idFromUrl &&
+      idFromUrl !== "free" &&
+      requestedTab === "guide"
+      ? "guide"
+      : "details",
+  );
   useEffect(() => {
     if (
       compactViewport &&
@@ -3034,7 +3057,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           if (n.id !== nodeId) return n;
           const updated: Node = {
             ...n,
-            style: { ...(n.style ?? {}), width, height },
+            style: { ...n.style, width, height },
             data: {
               ...(n.data as AnyNodeData),
               shape: {
@@ -3065,7 +3088,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         const newOrder = [...others, node];
         return newOrder.map((n, i) => ({
           ...n,
-          style: { ...(n.style ?? {}), zIndex: i },
+          style: { ...n.style, zIndex: i },
         }));
       });
     };
@@ -3081,7 +3104,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         const newOrder = [node, ...others];
         return newOrder.map((n, i) => ({
           ...n,
-          style: { ...(n.style ?? {}), zIndex: i },
+          style: { ...n.style, zIndex: i },
         }));
       });
     };
@@ -3527,7 +3550,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     if (!inspectedNodeId) return;
 
     const newProperty: CustomProperty = {
-      id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+      id: `custom-${crypto.randomUUID()}`,
       key: `customProperty${(customProperties[inspectedNodeId]?.length || 0) + 1}`,
       label: `Custom Property ${(customProperties[inspectedNodeId]?.length || 0) + 1}`,
       type: "text",
@@ -4223,7 +4246,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
           {/* Color */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-muted w-12 flex-shrink-0">
+            <label
+              htmlFor="edge-color-value"
+              className="text-xs text-muted w-12 flex-shrink-0"
+            >
               Color
             </label>
             <div className="relative flex-shrink-0">
@@ -4241,6 +4267,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
               />
             </div>
             <input
+              id="edge-color-value"
               type="text"
               value={currentEdgeColor}
               placeholder="default"
@@ -4262,10 +4289,14 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
           {/* Stroke Width */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-muted w-12 flex-shrink-0">
+            <label
+              htmlFor="edge-stroke-width"
+              className="text-xs text-muted w-12 flex-shrink-0"
+            >
               Width
             </label>
             <input
+              id="edge-stroke-width"
               type="range"
               min={1}
               max={8}
@@ -4342,6 +4373,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
+            aria-hidden="true"
           >
             <polyline points="3 6 5 6 21 6" />
             <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
@@ -4847,11 +4879,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
     try {
       // Custom problems stored in localStorage (custom-...)
-      if (
-        idFromUrl &&
-        idFromUrl.startsWith &&
-        idFromUrl.startsWith("custom-")
-      ) {
+      if (idFromUrl?.startsWith("custom-")) {
         localStorage.removeItem(`custom-problem-${idFromUrl}`);
       } else if (diagramIdFromUrl && currentDiagramId) {
         // Viewing a diagram by URL: delete user's diagram if authenticated
@@ -5431,7 +5459,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
   return (
     <>
-      <SEO
+      <Seo
         title={pageTitle}
         description={pageDescription}
         keywords={`system design playground, ${problem?.title || "free canvas"}, architecture diagram tool, ${problem?.category || "design tool"}`}
@@ -5446,7 +5474,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       />
       <div className="design-studio-page h-screen flex flex-col overflow-hidden bg-theme">
         {/* Header */}
-        <header className="relative z-50 bg-[var(--brand)] shadow-md overflow-visible">
+        <header
+          className="relative z-50 bg-[var(--brand)] shadow-md overflow-visible"
+          style={{ marginTop: "var(--announcement-h, 0px)" }}
+        >
           <div className="max-w-full mx-auto px-4 sm:px-6 overflow-visible">
             <div className="flex flex-wrap items-center justify-between min-h-14 gap-y-2 py-2 md:h-14 md:flex-nowrap md:py-0 overflow-visible">
               {/* Left side - Logo and Title */}
@@ -5472,13 +5503,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                     <>
                       <span
                         className={`playground-difficulty px-2 py-1 rounded text-xs font-medium ${
-                          problem.difficulty === "Easy"
-                            ? "playground-difficulty--easy"
-                            : problem.difficulty === "Medium"
-                              ? "playground-difficulty--medium"
-                              : problem.difficulty === "Very Hard"
-                                ? "playground-difficulty--very-hard"
-                                : "playground-difficulty--hard"
+                          getPlaygroundDifficultyClass(problem.difficulty)
                         }`}
                       >
                         {problem.difficulty}
@@ -5641,6 +5666,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
+                          aria-hidden="true"
                         >
                           <path
                             strokeLinecap="round"
@@ -6086,6 +6112,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
+                    aria-hidden="true"
                   >
                     <path
                       strokeLinecap="round"
@@ -6359,10 +6386,12 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                     <button
                       type="button"
                       onClick={() => {
-                        navigator.clipboard.writeText(
-                          `${globalThis.location.origin}/#/playground/free?diagramId=${currentDiagramId}`,
-                        );
-                        toast.success("Link copied to clipboard!");
+                        void navigator.clipboard
+                          .writeText(
+                            `${globalThis.location.origin}/#/playground/free?diagramId=${currentDiagramId}`,
+                          )
+                          .then(() => toast.success("Link copied to clipboard!"))
+                          .catch(() => toast.error("Could not copy the link."));
                       }}
                       className="px-3 py-2 bg-theme/10 hover:bg-theme/20 text-theme rounded-md transition-colors"
                     >
