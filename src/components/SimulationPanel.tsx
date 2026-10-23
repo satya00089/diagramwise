@@ -19,6 +19,7 @@ import type {
   SimulationInput,
   SimulationProfileCapacities,
   SimulationResult,
+  SimulationRole,
 } from "../types/simulation";
 import { prepareSimulation } from "../services/simulation";
 import {
@@ -183,6 +184,17 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
 
   const isPreparedForCurrentGraph =
     preparation?.status === "ready" && preparedFor === graphFingerprint;
+  const routeRoles = useMemo(() => {
+    if (!preparation) return new Set<SimulationRole>();
+    const routeNodeIds = new Set(
+      preparation.routes.flatMap((route) => route.node_ids),
+    );
+    return new Set(
+      preparation.component_roles
+        .filter(({ node_id }) => routeNodeIds.has(node_id))
+        .map(({ role }) => role),
+    );
+  }, [preparation]);
   const hasReadCache = Boolean(
     preparation?.routes
       .find((route) => route.operation === "read")
@@ -488,34 +500,78 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
                   Component profiles · educational assumptions
                 </summary>
                 <div className="mt-3 flex flex-col gap-4">
-                  <SliderField
-                    id="simulation-database-capacity"
-                    label="Database capacity per node"
-                    value={profileCapacities.database}
-                    min={100}
-                    max={3000}
-                    step={50}
-                    suffix="ops/s"
-                    help="Assumes one equal-cost data operation per read or write."
-                    onChange={(value) =>
-                      updateInput("profileCapacities", {
-                        ...profileCapacities,
-                        database: value,
-                      })
-                    }
-                  />
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted">
-                    <span>Ingress · assumed</span>
-                    <span className="text-right tabular-nums">{formatRate(profileCapacities.ingress)} req/s</span>
-                    <span>Compute · assumed</span>
-                    <span className="text-right tabular-nums">{formatRate(profileCapacities.compute)} req/s per node</span>
-                    {hasReadCache && (
-                      <>
-                        <span>Cache · assumed</span>
-                        <span className="text-right tabular-nums">{formatRate(profileCapacities.cache)} ops/s</span>
-                      </>
-                    )}
-                  </div>
+                  {routeRoles.has("ingress") && (
+                    <SliderField
+                      id="simulation-ingress-capacity"
+                      label="Ingress capacity per node"
+                      value={profileCapacities.ingress}
+                      min={100}
+                      max={20000}
+                      step={100}
+                      suffix="req/s"
+                      help="Assumed request handling capacity for each ingress component."
+                      onChange={(value) =>
+                        updateInput("profileCapacities", {
+                          ...profileCapacities,
+                          ingress: value,
+                        })
+                      }
+                    />
+                  )}
+                  {routeRoles.has("compute") && (
+                    <SliderField
+                      id="simulation-compute-capacity"
+                      label="Compute capacity per node"
+                      value={profileCapacities.compute}
+                      min={100}
+                      max={10000}
+                      step={100}
+                      suffix="req/s"
+                      help="Assumed request handling capacity for each compute component."
+                      onChange={(value) =>
+                        updateInput("profileCapacities", {
+                          ...profileCapacities,
+                          compute: value,
+                        })
+                      }
+                    />
+                  )}
+                  {routeRoles.has("cache") && (
+                    <SliderField
+                      id="simulation-cache-capacity"
+                      label="Cache capacity"
+                      value={profileCapacities.cache}
+                      min={100}
+                      max={50000}
+                      step={100}
+                      suffix="ops/s"
+                      help="Assumed operation capacity for each cache component."
+                      onChange={(value) =>
+                        updateInput("profileCapacities", {
+                          ...profileCapacities,
+                          cache: value,
+                        })
+                      }
+                    />
+                  )}
+                  {routeRoles.has("database") && (
+                    <SliderField
+                      id="simulation-database-capacity"
+                      label="Database capacity per node"
+                      value={profileCapacities.database}
+                      min={100}
+                      max={3000}
+                      step={50}
+                      suffix="ops/s"
+                      help="Assumes one equal-cost data operation per read or write."
+                      onChange={(value) =>
+                        updateInput("profileCapacities", {
+                          ...profileCapacities,
+                          database: value,
+                        })
+                      }
+                    />
+                  )}
                 </div>
               </details>
 
