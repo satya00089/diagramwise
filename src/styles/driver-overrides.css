@@ -60,106 +60,106 @@ html.dark .driver-popover {
 }
 
 /* Description */
-.driver-popover-description {
-  margin: 0 !important;
-  color: var(--muted, #6b7280) !important;
-  font-size: 13px !important;
-  font-weight: 400 !important;
-  line-height: 1.55 !important;
+html body .driver-popover .driver-popover-description {
+  margin: 0;
+  color: var(--muted, #6b7280);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.55;
 }
 
 /* Footer and progress */
-.driver-popover-footer {
-  min-height: 34px !important;
-  margin-top: 17px !important;
-  gap: 12px !important;
+html body .driver-popover .driver-popover-footer {
+  min-height: 34px;
+  margin-top: 17px;
+  gap: 12px;
 }
 
-.driver-popover-progress-text {
-  flex: none !important;
-  color: var(--muted, #6b7280) !important;
-  font-size: 10px !important;
-  font-weight: 700 !important;
+html body .driver-popover .driver-popover-progress-text {
+  flex: none;
+  color: var(--muted, #6b7280);
+  font-size: 10px;
+  font-weight: 700;
   letter-spacing: 0.1em;
-  line-height: 1.2 !important;
-  text-transform: uppercase !important;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 
-.driver-popover-navigation-btns {
-  gap: 6px !important;
+html body .driver-popover .driver-popover-navigation-btns {
+  gap: 6px;
 }
 
-.driver-popover-navigation-btns button + button {
-  margin-left: 0 !important;
+html body .driver-popover .driver-popover-navigation-btns button + button {
+  margin-left: 0;
 }
 
-.driver-popover-footer button {
-  box-sizing: border-box !important;
-  min-height: 32px !important;
-  padding: 7px 11px !important;
-  border: 1px solid transparent !important;
-  border-radius: 999px !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
+html body .driver-popover .driver-popover-footer button {
+  box-sizing: border-box;
+  min-height: 32px;
+  padding: 7px 11px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
   letter-spacing: -0.01em;
-  line-height: 1 !important;
-  text-shadow: none !important;
+  line-height: 1;
+  text-shadow: none;
   transition:
     background-color 180ms ease,
     border-color 180ms ease,
     color 180ms ease,
-    transform 180ms ease !important;
+    transform 180ms ease;
 }
 
-.driver-popover-prev-btn {
-  color: var(--muted, #6b7280) !important;
-  background: transparent !important;
+html body .driver-popover .driver-popover-prev-btn {
+  color: var(--muted, #6b7280);
+  background: transparent;
 }
 
-.driver-popover-prev-btn:hover,
-.driver-popover-prev-btn:focus-visible {
-  border-color: var(--border, #d9d2c5) !important;
-  background: var(--bg-hover, #ebe4da) !important;
-  color: var(--text, #111827) !important;
+html body .driver-popover .driver-popover-prev-btn:hover,
+html body .driver-popover .driver-popover-prev-btn:focus-visible {
+  border-color: var(--border, #d9d2c5);
+  background: var(--bg-hover, #ebe4da);
+  color: var(--text, #111827);
 }
 
-.driver-popover-next-btn {
-  border-color: var(--text, #111827) !important;
-  background: var(--text, #111827) !important;
-  color: var(--bg, #f8f6f1) !important;
+html body .driver-popover .driver-popover-next-btn {
+  border-color: var(--text, #111827);
+  background: var(--text, #111827);
+  color: var(--bg, #f8f6f1);
 }
 
-.driver-popover-next-btn:hover,
-.driver-popover-next-btn:focus-visible {
-  transform: translateY(-1px) !important;
-  opacity: 0.84 !important;
+html body .driver-popover .driver-popover-next-btn:hover,
+html body .driver-popover .driver-popover-next-btn:focus-visible {
+  transform: translateY(-1px);
+  opacity: 0.84;
 }
 
-.driver-popover-footer button:focus-visible,
-.driver-popover-close-btn:focus-visible {
-  outline: 2px solid var(--text, #111827) !important;
-  outline-offset: 2px !important;
+html body .driver-popover .driver-popover-footer button:focus-visible,
+html body .driver-popover .driver-popover-close-btn:focus-visible {
+  outline: 2px solid var(--text, #111827);
+  outline-offset: 2px;
 }
 
-.driver-popover-btn-disabled {
-  opacity: 0.35 !important;
+html body .driver-popover .driver-popover-btn-disabled {
+  opacity: 0.35;
 }
 
 /* Close button */
-.driver-popover-close-btn {
-  top: 11px !important;
-  right: 11px !important;
-  width: 28px !important;
-  height: 28px !important;
-  border-radius: 999px !important;
-  color: var(--muted, #6b7280) !important;
-  font-size: 18px !important;
-  font-weight: 400 !important;
-  line-height: 28px !important;
-  text-align: center !important;
+html body .driver-popover .driver-popover-close-btn {
+  top: 11px;
+  right: 11px;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  color: var(--muted, #6b7280);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 28px;
+  text-align: center;
   transition:
     background-color 180ms ease,
-    color 180ms ease !important;
+    color 180ms ease;
 }
 
 .driver-popover-close-btn:hover {
