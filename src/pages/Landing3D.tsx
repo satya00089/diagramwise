@@ -518,7 +518,6 @@ export default function Landing3D() {
           </div>
           <div className="systema-features">
             <Link to="/problems/" className="systema-feature">
-              <FeatureArt type="design" />
               <div>
                 <h3>
                   Practice system design <HiArrowUpRight />
@@ -531,7 +530,6 @@ export default function Landing3D() {
               </div>
             </Link>
             <Link to="/learning-paths/" className="systema-feature">
-              <FeatureArt type="reason" />
               <div>
                 <h3>
                   Follow a learning path <HiArrowUpRight />
@@ -543,7 +541,6 @@ export default function Landing3D() {
               </div>
             </Link>
             <Link to="/problems/" className="systema-feature">
-              <FeatureArt type="review" />
               <div>
                 <h3>
                   Get a guided walkthrough <HiArrowUpRight />
@@ -555,7 +552,6 @@ export default function Landing3D() {
               </div>
             </Link>
             <Link to="/playground/free" className="systema-feature">
-              <FeatureArt type="canvas" />
               <div>
                 <h3>
                   Start from a blank canvas <HiArrowUpRight />
