@@ -670,7 +670,7 @@ export default function Landing3D() {
           <div className="systema-toolkit-grid">
             <article>
               <span className="systema-toolkit-index">01</span>
-              <FeatureArt type="library" />
+              <FeatureArt type="library" variant="toolkit" />
               <h3>Architecture library</h3>
               <p>
                 Start with generic building blocks or use accurate AWS, Azure,
@@ -679,7 +679,7 @@ export default function Landing3D() {
             </article>
             <article>
               <span className="systema-toolkit-index">02</span>
-              <FeatureArt type="annotate" />
+              <FeatureArt type="annotate" variant="toolkit" />
               <h3>Connected, annotated diagrams</h3>
               <p>
                 Draw labeled data flows and attach notes, metadata, and custom
