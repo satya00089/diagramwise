@@ -2259,7 +2259,7 @@ h6 {
 
 /* Typography: ensure Tailwind 'prose' uses theme variables for light/dark */
 .prose {
-  color: var(--text) !important;
+  color: var(--text);
 }
 .prose p,
 .prose li,
@@ -2273,7 +2273,7 @@ h6 {
 .prose code,
 .prose strong,
 .prose em {
-  color: inherit !important;
+  color: inherit;
 }
 .prose h1,
 .prose h2,
@@ -2281,21 +2281,21 @@ h6 {
 .prose h4,
 .prose h5,
 .prose h6 {
-  color: var(--text) !important;
+  color: var(--text);
 }
 .prose a {
   color: var(--brand) !important;
 }
 .prose table {
-  border-color: var(--border) !important;
+  border-color: var(--border);
 }
 .prose th {
-  color: var(--text) !important;
+  color: var(--text);
 }
 
 /* Ensure 'prose-invert' still relies on variables (dark mode) */
 .prose.prose-invert {
-  color: var(--text) !important;
+  color: var(--text);
 }
 
 /* Utility classes */
