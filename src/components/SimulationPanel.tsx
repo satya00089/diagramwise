@@ -4,10 +4,7 @@ import { useReactFlow } from "@xyflow/react";
 import {
   MdCheckCircle,
   MdInfoOutline,
-  MdPause,
-  MdPlayArrow,
   MdRefresh,
-  MdStop,
   MdWarningAmber,
 } from "react-icons/md";
 import type {
@@ -16,17 +13,19 @@ import type {
   SystemDesignSolution,
 } from "../types/systemDesign";
 import type {
+  SimulationCapacityRole,
   SimulationInput,
-  SimulationProfileCapacities,
+  SimulationInputProvenance,
   SimulationResult,
   SimulationRole,
+  SimulationRunSnapshot,
 } from "../types/simulation";
 import { prepareSimulation } from "../services/simulation";
 import {
   buildProvidedReasoningContext,
   buildSystemDesignSolution,
 } from "../utils/designReviewContext";
-import { runCapacitySimulation } from "../utils/simulationEngine";
+import { runCapacitySimulationInWorker } from "../utils/simulationWorker";
 
 type SimulationPanelProps = {
   nodes: Node[];
@@ -34,22 +33,159 @@ type SimulationPanelProps = {
   problem: SystemDesignProblem | null;
 };
 
-type RunState = "idle" | "running" | "paused" | "complete";
+const INITIAL_INPUT: SimulationInput = {
+  scenarioId: "url-shortener-capacity",
+  scenarioVersion: "1",
+  modelVersion: "capacity-v1",
+  requestRate: 1000,
+  redirectSharePercent: 95,
+  cacheHitPercent: 90,
+  profileCapacities: {
+    ingress: 5000,
+    compute: 1500,
+    cache: 10000,
+    database: 600,
+  },
+  provenance: {
+    requestRate: "educational-default",
+    redirectSharePercent: "educational-default",
+    cacheHitPercent: "educational-default",
+    profileCapacities: {
+      ingress: "educational-default",
+      compute: "educational-default",
+      cache: "educational-default",
+      database: "educational-default",
+    },
+  },
+};
 
-const INITIAL_CAPACITIES: SimulationProfileCapacities = {
-  ingress: 5000,
-  compute: 1500,
-  cache: 10000,
-  database: 600,
+const CAPACITY_ROLES: SimulationCapacityRole[] = [
+  "ingress",
+  "compute",
+  "cache",
+  "database",
+];
+
+const ROLE_LABELS: Record<SimulationCapacityRole, string> = {
+  ingress: "Ingress",
+  compute: "Compute",
+  cache: "Cache",
+  database: "Database",
 };
 
 const formatRate = (value: number) =>
   new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(value);
 
+const provenanceLabel = (source: SimulationInputProvenance) =>
+  source === "user" ? "your override" : "educational default";
+
 const readRouteText = (solution: SystemDesignSolution, ids: string[]) => {
-  const byId = new Map(solution.components.map((component) => [component.id, component.label]));
+  const byId = new Map(
+    solution.components.map((component) => [component.id, component.label]),
+  );
   return ids.map((id) => byId.get(id) ?? id).join(" → ");
 };
+
+const snapshotPreparedRoutes = (
+  solution: SystemDesignSolution,
+  preparation: NonNullable<Awaited<ReturnType<typeof prepareSimulation>>>,
+) => {
+  const labelsById = new Map(
+    solution.components.map((component) => [component.id, component.label]),
+  );
+  return preparation.routes.map((route) => ({
+    operation: route.operation,
+    nodeIds: [...route.node_ids],
+    edgeIds: [...route.edge_ids],
+    nodeLabels: route.node_ids.map((id) => labelsById.get(id) ?? id),
+    explanation: route.explanation,
+  }));
+};
+
+const fingerprintPreparation = (
+  preparation: NonNullable<Awaited<ReturnType<typeof prepareSimulation>>>,
+) =>
+  JSON.stringify({
+    componentRoles: preparation.component_roles
+      .map(({ node_id, role }) => ({ node_id, role }))
+      .sort((a, b) => a.node_id.localeCompare(b.node_id)),
+    routes: preparation.routes
+      .map(({ operation, node_ids, edge_ids }) => ({
+        operation,
+        node_ids,
+        edge_ids,
+      }))
+      .sort((a, b) => a.operation.localeCompare(b.operation)),
+  });
+
+const copyInput = (input: SimulationInput): SimulationInput => ({
+  ...input,
+  profileCapacities: { ...input.profileCapacities },
+  provenance: {
+    ...input.provenance,
+    profileCapacities: { ...input.provenance.profileCapacities },
+  },
+});
+
+function snapshotHasRedirectCache(snapshot: SimulationRunSnapshot): boolean {
+  const redirectRoute = snapshot.preparedRoutes.find(
+    (route) => route.operation === "redirect",
+  );
+  return Boolean(
+    redirectRoute?.nodeIds.some((nodeId) =>
+      snapshot.componentRoles.some(
+        (component) => component.nodeId === nodeId && component.role === "cache",
+      ),
+    ),
+  );
+}
+
+function describeInputChanges(
+  baselineRun: SimulationRunSnapshot,
+  currentRun: SimulationRunSnapshot,
+): string[] {
+  const baseline = baselineRun.input;
+  const current = currentRun.input;
+  const changes: string[] = [];
+  if (
+    baseline.requestRate !== current.requestRate ||
+    baseline.provenance.requestRate !== current.provenance.requestRate
+  ) {
+    changes.push(
+      `Traffic: ${formatRate(baseline.requestRate)} → ${formatRate(current.requestRate)} req/s (${provenanceLabel(baseline.provenance.requestRate)} → ${provenanceLabel(current.provenance.requestRate)})`,
+    );
+  }
+  if (
+    baseline.redirectSharePercent !== current.redirectSharePercent ||
+    baseline.provenance.redirectSharePercent !==
+      current.provenance.redirectSharePercent
+  ) {
+    changes.push(
+      `Redirect share: ${formatRate(baseline.redirectSharePercent)}% → ${formatRate(current.redirectSharePercent)}% (${provenanceLabel(baseline.provenance.redirectSharePercent)} → ${provenanceLabel(current.provenance.redirectSharePercent)})`,
+    );
+  }
+  if (
+    (snapshotHasRedirectCache(baselineRun) || snapshotHasRedirectCache(currentRun)) &&
+    (baseline.cacheHitPercent !== current.cacheHitPercent ||
+      baseline.provenance.cacheHitPercent !== current.provenance.cacheHitPercent)
+  ) {
+    changes.push(
+      `Cache hit assumption: ${formatRate(baseline.cacheHitPercent)}% → ${formatRate(current.cacheHitPercent)}% (${provenanceLabel(baseline.provenance.cacheHitPercent)} → ${provenanceLabel(current.provenance.cacheHitPercent)})`,
+    );
+  }
+  for (const role of CAPACITY_ROLES) {
+    const before = baseline.profileCapacities[role];
+    const after = current.profileCapacities[role];
+    const beforeSource = baseline.provenance.profileCapacities[role];
+    const afterSource = current.provenance.profileCapacities[role];
+    if (before !== after || beforeSource !== afterSource) {
+      changes.push(
+        `${ROLE_LABELS[role]} capacity: ${formatRate(before)} → ${formatRate(after)} ${role === "cache" || role === "database" ? "ops/s" : "req/s"} (${provenanceLabel(beforeSource)} → ${provenanceLabel(afterSource)})`,
+      );
+    }
+  }
+  return changes.length ? changes : ["Workload and capacity profiles match the baseline."];
+}
 
 const SliderField: React.FC<{
   id: string;
@@ -59,7 +195,8 @@ const SliderField: React.FC<{
   max: number;
   step?: number;
   suffix: string;
-  help?: string;
+  help: string;
+  source: string;
   disabled?: boolean;
   onChange: (value: number) => void;
 }> = ({
@@ -71,6 +208,7 @@ const SliderField: React.FC<{
   step = 1,
   suffix,
   help,
+  source,
   disabled = false,
   onChange,
 }) => (
@@ -101,25 +239,42 @@ const SliderField: React.FC<{
       <span>{formatRate(min)}</span>
       <span>{formatRate(max)}</span>
     </div>
-    {help && <p className="text-xs leading-5 text-muted">{help}</p>}
+    <p className="text-xs leading-5 text-muted">
+      {help} Source: {source}.
+    </p>
   </div>
 );
 
-function buildCapacityPath(
-  points: SimulationResult["timeline"],
-  key: "offeredRequestsPerSecond" | "servedRequestsPerSecond" | "backlog",
-  width: number,
-  height: number,
-  maxValue: number,
-) {
-  if (!points.length) return "";
-  return points
-    .map((point, index) => {
-      const x = points.length === 1 ? 0 : (index / (points.length - 1)) * width;
-      const y = height - (point[key] / Math.max(maxValue, 1)) * height;
-      return `${index === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
+function MetricRow({ metric }: { metric: SimulationResult["nodeMetrics"][number] }) {
+  const utilizationPercent = metric.utilization * 100;
+  return (
+    <tr className="border-t border-[var(--border)] align-top">
+      <th scope="row" className="py-2 pr-3 text-left font-medium text-theme">
+        <span className="block">{metric.label}</span>
+        <span className="text-xs font-normal capitalize text-muted">
+          {metric.role}
+        </span>
+      </th>
+      <td className="whitespace-nowrap py-2 pr-3 text-right tabular-nums text-theme">
+        {formatRate(metric.demandPerSecond)} {metric.unit}
+      </td>
+      <td className="whitespace-nowrap py-2 pr-3 text-right tabular-nums text-theme">
+        {formatRate(metric.capacityPerSecond)} {metric.unit}
+      </td>
+      <td className="min-w-24 py-2 text-right text-theme">
+        <span className="block tabular-nums">{formatRate(utilizationPercent)}%</span>
+        <span
+          className="mt-1 ml-auto block h-1.5 w-20 overflow-hidden rounded-full bg-[var(--border)]"
+          aria-hidden="true"
+        >
+          <span
+            className={`block h-full rounded-full ${utilizationPercent > 100 ? "bg-rose-600" : "bg-[var(--product-accent)]"}`}
+            style={{ width: `${Math.min(utilizationPercent, 100)}%` }}
+          />
+        </span>
+      </td>
+    </tr>
+  );
 }
 
 const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem }) => {
@@ -135,12 +290,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
   const graphFingerprint = useMemo(() => {
     const components = solution.components
       .filter((component) => (component.type as string) !== "group")
-      .map(({ id, type, label, properties }) => ({
-        id,
-        type,
-        label,
-        properties,
-      }))
+      .map(({ id, type, label, properties }) => ({ id, type, label, properties }))
       .sort((a, b) => a.id.localeCompare(b.id));
     const connections = solution.connections
       .map(({ id, source, target, type, label, description }) => ({
@@ -161,26 +311,27 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
             title: problem.title,
             requirementRevision: problem.requirementSpec?.revision,
             description: problem.description,
+            requirements: problem.requirements,
+            constraints: problem.constraints,
           }
         : null,
     });
   }, [solution, problem]);
+  const isSupportedExercise = problem?.slug === "url-shortener-like-bit-ly";
 
   const [preparation, setPreparation] = useState<
     Awaited<ReturnType<typeof prepareSimulation>> | null
   >(null);
   const [preparing, setPreparing] = useState(false);
-  const [preparationError, setPreparationError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [preparedFor, setPreparedFor] = useState<string | null>(null);
+  const [routesReviewedFor, setRoutesReviewedFor] = useState<string | null>(null);
   const preparationController = useRef<AbortController | null>(null);
-  const [requestRate, setRequestRate] = useState(1000);
-  const [readSharePercent, setReadSharePercent] = useState(95);
-  const [cacheHitPercent, setCacheHitPercent] = useState(90);
-  const [profileCapacities, setProfileCapacities] =
-    useState<SimulationProfileCapacities>(INITIAL_CAPACITIES);
-  const [result, setResult] = useState<SimulationResult | null>(null);
-  const [runState, setRunState] = useState<RunState>("idle");
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const simulationController = useRef<AbortController | null>(null);
+  const [input, setInput] = useState<SimulationInput>(() => copyInput(INITIAL_INPUT));
+  const [currentRun, setCurrentRun] = useState<SimulationRunSnapshot | null>(null);
+  const [baseline, setBaseline] = useState<SimulationRunSnapshot | null>(null);
+  const [running, setRunning] = useState(false);
 
   const isPreparedForCurrentGraph =
     preparation?.status === "ready" && preparedFor === graphFingerprint;
@@ -195,9 +346,9 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
         .map(({ role }) => role),
     );
   }, [preparation]);
-  const hasReadCache = Boolean(
+  const hasRedirectCache = Boolean(
     preparation?.routes
-      .find((route) => route.operation === "read")
+      .find((route) => route.operation === "redirect")
       ?.node_ids.some(
         (nodeId) =>
           preparation.component_roles.find((item) => item.node_id === nodeId)
@@ -208,30 +359,22 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
   useEffect(() => {
     if (preparedFor && preparedFor !== graphFingerprint) {
       preparationController.current?.abort();
+      simulationController.current?.abort();
       setPreparation(null);
       setPreparedFor(null);
-      setPreparationError(null);
-      setResult(null);
-      setRunState("idle");
-      setElapsedSeconds(0);
+      setRoutesReviewedFor(null);
+      setPreparing(false);
+      setCurrentRun(null);
+      setRunning(false);
+      setErrorMessage(null);
     }
   }, [graphFingerprint, preparedFor]);
 
-  useEffect(() => {
-    if (runState !== "running" || !result) return;
-    if (elapsedSeconds >= result.durationSeconds) {
-      setRunState("complete");
-      return;
-    }
-    const timer = window.setTimeout(
-      () => setElapsedSeconds((current) => Math.min(current + 1, result.durationSeconds)),
-      400,
-    );
-    return () => window.clearTimeout(timer);
-  }, [elapsedSeconds, result, runState]);
-
   useEffect(
-    () => () => preparationController.current?.abort(),
+    () => () => {
+      preparationController.current?.abort();
+      simulationController.current?.abort();
+    },
     [],
   );
 
@@ -240,24 +383,21 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
     const controller = new AbortController();
     preparationController.current = controller;
     setPreparation(null);
+    setPreparedFor(graphFingerprint);
+    setRoutesReviewedFor(null);
     setPreparing(true);
-    setPreparationError(null);
-    setResult(null);
-    setRunState("idle");
+    setErrorMessage(null);
+    setCurrentRun(null);
     try {
       const prepared = await prepareSimulation(solution, problem, controller.signal);
       if (controller.signal.aborted) return;
       setPreparation(prepared);
-      setPreparedFor(graphFingerprint);
-      if (prepared.status !== "ready") {
-        setPreparationError(null);
-      }
     } catch (error) {
       if (!controller.signal.aborted) {
-        setPreparationError(
+        setErrorMessage(
           error instanceof Error
             ? error.message
-            : "AI could not prepare this diagram. No simulation metrics were produced.",
+            : "AI could not prepare this diagram. No capacity analysis was produced.",
         );
         setPreparedFor(null);
       }
@@ -266,50 +406,90 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
     }
   }, [graphFingerprint, problem, solution]);
 
-  const currentInput: SimulationInput = {
-    requestRate,
-    readSharePercent,
-    cacheHitPercent: hasReadCache ? cacheHitPercent : 0,
-    durationSeconds: 30,
-    profileCapacities,
-  };
-
-  const updateInput = <K extends keyof SimulationInput>(
-    key: K,
-    value: SimulationInput[K],
+  const updateScalarInput = (
+    key: "requestRate" | "redirectSharePercent" | "cacheHitPercent",
+    value: number,
   ) => {
-    if (key === "profileCapacities") {
-      setProfileCapacities(value as SimulationProfileCapacities);
-    } else if (key === "requestRate") {
-      setRequestRate(value as number);
-    } else if (key === "readSharePercent") {
-      setReadSharePercent(value as number);
-    } else if (key === "cacheHitPercent") {
-      setCacheHitPercent(value as number);
-    }
-    setResult(null);
-    setRunState("idle");
-    setElapsedSeconds(0);
+    simulationController.current?.abort();
+    setRunning(false);
+    setCurrentRun(null);
+    setInput((previous) => ({
+      ...previous,
+      [key]: value,
+      provenance: { ...previous.provenance, [key]: "user" },
+    }));
   };
 
-  const handleRun = () => {
-    if (!preparation || !isPreparedForCurrentGraph) return;
+  const updateProfileCapacity = (role: SimulationCapacityRole, value: number) => {
+    simulationController.current?.abort();
+    setRunning(false);
+    setCurrentRun(null);
+    setInput((previous) => ({
+      ...previous,
+      profileCapacities: { ...previous.profileCapacities, [role]: value },
+      provenance: {
+        ...previous.provenance,
+        profileCapacities: {
+          ...previous.provenance.profileCapacities,
+          [role]: "user",
+        },
+      },
+    }));
+  };
+
+  const handleRun = async () => {
+    if (
+      !preparation ||
+      !isPreparedForCurrentGraph ||
+      routesReviewedFor !== graphFingerprint ||
+      running
+    )
+      return;
+    simulationController.current?.abort();
+    const controller = new AbortController();
+    simulationController.current = controller;
+    const runInput = copyInput(input);
+    setRunning(true);
+    setCurrentRun(null);
+    setErrorMessage(null);
     try {
-      const nextResult = runCapacitySimulation(solution, preparation, currentInput);
-      setResult(nextResult);
-      setElapsedSeconds(0);
-      setRunState("running");
-      setPreparationError(null);
-    } catch (error) {
-      setPreparationError(
-        error instanceof Error ? error.message : "This workload could not be simulated.",
+      const result = await runCapacitySimulationInWorker(
+        solution,
+        preparation,
+        runInput,
+        controller.signal,
       );
+      if (controller.signal.aborted) return;
+      setCurrentRun({
+        input: runInput,
+        result,
+        graphFingerprint,
+        preparationFingerprint: fingerprintPreparation(preparation),
+        preparedRoutes: snapshotPreparedRoutes(solution, preparation),
+        componentRoles: preparation.component_roles.map(({ node_id, role }) => ({
+          nodeId: node_id,
+          label:
+            solution.components.find((component) => component.id === node_id)?.label ??
+            node_id,
+          role,
+        })),
+        exerciseId: problem?.id ?? null,
+        requirementRevision: problem?.requirementSpec?.revision ?? null,
+      });
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        setErrorMessage(
+          error instanceof Error ? error.message : "Capacity analysis failed.",
+        );
+      }
+    } finally {
+      if (!controller.signal.aborted) setRunning(false);
     }
   };
 
   const handleFocusBottleneck = () => {
     const component = solution.components.find(
-      (item) => item.id === result?.bottleneckNodeId,
+      (item) => item.id === currentRun?.result.bottleneckNodeId,
     );
     if (!component) return;
     setCenter(component.position.x + 110, component.position.y + 55, {
@@ -318,53 +498,63 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
     });
   };
 
-  const visibleTimeline = result?.timeline.slice(0, elapsedSeconds) ?? [];
-  const chartMax = Math.max(
-    requestRate,
-    result?.bottleneckCapacityPerSecond ?? 0,
-    1,
+  const isComparable = Boolean(
+    baseline &&
+      currentRun &&
+      baseline.input.scenarioId === currentRun.input.scenarioId &&
+      baseline.input.scenarioVersion === currentRun.input.scenarioVersion &&
+      baseline.result.modelVersion === currentRun.result.modelVersion &&
+      baseline.exerciseId === currentRun.exerciseId &&
+      baseline.requirementRevision === currentRun.requirementRevision,
   );
-  const backlogMax = Math.max(result?.projectedBacklog ?? 0, 1);
-  const offeredPath = buildCapacityPath(visibleTimeline, "offeredRequestsPerSecond", 300, 86, chartMax);
-  const servedPath = buildCapacityPath(visibleTimeline, "servedRequestsPerSecond", 300, 86, chartMax);
-  const backlogPath = buildCapacityPath(visibleTimeline, "backlog", 300, 86, backlogMax);
-  const bottleneck = result?.nodeMetrics.find(
-    (metric) => metric.nodeId === result.bottleneckNodeId,
-  );
+  const capacityDelta =
+    baseline && currentRun
+      ? currentRun.result.estimatedCapacityAtMixRequestsPerSecond -
+        baseline.result.estimatedCapacityAtMixRequestsPerSecond
+      : 0;
+  const inputSources = input.provenance;
 
   return (
-    <section className="flex min-w-0 flex-col gap-4 text-theme" aria-labelledby="simulation-panel-title">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 id="simulation-panel-title" className="font-serif text-xl text-theme">
-            Simulate this design
-          </h2>
-          <p className="mt-1 text-sm leading-5 text-muted">
-            Explore how its request paths behave under a workload you choose.
-          </p>
-        </div>
-        {runState === "running" && (
-          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--product-accent)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--product-accent)]">
-            <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
-            Live · {String(elapsedSeconds).padStart(2, "0")}s
-          </span>
-        )}
-      </div>
-
-      <div className="flex items-start gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-xs leading-5 text-muted">
-        <MdInfoOutline className="mt-0.5 h-4 w-4 shrink-0 text-[var(--product-accent)]" aria-hidden="true" />
-        <p>
-          Educational estimate. AI checks the diagram paths; editable profiles estimate
-          capacity. This does not measure a deployed system.
+    <section
+      className="flex min-w-0 flex-col gap-4 text-theme"
+      aria-labelledby="simulation-panel-title"
+    >
+      <div>
+        <h2 id="simulation-panel-title" className="font-serif text-xl text-theme">
+          Explore a URL-shortener workload
+        </h2>
+        <p className="mt-1 text-sm leading-5 text-muted">
+          Estimate request capacity on the design’s redirect and link-creation paths.
         </p>
       </div>
 
-      {nodes.length === 0 ? (
+      <div className="flex items-start gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-xs leading-5 text-muted">
+        <MdInfoOutline
+          className="mt-0.5 h-4 w-4 shrink-0 text-[var(--product-accent)]"
+          aria-hidden="true"
+        />
+        <p>
+          Capacity analysis only. It does not model queueing, latency, timeouts, or
+          production performance. Rates are illustrative assumptions, not benchmarks.
+        </p>
+      </div>
+
+      {!isSupportedExercise ? (
+        <div className="rounded-lg border border-dashed border-[var(--border)] p-4">
+          <h3 className="text-sm font-semibold text-theme">
+            This model supports the URL-shortener exercise
+          </h3>
+          <p className="mt-1 text-sm leading-5 text-muted">
+            Open “URL Shortener (like bit.ly)” to prepare redirect and create-link
+            paths. Other exercises need their own reviewed workload and behavior model.
+          </p>
+        </div>
+      ) : nodes.length === 0 ? (
         <div className="rounded-lg border border-dashed border-[var(--border)] p-4">
           <h3 className="text-sm font-semibold text-theme">Add components to begin</h3>
           <p className="mt-1 text-sm leading-5 text-muted">
-            Draw a request path from a client through application logic to a database,
-            then ask AI to prepare it for this model.
+            Draw a client path through application logic to a database, then prepare the
+            redirect and create-link routes.
           </p>
         </div>
       ) : (
@@ -372,8 +562,8 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
           {!preparation && (
             <div className="flex flex-col gap-3">
               <p className="text-sm leading-5 text-muted">
-                AI will map the read and write paths and flag connections this model
-                cannot explain. It will not set component capacities.
+                AI will identify the supported paths and flag connections this model
+                cannot explain. It will not assign measured capacities.
               </p>
               <button
                 type="button"
@@ -382,11 +572,14 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
                 className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-[var(--product-accent)] px-4 py-2 text-sm font-semibold text-[var(--product-accent-contrast)] transition-colors hover:bg-[var(--product-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-65"
               >
                 {preparing ? (
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none" aria-hidden="true" />
+                  <span
+                    className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent motion-reduce:animate-none"
+                    aria-hidden="true"
+                  />
                 ) : (
                   <MdRefresh className="h-4 w-4" aria-hidden="true" />
                 )}
-                {preparing ? "Checking paths…" : "Prepare with AI"}
+                {preparing ? "Checking paths…" : "Prepare request paths"}
               </button>
             </div>
           )}
@@ -397,16 +590,22 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
                 className={`flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm leading-5 ${preparation.status === "ready" && preparedFor === graphFingerprint ? "border-emerald-700/30 bg-emerald-700/5" : "border-amber-700/35 bg-amber-700/5"}`}
               >
                 {preparation.status === "ready" && preparedFor === graphFingerprint ? (
-                  <MdCheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300" aria-hidden="true" />
+                  <MdCheckCircle
+                    className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300"
+                    aria-hidden="true"
+                  />
                 ) : (
-                  <MdWarningAmber className="mt-0.5 h-4 w-4 shrink-0 text-amber-800 dark:text-amber-300" aria-hidden="true" />
+                  <MdWarningAmber
+                    className="mt-0.5 h-4 w-4 shrink-0 text-amber-800 dark:text-amber-300"
+                    aria-hidden="true"
+                  />
                 )}
                 <div>
                   <p className="font-semibold text-theme">
                     {preparation.status === "ready" && preparedFor === graphFingerprint
                       ? "Paths prepared"
                       : preparation.status === "blocked"
-                        ? "This design is not ready to simulate"
+                        ? "This design is not ready for this model"
                         : "Review the uncertain paths"}
                   </p>
                   <p className="mt-0.5 text-muted">{preparation.summary}</p>
@@ -417,7 +616,10 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
                 <ul className="flex flex-col gap-2 text-sm leading-5 text-theme">
                   {[...preparation.blockers, ...preparation.unresolved].map((item, index) => (
                     <li key={`${index}-${item}`} className="flex items-start gap-2">
-                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--product-accent)]" aria-hidden="true" />
+                      <span
+                        className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--product-accent)]"
+                        aria-hidden="true"
+                      />
                       <span>{item}</span>
                     </li>
                   ))}
@@ -429,16 +631,45 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
                 {preparation.routes.map((route) => (
                   <div key={route.operation} className="min-w-0">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted">
-                      {route.operation}
+                      {route.operation === "redirect" ? "Redirect" : "Create link"}
                     </p>
                     <p className="mt-0.5 break-words text-sm leading-5 text-theme">
                       {route.node_ids.length
                         ? readRouteText(solution, route.node_ids)
                         : "No supported route found"}
                     </p>
+                    <p className="mt-0.5 text-xs leading-5 text-muted">
+                      {route.explanation}
+                    </p>
                   </div>
                 ))}
+                {preparation.assumptions.length > 0 && (
+                  <ul className="mt-1 list-disc space-y-1 pl-5 text-xs leading-5 text-muted">
+                    {preparation.assumptions.map((assumption, index) => (
+                      <li key={`${index}-${assumption}`}>{assumption}</li>
+                    ))}
+                  </ul>
+                )}
               </div>
+
+              {isPreparedForCurrentGraph && (
+                <label className="flex items-start gap-2 text-sm leading-5 text-theme">
+                  <input
+                    type="checkbox"
+                    checked={routesReviewedFor === graphFingerprint}
+                    onChange={(event) =>
+                      setRoutesReviewedFor(
+                        event.target.checked ? graphFingerprint : null,
+                      )
+                    }
+                    className="mt-1 h-4 w-4 shrink-0 accent-[var(--product-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)] focus-visible:ring-offset-2"
+                  />
+                  <span>
+                    These routes match my design. If they do not, I’ll edit the canvas
+                    and prepare them again.
+                  </span>
+                </label>
+              )}
 
               <button
                 type="button"
@@ -446,7 +677,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
                 disabled={preparing}
                 className="self-start rounded px-1 py-1 text-sm font-medium text-[var(--product-accent)] underline underline-offset-4 hover:text-[var(--product-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]"
               >
-                {preparing ? "Checking paths…" : "Check paths again"}
+                {preparing ? "Checking paths…" : "Prepare paths again"}
               </button>
             </div>
           )}
@@ -454,267 +685,350 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
           {isPreparedForCurrentGraph && preparation && (
             <div className="flex flex-col gap-5 border-t border-[var(--border)] pt-4">
               <div>
-                <h3 className="text-base font-semibold text-theme">Workload</h3>
+                <h3 className="text-base font-semibold text-theme">
+                  Workload · URL-shortener capacity v1
+                </h3>
                 <p className="mt-0.5 text-xs leading-5 text-muted">
-                  Change the incoming rate to find where the prepared paths exceed their profiles.
+                  One request performs one operation. Each uncached redirect does one
+                  equal-cost database read; each link creation does one equal-cost
+                  database write. The cache hit assumption applies only to redirects.
+                </p>
+              </div>
+
+              <div className="rounded-lg border border-[var(--border)] px-3 py-2.5 text-xs leading-5 text-muted">
+                <p className="font-semibold text-theme">Try a what-if</p>
+                <p className="mt-0.5">
+                  Analyze a baseline, set it as the comparison, then increase redirect
+                  traffic or change the cache-hit assumption. Replay to see which
+                  component gets closer to its configured capacity.
                 </p>
               </div>
 
               <SliderField
                 id="simulation-request-rate"
-                label="Incoming traffic"
-                value={requestRate}
+                label="Incoming requests"
+                value={input.requestRate}
                 min={100}
                 max={5000}
                 step={50}
                 suffix="req/s"
-                onChange={(value) => updateInput("requestRate", value)}
+                help="Steady offered rate for this capacity estimate."
+                source={provenanceLabel(inputSources.requestRate)}
+                onChange={(value) => updateScalarInput("requestRate", value)}
               />
 
               <SliderField
-                id="simulation-read-share"
-                label={`Reads · ${readSharePercent}%`}
-                value={readSharePercent}
+                id="simulation-redirect-share"
+                label="Redirect requests"
+                value={input.redirectSharePercent}
                 min={0}
                 max={100}
                 suffix="%"
-                help={`Writes · ${100 - readSharePercent}%`}
-                onChange={(value) => updateInput("readSharePercent", value)}
+                help={`Link creations: ${100 - input.redirectSharePercent}%.`}
+                source={provenanceLabel(inputSources.redirectSharePercent)}
+                onChange={(value) => updateScalarInput("redirectSharePercent", value)}
               />
 
-              {hasReadCache && (
+              {hasRedirectCache && (
                 <SliderField
                   id="simulation-cache-hit-rate"
-                  label="Read cache hit assumption"
-                  value={cacheHitPercent}
+                  label="Redirect cache hit assumption"
+                  value={input.cacheHitPercent}
                   min={0}
                   max={100}
                   suffix="%"
-                  help="Applied only because the prepared read route passes through a cache."
-                  onChange={(value) => updateInput("cacheHitPercent", value)}
+                  help="Only redirects on the prepared cache path receive this reduction."
+                  source={provenanceLabel(inputSources.cacheHitPercent)}
+                  onChange={(value) => updateScalarInput("cacheHitPercent", value)}
                 />
               )}
 
               <details className="group rounded-lg border border-[var(--border)] px-3 py-2.5">
                 <summary className="cursor-pointer text-sm font-semibold text-theme focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]">
-                  Component profiles · educational assumptions
+                  Component capacity profiles · educational defaults
                 </summary>
                 <div className="mt-3 flex flex-col gap-4">
                   {routeRoles.has("ingress") && (
                     <SliderField
                       id="simulation-ingress-capacity"
-                      label="Ingress capacity per node"
-                      value={profileCapacities.ingress}
+                      label="Ingress capacity per component"
+                      value={input.profileCapacities.ingress}
                       min={100}
                       max={20000}
                       step={100}
                       suffix="req/s"
-                      help="Assumed request handling capacity for each ingress component."
-                      onChange={(value) =>
-                        updateInput("profileCapacities", {
-                          ...profileCapacities,
-                          ingress: value,
-                        })
-                      }
+                      help="Assumed request handling capacity."
+                      source={provenanceLabel(inputSources.profileCapacities.ingress)}
+                      onChange={(value) => updateProfileCapacity("ingress", value)}
                     />
                   )}
                   {routeRoles.has("compute") && (
                     <SliderField
                       id="simulation-compute-capacity"
-                      label="Compute capacity per node"
-                      value={profileCapacities.compute}
+                      label="Compute capacity per component"
+                      value={input.profileCapacities.compute}
                       min={100}
                       max={10000}
                       step={100}
                       suffix="req/s"
-                      help="Assumed request handling capacity for each compute component."
-                      onChange={(value) =>
-                        updateInput("profileCapacities", {
-                          ...profileCapacities,
-                          compute: value,
-                        })
-                      }
+                      help="Assumed request handling capacity."
+                      source={provenanceLabel(inputSources.profileCapacities.compute)}
+                      onChange={(value) => updateProfileCapacity("compute", value)}
                     />
                   )}
                   {routeRoles.has("cache") && (
                     <SliderField
                       id="simulation-cache-capacity"
-                      label="Cache capacity"
-                      value={profileCapacities.cache}
+                      label="Cache capacity per component"
+                      value={input.profileCapacities.cache}
                       min={100}
                       max={50000}
                       step={100}
                       suffix="ops/s"
-                      help="Assumed operation capacity for each cache component."
-                      onChange={(value) =>
-                        updateInput("profileCapacities", {
-                          ...profileCapacities,
-                          cache: value,
-                        })
-                      }
+                      help="Assumed operation handling capacity."
+                      source={provenanceLabel(inputSources.profileCapacities.cache)}
+                      onChange={(value) => updateProfileCapacity("cache", value)}
                     />
                   )}
                   {routeRoles.has("database") && (
                     <SliderField
                       id="simulation-database-capacity"
-                      label="Database capacity per node"
-                      value={profileCapacities.database}
+                      label="Database capacity per component"
+                      value={input.profileCapacities.database}
                       min={100}
                       max={3000}
                       step={50}
                       suffix="ops/s"
-                      help="Assumes one equal-cost data operation per read or write."
-                      onChange={(value) =>
-                        updateInput("profileCapacities", {
-                          ...profileCapacities,
-                          database: value,
-                        })
-                      }
+                      help="Assumes redirect reads and link writes have equal cost."
+                      source={provenanceLabel(inputSources.profileCapacities.database)}
+                      onChange={(value) => updateProfileCapacity("database", value)}
                     />
                   )}
                 </div>
               </details>
 
               <div className="flex flex-wrap items-center gap-2">
-                {runState === "running" ? (
-                  <button
-                    type="button"
-                    onClick={() => setRunState("paused")}
-                    className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-[var(--border)] px-3 py-2 text-sm font-semibold text-theme hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]"
-                  >
-                    <MdPause className="h-4 w-4" aria-hidden="true" /> Pause
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={
-                      runState === "paused" && result
-                        ? () => setRunState("running")
-                        : handleRun
-                    }
-                    className="inline-flex min-h-10 items-center gap-1.5 rounded-md bg-[var(--product-accent)] px-3 py-2 text-sm font-semibold text-[var(--product-accent-contrast)] hover:bg-[var(--product-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)] focus-visible:ring-offset-2"
-                  >
-                    <MdPlayArrow className="h-4 w-4" aria-hidden="true" />
-                    {runState === "paused"
-                      ? "Resume"
-                      : runState === "complete"
-                        ? "Run again"
-                        : "Run simulation"}
-                  </button>
-                )}
-                {(result || runState === "paused" || runState === "running") && (
+                <button
+                  type="button"
+                  onClick={handleRun}
+                  disabled={running || routesReviewedFor !== graphFingerprint}
+                  className="inline-flex min-h-10 items-center gap-1.5 rounded-md bg-[var(--product-accent)] px-3 py-2 text-sm font-semibold text-[var(--product-accent-contrast)] hover:bg-[var(--product-accent-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)] focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-65"
+                >
+                  {running ? "Calculating…" : currentRun ? "Recalculate" : "Analyze capacity"}
+                </button>
+                {running && (
                   <button
                     type="button"
                     onClick={() => {
-                      setRunState("idle");
-                      setElapsedSeconds(0);
-                      setResult(null);
+                      simulationController.current?.abort();
+                      setRunning(false);
                     }}
-                    className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-[var(--border)] px-3 py-2 text-sm font-medium text-theme hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]"
+                    className="min-h-10 rounded-md border border-[var(--border)] px-3 py-2 text-sm font-medium text-theme hover:bg-[var(--bg-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]"
                   >
-                    <MdStop className="h-4 w-4" aria-hidden="true" /> Stop
+                    Cancel
                   </button>
-                )}
-                {runState === "complete" && (
-                  <span className="text-xs font-medium text-muted">Run complete · {elapsedSeconds}s</span>
                 )}
               </div>
 
-              {result && (
+              {currentRun && (
                 <div className="flex flex-col gap-4 border-t border-[var(--border)] pt-4" aria-live="polite">
-                  {bottleneck ? (
-                    <div className="rounded-lg border border-[var(--product-accent)]/40 bg-[var(--product-accent)]/5 p-3">
-                      <p className="flex items-center gap-2 font-serif text-lg text-[var(--product-accent)]">
-                        <MdWarningAmber className="h-5 w-5" aria-hidden="true" />
-                        {bottleneck.label} is the bottleneck
-                      </p>
-                      <p className="mt-1 text-sm leading-5 text-theme">
-                        Demand is {formatRate(result.bottleneckDemandPerSecond)} {bottleneck.unit} against
-                        an assumed capacity of {formatRate(result.bottleneckCapacityPerSecond)} {bottleneck.unit}.
-                      </p>
-                      {result.backlogGrowthPerSecond > 0 && (
-                        <p className="mt-1 text-sm font-medium text-theme">
-                          Backlog grows by about {formatRate(result.backlogGrowthPerSecond)} operations each second.
+                  <div className="rounded-lg border border-[var(--product-accent)]/40 bg-[var(--product-accent)]/5 p-3">
+                    <p className="font-serif text-lg text-[var(--product-accent)]">
+                      Estimated capacity at this operation mix
+                    </p>
+                    <p className="mt-1 text-sm leading-5 text-theme">
+                      About {formatRate(currentRun.result.estimatedCapacityAtMixRequestsPerSecond)}
+                      {" "}requests/s across the prepared paths, using the selected profiles.
+                    </p>
+                    {currentRun.result.bottleneckNodeId ? (
+                      <>
+                        <p className="mt-1 text-sm leading-5 text-theme">
+                          {currentRun.result.nodeMetrics.find(
+                            (metric) => metric.nodeId === currentRun.result.bottleneckNodeId,
+                          )?.label} is over its assumed capacity at the offered rate
+                          ({formatRate(currentRun.result.bottleneckDemandPerSecond)} / {formatRate(currentRun.result.bottleneckCapacityPerSecond)} {currentRun.result.nodeMetrics.find(
+                            (metric) => metric.nodeId === currentRun.result.bottleneckNodeId,
+                          )?.unit}).
                         </p>
-                      )}
-                      <button
-                        type="button"
-                        onClick={handleFocusBottleneck}
-                        className="mt-2 rounded px-1 py-1 text-sm font-semibold text-[var(--product-accent)] underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]"
-                      >
-                        View on canvas
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-start gap-2 rounded-lg border border-emerald-700/30 bg-emerald-700/5 p-3 text-sm leading-5 text-theme">
-                      <MdCheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300" aria-hidden="true" />
-                      <span>No component exceeds its configured educational capacity at this load.</span>
-                    </div>
-                  )}
-
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <h3 className="text-sm font-semibold text-theme">Run timeline</h3>
-                      <span className="text-xs tabular-nums text-muted">
-                        {elapsedSeconds}s / {result.durationSeconds}s
-                      </span>
-                    </div>
-                    <svg
-                      viewBox="0 0 300 110"
-                      className="h-auto w-full overflow-visible"
-                      role="img"
-                      aria-label={`Run timeline. Offered ${formatRate(requestRate)} requests per second, served ${formatRate(result.maxSustainableRequestsPerSecond)} per second, backlog ${formatRate((result.backlogGrowthPerSecond * elapsedSeconds))} operations.`}
-                    >
-                      <line x1="0" y1="86" x2="300" y2="86" stroke="var(--border)" strokeWidth="1" />
-                      <line x1="0" y1="43" x2="300" y2="43" stroke="var(--border)" strokeWidth="1" opacity="0.55" />
-                      <path d={offeredPath} fill="none" stroke="var(--product-accent)" strokeWidth="2.5" />
-                      <path d={servedPath} fill="none" stroke="var(--text)" strokeWidth="2" />
-                      {result.backlogGrowthPerSecond > 0 && (
-                        <path d={backlogPath} fill="none" stroke="#d9879e" strokeWidth="2" strokeDasharray="4 3" />
-                      )}
-                      <text x="0" y="103" fill="var(--muted)" fontSize="10">0s</text>
-                      <text x="270" y="103" fill="var(--muted)" fontSize="10">{result.durationSeconds}s</text>
-                    </svg>
-                    <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs text-muted">
-                      <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[var(--product-accent)]" aria-hidden="true" />Offered · {formatRate(requestRate)} req/s</span>
-                      <span className="inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-theme" aria-hidden="true" />Capacity · {formatRate(result.maxSustainableRequestsPerSecond)} req/s</span>
-                      {result.backlogGrowthPerSecond > 0 && (
-                        <span className="col-span-2 inline-flex items-center gap-1.5"><i className="h-2 w-2 rounded-full bg-[#d9879e]" aria-hidden="true" />Backlog · {formatRate(result.backlogGrowthPerSecond * elapsedSeconds)} ops · separate scale</span>
-                      )}
-                    </div>
+                        <button
+                          type="button"
+                          onClick={handleFocusBottleneck}
+                          className="mt-2 rounded px-1 py-1 text-sm font-semibold text-[var(--product-accent)] underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]"
+                        >
+                          View on canvas
+                        </button>
+                      </>
+                    ) : (
+                      <p className="mt-1 text-sm leading-5 text-theme">
+                        No modeled component exceeds its configured capacity at the selected rate.
+                      </p>
+                    )}
                   </div>
 
-                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-[var(--border)] pt-3 text-sm">
-                    <dt className="text-muted">Total requests in run</dt>
-                    <dd className="text-right font-medium tabular-nums text-theme">{formatRate(result.totalRequests)}</dd>
-                    <dt className="text-muted">Estimated sustainable rate</dt>
-                    <dd className="text-right font-medium tabular-nums text-theme">{formatRate(result.maxSustainableRequestsPerSecond)} req/s</dd>
-                    <dt className="text-muted">Backlog after run</dt>
-                    <dd className="text-right font-medium tabular-nums text-theme">{formatRate(result.backlogGrowthPerSecond * elapsedSeconds)} ops</dd>
+                  <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">
+                    <dt className="text-muted">Redirects</dt>
+                    <dd className="text-right font-medium tabular-nums text-theme">
+                      {formatRate(currentRun.result.redirectsPerSecond)} req/s
+                    </dd>
+                    <dt className="text-muted">Link creations</dt>
+                    <dd className="text-right font-medium tabular-nums text-theme">
+                      {formatRate(currentRun.result.linkCreationsPerSecond)} req/s
+                    </dd>
+                    {hasRedirectCache && (
+                      <>
+                        <dt className="text-muted">Cache hits / misses</dt>
+                        <dd className="text-right font-medium tabular-nums text-theme">
+                          {formatRate(currentRun.result.cacheHitsPerSecond)} / {formatRate(currentRun.result.cacheMissesPerSecond)} ops/s
+                        </dd>
+                      </>
+                    )}
+                    <dt className="text-muted">Database redirect reads</dt>
+                    <dd className="text-right font-medium tabular-nums text-theme">
+                      {formatRate(currentRun.result.databaseRedirectReadsPerSecond)} ops/s
+                    </dd>
+                    <dt className="text-muted">Database link writes</dt>
+                    <dd className="text-right font-medium tabular-nums text-theme">
+                      {formatRate(currentRun.result.databaseLinkWritesPerSecond)} ops/s
+                    </dd>
                   </dl>
 
-                  {preparation.assumptions.length > 0 && (
-                    <details className="rounded-lg border border-[var(--border)] px-3 py-2.5">
-                      <summary className="cursor-pointer text-sm font-semibold text-theme focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]">
-                        AI preparation assumptions
-                      </summary>
-                      <ul className="mt-2 flex list-disc flex-col gap-1.5 pl-5 text-xs leading-5 text-muted">
-                        {preparation.assumptions.map((assumption, index) => (
-                          <li key={`${index}-${assumption}`}>{assumption}</li>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[28rem] border-collapse text-xs">
+                      <caption className="mb-2 text-left text-sm font-semibold text-theme">
+                        Demand against configured capacity
+                      </caption>
+                      <thead>
+                        <tr className="text-muted">
+                          <th scope="col" className="pb-2 pr-3 text-left font-medium">Component</th>
+                          <th scope="col" className="pb-2 pr-3 text-right font-medium">Demand</th>
+                          <th scope="col" className="pb-2 pr-3 text-right font-medium">Capacity</th>
+                          <th scope="col" className="pb-2 text-right font-medium">Use</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentRun.result.nodeMetrics.map((metric) => (
+                          <MetricRow key={metric.nodeId} metric={metric} />
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-muted">
+                      {currentRun.input.modelVersion} · {currentRun.input.scenarioId} v{currentRun.input.scenarioVersion}
+                      {currentRun.requirementRevision
+                        ? ` · exercise revision ${currentRun.requirementRevision}`
+                        : " · no exercise revision"}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setBaseline(currentRun)}
+                      className="rounded px-1 py-1 text-sm font-semibold text-[var(--product-accent)] underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]"
+                    >
+                      {baseline ? "Set this run as new baseline" : "Set current run as baseline"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {baseline && (
+                <div className="rounded-lg border border-[var(--border)] p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h3 className="text-sm font-semibold text-theme">
+                        {currentRun ? "Baseline comparison" : "Baseline · this session"}
+                      </h3>
+                      <p className="mt-1 text-xs leading-5 text-muted">
+                        Baseline: {formatRate(baseline.input.requestRate)} req/s · {formatRate(baseline.input.redirectSharePercent)}% redirects · {snapshotHasRedirectCache(baseline) ? `cache hit assumption ${formatRate(baseline.input.cacheHitPercent)}%` : "no redirect cache"} · {baseline.input.modelVersion}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setBaseline(null)}
+                      className="shrink-0 rounded px-1 py-1 text-xs font-medium text-muted underline underline-offset-4 hover:text-theme focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  {currentRun && isComparable && (
+                    <div className="mt-3 flex flex-col gap-2 text-sm">
+                      <p className="font-medium text-theme">
+                        Capacity estimate: {formatRate(baseline.result.estimatedCapacityAtMixRequestsPerSecond)} → {formatRate(currentRun.result.estimatedCapacityAtMixRequestsPerSecond)} req/s
+                        <span className="ml-1 text-muted">
+                          ({capacityDelta > 0 ? "+" : ""}{formatRate(capacityDelta)} req/s)
+                        </span>
+                      </p>
+                      <p className="text-xs font-medium text-muted">
+                        {baseline.graphFingerprint === currentRun.graphFingerprint
+                          ? "Same architecture"
+                          : "Architecture changed since baseline"}
+                      </p>
+                      <p className="text-xs font-medium text-muted">
+                        {baseline.preparationFingerprint === currentRun.preparationFingerprint
+                          ? "Prepared routes and component roles match"
+                          : "Prepared routes or component roles changed since baseline"}
+                      </p>
+                      <ul className="list-disc space-y-1 pl-5 text-xs leading-5 text-muted">
+                        {describeInputChanges(baseline, currentRun).map((change) => (
+                          <li key={change}>{change}</li>
                         ))}
                       </ul>
-                    </details>
+                    </div>
+                  )}
+                  <details className="mt-2 text-xs text-muted">
+                    <summary className="cursor-pointer font-medium underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]">
+                      Show paths used for the baseline
+                    </summary>
+                    <ul className="mt-2 flex flex-col gap-2">
+                      {baseline.preparedRoutes.map((route) => (
+                        <li key={route.operation}>
+                          <span className="font-semibold capitalize text-theme">
+                            {route.operation === "create-link" ? "Create link" : route.operation}
+                          </span>
+                          <span className="mt-0.5 block break-words">{route.nodeLabels.join(" → ")}</span>
+                          {route.explanation && <span className="mt-0.5 block">{route.explanation}</span>}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-3 font-semibold text-theme">Baseline component roles</p>
+                    <ul className="mt-1 flex flex-col gap-1">
+                      {baseline.componentRoles.map((component) => (
+                        <li key={component.nodeId}>
+                          {component.label}: <span className="capitalize">{component.role}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                  {currentRun && !isComparable && (
+                    <p className="mt-2 text-xs text-muted">
+                      This baseline uses a different scenario or model version, so its capacity estimate cannot be compared.
+                    </p>
+                  )}
+                  {!currentRun && (
+                    <p className="mt-2 text-xs leading-5 text-muted">
+                      This baseline lasts for this editor session. Change the workload or design, prepare the paths again if the graph changed, and analyze to compare.
+                    </p>
                   )}
                 </div>
               )}
+
+              <p className="text-xs leading-5 text-muted">
+                The model assumes equal-cost database operations and linear capacity. It does not predict queue length, latency, timeouts, or failed requests.
+              </p>
             </div>
           )}
 
-          {preparationError && (
-            <div role="alert" className="flex items-start gap-2 rounded-lg border border-red-700/35 bg-red-700/5 p-3 text-sm leading-5 text-theme">
-              <MdWarningAmber className="mt-0.5 h-4 w-4 shrink-0 text-red-700 dark:text-red-300" aria-hidden="true" />
+          {errorMessage && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-lg border border-red-700/35 bg-red-700/5 p-3 text-sm leading-5 text-theme"
+            >
+              <MdWarningAmber
+                className="mt-0.5 h-4 w-4 shrink-0 text-red-700 dark:text-red-300"
+                aria-hidden="true"
+              />
               <div>
-                <p>{preparationError}</p>
+                <p>{errorMessage}</p>
                 {!preparing && !preparation && (
                   <button
                     type="button"

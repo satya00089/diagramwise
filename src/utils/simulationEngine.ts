@@ -1,13 +1,12 @@
 import type { SystemDesignSolution } from "../types/systemDesign";
 import type {
   SimulationInput,
+  SimulationNodeMetric,
   SimulationOperation,
   SimulationPreparation,
   SimulationResult,
   SimulationRole,
 } from "../types/simulation";
-
-const DEFAULT_DURATION_SECONDS = 30;
 
 function capacityForRole(
   role: SimulationRole,
@@ -29,21 +28,21 @@ export function runCapacitySimulation(
     throw new Error("Incoming traffic must be greater than zero requests per second.");
   }
   if (
-    input.readSharePercent < 0 ||
-    input.readSharePercent > 100 ||
+    !Number.isFinite(input.redirectSharePercent) ||
+    input.redirectSharePercent < 0 ||
+    input.redirectSharePercent > 100 ||
+    !Number.isFinite(input.cacheHitPercent) ||
     input.cacheHitPercent < 0 ||
     input.cacheHitPercent > 100
   ) {
     throw new Error("Workload percentages must be between 0 and 100.");
   }
   if (
-    !Number.isFinite(input.durationSeconds) ||
-    input.durationSeconds < 1 ||
     Object.values(input.profileCapacities).some(
       (capacity) => !Number.isFinite(capacity) || capacity <= 0,
     )
   ) {
-    throw new Error("Simulation profiles and duration must be positive numbers.");
+    throw new Error("Simulation profile capacities must be positive numbers.");
   }
 
   const rolesByNode = new Map(
@@ -55,19 +54,31 @@ export function runCapacitySimulation(
   const routesByOperation = new Map(
     preparation.routes.map((route) => [route.operation, route]),
   );
+  if (
+    preparation.routes.length !== 2 ||
+    routesByOperation.size !== 2 ||
+    !routesByOperation.has("redirect") ||
+    !routesByOperation.has("create-link")
+  ) {
+    throw new Error("The prepared design must include both supported operation paths.");
+  }
   const operationRates: Record<SimulationOperation, number> = {
-    read: input.requestRate * (input.readSharePercent / 100),
-    write: input.requestRate * ((100 - input.readSharePercent) / 100),
+    redirect: input.requestRate * (input.redirectSharePercent / 100),
+    "create-link": input.requestRate * ((100 - input.redirectSharePercent) / 100),
   };
-  const demandByNode = new Map<string, number>();
+  const demandByNode = new Map<
+    string,
+    { redirect: number; createLink: number }
+  >();
+  let redirectCacheNodeId: string | null = null;
 
-  for (const operation of ["read", "write"] as const) {
+  for (const operation of ["redirect", "create-link"] as const) {
     const rate = operationRates[operation];
-    if (rate === 0) continue;
     const route = routesByOperation.get(operation);
     if (!route?.node_ids.length) {
       throw new Error(`The prepared design has no supported ${operation} route.`);
     }
+    if (rate === 0) continue;
 
     let cacheSeen = false;
     for (const nodeId of route.node_ids) {
@@ -75,87 +86,102 @@ export function runCapacitySimulation(
       if (!role) {
         throw new Error("The prepared route references an unclassified component.");
       }
-      let demand = rate;
+      if (!componentsById.has(nodeId)) {
+        throw new Error("The prepared route references a missing component.");
+      }
       if (role === "client") continue;
-      if (operation === "read" && role === "cache") cacheSeen = true;
-      if (operation === "read" && role === "database" && cacheSeen) {
+
+      let demand = rate;
+      if (operation === "redirect" && role === "cache") {
+        cacheSeen = true;
+        redirectCacheNodeId = nodeId;
+      }
+      if (operation === "redirect" && role === "database" && cacheSeen) {
         demand *= 1 - input.cacheHitPercent / 100;
       }
-      demandByNode.set(nodeId, (demandByNode.get(nodeId) ?? 0) + demand);
+
+      const nodeDemand = demandByNode.get(nodeId) ?? {
+        redirect: 0,
+        createLink: 0,
+      };
+      if (operation === "redirect") nodeDemand.redirect += demand;
+      else nodeDemand.createLink += demand;
+      demandByNode.set(nodeId, nodeDemand);
     }
   }
 
-  const metrics = Array.from(demandByNode, ([nodeId, demandPerSecond]) => {
-    const role = rolesByNode.get(nodeId)!;
-    const capacityPerSecond = capacityForRole(
-      role,
-      input.profileCapacities,
-    );
-    if (capacityPerSecond == null) {
-      throw new Error(
-        "The prepared route contains a component without a supported capacity profile.",
+  const metrics: SimulationNodeMetric[] = Array.from(
+    demandByNode,
+    ([nodeId, demand]) => {
+      const role = rolesByNode.get(nodeId)!;
+      const capacityPerSecond = capacityForRole(
+        role,
+        input.profileCapacities,
       );
-    }
-    const component = componentsById.get(nodeId);
-    if (!component) {
-      throw new Error("The prepared route references a missing component.");
-    }
-    return {
-      nodeId,
-      label: component.label,
-      role,
-      demandPerSecond,
-      capacityPerSecond,
-      utilization: demandPerSecond / capacityPerSecond,
-      unit:
-        role === "database" || role === "cache"
-          ? ("ops/s" as const)
-          : ("requests/s" as const),
-    };
-  });
+      if (capacityPerSecond == null) {
+        throw new Error(
+          "The prepared route contains a component without a supported capacity profile.",
+        );
+      }
+      const component = componentsById.get(nodeId);
+      if (!component) {
+        throw new Error("The prepared route references a missing component.");
+      }
+      const demandPerSecond = demand.redirect + demand.createLink;
+      return {
+        nodeId,
+        label: component.label,
+        role,
+        redirectDemandPerSecond: demand.redirect,
+        createLinkDemandPerSecond: demand.createLink,
+        demandPerSecond,
+        capacityPerSecond,
+        utilization: demandPerSecond / capacityPerSecond,
+        unit:
+          role === "database" || role === "cache"
+            ? ("ops/s" as const)
+            : ("requests/s" as const),
+      };
+    },
+  );
 
-  const limitingMetric = metrics.reduce<typeof metrics[number] | null>(
+  const limitingMetric = metrics.reduce<SimulationNodeMetric | null>(
     (limiting, metric) =>
       !limiting || metric.utilization > limiting.utilization
         ? metric
         : limiting,
     null,
   );
-  const scale = Math.min(1, 1 / (limitingMetric?.utilization ?? 1));
-  const maxSustainableRequestsPerSecond = input.requestRate * scale;
-  const backlogGrowthPerSecond = limitingMetric
-    ? Math.max(
-        0,
-        limitingMetric.demandPerSecond - limitingMetric.capacityPerSecond,
-      )
+  if (!limitingMetric || limitingMetric.utilization <= 0) {
+    throw new Error("The prepared routes do not contain a modeled service component.");
+  }
+
+  const redirectsPerSecond = operationRates.redirect;
+  const cacheHitRate = redirectCacheNodeId
+    ? input.cacheHitPercent / 100
     : 0;
-  const durationSeconds = Math.max(
-    1,
-    Math.min(DEFAULT_DURATION_SECONDS, Math.round(input.durationSeconds)),
-  );
-  const timeline = Array.from({ length: durationSeconds }, (_, index) => {
-    const second = index + 1;
-    return {
-      second,
-      offeredRequestsPerSecond: input.requestRate,
-      servedRequestsPerSecond: maxSustainableRequestsPerSecond,
-      backlog: backlogGrowthPerSecond * second,
-    };
-  });
+  const databaseRedirectReadsPerSecond = metrics
+    .filter((metric) => metric.role === "database")
+    .reduce((sum, metric) => sum + metric.redirectDemandPerSecond, 0);
+  const databaseLinkWritesPerSecond = metrics
+    .filter((metric) => metric.role === "database")
+    .reduce((sum, metric) => sum + metric.createLinkDemandPerSecond, 0);
 
   return {
-    durationSeconds,
-    totalRequests: input.requestRate * durationSeconds,
-    maxSustainableRequestsPerSecond,
+    modelVersion: input.modelVersion,
+    requestRate: input.requestRate,
+    redirectsPerSecond,
+    linkCreationsPerSecond: operationRates["create-link"],
+    cacheHitsPerSecond: redirectsPerSecond * cacheHitRate,
+    cacheMissesPerSecond: redirectsPerSecond * (1 - cacheHitRate),
+    databaseRedirectReadsPerSecond,
+    databaseLinkWritesPerSecond,
+    estimatedCapacityAtMixRequestsPerSecond:
+      input.requestRate / limitingMetric.utilization,
     bottleneckNodeId:
-      limitingMetric && limitingMetric.utilization > 1
-        ? limitingMetric.nodeId
-        : null,
-    bottleneckDemandPerSecond: limitingMetric?.demandPerSecond ?? 0,
-    bottleneckCapacityPerSecond: limitingMetric?.capacityPerSecond ?? 0,
-    backlogGrowthPerSecond,
-    projectedBacklog: backlogGrowthPerSecond * durationSeconds,
+      limitingMetric.utilization > 1 ? limitingMetric.nodeId : null,
+    bottleneckDemandPerSecond: limitingMetric.demandPerSecond,
+    bottleneckCapacityPerSecond: limitingMetric.capacityPerSecond,
     nodeMetrics: metrics.sort((a, b) => b.utilization - a.utilization),
-    timeline,
   };
 }

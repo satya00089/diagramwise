@@ -1,14 +1,14 @@
 # Architecture simulation for Diagramwise
 
-Created: 15 October 2026. Updated: 17 October 2026. Status: planning only; no simulator implemented or deployed. This review uses the inspected local product/code and primary-source research. It does not establish customer demand or production performance.
+Created: 15 October 2026. Updated: 23 October 2026. Status: first bounded implementation slice in progress on `feat/architecture-simulator`; not deployed. The current code provides educational capacity analysis, not a time-dependent production simulator. This review uses the inspected local product/code and primary-source research. It does not establish customer demand or production performance.
 
-**User constraint:** Keep this work at the planning and research stage. Compare better alternatives and revise the recommendation when warranted. Do not implement application code, prototypes, simulation engines, integrations, or deployments until the user explicitly asks. Every implementation stage below is a proposal, not authorization to start it.
+**Implementation authorization:** On 23 October 2026, the user explicitly asked to start implementation following this plan. Keep the work bounded by the supported URL-shortener model and its evidence. This authorization does not establish customer demand, production performance, or deployment readiness.
 
 ## Recommendation
 
 The leading proposal is **guided architecture experiments on the learner's own design**, inside the existing practice canvas. Start from a question such as “What changes when redirect traffic increases?” and expose the relevant request path, assumptions, and before/after evidence. Begin with the URL-shortener exercise and a limited set of supported behaviors. A general **Simulate load** experience remains a candidate expansion after the models and learning value are validated.
 
-This fits Diagramwise's stated purpose: helping engineers design, explain, review, and improve systems. It adds an experiment between drawing and assessment: predict a bottleneck, run a workload, inspect the cause, change one decision, and replay. That is a meaningful extension of the learning loop described in [PRODUCT.md](../../PRODUCT.md).
+This fits Diagramwise's stated purpose: helping engineers design, explain, review, and improve systems. It adds an experiment between drawing and assessment: predict a bottleneck, run a workload, inspect the cause, change one decision, and replay. That is a meaningful extension of the learning loop described in [README.md](../../README.md).
 
 The product promise should be: **Explore how your design behaves under explicit workload and capacity assumptions.** Numerical outputs are results of an educational model. They are not measurements of a deployed application, cloud-instance benchmarks, or proof that the architecture is production-ready.
 
@@ -60,18 +60,27 @@ These are product hypotheses, not measured conversion or retention claims. Simul
 
 ## What the current implementation provides
 
-The local implementation already has useful seams:
+The first implementation slice now includes:
 
-- [System design types](../../diagrammatic/src/types/systemDesign.ts) preserve component and connection IDs, semantic component classes, property bags, reasoning context, findings, and assessment history.
-- [Requirement types](../../diagrammatic/src/types/requirements.ts) carry exercise revision and core/extension scope. Requirements themselves and reasoning fields such as traffic and read/write ratio are still prose, not executable workload parameters.
-- [SystemDesignPlayground](../../diagrammatic/src/pages/SystemDesignPlayground.tsx) already hosts editing and assessment. Reuse its canvas and selected-component inspector.
-- [Design review normalization](../../diagrammatic/src/utils/designReviewContext.ts) preserves semantic IDs and removes presentation fields; share that boundary rather than the narrower final AI payload in [assessor.ts](../../diagrammatic/src/utils/assessor.ts). [Attempt models](../../diagrammatic-api/app/models/attempt_models.py) provide the existing persistence boundary for future saved run summaries.
-- [URL-shortener guide](../../diagrammatic/src/data/public/problemGuides/url-shortener-like-bit-ly.json) already distinguishes link creation from redirects, read-heavy traffic, hot links, and latency goals. Use its teaching structure, but resolve the authoritative exercise revision instead of silently copying its example numbers into every attempt.
-- [Assessment implementation status](../../diagrammatic/docs/plans/problem-requirements-and-assessment-trust-implementation.md) documents local versioned requirements and review trust work. Its release status is explicitly qualified; this proposal does not claim those changes are deployed.
+- A same-canvas capacity panel, currently enabled only for the URL-shortener exercise, with editable request rate, redirect share, cache-hit assumption, and per-role capacity profiles.
+- AI-assisted route preparation for separate redirect and create-link paths, with backend validation of node/edge references and bounded cache/database semantics. Learners must confirm the displayed paths before analysis; they can correct a mismatch by editing the canvas and preparing again.
+- A deterministic analytical capacity calculation in a browser worker. It reports operation demand, cache hits/misses, database reads/writes, component utilization, and the estimated capacity at the selected operation mix.
+- An in-session baseline comparison that records the diagram fingerprint, exercise revision, scenario/model versions, input values, and whether each value is an educational default or a learner override.
 
-The missing foundation is executable behavior. An arrow currently cannot reliably tell us whether traffic is load balanced, broadcast, sequential, asynchronous, or conditional. A generic database icon does not determine query cost or throughput. Existing inspector defaults are also not guaranteed to be materialized in saved node properties; resolve all effective simulation inputs centrally.
+The calculation is intentionally capacity-only. It does not model queue growth, latency, timeouts, rejected requests, bursts, recovery, or persistence of historical runs. These remain later work; the UI must not imply that its simple rate arithmetic is a time-dependent simulation.
 
-Specific catalog fields also need interpretation: the gateway's rate-limit setting is an admission policy, not measured processing capacity; a database replication-factor default does not prove query-serving read replicas. Do not convert those fields directly into extra capacity. [Current component definitions](../../diagrammatic/src/config/components.ts)
+The codebase also has useful seams:
+
+- [System design types](../../src/types/systemDesign.ts) preserve component and connection IDs, semantic component classes, property bags, reasoning context, findings, and assessment history.
+- [Requirement types](../../src/types/requirements.ts) carry exercise revision and core/extension scope. Requirements themselves and reasoning fields such as traffic and read/write ratio are still prose, not executable workload parameters.
+- [SystemDesignPlayground](../../src/pages/SystemDesignPlayground.tsx) already hosts editing and assessment. Reuse its canvas and selected-component inspector.
+- [Design review normalization](../../src/utils/designReviewContext.ts) preserves semantic IDs and removes presentation fields; share that boundary rather than the narrower final AI payload in [assessor.ts](../../src/utils/assessor.ts). The companion [API attempt models](https://github.com/satya00089/diagramwise-api/blob/feat/architecture-simulator/app/models/attempt_models.py) provide the existing persistence boundary for future saved run summaries.
+- [URL-shortener guide](../../src/data/public/problemGuides/url-shortener-like-bit-ly.json) already distinguishes link creation from redirects, read-heavy traffic, hot links, and latency goals. Use its teaching structure, but resolve the authoritative exercise revision instead of silently copying its example numbers into every attempt.
+- [Assessment implementation status](../../docs/plans/problem-requirements-and-assessment-trust-implementation.md) documents local versioned requirements and review trust work. Its release status is explicitly qualified; this proposal does not claim those changes are deployed.
+
+The remaining foundation is richer executable behavior. An arrow cannot reliably tell us whether traffic is load balanced, broadcast, sequential, asynchronous, or conditional. The current model therefore supports only a narrow directed path with one database per operation and at most one cache on the redirect path; it does not infer replica routing or fan-out. A generic database icon does not determine query cost or throughput. Existing inspector defaults are also not guaranteed to be materialized in saved node properties; resolve all effective simulation inputs centrally.
+
+Specific catalog fields also need interpretation: the gateway's rate-limit setting is an admission policy, not measured processing capacity; a database replication-factor default does not prove query-serving read replicas. Do not convert those fields directly into extra capacity. [Current component definitions](../../src/config/components.ts)
 
 Reuse the current semantic graph boundaries, but add a small typed simulation contract rather than running calculations directly over rendering props. There is no reason to put MCP or an LLM in the calculation loop.
 
@@ -199,26 +208,34 @@ Set explicit limits for nodes, simulated requests, events, elapsed computation, 
 
 Simulation remains separate from the architecture-review score. It covers modeled performance behavior; security, correctness, durability, operational complexity, and unmodeled requirements still need reasoning and review. A short successful run cannot establish an annual availability target.
 
-## Breakscale and other references
+## Current implementation boundary
 
-See the companion [primary-source landscape review](architecture-simulation-landscape-2026-10-15.md) for inspected repositories, source links, and reuse limitations.
+The implementation requested on 23 October is in progress on `feat/architecture-simulator`. This first slice is a URL-shortener **capacity analysis**, not the time-dependent simulator described by the later stages:
 
-Breakscale is a useful reference for an interactive load playground and a browser-side event engine. Investigate selective engine reuse against Diagramwise's fixtures before adopting code. Reusing its entire app would duplicate a canvas and product flow Diagramwise already owns. Its modeled behavior must be reviewed independently; a permissive license does not establish fidelity or compatibility. [Breakscale repository](https://github.com/xevrion/breakscale)
+- The API prepares one redirect route and one create-link route from the supplied graph. The learner reviews the proposed paths before calculating.
+- The browser worker applies a typed, versioned analytical model. Each uncached redirect contributes one database read; each link creation contributes one database write; database operations have equal assumed cost; capacity scales linearly with offered load.
+- The learner can change the operation mix, redirect cache-hit assumption, and role-level educational capacity profiles. Inputs identify defaults separately from learner overrides.
+- Results show path demand, configured capacity, utilization, the limiting component, and database/cache operation counts. The in-session baseline records the graph, exercise revision, interpreted routes, component roles, and input provenance.
+- The panel is enabled only for the URL-shortener exercise. No run is persisted, and the numbers are not production measurements.
+
+Breakscale source was inspected directly. Its current MIT-licensed engine is a browser-side discrete-event runtime with a heap scheduler, seeded random generator, component behavior registry, pooled requests, queues, retries, and runtime metrics. Those behaviors are coupled to Breakscale's own node and runtime types. Reusing pieces for this analytical calculation would add an adapter without improving its stated arithmetic, so the current slice uses a small local engine. Revisit selective reuse only if Diagramwise implements event timing, queues, retries, or request traces, and then compare each behavior against Diagramwise's own fixtures. The full Breakscale app would duplicate a canvas and product flow Diagramwise already owns. [Breakscale repository](https://github.com/xevrion/breakscale)
+
+The current implementation does not model branches, replicas, queues, bursts, latency, deadlines, failures, or autoscaling. Run persistence, historical replay, learner evaluation, and expansion beyond this exercise remain pending. The tests and build checks still need a clean review before this slice can be marked complete.
 
 Diagramwise's opportunity is the connected learning experience: the learner's existing exercise, saved design, declared assumptions, experiment, explanation, and revision. We have not established that simulation itself is a unique market feature.
 
 ## Future delivery sequence and decision gates
 
-These stages apply only after the user explicitly requests implementation and a candidate scope is selected. Current work is limited to planning documentation.
+Implementation has been explicitly requested for the first bounded slice. Stage 1 is in progress; the remaining stages are gated on correctness and learning evidence. This work does not establish that the model is validated for production use.
 
-| Stage | Deliverable | Exit condition |
-| --- | --- | --- |
-| 1. Model spike | Approved URL-shortener workload, typed route/profile contract, hand-calculated fixtures; compare a minimal engine with selective Breakscale reuse | Reviewers can explain every output from stated inputs; all supported paths have unambiguous meaning |
-| 2. Private functional pilot | Deterministic engine, same-canvas inspection, traffic control, defaults provenance, baseline comparison | Conservation, routing, overload, replay, and browser responsiveness checks pass |
-| 3. Learning pilot | Observed sessions with roughly 8–12 target learners and 2–3 experienced reviewers | Learners can explain the cause and transfer it to a new workload; major misconceptions are absent |
-| 4. Controlled expansion | One additional workload chosen to test a new concept | First pilot has clear learning value and manageable content/model maintenance |
+| Stage | Deliverable | Exit condition | Status |
+| --- | --- | --- | --- |
+| 1. Model spike | Versioned URL-shortener workload, typed route/profile contract, hand-calculated fixtures; compare a minimal engine with selective Breakscale reuse | Reviewers can explain every output from stated inputs; all supported paths have unambiguous meaning | In progress: contract and engine comparison are implemented; fixture verification and review are pending |
+| 2. Private functional pilot | Deterministic engine, same-canvas inspection, traffic control, defaults provenance, baseline comparison | Conservation, routing, overload, replay, and browser responsiveness checks pass | Partial: panel, worker, assumptions, and session baseline exist; event behavior and pilot checks remain |
+| 3. Learning pilot | Observed sessions with roughly 8–12 target learners and 2–3 experienced reviewers | Learners can explain the cause and transfer it to a new workload; major misconceptions are absent | Pending |
+| 4. Controlled expansion | One additional workload chosen to test a new concept | First pilot has clear learning value and manageable content/model maintenance | Pending |
 
-This is a multi-week engineering and content effort, not a small button feature. Estimate implementation after stage 1; the main uncertainty is adapting arbitrary user graphs into valid operation paths, not drawing traffic animation.
+The later event-based model and learner pilot remain substantial engineering and content work. For the current slice, the main remaining checks are verifying the hand-calculated cases, confirming API contract compatibility, and reviewing the end-to-end experience.
 
 Proposed pilot targets, to agree before testing rather than treating as industry benchmarks:
 

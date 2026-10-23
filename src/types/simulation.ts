@@ -7,7 +7,9 @@ export type SimulationRole =
   | "queue"
   | "other";
 
-export type SimulationOperation = "read" | "write";
+export type SimulationOperation = "redirect" | "create-link";
+export type SimulationInputProvenance = "educational-default" | "user";
+export type SimulationCapacityRole = "ingress" | "compute" | "cache" | "database";
 
 export type SimulationPreparation = {
   status: "ready" | "blocked" | "needs_review";
@@ -33,47 +35,75 @@ export type SimulationPreparation = {
   blockers: string[];
 };
 
-export type SimulationProfileCapacities = {
-  ingress: number;
-  compute: number;
-  cache: number;
-  database: number;
-};
+export type SimulationProfileCapacities = Record<SimulationCapacityRole, number>;
+export type SimulationProfileProvenance = Record<
+  SimulationCapacityRole,
+  SimulationInputProvenance
+>;
 
 export type SimulationInput = {
+  scenarioId: "url-shortener-capacity";
+  scenarioVersion: "1";
+  modelVersion: "capacity-v1";
   requestRate: number;
-  readSharePercent: number;
+  redirectSharePercent: number;
   cacheHitPercent: number;
-  durationSeconds: number;
   profileCapacities: SimulationProfileCapacities;
+  provenance: {
+    requestRate: SimulationInputProvenance;
+    redirectSharePercent: SimulationInputProvenance;
+    cacheHitPercent: SimulationInputProvenance;
+    profileCapacities: SimulationProfileProvenance;
+  };
 };
 
 export type SimulationNodeMetric = {
   nodeId: string;
   label: string;
   role: SimulationRole;
+  redirectDemandPerSecond: number;
+  createLinkDemandPerSecond: number;
   demandPerSecond: number;
   capacityPerSecond: number;
   utilization: number;
   unit: "requests/s" | "ops/s";
 };
 
-export type SimulationTimelinePoint = {
-  second: number;
-  offeredRequestsPerSecond: number;
-  servedRequestsPerSecond: number;
-  backlog: number;
-};
-
 export type SimulationResult = {
-  durationSeconds: number;
-  totalRequests: number;
-  maxSustainableRequestsPerSecond: number;
+  modelVersion: SimulationInput["modelVersion"];
+  requestRate: number;
+  redirectsPerSecond: number;
+  linkCreationsPerSecond: number;
+  cacheHitsPerSecond: number;
+  cacheMissesPerSecond: number;
+  databaseRedirectReadsPerSecond: number;
+  databaseLinkWritesPerSecond: number;
+  estimatedCapacityAtMixRequestsPerSecond: number;
   bottleneckNodeId: string | null;
   bottleneckDemandPerSecond: number;
   bottleneckCapacityPerSecond: number;
-  backlogGrowthPerSecond: number;
-  projectedBacklog: number;
   nodeMetrics: SimulationNodeMetric[];
-  timeline: SimulationTimelinePoint[];
+};
+
+export type SimulationPreparedRouteSnapshot = {
+  operation: SimulationOperation;
+  nodeIds: string[];
+  edgeIds: string[];
+  nodeLabels: string[];
+  explanation: string;
+};
+
+export type SimulationRunSnapshot = {
+  input: SimulationInput;
+  result: SimulationResult;
+  graphFingerprint: string;
+  preparationFingerprint: string;
+  preparedRoutes: SimulationPreparedRouteSnapshot[];
+  componentRoles: Array<{
+    nodeId: string;
+    label: string;
+    role: SimulationRole;
+  }>;
+  exerciseId: string | null;
+  requirementRevision: string | null;
 };

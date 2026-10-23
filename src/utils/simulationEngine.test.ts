@@ -25,24 +25,24 @@ const roles: SimulationPreparation["component_roles"] = [
 ];
 
 const preparation = (
-  readNodeIds: string[],
-  writeNodeIds: string[],
+  redirectNodeIds: string[],
+  createLinkNodeIds: string[],
 ): SimulationPreparation => ({
   status: "ready",
   component_roles: roles,
   connection_checks: [],
   routes: [
     {
-      operation: "read",
-      node_ids: readNodeIds,
+      operation: "redirect",
+      node_ids: redirectNodeIds,
       edge_ids: [],
-      explanation: "Read route",
+      explanation: "Redirect route",
     },
     {
-      operation: "write",
-      node_ids: writeNodeIds,
+      operation: "create-link",
+      node_ids: createLinkNodeIds,
       edge_ids: [],
-      explanation: "Write route",
+      explanation: "Create-link route",
     },
   ],
   assumptions: [],
@@ -52,20 +52,33 @@ const preparation = (
 });
 
 const input = {
+  scenarioId: "url-shortener-capacity" as const,
+  scenarioVersion: "1" as const,
+  modelVersion: "capacity-v1" as const,
   requestRate: 1000,
-  readSharePercent: 95,
+  redirectSharePercent: 95,
   cacheHitPercent: 0,
-  durationSeconds: 30,
   profileCapacities: {
     ingress: 5000,
     compute: 1500,
     cache: 10000,
     database: 600,
   },
+  provenance: {
+    requestRate: "educational-default" as const,
+    redirectSharePercent: "educational-default" as const,
+    cacheHitPercent: "educational-default" as const,
+    profileCapacities: {
+      ingress: "educational-default" as const,
+      compute: "educational-default" as const,
+      cache: "educational-default" as const,
+      database: "educational-default" as const,
+    },
+  },
 };
 
 describe("runCapacitySimulation", () => {
-  it("accounts for read and write demand and exposes a growing database backlog", () => {
+  it("accounts for redirect reads and create-link writes at shared capacity", () => {
     const result = runCapacitySimulation(
       solution,
       preparation(
@@ -76,16 +89,16 @@ describe("runCapacitySimulation", () => {
     );
 
     const database = result.nodeMetrics.find((metric) => metric.nodeId === "db");
-    expect(database?.demandPerSecond).toBe(1000);
+    expect(database?.redirectDemandPerSecond).toBe(950);
+    expect(database?.createLinkDemandPerSecond).toBe(50);
     expect(database?.capacityPerSecond).toBe(600);
+    expect(result.databaseRedirectReadsPerSecond).toBe(950);
+    expect(result.databaseLinkWritesPerSecond).toBe(50);
     expect(result.bottleneckNodeId).toBe("db");
-    expect(result.maxSustainableRequestsPerSecond).toBe(600);
-    expect(result.backlogGrowthPerSecond).toBe(400);
-    expect(result.projectedBacklog).toBe(12_000);
-    expect(result.timeline).toHaveLength(30);
+    expect(result.estimatedCapacityAtMixRequestsPerSecond).toBe(600);
   });
 
-  it("reduces database reads only when the prepared read path includes a cache", () => {
+  it("reduces database reads only when the redirect path includes a cache", () => {
     const result = runCapacitySimulation(
       solution,
       preparation(
@@ -97,10 +110,13 @@ describe("runCapacitySimulation", () => {
 
     const cache = result.nodeMetrics.find((metric) => metric.nodeId === "cache");
     const database = result.nodeMetrics.find((metric) => metric.nodeId === "db");
-    expect(cache?.demandPerSecond).toBe(950);
-    expect(database?.demandPerSecond).toBe(145);
+    expect(cache?.redirectDemandPerSecond).toBe(950);
+    expect(database?.redirectDemandPerSecond).toBe(95);
+    expect(database?.createLinkDemandPerSecond).toBe(50);
+    expect(result.cacheHitsPerSecond).toBe(855);
+    expect(result.cacheMissesPerSecond).toBe(95);
+    expect(result.databaseRedirectReadsPerSecond).toBe(95);
     expect(result.bottleneckNodeId).toBeNull();
-    expect(result.projectedBacklog).toBe(0);
   });
 
   it("does not produce metrics for a blocked preparation", () => {
