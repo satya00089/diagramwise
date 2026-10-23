@@ -15,7 +15,6 @@ export interface User {
 
 export interface AuthState {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
@@ -35,6 +34,11 @@ export interface SignupCredentials {
 export interface AuthResponse {
   user: User;
   token: string;
+}
+
+/** Browser session response; the session credential is an HttpOnly cookie. */
+export interface SessionAuthResponse {
+  user: User;
 }
 
 export interface SignupPendingResponse {

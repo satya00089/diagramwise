@@ -26,7 +26,6 @@ interface DiagramUpdateData {
 
 interface UseCollaborationOptions {
   diagramId: string;
-  token: string;
   enabled: boolean;
   onDiagramUpdate?: (data: DiagramUpdateData, userId: string) => void;
   onUserJoined?: (user: CollaboratorUser) => void;
@@ -61,12 +60,11 @@ const getWebSocketUrl = (apiUrl: string): string => {
 };
 
 const WS_BASE_URL = getWebSocketUrl(
-  import.meta.env.VITE_ASSESSMENT_API_URL || "",
+  import.meta.env.VITE_API_URL || import.meta.env.VITE_ASSESSMENT_API_URL || "",
 );
 
 export const useCollaboration = ({
   diagramId,
-  token,
   enabled,
   onDiagramUpdate,
   onUserJoined,
@@ -79,8 +77,8 @@ export const useCollaboration = ({
   const lastUpdateRef = useRef<number>(0);
   const updateDebounceRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Build WebSocket URL with token
-  const wsUrl = `${WS_BASE_URL}/api/v1/diagrams/${diagramId}/collaborate?token=${token}`;
+  // The browser sends the HttpOnly session cookie during the WebSocket upgrade.
+  const wsUrl = `${WS_BASE_URL}/api/v1/diagrams/${encodeURIComponent(diagramId)}/collaborate`;
 
   const handleMessage = useCallback(
     (message: WebSocketMessage) => {

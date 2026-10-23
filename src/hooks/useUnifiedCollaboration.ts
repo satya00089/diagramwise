@@ -67,7 +67,7 @@ export const useUnifiedCollaboration = ({
   roomId,
   getSeed,
 }: UnifiedCollaborationOptions): UnifiedCollaborationReturn => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
 
   // Check if Yjs is enabled via feature flag AND Yjs URL is configured
   // If no VITE_YJS_URL is provided, automatically fall back to custom WebSocket
@@ -97,7 +97,6 @@ export const useUnifiedCollaboration = ({
   const [wsCursors, setWsCursors] = useState<CollaboratorCursor[]>([]);
   const wsCollaboration = useWebSocketCollaboration({
     diagramId,
-    token: token || "",
     enabled: !useYjs && enabled,
     onDiagramUpdate: (data) => {
       if (data.nodes) {

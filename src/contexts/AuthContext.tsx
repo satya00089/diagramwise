@@ -5,10 +5,10 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { jwtDecode } from "jwt-decode";
 import type {
   AuthState,
-  AuthResponse,
+  User,
+  SessionAuthResponse,
   LoginCredentials,
   SignupCredentials,
 } from "../types/auth";
@@ -21,14 +21,98 @@ interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   signup: (credentials: SignupCredentials) => Promise<void>;
   googleLogin: (credential: string) => Promise<void>;
-  completeSession: (response: AuthResponse) => void;
+  completeSession: (response: SessionAuthResponse) => void;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
 }
 
+const AUTH_CHANNEL_NAME = "diagramwise-auth";
+const AUTH_CHANGE_STORAGE_KEY = "diagramwise-auth-change";
+let sessionBootstrap: Promise<User | null> | null = null;
+let authStateRevision = 0;
+
+const clearLegacyToken = (): void => {
+  try {
+    localStorage.removeItem("auth_token");
+  } catch {
+    // Storage may be disabled; the cookie session still works.
+  }
+};
+
+const readLegacyToken = (): string | null => {
+  try {
+    return localStorage.getItem("auth_token");
+  } catch {
+    // Continue with the HttpOnly cookie when storage is unavailable.
+    return null;
+  }
+};
+
+const getCurrentUserOrNull = async (): Promise<User | null> => {
+  try {
+    return await apiService.getCurrentUser();
+  } catch {
+    return null;
+  }
+};
+
+const getErrorStatus = (error: unknown): unknown =>
+  error && typeof error === "object" && "status" in error
+    ? error.status
+    : undefined;
+
+const restoreSessionAfterUpgradeFailure = async (
+  error: unknown,
+): Promise<User | null> => {
+  // Another tab may already have upgraded and revoked the old bearer.
+  const user = await getCurrentUserOrNull();
+  if (user) {
+    clearLegacyToken();
+    notifyAuthChanged();
+    return user;
+  }
+
+  if (getErrorStatus(error) === 401) clearLegacyToken();
+  // Keep the token after a transient failure so a reload can retry the upgrade.
+  return null;
+};
+
+const loadBrowserSession = async (): Promise<User | null> => {
+  const legacyToken = readLegacyToken();
+  if (!legacyToken) return getCurrentUserOrNull();
+
+  try {
+    const user = (await apiService.upgradeSession(legacyToken)).user;
+    clearLegacyToken();
+    notifyAuthChanged();
+    return user;
+  } catch (error) {
+    return restoreSessionAfterUpgradeFailure(error);
+  }
+};
+
+const initializeBrowserSession = (): Promise<User | null> => {
+  sessionBootstrap ??= loadBrowserSession();
+  return sessionBootstrap;
+};
+
+function notifyAuthChanged(): void {
+  if (typeof BroadcastChannel !== "undefined") {
+    const channel = new BroadcastChannel(AUTH_CHANNEL_NAME);
+    channel.postMessage({ type: "session-changed" });
+    channel.close();
+    return;
+  }
+
+  try {
+    localStorage.setItem(AUTH_CHANGE_STORAGE_KEY, String(Date.now()));
+  } catch {
+    // The current tab's auth state remains correct if storage is unavailable.
+  }
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Export context for useAuth hook
 export { AuthContext };
 export type { AuthContextType };
 
@@ -37,7 +121,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [state, setState] = useState<AuthState>({
     user: null,
-    token: null,
     isAuthenticated: false,
     isLoading: true,
   });
@@ -47,149 +130,113 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   });
   const { toasts, removeToast, warning: showWarning } = useToast();
 
-  // Check if token is expired
-  const isTokenExpired = useCallback((token: string): boolean => {
+  const refreshSession = useCallback(async () => {
+    const revision = ++authStateRevision;
+    setState((prev) => ({ ...prev, isLoading: true }));
     try {
-      const decoded = jwtDecode(token);
-      if (!decoded.exp) return false;
-      return decoded.exp * 1000 < Date.now();
+      const user = await apiService.getCurrentUser();
+      if (revision === authStateRevision) {
+        setState({ user, isAuthenticated: true, isLoading: false });
+      }
     } catch {
-      return true;
+      if (revision === authStateRevision) {
+        setState({ user: null, isAuthenticated: false, isLoading: false });
+      }
     }
   }, []);
 
-  // Define logout first so it can be used in other functions
-  const logout = useCallback(async (): Promise<void> => {
-    const token = localStorage.getItem("auth_token");
-    localStorage.removeItem("auth_token");
+  useEffect(() => {
+    let active = true;
+    const revision = authStateRevision;
+
+    const initAuth = async () => {
+      const user = await initializeBrowserSession();
+      if (active && revision === authStateRevision) {
+        setState({ user, isAuthenticated: Boolean(user), isLoading: false });
+      }
+    };
+
+    void initAuth();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      void refreshSession();
+    };
+    const channel =
+      typeof BroadcastChannel !== "undefined"
+        ? new BroadcastChannel(AUTH_CHANNEL_NAME)
+        : null;
+    if (channel) channel.onmessage = handleAuthChange;
+
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === AUTH_CHANGE_STORAGE_KEY) handleAuthChange();
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => {
+      channel?.close();
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [refreshSession]);
+
+  const completeSession = useCallback((response: SessionAuthResponse) => {
+    authStateRevision += 1;
+    sessionBootstrap = null;
+    clearLegacyToken();
     setState({
-      user: null,
-      token: null,
-      isAuthenticated: false,
+      user: response.user,
+      isAuthenticated: true,
       isLoading: false,
     });
-    if (!token) return;
+    notifyAuthChanged();
+  }, []);
+
+  const login = useCallback(async (credentials: LoginCredentials) => {
+    const response = await apiService.login(credentials);
+    completeSession(response);
+  }, [completeSession]);
+
+  const signup = useCallback(async (credentials: SignupCredentials) => {
+    await apiService.signup(credentials);
+    trackEvent("account_signup_submitted", { method: "password" }, true);
+  }, [trackEvent]);
+
+  const googleLogin = useCallback(async (credential: string) => {
+    const response = await apiService.googleLogin(credential);
+    completeSession(response);
+  }, [completeSession]);
+
+  const logout = useCallback(async (): Promise<void> => {
     try {
-      await apiService.logout(token);
+      await apiService.logout();
     } catch (error) {
       console.warn("Server-side session revocation could not be confirmed:", error);
       showWarning(
         "Signed out on this device. The server could not confirm session revocation, so this session may remain valid until it expires.",
         8000,
       );
+    } finally {
+      authStateRevision += 1;
+      sessionBootstrap = null;
+      clearLegacyToken();
+      setState({ user: null, isAuthenticated: false, isLoading: false });
+      notifyAuthChanged();
     }
   }, [showWarning]);
 
-  // Initialize auth state from localStorage
-  useEffect(() => {
-    const initAuth = async () => {
-      const token = localStorage.getItem("auth_token");
-
-      if (!token) {
-        setState((prev) => ({ ...prev, isLoading: false }));
-        return;
-      }
-
-      if (isTokenExpired(token)) {
-        localStorage.removeItem("auth_token");
-        setState((prev) => ({ ...prev, isLoading: false }));
-        return;
-      }
-
-      try {
-        const user = await apiService.getCurrentUser();
-        if (localStorage.getItem("auth_token") !== token) return;
-        setState({
-          user,
-          token,
-          isAuthenticated: true,
-          isLoading: false,
-        });
-      } catch (error) {
-        console.error("Failed to fetch user:", error);
-        if (localStorage.getItem("auth_token") === token) {
-          localStorage.removeItem("auth_token");
-          setState((prev) => ({ ...prev, isLoading: false }));
-        }
-      }
-    };
-
-    void initAuth();
-  }, [isTokenExpired]);
-
-  useEffect(() => {
-    const handleStorage = (event: StorageEvent) => {
-      if (event.key !== "auth_token") return;
-      const token = event.newValue;
-      if (!token) {
-        setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
-        return;
-      }
-      if (isTokenExpired(token)) {
-        if (localStorage.getItem("auth_token") === token) {
-          localStorage.removeItem("auth_token");
-        }
-        setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
-        return;
-      }
-      setState((prev) => ({ ...prev, isLoading: true }));
-      void apiService.getCurrentUser().then((user) => {
-        if (localStorage.getItem("auth_token") !== token) return;
-        setState({ user, token, isAuthenticated: true, isLoading: false });
-      }).catch(() => {
-        if (localStorage.getItem("auth_token") !== token) return;
-        localStorage.removeItem("auth_token");
-        setState({ user: null, token: null, isAuthenticated: false, isLoading: false });
-      });
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, [isTokenExpired]);
-
-  const login = useCallback(async (credentials: LoginCredentials) => {
-    const { user, token } = await apiService.login(credentials);
-    localStorage.setItem("auth_token", token);
-    setState({
-      user,
-      token,
-      isAuthenticated: true,
-      isLoading: false,
-    });
-  }, []);
-
-  const signup = useCallback(async (credentials: SignupCredentials) => {
-    // Email/password accounts must be activated before they receive a session.
-    await apiService.signup(credentials);
-    trackEvent("account_signup_submitted", { method: "password" }, true);
-  }, [trackEvent]);
-
-  const completeSession = useCallback((response: AuthResponse) => {
-    const { user, token } = response;
-    localStorage.setItem("auth_token", token);
-    setState({
-      user,
-      token,
-      isAuthenticated: true,
-      isLoading: false,
-    });
-  }, []);
-
-  const googleLogin = useCallback(async (credential: string) => {
-    const { user, token } = await apiService.googleLogin(credential);
-    completeSession({ user, token });
-  }, [completeSession]);
-
   const refreshUser = useCallback(async () => {
-    if (!state.token) return;
-
+    if (!state.isAuthenticated) return;
     try {
       const user = await apiService.getCurrentUser();
       setState((prev) => ({ ...prev, user }));
     } catch (error) {
       console.error("Failed to refresh user:", error);
-      logout();
+      await logout();
     }
-  }, [state.token, logout]);
+  }, [state.isAuthenticated, logout]);
 
   const contextValue = useMemo(
     () => ({
