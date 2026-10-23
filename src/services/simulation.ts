@@ -1,7 +1,6 @@
 import { getApiBaseUrl } from "./api";
 import type { SystemDesignProblem, SystemDesignSolution } from "../types/systemDesign";
 import type { SimulationPreparation } from "../types/simulation";
-import { buildAssessmentPayload } from "../utils/assessor";
 
 const SIMULATION_API_BASE_URL = getApiBaseUrl(
   import.meta.env.VITE_API_URL,
@@ -18,6 +17,27 @@ export async function prepareSimulation(
       "The assessment API URL is not configured. Set VITE_API_URL to prepare this simulation.",
     );
   }
+  if (!problem || problem.slug !== "url-shortener-like-bit-ly") {
+    throw new Error("Choose the URL-shortener exercise before preparing a simulation.");
+  }
+
+  const payload = {
+    contractVersion: "1",
+    scenarioId: "url-shortener-capacity",
+    problem: {
+      id: problem.id,
+      slug: problem.slug,
+      requirementRevision: problem.requirementSpec?.revision ?? null,
+    },
+    components: solution.components.map(({ id, type, label, properties }) => ({
+      id, type, label, properties,
+    })),
+    connections: solution.connections.map(
+      ({ id, source, target, type, label, description, properties }) => ({
+        id, source, target, type, label, description, properties,
+      }),
+    ),
+  };
 
   const response = await fetch(
     `${SIMULATION_API_BASE_URL.replace(/\/$/, "")}/api/v1/simulation/prepare`,
@@ -27,7 +47,7 @@ export async function prepareSimulation(
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify(buildAssessmentPayload(solution, problem)),
+      body: JSON.stringify(payload),
       signal,
     },
   );
@@ -45,5 +65,13 @@ export async function prepareSimulation(
     throw new Error(message);
   }
 
+  if (
+    result.contract_version !== "1" ||
+    result.scenario_id !== "url-shortener-capacity" ||
+    result.exercise_id !== problem.id ||
+    result.requirement_revision !== (problem.requirementSpec?.revision ?? null)
+  ) {
+    throw new Error("The preparation does not match this exercise. Reload and prepare again.");
+  }
   return result;
 }

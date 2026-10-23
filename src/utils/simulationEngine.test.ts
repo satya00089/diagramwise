@@ -11,7 +11,13 @@ const solution: SystemDesignSolution = {
     { id: "cache", type: "cache", label: "Redis", position: { x: 0, y: 0 }, properties: {} },
     { id: "db", type: "database", label: "PostgreSQL", position: { x: 0, y: 0 }, properties: {} },
   ],
-  connections: [],
+  connections: [
+    { id: "client-gateway", source: "client", target: "gateway", type: "http" },
+    { id: "gateway-app", source: "gateway", target: "app", type: "http" },
+    { id: "app-cache", source: "app", target: "cache", type: "tcp" },
+    { id: "cache-db", source: "cache", target: "db", type: "tcp" },
+    { id: "app-db", source: "app", target: "db", type: "tcp" },
+  ],
   explanation: "",
   keyPoints: [],
 };
@@ -29,19 +35,31 @@ const preparation = (
   createLinkNodeIds: string[],
 ): SimulationPreparation => ({
   status: "ready",
+  contract_version: "1",
+  scenario_id: "url-shortener-capacity",
+  exercise_id: "url-shortener-exercise",
+  requirement_revision: null,
   component_roles: roles,
-  connection_checks: [],
+  connection_checks: solution.connections.map(({ id }) => ({
+    edge_id: id,
+    status: "supported",
+    explanation: "Valid directed connection",
+  })),
   routes: [
     {
       operation: "redirect",
       node_ids: redirectNodeIds,
-      edge_ids: [],
+      edge_ids: redirectNodeIds.slice(1).map((nodeId, index) =>
+        `${redirectNodeIds[index]}-${nodeId}`,
+      ),
       explanation: "Redirect route",
     },
     {
       operation: "create-link",
       node_ids: createLinkNodeIds,
-      edge_ids: [],
+      edge_ids: createLinkNodeIds.slice(1).map((nodeId, index) =>
+        `${createLinkNodeIds[index]}-${nodeId}`,
+      ),
       explanation: "Create-link route",
     },
   ],

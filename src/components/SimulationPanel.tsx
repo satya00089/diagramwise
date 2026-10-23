@@ -284,7 +284,21 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
     [problem, nodes, edges],
   );
   const solution = useMemo(
-    () => buildSystemDesignSolution(nodes, edges, reasoningContext),
+    () => {
+      const design = buildSystemDesignSolution(nodes, edges, reasoningContext);
+      const components = design.components.filter(
+        (component) => (component.type as string) !== "group",
+      );
+      const componentIds = new Set(components.map((component) => component.id));
+      return {
+        ...design,
+        components,
+        connections: design.connections.filter(
+          (connection) =>
+            componentIds.has(connection.source) && componentIds.has(connection.target),
+        ),
+      };
+    },
     [nodes, edges, reasoningContext],
   );
   const graphFingerprint = useMemo(() => {
@@ -293,13 +307,14 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
       .map(({ id, type, label, properties }) => ({ id, type, label, properties }))
       .sort((a, b) => a.id.localeCompare(b.id));
     const connections = solution.connections
-      .map(({ id, source, target, type, label, description }) => ({
+      .map(({ id, source, target, type, label, description, properties }) => ({
         id,
         source,
         target,
         type,
         label,
         description,
+        properties,
       }))
       .sort((a, b) => a.id.localeCompare(b.id));
     return JSON.stringify({
@@ -489,7 +504,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
 
   const handleFocusBottleneck = () => {
     const component = solution.components.find(
-      (item) => item.id === currentRun?.result.bottleneckNodeId,
+      (item) => item.id === currentRun?.result.limitingNodeId,
     );
     if (!component) return;
     setCenter(component.position.x + 110, component.position.y + 55, {
@@ -562,8 +577,9 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
           {!preparation && (
             <div className="flex flex-col gap-3">
               <p className="text-sm leading-5 text-muted">
-                AI will identify the supported paths and flag connections this model
-                cannot explain. It will not assign measured capacities.
+                The path checker uses known component types for simple diagrams and
+                interprets ambiguous diagrams with AI. It flags unsupported connections
+                and does not assign measured capacities.
               </p>
               <button
                 type="button"
@@ -708,7 +724,7 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
                 id="simulation-request-rate"
                 label="Incoming requests"
                 value={input.requestRate}
-                min={100}
+                min={0}
                 max={5000}
                 step={50}
                 suffix="req/s"
@@ -840,29 +856,23 @@ const SimulationPanel: React.FC<SimulationPanelProps> = ({ nodes, edges, problem
                       About {formatRate(currentRun.result.estimatedCapacityAtMixRequestsPerSecond)}
                       {" "}requests/s across the prepared paths, using the selected profiles.
                     </p>
-                    {currentRun.result.bottleneckNodeId ? (
-                      <>
-                        <p className="mt-1 text-sm leading-5 text-theme">
-                          {currentRun.result.nodeMetrics.find(
-                            (metric) => metric.nodeId === currentRun.result.bottleneckNodeId,
-                          )?.label} is over its assumed capacity at the offered rate
-                          ({formatRate(currentRun.result.bottleneckDemandPerSecond)} / {formatRate(currentRun.result.bottleneckCapacityPerSecond)} {currentRun.result.nodeMetrics.find(
-                            (metric) => metric.nodeId === currentRun.result.bottleneckNodeId,
-                          )?.unit}).
-                        </p>
-                        <button
-                          type="button"
-                          onClick={handleFocusBottleneck}
-                          className="mt-2 rounded px-1 py-1 text-sm font-semibold text-[var(--product-accent)] underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]"
-                        >
-                          View on canvas
-                        </button>
-                      </>
-                    ) : (
-                      <p className="mt-1 text-sm leading-5 text-theme">
-                        No modeled component exceeds its configured capacity at the selected rate.
-                      </p>
-                    )}
+                    <p className="mt-1 text-sm leading-5 text-theme">
+                      {currentRun.result.nodeMetrics.find(
+                        (metric) => metric.nodeId === currentRun.result.limitingNodeId,
+                      )?.label} is the limiting modeled component. {currentRun.result.bottleneckNodeId
+                        ? "Its demand exceeds the assumed capacity at the offered rate"
+                        : "Its demand is within the assumed capacity at the offered rate"}
+                      {" "}({formatRate(currentRun.result.bottleneckDemandPerSecond)} / {formatRate(currentRun.result.bottleneckCapacityPerSecond)} {currentRun.result.nodeMetrics.find(
+                        (metric) => metric.nodeId === currentRun.result.limitingNodeId,
+                      )?.unit}).
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleFocusBottleneck}
+                      className="mt-2 rounded px-1 py-1 text-sm font-semibold text-[var(--product-accent)] underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--product-accent)]"
+                    >
+                      View on canvas
+                    </button>
                   </div>
 
                   <dl className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-sm">

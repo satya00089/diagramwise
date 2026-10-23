@@ -12,6 +12,10 @@ export type SimulationInputProvenance = "educational-default" | "user";
 export type SimulationCapacityRole = "ingress" | "compute" | "cache" | "database";
 
 export type SimulationPreparation = {
+  contract_version: "1";
+  scenario_id: "url-shortener-capacity";
+  exercise_id: string;
+  requirement_revision: string | null;
   status: "ready" | "blocked" | "needs_review";
   component_roles: Array<{
     node_id: string;
@@ -79,6 +83,7 @@ export type SimulationResult = {
   databaseRedirectReadsPerSecond: number;
   databaseLinkWritesPerSecond: number;
   estimatedCapacityAtMixRequestsPerSecond: number;
+  limitingNodeId: string;
   bottleneckNodeId: string | null;
   bottleneckDemandPerSecond: number;
   bottleneckCapacityPerSecond: number;

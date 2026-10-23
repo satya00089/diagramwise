@@ -24,8 +24,17 @@ export function runCapacitySimulation(
   if (preparation.status !== "ready") {
     throw new Error("Prepare and validate the architecture before running it.");
   }
-  if (!Number.isFinite(input.requestRate) || input.requestRate <= 0) {
-    throw new Error("Incoming traffic must be greater than zero requests per second.");
+  if (
+    input.scenarioId !== "url-shortener-capacity" ||
+    input.scenarioVersion !== "1" ||
+    input.modelVersion !== "capacity-v1" ||
+    preparation.contract_version !== "1" ||
+    preparation.scenario_id !== input.scenarioId
+  ) {
+    throw new Error("The simulation contract or model version is unsupported.");
+  }
+  if (!Number.isFinite(input.requestRate) || input.requestRate < 0) {
+    throw new Error("Incoming traffic must be zero or more requests per second.");
   }
   if (
     !Number.isFinite(input.redirectSharePercent) ||
@@ -62,9 +71,63 @@ export function runCapacitySimulation(
   ) {
     throw new Error("The prepared design must include both supported operation paths.");
   }
+  const edgesById = new Map(solution.connections.map((edge) => [edge.id, edge]));
+  const checksById = new Map(
+    preparation.connection_checks.map((check) => [check.edge_id, check.status]),
+  );
+  for (const operation of ["redirect", "create-link"] as const) {
+    const route = routesByOperation.get(operation)!;
+    if (
+      route.node_ids.length < 3 ||
+      route.edge_ids.length !== route.node_ids.length - 1 ||
+      new Set(route.node_ids).size !== route.node_ids.length
+    ) {
+      throw new Error(`The prepared ${operation} path is incomplete or contains a loop.`);
+    }
+    const roles = route.node_ids.map((nodeId) => {
+      if (!componentsById.has(nodeId)) {
+        throw new Error("The prepared route references a missing component.");
+      }
+      return rolesByNode.get(nodeId);
+    });
+    if (
+      roles[0] !== "client" ||
+      roles[roles.length - 1] !== "database" ||
+      roles.filter((role) => role === "database").length !== 1 ||
+      !roles.includes("compute") ||
+      roles.some((role, index) =>
+        index > 0 && index < roles.length - 1 &&
+        !["ingress", "compute", "cache"].includes(role ?? ""),
+      )
+    ) {
+      throw new Error(`The prepared ${operation} path has unsupported component roles.`);
+    }
+    const cachePositions = roles.flatMap((role, index) => role === "cache" ? [index] : []);
+    if (
+      (operation === "create-link" && cachePositions.length > 0) ||
+      cachePositions.length > 1 ||
+      (cachePositions.length === 1 &&
+        (roles.indexOf("compute") > cachePositions[0] ||
+         cachePositions[0] !== roles.length - 2))
+    ) {
+      throw new Error(`The prepared ${operation} path has an unsupported cache position.`);
+    }
+    route.edge_ids.forEach((edgeId, index) => {
+      const edge = edgesById.get(edgeId);
+      if (
+        !edge || edge.source !== route.node_ids[index] ||
+        edge.target !== route.node_ids[index + 1] ||
+        checksById.get(edgeId) !== "supported"
+      ) {
+        throw new Error(`The prepared ${operation} path has an unverified connection.`);
+      }
+    });
+  }
+  // A one-request reference rate keeps capacity at the selected mix defined at zero traffic.
+  const modeledRequestRate = input.requestRate || 1;
   const operationRates: Record<SimulationOperation, number> = {
-    redirect: input.requestRate * (input.redirectSharePercent / 100),
-    "create-link": input.requestRate * ((100 - input.redirectSharePercent) / 100),
+    redirect: modeledRequestRate * (input.redirectSharePercent / 100),
+    "create-link": modeledRequestRate * ((100 - input.redirectSharePercent) / 100),
   };
   const demandByNode = new Map<
     string,
@@ -127,13 +190,14 @@ export function runCapacitySimulation(
       if (!component) {
         throw new Error("The prepared route references a missing component.");
       }
-      const demandPerSecond = demand.redirect + demand.createLink;
+      const offeredScale = input.requestRate / modeledRequestRate;
+      const demandPerSecond = (demand.redirect + demand.createLink) * offeredScale;
       return {
         nodeId,
         label: component.label,
         role,
-        redirectDemandPerSecond: demand.redirect,
-        createLinkDemandPerSecond: demand.createLink,
+        redirectDemandPerSecond: demand.redirect * offeredScale,
+        createLinkDemandPerSecond: demand.createLink * offeredScale,
         demandPerSecond,
         capacityPerSecond,
         utilization: demandPerSecond / capacityPerSecond,
@@ -145,18 +209,25 @@ export function runCapacitySimulation(
     },
   );
 
-  const limitingMetric = metrics.reduce<SimulationNodeMetric | null>(
-    (limiting, metric) =>
-      !limiting || metric.utilization > limiting.utilization
-        ? metric
-        : limiting,
-    null,
-  );
-  if (!limitingMetric || limitingMetric.utilization <= 0) {
+  const limitingMetric = metrics.reduce<SimulationNodeMetric | null>((limiting, metric) => {
+    const referenceUtilization = (item: SimulationNodeMetric) => {
+      const demand = demandByNode.get(item.nodeId)!;
+      return (demand.redirect + demand.createLink) / item.capacityPerSecond;
+    };
+    return !limiting || referenceUtilization(metric) > referenceUtilization(limiting)
+      ? metric : limiting;
+  }, null);
+  if (!limitingMetric) {
+    throw new Error("The prepared routes do not contain a modeled service component.");
+  }
+  const limitingDemand = demandByNode.get(limitingMetric.nodeId)!;
+  const limitingReferenceUtilization =
+    (limitingDemand.redirect + limitingDemand.createLink) / limitingMetric.capacityPerSecond;
+  if (limitingReferenceUtilization <= 0) {
     throw new Error("The prepared routes do not contain a modeled service component.");
   }
 
-  const redirectsPerSecond = operationRates.redirect;
+  const redirectsPerSecond = operationRates.redirect * input.requestRate / modeledRequestRate;
   const cacheHitRate = redirectCacheNodeId
     ? input.cacheHitPercent / 100
     : 0;
@@ -171,13 +242,14 @@ export function runCapacitySimulation(
     modelVersion: input.modelVersion,
     requestRate: input.requestRate,
     redirectsPerSecond,
-    linkCreationsPerSecond: operationRates["create-link"],
+    linkCreationsPerSecond: operationRates["create-link"] * input.requestRate / modeledRequestRate,
     cacheHitsPerSecond: redirectsPerSecond * cacheHitRate,
     cacheMissesPerSecond: redirectsPerSecond * (1 - cacheHitRate),
     databaseRedirectReadsPerSecond,
     databaseLinkWritesPerSecond,
     estimatedCapacityAtMixRequestsPerSecond:
-      input.requestRate / limitingMetric.utilization,
+      modeledRequestRate / limitingReferenceUtilization,
+    limitingNodeId: limitingMetric.nodeId,
     bottleneckNodeId:
       limitingMetric.utilization > 1 ? limitingMetric.nodeId : null,
     bottleneckDemandPerSecond: limitingMetric.demandPerSecond,
