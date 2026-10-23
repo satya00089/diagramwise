@@ -516,8 +516,9 @@ html:has(.systema-page[data-theme="dark"]) {
   padding-top: 8px;
   border-top: 1px solid var(--systema-line);
 }
-.systema-mobile-nav-workspace-link {
-  color: var(--systema-accent) !important;
+.systema-mobile-nav .systema-mobile-nav-workspace-link,
+.systema-mobile-nav .systema-mobile-nav-workspace-link:hover {
+  color: var(--systema-accent);
   font-weight: 600;
 }
 .systema-mobile-nav-sign-in {
