@@ -3,11 +3,8 @@ import { Link, useLocation } from "react-router-dom";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { MdClose, MdMenuBook } from "react-icons/md";
 import { LuBrainCircuit } from "react-icons/lu";
-import { HiUserGroup } from "react-icons/hi2";
 import { useAuth } from "../hooks/useAuth";
 import { useOnboarding } from "../hooks/useOnboarding";
-import { FeatureFlags, isFeatureEnabled } from "../config/featureFlags";
-import type { FeatureFlag } from "../config/featureFlags";
 import type { PageId } from "../contexts/OnboardingContext";
 
 interface Announcement {
@@ -18,7 +15,6 @@ interface Announcement {
   description: string;
   ctaLabel: string;
   ctaHref?: string;
-  featureFlag?: FeatureFlag;
 }
 
 const ANNOUNCEMENT_SESSION_KEY = "diagramwise_announcement_dismissed_session";
@@ -36,25 +32,14 @@ const ANNOUNCEMENTS: Announcement[] = [
     ctaHref: "/problems",
   },
   {
-    id: "realtime_collab_v1",
-    icon: <HiUserGroup className="h-5 w-5" aria-hidden="true" />,
-    badge: "New Feature",
-    title: "Real-Time Collaboration is Live",
-    description:
-      "Invite teammates to your design canvas. Changes sync instantly — just like Figma.",
-    ctaLabel: "Try It Now",
-    ctaHref: "/playground/free",
-  },
-  {
-    id: "learning_path_weekly_modules_v1",
+    id: "guided_walkthroughs_v1",
     icon: <MdMenuBook className="h-5 w-5" aria-hidden="true" />,
-    badge: "Weekly",
-    title: "Learning Paths Just Got Better",
+    badge: "Guided Help",
+    title: "Guided Walkthroughs for System Design Problems",
     description:
-      "New curated modules are added to Learning Paths every week — stay current with focused modules.",
-    ctaLabel: "Browse Learning Paths",
-    ctaHref: "/learning-paths/",
-    featureFlag: FeatureFlags.LEARNING_PATH_WEEKLY_MODULES,
+      "Get step-by-step guidance on supported problems while learning the reasoning behind each design decision.",
+    ctaLabel: "Find a walkthrough",
+    ctaHref: "/problems/",
   },
 ];
 
@@ -97,11 +82,9 @@ const FeatureAnnouncement: React.FC = () => {
   const announcement =
     isAuthLoading || deferForTour || dismissedThisSession
       ? undefined
-      : ANNOUNCEMENTS.find((item) => {
-          if (item.featureFlag && !isFeatureEnabled(item.featureFlag))
-            return false;
-          return !isAnnouncementSeen(item.id, user?.id);
-        });
+      : ANNOUNCEMENTS.find(
+          (item) => !isAnnouncementSeen(item.id, user?.id),
+        );
   const isVisible = Boolean(announcement);
 
   // Keep fixed page headers below the strip without assuming a fixed height.
