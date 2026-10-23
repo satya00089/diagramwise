@@ -237,23 +237,23 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   gap: 28px;
 }
 
-/* Compact product update. The announcement shares the editorial page surface
-   so it reads as part of the product header, not a separate notification skin. */
+/* Product updates use the same paper-and-ink surface at every viewport size. */
 .announcement-bar {
-  min-height: 54px;
+  display: flex;
   align-items: center;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   color: var(--text);
+  box-shadow: 0 8px 24px rgb(17 24 39 / 8%);
 }
 
 .announcement-bar__inner {
   display: flex;
   width: min(1280px, calc(100% - 64px));
-  min-height: 54px;
+  min-height: 64px;
   margin: 0 auto;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
 /* Shared editorial popup primitives. New modal surfaces should compose these
@@ -457,25 +457,32 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   flex: none;
   align-items: center;
   justify-content: center;
-  color: var(--accent);
+  color: var(--product-accent);
 }
 
 .announcement-bar__content {
-  display: flex;
+  display: grid;
   min-width: 0;
   flex: 1;
-  align-items: center;
+  gap: 4px;
+}
+
+.announcement-bar__heading {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
   gap: 10px;
 }
 
 .announcement-bar__badge {
   flex: none;
-  padding: 3px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--accent) 48%, var(--border));
-  color: var(--accent);
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--product-accent);
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
   line-height: 1;
   text-transform: uppercase;
 }
@@ -484,11 +491,19 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   min-width: 0;
   overflow: hidden;
   color: var(--text);
-  font-family: "Instrument Serif", Georgia, serif;
-  font-size: 17px;
-  font-weight: 400;
-  letter-spacing: -0.02em;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.announcement-bar__description {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -499,21 +514,24 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   flex: none;
   align-items: center;
   justify-content: center;
-  padding: 7px 16px;
-  border: 1px solid var(--text);
-  border-radius: 9px;
-  background: var(--text);
-  color: var(--bg);
+  padding: 8px 13px;
+  border: 1px solid var(--product-accent);
+  border-radius: 8px;
+  background: var(--product-accent);
+  color: var(--product-accent-contrast);
   font-size: 12px;
   font-weight: 650;
   line-height: 1;
+  cursor: pointer;
   transition:
-    background-color 180ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
     transform 180ms ease;
 }
 
 .announcement-bar__cta:hover {
-  background: color-mix(in srgb, var(--text) 86%, var(--accent));
+  border-color: var(--product-accent-hover);
+  background: var(--product-accent-hover);
 }
 
 .announcement-bar__cta:active {
@@ -529,6 +547,7 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   justify-content: center;
   border-radius: 8px;
   color: var(--muted);
+  cursor: pointer;
   transition:
     background-color 180ms ease,
     color 180ms ease;
@@ -546,13 +565,84 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
 
 .announcement-bar__cta:focus-visible,
 .announcement-bar__dismiss:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--product-accent);
   outline-offset: 3px;
 }
 
 @media (max-width: 899px) {
   .announcement-bar__inner {
-    width: calc(100% - 40px);
+    width: calc(100% - 32px);
+    gap: 12px;
+  }
+
+  .announcement-bar__heading {
+    gap: 8px;
+  }
+
+  .announcement-bar__description {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 767px) {
+  .announcement-bar__inner {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) 32px;
+    grid-template-areas:
+      "icon content dismiss"
+      ". cta .";
+    align-items: start;
+    gap: 8px 10px;
+    padding: 12px 0;
+  }
+
+  .announcement-bar__icon {
+    grid-area: icon;
+    width: 24px;
+    height: 24px;
+    margin-top: 1px;
+  }
+
+  .announcement-bar__content {
+    grid-area: content;
+    gap: 5px;
+  }
+
+  .announcement-bar__heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .announcement-bar__title {
+    overflow: visible;
+    white-space: normal;
+  }
+
+  .announcement-bar__description {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .announcement-bar__cta {
+    grid-area: cta;
+    justify-self: start;
+    min-height: 30px;
+    padding: 7px 11px;
+  }
+
+  .announcement-bar__dismiss {
+    grid-area: dismiss;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .announcement-bar__cta,
+  .announcement-bar__dismiss {
+    transition-duration: 1ms;
   }
 }
 

@@ -102,7 +102,10 @@ const SkeletonBlock: React.FC<{ className: string }> = ({ className }) => (
 const ProblemLandingSkeleton: React.FC = () => (
   <div className="min-h-screen bg-[var(--bg)] text-theme" aria-busy="true">
     <output className="sr-only">Loading the design brief</output>
-    <header className="border-b border-white/20 bg-[var(--brand)] text-white">
+    <header
+      className="border-b border-white/20 bg-[var(--brand)] text-white"
+      style={{ marginTop: "var(--announcement-h, 0px)" }}
+    >
       <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3" aria-hidden="true">
           <span className="h-7 w-7 rounded bg-white/20" />
