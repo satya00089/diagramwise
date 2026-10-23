@@ -1225,6 +1225,81 @@ html:has(.systema-page[data-theme="dark"]) {
   color: var(--systema-muted);
   margin-top: 12px;
 }
+.systema-product-features {
+  border-top: 1px solid var(--systema-line);
+  padding-block: 100px;
+}
+.systema-product-features-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.8fr);
+  align-items: end;
+  gap: 0 72px;
+  margin-bottom: 42px;
+}
+.systema-product-features-heading > span {
+  grid-column: 1 / -1;
+  color: var(--systema-muted);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+}
+.systema-product-features-heading h2 {
+  margin-top: 15px;
+}
+.systema-product-features-heading > p {
+  max-width: 390px;
+  color: var(--systema-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.systema-product-feature {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: clamp(36px, 7vw, 100px);
+  padding-block: 48px;
+  border-top: 1px solid var(--systema-line);
+}
+.systema-product-feature-copy {
+  grid-column: 1;
+  grid-row: 1;
+}
+.systema-product-feature-visual {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+}
+.systema-product-feature--reverse .systema-product-feature-copy {
+  grid-column: 2;
+}
+.systema-product-feature--reverse .systema-product-feature-visual {
+  grid-column: 1;
+}
+.systema-product-feature-copy > span {
+  color: var(--systema-muted);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+.systema-product-feature-copy h3 {
+  max-width: 540px;
+  margin-top: 16px;
+  font-size: clamp(25px, 2.6vw, 36px);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.18;
+}
+.systema-product-feature-copy p {
+  max-width: 500px;
+  margin-top: 17px;
+  color: var(--systema-muted);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.systema-product-feature-copy .systema-text-link {
+  margin-top: 22px;
+}
+.systema-product-feature-visual .systema-feature-art {
+  max-height: 310px;
+}
 .systema-toolkit {
   border-top: 1px solid var(--systema-line);
   display: grid;
@@ -1517,6 +1592,22 @@ html:has(.systema-page[data-theme="dark"]) {
   .systema-capabilities {
     padding-block: 70px;
   }
+  .systema-product-features {
+    padding-block: 70px;
+  }
+  .systema-product-features-heading {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .systema-product-features-heading > span {
+    grid-column: auto;
+  }
+  .systema-product-feature {
+    gap: 30px;
+  }
+  .systema-product-feature-copy h3 {
+    font-size: 28px;
+  }
   .systema-section-heading {
     align-items: flex-start;
     flex-direction: column;
@@ -1641,6 +1732,30 @@ html:has(.systema-page[data-theme="dark"]) {
   }
   .systema-feature {
     padding: 18px 24px 28px;
+  }
+  .systema-product-features {
+    padding-block: 60px;
+  }
+  .systema-product-feature {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding-block: 34px;
+  }
+  .systema-product-feature-copy,
+  .systema-product-feature--reverse .systema-product-feature-copy {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .systema-product-feature-visual,
+  .systema-product-feature--reverse .systema-product-feature-visual {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .systema-product-feature-copy h3 {
+    font-size: 25px;
+  }
+  .systema-product-feature-visual .systema-feature-art {
+    max-height: 240px;
   }
   .systema-value {
     gap: 36px;
