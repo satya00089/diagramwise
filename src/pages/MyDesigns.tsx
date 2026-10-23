@@ -9,7 +9,7 @@ import { useAuth } from "../hooks/useAuth";
 import { useOnboarding } from "../hooks/useOnboarding";
 import { useTour } from "../hooks/useTour";
 import { useToast } from "../hooks/useToast";
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import { ToastContainer } from "../components/Toast";
 import { apiService } from "../services/api";
 import type { SavedDiagramSummary } from "../types/auth";
@@ -620,7 +620,7 @@ const MyDesigns: React.FC = () => {
 
   return (
     <>
-      <SEO
+      <Seo
         title="My Designs | Diagramwise"
         description="View and manage your saved system design projects and diagrams shared with you"
         image="https://diagramwise.com/og/diagrams.png"

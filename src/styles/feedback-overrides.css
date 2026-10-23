@@ -345,14 +345,14 @@ html.dark .feedback-dialog__surface::-webkit-scrollbar-thumb {
 }
 
 .feedback-dialog__editor .overflow-hidden {
-  border-color: var(--border, #d9d2c5) !important;
-  border-radius: 14px !important;
-  background: var(--bg, #f8f6f1) !important;
-  color: var(--text, #111827) !important;
+  border-color: var(--border, #d9d2c5);
+  border-radius: 14px;
+  background: var(--bg, #f8f6f1);
+  color: var(--text, #111827);
 }
 
 .feedback-dialog__editor .border-b {
-  border-color: var(--border, #d9d2c5) !important;
+  border-color: var(--border, #d9d2c5);
 }
 
 .feedback-dialog__editor [contenteditable="true"] {

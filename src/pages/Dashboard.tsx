@@ -26,7 +26,7 @@ import { useOnboarding } from "../hooks/useOnboarding";
 import { useTour } from "../hooks/useTour";
 import useAnalytics from "../hooks/useAnalytics";
 import { AuthModal } from "../components/AuthModal";
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   fetchProblems,
@@ -380,7 +380,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <>
-      <SEO
+      <Seo
         title="System Design & AI/ML Practice Problems | Diagramwise"
         description="Practice infrastructure, application, AI/ML, and MLOps architecture problems with clear requirements, interactive diagrams, and feedback on the decisions behind your design."
         keywords="system design problems, AI ML design problems, machine learning architecture, MLOps, AIOps, recommendation systems, fraud detection, NLP, computer vision, distributed systems, scalable architecture, system design interview prep, infrastructure design, application architecture"

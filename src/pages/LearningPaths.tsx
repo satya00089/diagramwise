@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { AuthModal } from "../components/AuthModal";
 import { MdHelpOutline } from "react-icons/md";
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import ProductHeader from "../components/ProductHeader";
 import { useTheme } from "../hooks/useTheme";
@@ -199,7 +199,7 @@ const LearningPaths: React.FC = () => {
 
   return (
     <>
-      <SEO
+      <Seo
         title="Learning Paths | Diagramwise"
         description="Structured learning paths to master system design concepts, modules, and exercises."
         keywords="system design learning path, system design tutorial, learning path"

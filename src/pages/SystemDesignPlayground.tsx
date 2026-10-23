@@ -133,7 +133,7 @@ import {
 } from "../components/shared/AnimatedInputFields";
 
 // UI Components - Layout
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import AccountMenu from "../components/AccountMenu";
 import { ToastContainer } from "../components/Toast";
@@ -4875,11 +4875,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
     try {
       // Custom problems stored in localStorage (custom-...)
-      if (
-        idFromUrl &&
-        idFromUrl.startsWith &&
-        idFromUrl.startsWith("custom-")
-      ) {
+      if (idFromUrl?.startsWith("custom-")) {
         localStorage.removeItem(`custom-problem-${idFromUrl}`);
       } else if (diagramIdFromUrl && currentDiagramId) {
         // Viewing a diagram by URL: delete user's diagram if authenticated
@@ -5459,7 +5455,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
   return (
     <>
-      <SEO
+      <Seo
         title={pageTitle}
         description={pageDescription}
         keywords={`system design playground, ${problem?.title || "free canvas"}, architecture diagram tool, ${problem?.category || "design tool"}`}

@@ -13,7 +13,7 @@ export type ComponentProvider =
   | "docker"
   | "terraform"
   | "generic"
-  | string; // Allow custom providers
+  | (string & Record<never, never>); // Allow custom providers while retaining known-value completions
 
 export type ComponentCategory =
   | "storage"
@@ -32,7 +32,7 @@ export type ComponentCategory =
   | "ci-cd"
   | "pattern"
   | "other"
-  | string; // Allow custom categories
+  | (string & Record<never, never>); // Allow custom categories while retaining known-value completions
 
 export interface ComponentProperty {
   key: string; // Added key field to identify the property

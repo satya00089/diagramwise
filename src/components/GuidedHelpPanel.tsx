@@ -152,7 +152,7 @@ type GuidedHelpPanelProps = Readonly<{
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function StepTypeBadge({ type }: { type: GuidedStepType }) {
+function StepTypeBadge({ type }: Readonly<{ type: GuidedStepType }>) {
   const cfg = STEP_TYPE_CONFIG[type] ?? STEP_TYPE_CONFIG.explanation;
   return (
     <span

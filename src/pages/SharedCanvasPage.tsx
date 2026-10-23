@@ -24,7 +24,7 @@ import ThemeSwitcher from "../components/ThemeSwitcher";
 import CustomEdge from "../components/CustomEdge";
 import ERRelationshipEdge from "../components/ERRelationshipEdge";
 import AssessmentFindings from "../components/AssessmentFindings";
-import SEO from "../components/SEO";
+import Seo from "../components/SEO";
 import type { ValidationResult } from "../types/systemDesign";
 import { COMPONENTS } from "../config/components";
 import { getNodeDisplayLabel } from "../utils/nodePresentation";
@@ -46,6 +46,8 @@ import {
   MdTune,
   MdWarning,
 } from "react-icons/md";
+
+type CaptureReady = "true" | "false" | undefined;
 
 // ---------------------------------------------------------------------------
 // Constants mirrored from InspectorPanel
@@ -1469,7 +1471,7 @@ const SharedCanvasPage: React.FC = () => {
     );
   }
 
-  let captureReady: "true" | "false" | undefined;
+  let captureReady: CaptureReady;
   if (captureMode) {
     if (publicIconLoading || !captureCanvasReady) {
       captureReady = "false";
@@ -1480,7 +1482,7 @@ const SharedCanvasPage: React.FC = () => {
 
   return (
     <>
-      <SEO
+      <Seo
         title={pageTitle}
         description={
           data.kind === "attempt"

@@ -12,7 +12,7 @@ html.dark .driver-overlay {
 /* Driver mounts at document level, outside page-scoped theme tokens. Keep the
    tour surface global so every route, including My Designs, gets the same
    paper-and-ink treatment. */
-.driver-popover {
+html body .driver-popover {
   --bg: #f4f3ee;
   --surface: #ebeae5;
   --bg-hover: #e4e2db;
@@ -21,10 +21,10 @@ html.dark .driver-overlay {
   --border: #d4d2ca;
   --brand: #151513;
   box-sizing: border-box !important;
-  width: min(360px, calc(100vw - 32px)) !important;
-  min-width: min(292px, calc(100vw - 32px)) !important;
-  max-width: min(360px, calc(100vw - 32px)) !important;
-  padding: 18px 18px 15px !important;
+  width: min(360px, calc(100vw - 32px));
+  min-width: min(292px, calc(100vw - 32px));
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 18px 18px 15px;
   border: 1px solid var(--border, #d9d2c5) !important;
   border-radius: 16px !important;
   background: var(--surface, #f2ede6) !important;
@@ -49,11 +49,11 @@ html.dark .driver-popover {
 }
 
 /* Title */
-.driver-popover-title {
+html body .driver-popover .driver-popover-title {
   margin: 0 28px 6px 0 !important;
   color: var(--text, #111827) !important;
   font-family: "Instrument Serif", Georgia, serif !important;
-  font-size: 21px !important;
+  font-size: 21px;
   font-weight: 400 !important;
   letter-spacing: -0.035em;
   line-height: 1.05 !important;
@@ -162,9 +162,9 @@ html body .driver-popover .driver-popover-close-btn {
     color 180ms ease;
 }
 
-.driver-popover-close-btn:hover {
-  background: var(--bg-hover, #ebe4da) !important;
-  color: var(--text, #111827) !important;
+html body .driver-popover .driver-popover-close-btn:hover {
+  background: var(--bg-hover, #ebe4da);
+  color: var(--text, #111827);
 }
 
 /* The spotlight uses the same ink accent as the newer header/actions. */
@@ -174,51 +174,51 @@ html body .driver-popover .driver-popover-close-btn {
 }
 
 /* Match the popover surface on each arrow orientation. */
-.driver-popover-arrow {
-  width: 0 !important;
-  height: 0 !important;
-  border: 7px solid transparent !important;
-  background: transparent !important;
+html body .driver-popover-arrow {
+  width: 0;
+  height: 0;
+  border: 7px solid transparent;
+  background: transparent;
 }
 
-.driver-popover-arrow.driver-popover-arrow-side-bottom {
-  border-bottom-color: var(--surface, #f2ede6) !important;
-  border-top: none !important;
+html body .driver-popover-arrow.driver-popover-arrow-side-bottom {
+  border-bottom-color: var(--surface, #f2ede6);
+  border-top: none;
 }
 
-.driver-popover-arrow.driver-popover-arrow-side-top {
-  border-top-color: var(--surface, #f2ede6) !important;
-  border-bottom: none !important;
+html body .driver-popover-arrow.driver-popover-arrow-side-top {
+  border-top-color: var(--surface, #f2ede6);
+  border-bottom: none;
 }
 
-.driver-popover-arrow.driver-popover-arrow-side-right {
-  border-right-color: var(--surface, #f2ede6) !important;
-  border-left: none !important;
+html body .driver-popover-arrow.driver-popover-arrow-side-right {
+  border-right-color: var(--surface, #f2ede6);
+  border-left: none;
 }
 
-.driver-popover-arrow.driver-popover-arrow-side-left {
-  border-left-color: var(--surface, #f2ede6) !important;
-  border-right: none !important;
+html body .driver-popover-arrow.driver-popover-arrow-side-left {
+  border-left-color: var(--surface, #f2ede6);
+  border-right: none;
 }
 
 @media (max-width: 480px) {
-  .driver-popover {
-    width: calc(100vw - 24px) !important;
-    min-width: calc(100vw - 24px) !important;
-    max-width: calc(100vw - 24px) !important;
-    padding: 16px 16px 14px !important;
+  html body .driver-popover {
+    width: calc(100vw - 24px);
+    min-width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    padding: 16px 16px 14px;
   }
 
-  .driver-popover-title {
-    font-size: 20px !important;
+  html body .driver-popover .driver-popover-title {
+    font-size: 20px;
   }
 
-  .driver-popover-description {
-    font-size: 13px !important;
+  html body .driver-popover .driver-popover-description {
+    font-size: 13px;
   }
 
-  .driver-popover-footer {
-    margin-top: 15px !important;
+  html body .driver-popover .driver-popover-footer {
+    margin-top: 15px;
   }
 }
 
