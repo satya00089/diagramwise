@@ -42,22 +42,25 @@
 .sim-toolbar__state--error, .sim-toolbar__state--invalid { color: var(--sim-danger); }
 .sim-toolbar__clock { margin-left: auto; }
 .sim-toolbar__load { gap: 7px; margin-left: 4px; }
-.sim-toolbar__load label { color: var(--text-muted, #929292); white-space: nowrap; font-weight: 500; }
+.sim-toolbar__load label { color: var(--muted, #929292); white-space: nowrap; font-weight: 500; }
 .sim-toolbar__number { width: 82px; background: var(--bg, #111); font-variant-numeric: tabular-nums; }
 .sim-toolbar__slider {
   --sim-rate-progress: 0%;
   width: clamp(96px, 11vw, 156px);
-  height: 18px;
+  height: 24px;
   margin: 0;
   appearance: none;
   border-radius: 999px;
-  background: linear-gradient(to right, var(--accent, #ec4899) 0 var(--sim-rate-progress), color-mix(in srgb, var(--text, #ececec) 16%, transparent) var(--sim-rate-progress) 100%);
+  background: transparent;
   cursor: pointer;
 }
-.sim-toolbar__slider::-webkit-slider-thumb { width: 14px; height: 14px; appearance: none; border: 2px solid var(--surface, #151515); border-radius: 50%; background: var(--text, #ececec); box-shadow: 0 0 0 1px var(--border, #343434); }
+.sim-toolbar__slider::-webkit-slider-runnable-track { height: 4px; border-radius: 999px; background: linear-gradient(to right, var(--accent, #ec4899) 0 var(--sim-rate-progress), color-mix(in srgb, var(--text, #ececec) 16%, transparent) var(--sim-rate-progress) 100%); }
+.sim-toolbar__slider::-moz-range-track { height: 4px; border-radius: 999px; background: color-mix(in srgb, var(--text, #ececec) 16%, transparent); }
+.sim-toolbar__slider::-moz-range-progress { height: 4px; border-radius: 999px; background: var(--accent, #ec4899); }
+.sim-toolbar__slider::-webkit-slider-thumb { width: 14px; height: 14px; margin-top: -5px; appearance: none; border: 2px solid var(--surface, #151515); border-radius: 50%; background: var(--text, #ececec); box-shadow: 0 0 0 1px var(--border, #343434); }
 .sim-toolbar__slider::-moz-range-thumb { width: 11px; height: 11px; border: 2px solid var(--surface, #151515); border-radius: 50%; background: var(--text, #ececec); box-shadow: 0 0 0 1px var(--border, #343434); }
 .sim-toolbar__select { position: relative; display: flex; align-items: center; gap: 6px; }
-.sim-toolbar__select > span { color: var(--text-muted, #929292); }
+.sim-toolbar__select > span { color: var(--muted, #929292); }
 .sim-toolbar__select .dashboard-select-wrapper { width: auto; }
 .sim-toolbar__select .sim-toolbar__select-trigger { min-height: 32px; padding: 5px 7px; border-radius: 6px; background: var(--bg, #111); font-size: 12px; font-weight: 500; line-height: 1.25; }
 .sim-toolbar__select .sim-toolbar__select-trigger--traffic { min-width: 92px; }
