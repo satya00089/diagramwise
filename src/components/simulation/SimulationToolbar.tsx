@@ -98,9 +98,19 @@ export function SimulationToolbar({
             }}
             onBlur={commitRateDraft}
             onKeyDown={(event) => { if (event.key === "Enter") { commitRateDraft(); event.currentTarget.blur(); } }} />
-          <input className="sim-toolbar__slider" type="range" min={0} max={1000} step={1} value={sliderPosition} aria-label="Adjust incoming requests per second"
-            style={{ "--sim-rate-progress": rateProgress } as CSSProperties}
-            onChange={(event) => onRpsChange(sliderToRate(Number(event.currentTarget.value)))} />
+          <div className="sim-toolbar__range">
+            <input className="sim-toolbar__slider" type="range" min={0} max={1000} step={1} value={sliderPosition} aria-label="Adjust incoming requests per second"
+              aria-valuetext={`${rps.toLocaleString()} requests per second`}
+              style={{ "--sim-rate-progress": rateProgress } as CSSProperties}
+              onChange={(event) => onRpsChange(sliderToRate(Number(event.currentTarget.value)))} />
+            <div className="sim-toolbar__range-labels" aria-hidden="true">
+              <span style={{ left: "0%" }}>0</span>
+              <span style={{ left: "5%" }}>100</span>
+              <span style={{ left: "50%" }}>1k</span>
+              <span style={{ left: "75%" }}>10k</span>
+              <span style={{ left: "100%" }}>100k</span>
+            </div>
+          </div>
         </div>
         <div className="sim-toolbar__select">
           <span>Traffic</span>
