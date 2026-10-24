@@ -41,12 +41,30 @@
 .sim-toolbar__state--stale, .sim-toolbar__state--resource-limited { color: var(--sim-warning); }
 .sim-toolbar__state--error, .sim-toolbar__state--invalid { color: var(--sim-danger); }
 .sim-toolbar__clock { margin-left: auto; }
-.sim-toolbar__load { gap: 6px; margin-left: 4px; }
-.sim-toolbar__load label { white-space: nowrap; font-weight: 500; }
-.sim-toolbar__number { width: 82px; }
-.sim-toolbar__slider { width: clamp(80px, 10vw, 150px); accent-color: var(--accent, #ec4899); }
-.sim-toolbar__select { display: flex; align-items: center; gap: 6px; }
+.sim-toolbar__load { gap: 7px; margin-left: 4px; }
+.sim-toolbar__load label { color: var(--text-muted, #929292); white-space: nowrap; font-weight: 500; }
+.sim-toolbar__number { width: 82px; background: var(--bg, #111); font-variant-numeric: tabular-nums; }
+.sim-toolbar__slider {
+  --sim-rate-progress: 0%;
+  width: clamp(96px, 11vw, 156px);
+  height: 18px;
+  margin: 0;
+  appearance: none;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--accent, #ec4899) 0 var(--sim-rate-progress), color-mix(in srgb, var(--text, #ececec) 16%, transparent) var(--sim-rate-progress) 100%);
+  cursor: pointer;
+}
+.sim-toolbar__slider::-webkit-slider-thumb { width: 14px; height: 14px; appearance: none; border: 2px solid var(--surface, #151515); border-radius: 50%; background: var(--text, #ececec); box-shadow: 0 0 0 1px var(--border, #343434); }
+.sim-toolbar__slider::-moz-range-thumb { width: 11px; height: 11px; border: 2px solid var(--surface, #151515); border-radius: 50%; background: var(--text, #ececec); box-shadow: 0 0 0 1px var(--border, #343434); }
+.sim-toolbar__select { position: relative; display: flex; align-items: center; gap: 6px; }
 .sim-toolbar__select > span { color: var(--text-muted, #929292); }
+.sim-toolbar__select .dashboard-select-wrapper { width: auto; }
+.sim-toolbar__select .sim-toolbar__select-trigger { min-height: 32px; padding: 5px 7px; border-radius: 6px; background: var(--bg, #111); font-size: 12px; font-weight: 500; line-height: 1.25; }
+.sim-toolbar__select .sim-toolbar__select-trigger--traffic { min-width: 92px; }
+.sim-toolbar__select .sim-toolbar__select-trigger--playback { min-width: 58px; }
+.sim-toolbar__select .dashboard-select-chevron { width: 15px; height: 15px; }
+.sim-toolbar__select .dashboard-select-menu { z-index: 120; min-width: 132px; padding: 4px; border-radius: 8px; }
+.sim-toolbar__select .dashboard-select-option { min-height: 31px; padding: 7px 8px; font-size: 12px; }
 .sim-toolbar__notice { align-items: flex-start; margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--border, #343434); color: var(--sim-warning); }
 .sim-toolbar__notice > svg { flex-shrink: 0; margin-top: 1px; }
 .sim-toolbar__notice > span { flex: 1; }
@@ -136,9 +154,8 @@
   .sim-toolbar { max-width: 100%; padding: 8px; }
   .sim-toolbar__controls { gap: 7px; }
   .sim-toolbar__load { margin-left: 0; }
-  .sim-toolbar__slider { width: 80px; }
+  .sim-toolbar__slider { width: 88px; }
   .sim-toolbar__select { font-size: 11px; }
-  .sim-toolbar__select .sim-input { padding-inline: 4px; }
   .sim-toolbar__readout { gap: 5px 10px; }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -1,10 +1,24 @@
-import { useId } from "react";
+import { useId, type CSSProperties } from "react";
 import type { SimSnapshot, TrafficPattern } from "@diagramwise/simulation-core";
 import { MdPause, MdPlayArrow, MdRefresh, MdTune, MdWarningAmber } from "react-icons/md";
+import SelectDropdown from "../shared/SelectDropdown";
 import type { SimulationDiagnostic, SimulationStatus } from "./types";
 import { SIMULATION_STATUS_LABELS } from "./types";
 import { formatSimulationNumber, formatSimulationPercent } from "./presentation";
 import "./simulation.css";
+
+const TRAFFIC_OPTIONS: Readonly<Record<TrafficPattern, string>> = {
+  steady: "Steady",
+  ramp: "Ramp up",
+  spike: "Burst",
+  diurnal: "Daily cycle",
+};
+const PLAYBACK_OPTIONS: Readonly<Record<number, string>> = {
+  0.5: "0.5×",
+  1: "1×",
+  2: "2×",
+  5: "5×",
+};
 
 export type SimulationToolbarProps = {
   status: SimulationStatus;
@@ -34,6 +48,7 @@ export function SimulationToolbar({
   const errors = diagnostics.filter((item) => item.severity === "error");
   const startLabel = status === "stale" ? "Restart with changes" : status === "paused" ? "Resume" : "Start simulation";
   const slower = running && achievedSpeed !== undefined && timeMs > 2000 && achievedSpeed < speed * 0.75;
+  const rateProgress = `${Math.min(100, Math.max(0, rps / 1000))}%`;
 
   return (
     <section className="sim-toolbar nodrag nopan" aria-label="Simulation controls">
@@ -46,24 +61,41 @@ export function SimulationToolbar({
           <MdRefresh aria-hidden="true" size={19} />
         </button>
         <div className="sim-toolbar__load">
-          <label htmlFor={`${id}-rps`}>Requests/sec</label>
+          <label htmlFor={`${id}-rps`}>Requests / sec</label>
           <input id={`${id}-rps`} className="sim-input sim-toolbar__number" type="number" min={0} max={100000} step={1} value={rps}
             onChange={(event) => { const value = event.currentTarget.valueAsNumber; if (Number.isFinite(value)) onRpsChange(Math.max(0, Math.min(100000, value))); }} />
-          <input className="sim-toolbar__slider" type="range" min={0} max={5000} step={10} value={Math.min(5000, rps)} aria-label="Adjust incoming requests per second"
+          <input className="sim-toolbar__slider" type="range" min={0} max={100000} step={1} value={rps} aria-label="Adjust incoming requests per second"
+            style={{ "--sim-rate-progress": rateProgress } as CSSProperties}
             onChange={(event) => onRpsChange(Number(event.currentTarget.value))} />
         </div>
-        <label className="sim-toolbar__select">
+        <div className="sim-toolbar__select">
           <span>Traffic</span>
-          <select className="sim-input" value={pattern} onChange={(event) => onPatternChange(event.currentTarget.value as TrafficPattern)}>
-            <option value="steady">Steady</option><option value="ramp">Ramp up</option><option value="spike">Burst</option><option value="diurnal">Daily cycle</option>
-          </select>
-        </label>
-        <label className="sim-toolbar__select">
+          <SelectDropdown
+            id={`${id}-traffic`}
+            value={TRAFFIC_OPTIONS[pattern]}
+            options={Object.values(TRAFFIC_OPTIONS)}
+            aria-label="Traffic pattern"
+            className="sim-toolbar__select-trigger sim-toolbar__select-trigger--traffic"
+            onChange={(label) => {
+              const entry = (Object.entries(TRAFFIC_OPTIONS) as [TrafficPattern, string][]).find(([, value]) => value === label);
+              if (entry) onPatternChange(entry[0]);
+            }}
+          />
+        </div>
+        <div className="sim-toolbar__select">
           <span>Playback</span>
-          <select className="sim-input" value={speed} onChange={(event) => onSpeedChange(Number(event.currentTarget.value))}>
-            <option value={0.5}>0.5×</option><option value={1}>1×</option><option value={2}>2×</option><option value={5}>5×</option>
-          </select>
-        </label>
+          <SelectDropdown
+            id={`${id}-playback`}
+            value={PLAYBACK_OPTIONS[speed] ?? `${speed}×`}
+            options={Object.values(PLAYBACK_OPTIONS)}
+            aria-label="Playback speed"
+            className="sim-toolbar__select-trigger sim-toolbar__select-trigger--playback"
+            onChange={(label) => {
+              const entry = Object.entries(PLAYBACK_OPTIONS).find(([, value]) => value === label);
+              if (entry) onSpeedChange(Number(entry[0]));
+            }}
+          />
+        </div>
         {onInspect && <button type="button" className="sim-button sim-button--icon" onClick={onInspect} aria-label="Open simulation details" title="Simulation details"><MdTune aria-hidden="true" size={19} /></button>}
       </div>
       <div className="sim-toolbar__readout">
