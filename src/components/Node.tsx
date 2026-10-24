@@ -19,6 +19,7 @@ import { useAppSelector, useAppDispatch } from "../store/hooks";
 import SpriteIcon from "./SpriteIcon";
 import { loadSpriteManifest } from "../store/slices/spritesSlice";
 import { shouldUseDirectIcon } from "../utils/iconRendering";
+import { SimulationNodeRuntimeBadge } from "../simulation/RuntimeOverlays";
 
 /** Extract provider slug from a component ID like "aws-cognito" → "aws" */
 function providerFromId(id: string): string | null {
@@ -423,6 +424,7 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
         onMouseLeave={() => setIsHovered(false)}
       >
         <legend className="sr-only">{displayLabel}</legend>
+        <SimulationNodeRuntimeBadge nodeId={id} />
 
         {/* Node actions stay quiet until the node is hovered, focused, or active. */}
         <motion.div

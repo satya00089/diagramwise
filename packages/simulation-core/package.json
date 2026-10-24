@@ -1,0 +1,14 @@
+{
+  "name": "@diagramwise/simulation-core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts",
+    "./compiler": "./src/compiler.ts",
+    "./scenario": "./src/scenario.ts",
+    "./scenarios": "./src/scenarios.ts",
+    "./runtime": "./src/runtime.ts"
+  }
+}

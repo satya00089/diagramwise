@@ -19,6 +19,7 @@ import {
   type EdgeLabelRect,
   type EdgeLabelNode,
 } from "../utils/edgeLabelLayout";
+import { SimulationEdgeRuntimeOverlay } from "../simulation/RuntimeOverlays";
 
 export type EdgePathType = "bezier" | "straight" | "step" | "smoothstep";
 export type EdgeLabelPosition = "source" | "center" | "target";
@@ -729,6 +730,13 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
           </foreignObject>
         )}
       </g>
+      <SimulationEdgeRuntimeOverlay
+        id={id}
+        target={target}
+        path={edgePath}
+        x={centerX}
+        y={centerY}
+      />
       {readOnly && labelContent && (
         <EdgeLabelRenderer>
           <div
