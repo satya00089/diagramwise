@@ -11,7 +11,10 @@ import {
 } from "./assessor";
 import type { GuidedStep, SystemDesignProblem } from "../types/systemDesign";
 import type { GuidedWalkthrough } from "../types/systemDesign";
+import { Engine } from "@diagramwise/simulation-core";
+import { compileGraph } from "@diagramwise/simulation-core/compiler";
 import documentCandidate from "../test-fixtures/document-walkthrough.json";
+import documentWalkthroughCandidate from "../test-fixtures/walkthroughs/6901ef1b9420d83630aca871.json";
 
 const step: GuidedStep = {
   id: "s1",
@@ -108,6 +111,53 @@ describe("walkthrough application and review serialization", () => {
     expect(getAppliedGuidedSteps(reloaded)).toContain(
       guide.steps.find((guidedStep) => guidedStep.stepNumber === 41)!.id,
     );
+    const compiled = compileGraph(canvas);
+    expect(compiled.diagnostics).toContainEqual(expect.objectContaining({
+      code: "queue-without-consumer",
+      nodeId: "guided_message_broker",
+      severity: "warning",
+    }));
+    for (const nodeId of ["guided_database", "guided_file_storage", "guided_search", "guided_cache_response"])
+      expect(compiled.diagnostics).toContainEqual(expect.objectContaining({
+        code: "unreachable-component",
+        nodeId,
+        severity: "warning",
+      }));
+  });
+  it("applies the Kafka guide's explicit stream broker model through the editor node factory", () => {
+    const guide = documentWalkthroughCandidate as unknown as GuidedWalkthrough;
+    const kafkaStep = guide.steps.find(step => step.component?.nodeId === "guided_message_broker")!;
+    const canvas = applyGuidedStep(
+      { nodes: [], edges: [] },
+      kafkaStep,
+      () => ({
+        id: kafkaStep.component!.nodeId,
+        type: "custom",
+        position: kafkaStep.component!.position,
+        data: { componentId: kafkaStep.component!.componentType, label: kafkaStep.component!.label },
+      }),
+    );
+    expect(canvas.nodes[0].data.simulation).toEqual({ kind: "streambroker", config: { partitions: 24 } });
+    const compiled = compileGraph(canvas);
+    const broker = compiled.topology?.nodes.find(node => node.id === "guided_message_broker");
+    expect(broker?.kind).toBe("streambroker");
+    expect(broker?.config.partitions).toBe(24);
+  });
+  it.each([1, 42, 1337])("delivers Kafka guide traffic to every direct consumer at seed %i", (seed) => {
+    const guide = documentWalkthroughCandidate as unknown as GuidedWalkthrough;
+    const canvas = guide.steps.reduce(
+      (current, guidedStep) => applyGuidedStep(current, guidedStep),
+      { nodes: [], edges: [] } as Parameters<typeof applyGuidedStep>[0],
+    );
+    const topology = compileGraph(canvas).topology;
+    expect(topology).not.toBeNull();
+    const engine = new Engine(topology!, seed);
+    for (let frame = 0; frame < 44 * 60; frame += 1) engine.advance(1000 / 60);
+    const snapshot = engine.snapshot();
+
+    for (const nodeId of ["guided_database", "guided_file_storage", "guided_search", "guided_cache_response"])
+      expect(snapshot.nodes[nodeId].arrivalRate, `${nodeId} at seed ${seed}`).toBeGreaterThan(0);
+    expect(snapshot.nodes.guided_message_broker.consumerLag).toBeGreaterThanOrEqual(0);
   });
   it("is idempotent and persists explicit application without credit for reading", () => {
     const empty = { nodes: [], edges: [] };

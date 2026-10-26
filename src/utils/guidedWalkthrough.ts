@@ -18,6 +18,11 @@ const rememberStep = (data: Record<string, unknown>, stepId: string) => ({
   ),
 });
 
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+
 /** A viewed lesson is never applied evidence. This runs only on explicit acceptance. */
 export function applyGuidedStep(
   canvas: GuidedCanvas,
@@ -41,11 +46,15 @@ export function applyGuidedStep(
         subtitle: component.description,
       },
     };
+    const simulation = component.data?.simulation;
+    const mergedData = simulation && typeof simulation === "object" && !Array.isArray(simulation)
+      ? { ...node.data, simulation: { ...asRecord(node.data.simulation), ...asRecord(simulation) } }
+      : node.data;
     return {
       ...canvas,
       nodes: [
         ...canvas.nodes,
-        { ...node, data: rememberStep(node.data, step.id) },
+        { ...node, data: rememberStep(mergedData, step.id) },
       ],
     };
   }

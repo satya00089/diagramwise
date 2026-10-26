@@ -60,6 +60,32 @@ const initialState: ComponentsState = {
   error: null,
 };
 
+async function fetchAllPages(
+  fetchPage: (lastEvaluatedKey?: Record<string, string>) => Promise<{
+    items: ComponentDB[];
+    lastEvaluatedKey?: Record<string, string>;
+  }>,
+): Promise<ComponentDB[]> {
+  const components = new Map<string, ComponentDB>();
+  const cursors = new Set<string>();
+  let cursor: Record<string, string> | undefined;
+
+  do {
+    const response = await fetchPage(cursor);
+    for (const component of response.items) components.set(component.id, component);
+    cursor = response.lastEvaluatedKey;
+    if (cursor) {
+      const serialized = JSON.stringify(cursor);
+      if (cursors.has(serialized)) {
+        throw new Error("The component catalog returned a repeated page cursor.");
+      }
+      cursors.add(serialized);
+    }
+  } while (cursor);
+
+  return [...components.values()];
+}
+
 // Fetch minimal components by provider (no properties field)
 export const fetchMinimalComponents = createAsyncThunk(
   "components/fetchMinimal",
@@ -75,12 +101,15 @@ export const fetchMinimalComponents = createAsyncThunk(
           fromCache: true,
         };
       }
-      const response = await componentProviderService.getAllComponents({
-        limit: 500,
-        minimal: true,
-      });
+      const response = await fetchAllPages((lastEvaluatedKey) =>
+        componentProviderService.getAllComponents({
+          limit: 500,
+          minimal: true,
+          lastEvaluatedKey,
+        }),
+      );
       // Map ComponentDB to MinimalComponent
-      const minimalComponents = response.items.map((item: ComponentDB) => ({
+      const minimalComponents = response.map((item: ComponentDB) => ({
         id: item.id,
         platform: item.provider || "Other", // Use item.provider, fallback to 'Other'
         label: item.label || item.id, // Fallback to id if label is missing
@@ -110,13 +139,16 @@ export const fetchMinimalComponents = createAsyncThunk(
 
     // Fetch uncached providers
     for (const provider of providersToFetch) {
-      const response = await componentProviderService.getComponentsByProvider(
-        provider,
-        500,
-        true, // minimal=true
+      const response = await fetchAllPages((lastEvaluatedKey) =>
+        componentProviderService.getComponentsByProvider(
+          provider,
+          500,
+          true,
+          lastEvaluatedKey,
+        ),
       );
       // Map ComponentDB to MinimalComponent
-      const minimalComponents = response.items.map((item: ComponentDB) => ({
+      const minimalComponents = response.map((item: ComponentDB) => ({
         id: item.id,
         platform: provider, // Use the provider parameter since we know which provider this fetch is for
         label: item.label || item.id, // Fallback to id if label is missing
