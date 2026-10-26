@@ -6180,10 +6180,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             aria-modal="true"
             aria-labelledby="repair-challenge-dialog-title"
             aria-describedby="repair-challenge-dialog-description"
-            onCancel={(event) => {
-              event.preventDefault();
-              setIsRepairDemoConfirmOpen(false);
-            }}
+            onClose={() => setIsRepairDemoConfirmOpen(false)}
           >
             <button
               type="button"
