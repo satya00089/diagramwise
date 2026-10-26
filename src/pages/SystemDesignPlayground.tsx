@@ -6184,45 +6184,49 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
               event.preventDefault();
               setIsRepairDemoConfirmOpen(false);
             }}
-            onClick={(event) => {
-              if (event.target === event.currentTarget) {
-                setIsRepairDemoConfirmOpen(false);
-              }
-            }}
           >
-            <div className="app-modal__body">
-              <h2
-                id="repair-challenge-dialog-title"
-                className="app-modal__title"
-              >
-                Load the repair challenge?
-              </h2>
-              <p
-                id="repair-challenge-dialog-description"
-                className="mt-3 text-sm leading-relaxed text-muted"
-              >
-                This will replace your current canvas. You can undo the change
-                after loading the challenge.
-              </p>
-              <div className="mt-7 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  autoFocus
-                  className="app-modal__secondary"
-                  onClick={() => setIsRepairDemoConfirmOpen(false)}
+            <button
+              type="button"
+              className="repair-challenge-dialog__backdrop"
+              aria-label="Keep the current canvas and close the confirmation"
+              tabIndex={-1}
+              onClick={() => setIsRepairDemoConfirmOpen(false)}
+            />
+            <div className="app-modal repair-challenge-dialog__panel p-0">
+              <div className="app-modal__body">
+                <h2
+                  id="repair-challenge-dialog-title"
+                  className="app-modal__title"
                 >
-                  Keep my canvas
-                </button>
-                <button
-                  type="button"
-                  className="app-modal__primary"
-                  onClick={() => {
-                    setIsRepairDemoConfirmOpen(false);
-                    loadRepairDemo();
-                  }}
+                  Load the repair challenge?
+                </h2>
+                <p
+                  id="repair-challenge-dialog-description"
+                  className="mt-3 text-sm leading-relaxed text-muted"
                 >
-                  Replace canvas
-                </button>
+                  This will replace your current canvas. You can undo the change
+                  after loading the challenge.
+                </p>
+                <div className="mt-7 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    autoFocus
+                    className="app-modal__secondary"
+                    onClick={() => setIsRepairDemoConfirmOpen(false)}
+                  >
+                    Keep my canvas
+                  </button>
+                  <button
+                    type="button"
+                    className="app-modal__primary"
+                    onClick={() => {
+                      setIsRepairDemoConfirmOpen(false);
+                      loadRepairDemo();
+                    }}
+                  >
+                    Replace canvas
+                  </button>
+                </div>
               </div>
             </div>
           </dialog>

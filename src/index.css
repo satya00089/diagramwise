@@ -268,11 +268,45 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
 }
 
 .repair-challenge-dialog {
-  width: min(28rem, calc(100vw - 2rem));
+  position: fixed;
+  inset: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  margin: 0;
+  border: 0;
+  padding: 1rem;
+  background: transparent;
+  box-shadow: none;
 }
 
 .repair-challenge-dialog::backdrop {
   background: rgb(0 0 0 / 58%);
+}
+
+.repair-challenge-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+
+.repair-challenge-dialog__panel {
+  position: relative;
+  z-index: 1;
+  width: min(28rem, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* Keep preference editing on the same paper-and-ink surfaces as Profile,
