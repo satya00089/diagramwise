@@ -79,6 +79,7 @@ import {
 import { useAuth } from "../hooks/useAuth";
 import { useCanvasEventLogger } from "../hooks/useCanvasEventLogger";
 import { useToast } from "../hooks/useToast";
+import { useModalDialog } from "../hooks/useModalDialog";
 import { useChatBot } from "../hooks/useChatBot";
 import { useUnifiedCollaboration } from "../hooks/useUnifiedCollaboration";
 import { useOnboarding } from "../hooks/useOnboarding";
@@ -2821,6 +2822,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     exerciseId: idFromUrl && idFromUrl !== "free" ? idFromUrl : null,
   };
   useSimulationDocument(simulationScope, nodes, edges);
+  const [isRepairDemoConfirmOpen, setIsRepairDemoConfirmOpen] = useState(false);
+  const repairDemoDialogRef = useModalDialog(isRepairDemoConfirmOpen);
 
   const updateSimulationModel = useCallback((nodeId: string, kind: NodeKind) => {
     setNodes((current) => current.map((node) => {
@@ -2839,13 +2842,19 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       return { ...node, data: { ...node.data, simulation: { ...simulation, entrypoint: node.id === nodeId } } };
     }));
   }, [setNodes]);
-  const openRepairDemo = useCallback(() => {
-    if (nodes.length > 0 && !globalThis.confirm("Replace this canvas with the repair challenge? You can undo this change.")) return;
+  const loadRepairDemo = useCallback(() => {
     const demo = topologyToCanvas(databaseBottleneckScenario.initialTopology);
     setCanvasState({ nodes: demo.nodes, edges: demo.edges });
     simulationSession.reset();
     setActiveRightTab("simulation");
-  }, [nodes.length, setCanvasState]);
+  }, [setCanvasState]);
+  const openRepairDemo = useCallback(() => {
+    if (nodes.length > 0) {
+      setIsRepairDemoConfirmOpen(true);
+      return;
+    }
+    loadRepairDemo();
+  }, [loadRepairDemo, nodes.length]);
   useEffect(() => {
     const inspect = (event: Event) => {
       const nodeId = (event as CustomEvent<{ nodeId?: string }>).detail?.nodeId;
@@ -4595,6 +4604,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   // Disable during collaboration to prevent conflicts with Yjs
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Keep canvas history unchanged while a modal confirmation is active.
+      if (isRepairDemoConfirmOpen) return;
+
       // Disable undo/redo during active collaboration
       if (isCollaborationConnected) return;
 
@@ -4615,7 +4627,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
     globalThis.addEventListener("keydown", handleKeyDown);
     return () => globalThis.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo, isCollaborationConnected]);
+  }, [undo, redo, isCollaborationConnected, isRepairDemoConfirmOpen]);
 
   // Note: Yjs automatically syncs nodes/edges changes, no manual sendDiagramUpdate needed
   // For custom WebSocket fallback, sendUpdate is called but it's a no-op for Yjs
@@ -6160,6 +6172,61 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             </div>
           )}
         </div>
+
+        {isRepairDemoConfirmOpen && (
+          <dialog
+            ref={repairDemoDialogRef}
+            className="app-modal repair-challenge-dialog p-0"
+            aria-modal="true"
+            aria-labelledby="repair-challenge-dialog-title"
+            aria-describedby="repair-challenge-dialog-description"
+            onCancel={(event) => {
+              event.preventDefault();
+              setIsRepairDemoConfirmOpen(false);
+            }}
+            onClick={(event) => {
+              if (event.target === event.currentTarget) {
+                setIsRepairDemoConfirmOpen(false);
+              }
+            }}
+          >
+            <div className="app-modal__body">
+              <h2
+                id="repair-challenge-dialog-title"
+                className="app-modal__title"
+              >
+                Load the repair challenge?
+              </h2>
+              <p
+                id="repair-challenge-dialog-description"
+                className="mt-3 text-sm leading-relaxed text-muted"
+              >
+                This will replace your current canvas. You can undo the change
+                after loading the challenge.
+              </p>
+              <div className="mt-7 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  autoFocus
+                  className="app-modal__secondary"
+                  onClick={() => setIsRepairDemoConfirmOpen(false)}
+                >
+                  Keep my canvas
+                </button>
+                <button
+                  type="button"
+                  className="app-modal__primary"
+                  onClick={() => {
+                    setIsRepairDemoConfirmOpen(false);
+                    loadRepairDemo();
+                  }}
+                >
+                  Replace canvas
+                </button>
+              </div>
+            </div>
+          </dialog>
+        )}
 
         {/* Clear Canvas Confirmation Modal */}
         {showClearConfirm && (
