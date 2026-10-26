@@ -126,6 +126,8 @@
 .sim-advanced { margin-top: 11px; font-size: 12px; }
 .sim-advanced > summary { cursor: pointer; color: var(--text-muted, #929292); }
 .sim-advanced > p { margin-top: 9px; }
+.sim-setup-notes > summary { font-size: 13px; font-weight: 600; }
+.sim-setup-notes[open] > summary { margin-bottom: 12px; }
 .sim-fault-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; font-size: 12px; }
 .sim-fault-actions [aria-pressed="true"] { color: var(--sim-danger); border-color: var(--sim-danger); }
 .sim-diagnostics, .sim-attention { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; }
@@ -140,8 +142,9 @@
 .sim-attention__item:disabled { cursor: default; }
 .sim-model-note { border-top: 1px solid var(--border, #343434); padding-top: 13px; color: var(--text-muted, #929292); font-size: 11px; }
 .sim-node-badge { position: relative; width: 100%; min-width: 170px; padding: 7px 9px; border: 1px solid color-mix(in srgb, var(--sim-tone) 65%, var(--border, #343434)); border-radius: 7px; background: var(--surface, #151515); box-shadow: 0 2px 8px #0000000a; font-size: 10px; line-height: 1.4; text-align: left; }
-.sim-node-badge__status { display: flex; align-items: center; gap: 4px; color: var(--sim-tone); font-weight: 600; }
+.sim-node-badge__status { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; color: var(--sim-tone); font-weight: 600; }
 .sim-node-badge__status > svg { flex-shrink: 0; }
+.sim-node-badge__status > span:first-of-type { min-width: 0; }
 .sim-node-badge__paused { margin-left: auto; font-size: 9px; font-weight: 400; color: var(--text-muted, #929292); }
 .sim-node-badge__metrics { display: flex; align-items: center; gap: 5px; margin-top: 5px; font-weight: 600; }
 .sim-node-badge__metrics > svg { color: var(--text-muted, #929292); }

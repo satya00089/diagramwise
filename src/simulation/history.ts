@@ -6,11 +6,12 @@ const DATABASE = "diagramwise-simulation";
 const STORE = "runs";
 const MAX_BYTES = 240 * 1024;
 
-export function parseEventRun(value: unknown): EventRunArtifact {
+export function parseEventRun(value: unknown, options: { allowLegacyExport?: boolean } = {}): EventRunArtifact {
   const serialized = JSON.stringify(value);
   if (typeof serialized !== "string" || new TextEncoder().encode(serialized).length > MAX_BYTES) throw new Error("Run files must be smaller than 240 KiB.");
   const artifact = JSON.parse(serialized) as EventRunArtifact;
-  if (artifact?.contractVersion !== "2" || artifact.engineVersion !== "event-v1" || artifact.profileVersion !== "profiles-v1") throw new Error("This file uses an unsupported simulation model.");
+  const supportedEngine = artifact?.engineVersion === "event-v2" || (options.allowLegacyExport && artifact?.engineVersion === "event-v1");
+  if (artifact?.contractVersion !== "2" || !supportedEngine || artifact.profileVersion !== "profiles-v1") throw new Error("This file uses an unsupported simulation model. Exported runs from event-v1 can no longer be replayed with this engine.");
   if (!artifact.scope || typeof artifact.scope.designId !== "string" || typeof artifact.scope.canvasId !== "string" || typeof artifact.graphFingerprint !== "string") throw new Error("This run is missing its design information.");
   try { assertReplayTopology(artifact.topology); }
   catch (error) { throw new Error(error instanceof Error ? error.message : "This run has an invalid graph."); }
@@ -118,7 +119,7 @@ export async function listCloudRuns(scope: SimulationScope): Promise<SavedEventR
 export async function deleteCloudRun(id: string) { await cloudRequest(`/${encodeURIComponent(id)}`, { method: "DELETE" }); }
 
 export function downloadRun(snapshot: EventRunArtifact) {
-  const blob = new Blob([JSON.stringify(parseEventRun(snapshot), null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(parseEventRun(snapshot, { allowLegacyExport: true }), null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a"); anchor.href = url; anchor.download = `diagramwise-run-${Date.now()}.json`; anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);

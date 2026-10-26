@@ -106,7 +106,7 @@ export const simulationSession = {
     if (!s.scope || !s.initialTopology || !s.initialWorkload || !s.snapshot) return null;
     const system = s.snapshot.system;
     return {
-      contractVersion: "2", engineVersion: "event-v1", profileVersion: "profiles-v1", scope: s.scope,
+      contractVersion: "2", engineVersion: "event-v2", profileVersion: "profiles-v1", scope: s.scope,
       graphFingerprint: s.runFingerprint, topology: s.initialTopology, workload: s.initialWorkload, commands: s.commands,
       result: {
         timeMs: system.timeMs,

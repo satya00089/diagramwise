@@ -31,6 +31,7 @@ export function nodeSimulationSignal(
   stats: NodeStats | undefined,
   kind?: NodeKind,
   faulted = false,
+  diagnostic?: { code: string; message: string; severity?: "error" | "warning" | "info" },
 ): { tone: SimulationTone; label: string; explanation: string } {
   if (faulted) {
     return { tone: "danger", label: "Fault active", explanation: "A temporary fault is active on this component. Clear the fault to observe recovery." };
@@ -56,7 +57,19 @@ export function nodeSimulationSignal(
   if (stats.errorRate > 0) {
     return { tone: "danger", label: "Requests failing", explanation: "This component is reporting failed requests. A failure may originate here or propagate from a dependency." };
   }
+  if (diagnostic?.code === "queue-without-consumer") {
+    return {
+      tone: "warning",
+      label: stats.queued > 0 ? `No active consumer · ${formatSimulationNumber(stats.queued)} buffered` : "No active consumer",
+      explanation: diagnostic.message,
+    };
+  }
+  if (diagnostic?.code === "unreachable-component" && diagnostic.severity === "warning") {
+    return { tone: "warning", label: "No delivery observed", explanation: diagnostic.message };
+  }
   if (stats.queued > 0) {
+    if (kind === "queue") return { tone: "warning", label: `${formatSimulationNumber(stats.queued)} buffered`, explanation: "Messages are buffered for a background worker to pull. Watch whether the backlog drains as consumer throughput catches up." };
+    if (kind === "streambroker") return { tone: "warning", label: `${formatSimulationNumber(stats.queued)} consumer lag`, explanation: "At least one consumer group is behind the published log. Compare its lag with the publish rate and retention." };
     return { tone: "warning", label: `${formatSimulationNumber(stats.queued)} waiting`, explanation: "Work is waiting for a service slot. Watch whether the queue drains when traffic falls." };
   }
   if ((stats.instancesPending ?? 0) > 0 || stats.scalePhase === "warming") {

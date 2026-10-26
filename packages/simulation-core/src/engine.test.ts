@@ -277,6 +277,70 @@ describe('load balancer pool', () => {
   });
 });
 
+describe('queue consumer link accounting', () => {
+  function queueWorkerTopology() {
+    const client = { ...makeNode('client', 0, 0), id: 'client' };
+    client.config = { ...client.config, rps: 80 };
+    const queue = { ...makeNode('queue', 200, 0), id: 'queue' };
+    queue.config = { ...queue.config, queueLimit: 10_000 };
+    const worker = { ...makeNode('worker', 400, -60), id: 'worker' };
+    worker.config = { ...worker.config, capacity: 1, serviceMs: 100, serviceCv: 0 };
+    const worker2 = { ...makeNode('worker', 400, 60), id: 'worker2' };
+    worker2.config = { ...worker2.config, capacity: 1, serviceMs: 10, serviceCv: 0 };
+    return {
+      nodes: [client, queue, worker, worker2],
+      edges: [
+        { id: 'publish', from: 'client', to: 'queue', weight: 1 },
+        { id: 'consume-a', from: 'queue', to: 'worker', weight: 1 },
+        { id: 'consume-b', from: 'queue', to: 'worker', weight: 1 },
+        // The worker is also allowed to be drawn on the left of its queue.
+        { id: 'consume-reverse', from: 'worker2', to: 'queue', weight: 1 },
+      ],
+    } satisfies Topology;
+  }
+
+  it('counts each pulled message on exactly one forward or reverse consumer link', () => {
+    const snapshot = run(queueWorkerTopology(), 12, 42);
+    const flows = ['consume-a', 'consume-b', 'consume-reverse'].map(id => snapshot.edgeFlow[id]);
+    const workerArrivals = snapshot.nodes.worker.arrivalRate + snapshot.nodes.worker2.arrivalRate;
+
+    expect(flows[0]).toBeGreaterThan(0);
+    expect(flows[1]).toBeGreaterThan(0);
+    expect(flows[2]).toBeGreaterThan(0);
+    expect(flows.reduce((sum, rate) => sum + rate, 0)).toBeCloseTo(workerArrivals, 8);
+  });
+
+  it('cuts pull links when a worker is partitioned and leaves its messages buffered', () => {
+    const engine = new Engine(queueWorkerTopology(), 42);
+    for (let i = 0; i < 300; i += 1) engine.advance(1000 / 60);
+    const completedBefore = engine.snapshot().nodes.worker.totalCompleted;
+
+    engine.injectFailure('worker', 'partition');
+    for (let i = 0; i < 480; i += 1) engine.advance(1000 / 60);
+    const after = engine.snapshot();
+
+    expect(after.edgeState['consume-a']).toBe('cut');
+    expect(after.nodes.queue.queued).toBeGreaterThan(0);
+    expect(after.nodes.worker.totalCompleted - completedBefore).toBeLessThanOrEqual(1);
+  });
+
+  it('resumes buffered delivery when a partitioned queue heals after publishing stops', () => {
+    const topology = queueWorkerTopology();
+    const engine = new Engine(topology, 42);
+    for (let i = 0; i < 120; i += 1) engine.advance(1000 / 60);
+    engine.injectFailure('queue', 'partition');
+    for (let i = 0; i < 120; i += 1) engine.advance(1000 / 60);
+    const queuedBeforeHeal = engine.snapshot().nodes.queue.queued;
+    expect(queuedBeforeHeal).toBeGreaterThan(0);
+    engine.updateNodeConfig('client', { rps: 0 });
+
+    engine.clearFailure('queue');
+    for (let i = 0; i < 600; i += 1) engine.advance(1000 / 60);
+
+    expect(engine.snapshot().nodes.queue.queued).toBeLessThan(queuedBeforeHeal);
+  });
+});
+
 describe('hostile topologies', () => {
   const cases: Array<[string, Topology]> = [
     ['empty', { nodes: [], edges: [] }],

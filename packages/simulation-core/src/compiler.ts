@@ -1,6 +1,7 @@
 import { defaultConfig } from './presets';
 import type { NodeConfig, NodeKind, SimEdge, SimNode, Topology, TrafficPattern } from './types';
 import { isNodeKind, PROFILE_VERSION, resolveCatalogProfile, type CatalogProfile } from './catalog';
+import { behaviourFor } from './behaviour';
 
 /** A structural adapter input: no React or editor package belongs in the core. */
 export interface CanvasSimulationNode {
@@ -229,9 +230,102 @@ export function compileGraph(document: SimulationDocument, options: CompileOptio
   for (const client of clients) Object.assign(client.config, { rps: rate / clients.length, traffic });
   if (modeled.size === 0) diagnostics.push({ severity: 'error', code: 'empty-system', message: 'Add executable components, or try the repair example to start a simulation.' });
 
+  // Reachability follows executable behavior, not just the direction of the
+  // drawn arrows. Pull consumers read from a queue in either drawing
+  // orientation, while a queue's ordinary outgoing connection cannot push
+  // buffered work into a database or service.
+  const semanticOutgoing = new Map<string, Array<{ to: string; edgeId: string }>>();
+  const potentialOutgoing = new Map<string, Array<{ to: string; edgeId: string }>>();
+  const queueConsumers = new Map<string, Set<string>>();
+  const addLink = (map: Map<string, Array<{ to: string; edgeId: string }>>, from: string, to: string, edgeId: string) => {
+    map.set(from, [...(map.get(from) ?? []), { to, edgeId }]);
+  };
+  for (const edge of edges) {
+    if (edge.control) continue;
+    const from = modeled.get(edge.from);
+    const to = modeled.get(edge.to);
+    if (!from || !to) continue;
+    const fromBehaviour = behaviourFor(from.kind);
+    const toBehaviour = behaviourFor(to.kind);
+    const queueId = fromBehaviour.buffersForConsumers && toBehaviour.pullsFromQueues
+      ? from.id
+      : fromBehaviour.pullsFromQueues && toBehaviour.buffersForConsumers
+        ? to.id
+        : undefined;
+    if (queueId) {
+      const consumerId = queueId === from.id ? to.id : from.id;
+      const consumers = queueConsumers.get(queueId) ?? new Set<string>();
+      consumers.add(consumerId);
+      queueConsumers.set(queueId, consumers);
+      addLink(semanticOutgoing, queueId, consumerId, edge.id);
+      addLink(potentialOutgoing, queueId, consumerId, edge.id);
+      continue;
+    }
+    addLink(potentialOutgoing, edge.from, edge.to, edge.id);
+    if (!fromBehaviour.buffersForConsumers) addLink(semanticOutgoing, edge.from, edge.to, edge.id);
+  }
+
+  const roots = [...modeled.values()].filter(node => node.kind === 'client' || node.kind === 'cron');
+  const reachable = new Set(roots.map(node => node.id));
+  const pending = [...reachable];
+  while (pending.length > 0) {
+    const current = pending.shift()!;
+    for (const link of semanticOutgoing.get(current) ?? []) {
+      if (reachable.has(link.to)) continue;
+      reachable.add(link.to);
+      pending.push(link.to);
+    }
+  }
+
+  const blockedQueues = [...modeled.values()]
+    .filter(node => behaviourFor(node.kind).buffersForConsumers && reachable.has(node.id) && !(queueConsumers.get(node.id)?.size))
+    .sort((a, b) => a.id.localeCompare(b.id));
+  for (const queue of blockedQueues) {
+    diagnostics.push({
+      severity: 'warning', code: 'queue-without-consumer', nodeId: queue.id, action: 'fix-connection',
+      message: `No active consumer is connected to ${queue.label}. A work queue buffers messages until a compatible background worker pulls them.`,
+    });
+  }
+
+  function blockedQueueCause(targetId: string): { queue: SimNode; edgeId?: string } | undefined {
+    for (const queue of blockedQueues) {
+      const seen = new Set<string>([queue.id]);
+      const queueLinks = (potentialOutgoing.get(queue.id) ?? []).map(link => ({ ...link, firstEdgeId: link.edgeId }));
+      const queuePath = [...queueLinks];
+      while (queuePath.length > 0) {
+        const link = queuePath.shift()!;
+        if (link.to === targetId) return { queue, edgeId: link.firstEdgeId };
+        if (seen.has(link.to)) continue;
+        seen.add(link.to);
+        for (const next of potentialOutgoing.get(link.to) ?? []) queuePath.push({ ...next, firstEdgeId: link.firstEdgeId });
+      }
+    }
+    return undefined;
+  }
+
+  if (roots.length > 0) {
+    for (const node of [...modeled.values()].sort((a, b) => a.id.localeCompare(b.id))) {
+      if (reachable.has(node.id) || node.kind === 'client' || node.kind === 'cron' || node.kind === 'autoscaler') continue;
+      const cause = blockedQueueCause(node.id);
+      diagnostics.push({
+        severity: cause ? 'warning' : 'info', code: 'unreachable-component', nodeId: node.id, edgeId: cause?.edgeId,
+        action: cause ? 'fix-connection' : 'choose-entrypoint',
+        message: cause
+          ? `No delivery from ${cause.queue.label}: ${node.label} is not reachable from the traffic source.`
+          : `No traffic source reaches ${node.label}. Connect it to the request path or choose it as the entrypoint.`,
+      });
+    }
+  }
+
   // Reject cycles rather than turning the engine hop limit into a design failure.
   const outgoing = new Map<string, SimEdge[]>();
-  for (const edge of edges) if (!edge.control) outgoing.set(edge.from, [...(outgoing.get(edge.from) ?? []), edge]);
+  const edgeById = new Map(edges.map(edge => [edge.id, edge]));
+  for (const [from, links] of semanticOutgoing) {
+    outgoing.set(from, links.flatMap(link => {
+      const edge = edgeById.get(link.edgeId);
+      return edge ? [{ ...edge, from, to: link.to }] : [];
+    }));
+  }
   const visited = new Set<string>();
   const visiting = new Set<string>();
   function visit(id: string): void {

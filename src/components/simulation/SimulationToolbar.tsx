@@ -40,6 +40,7 @@ export type SimulationToolbarProps = {
   timeMs: number;
   snapshot: SimSnapshot | null;
   diagnostics?: readonly SimulationDiagnostic[];
+  hasBackgroundDelivery?: boolean;
   achievedSpeed?: number;
   onStart: () => void;
   onPause: () => void;
@@ -52,7 +53,7 @@ export type SimulationToolbarProps = {
 };
 
 export function SimulationToolbar({
-  status, rps, pattern, speed, timeMs, snapshot, diagnostics = [], achievedSpeed,
+  status, rps, pattern, speed, timeMs, snapshot, diagnostics = [], hasBackgroundDelivery = false, achievedSpeed,
   onStart, onPause, onReset, onRpsChange, onPatternChange, onSpeedChange, onInspect, onDemo,
 }: SimulationToolbarProps) {
   const id = useId();
@@ -145,7 +146,7 @@ export function SimulationToolbar({
       <div className="sim-toolbar__readout">
         <span className={`sim-toolbar__state sim-toolbar__state--${status}`} role="status"><span className="sim-status-dot" aria-hidden="true" />{SIMULATION_STATUS_LABELS[status]}</span>
         {snapshot && <>
-          <span><strong>{formatSimulationNumber(snapshot.system.goodputRps)}</strong> completed/s</span>
+          <span><strong>{formatSimulationNumber(snapshot.system.goodputRps)}</strong> {hasBackgroundDelivery ? "caller responses/s" : "completed/s"}</span>
           <span className={snapshot.system.errorRate > 0 ? "sim-text-danger" : undefined}><strong>{formatSimulationPercent(snapshot.system.errorRate)}</strong> failed</span>
           <span className="sim-toolbar__clock">{formatSimulationNumber(timeMs / 1000)} s simulated</span>
         </>}

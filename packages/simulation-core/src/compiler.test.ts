@@ -29,6 +29,72 @@ describe('compileGraph', () => {
     expect(result.diagnostics.some(item => item.severity === 'error')).toBe(false);
   });
 
+  it('explains a reachable work queue without a pull consumer and its idle destinations', () => {
+    const result = compileGraph({
+      nodes: [
+        { id: 'client', data: { simulation: { kind: 'client' }, label: 'Browser' } },
+        { id: 'events', data: { simulation: { kind: 'queue' }, label: 'Operation Event Bus' } },
+        { id: 'database', data: { simulation: { kind: 'db' }, label: 'Document Database' } },
+        { id: 'search', data: { simulation: { kind: 'searchindex' }, label: 'Search Index' } },
+        { id: 'optional', data: { simulation: { kind: 'cache' }, label: 'Optional cache' } },
+      ],
+      edges: [
+        { id: 'publish', source: 'client', target: 'events' },
+        { id: 'database-write', source: 'events', target: 'database' },
+        { id: 'index-write', source: 'events', target: 'search' },
+      ],
+    });
+    expect(result.topology).not.toBeNull();
+    expect(result.diagnostics).toEqual(expect.arrayContaining([
+      expect.objectContaining({ code: 'queue-without-consumer', nodeId: 'events', severity: 'warning' }),
+      expect.objectContaining({ code: 'unreachable-component', nodeId: 'database', severity: 'warning', message: expect.stringContaining('No delivery from Operation Event Bus') }),
+      expect.objectContaining({ code: 'unreachable-component', nodeId: 'search', severity: 'warning', message: expect.stringContaining('No delivery from Operation Event Bus') }),
+      expect.objectContaining({ code: 'unreachable-component', nodeId: 'optional', severity: 'info' }),
+    ]));
+  });
+
+  it.each([
+    ['queue to worker', { id: 'consume', source: 'events', target: 'worker' }],
+    ['worker to queue', { id: 'consume', source: 'worker', target: 'events' }],
+  ])('treats a %s link as a pull relationship, not a pushed request route', (_name, consumerEdge) => {
+    const result = compileGraph({
+      nodes: [
+        { id: 'client', data: { simulation: { kind: 'client' } } },
+        { id: 'events', data: { simulation: { kind: 'queue' } } },
+        { id: 'worker', data: { simulation: { kind: 'worker' } } },
+        { id: 'database', data: { simulation: { kind: 'db' } } },
+      ],
+      edges: [
+        { id: 'publish', source: 'client', target: 'events' },
+        consumerEdge,
+        { id: 'persist', source: 'worker', target: 'database' },
+      ],
+    });
+    expect(result.topology).not.toBeNull();
+    expect(result.diagnostics.some(item => item.code === 'queue-without-consumer')).toBe(false);
+    expect(result.diagnostics.some(item => item.code === 'unreachable-component' && item.nodeId === 'database')).toBe(false);
+    expect(result.diagnostics.some(item => item.code === 'request-cycle')).toBe(false);
+  });
+
+  it('does not treat control edges as traffic reachability or mistake cache hits for a broken path', () => {
+    const result = compileGraph({
+      nodes: [
+        { id: 'client', data: { simulation: { kind: 'client' } } },
+        { id: 'cache', data: { simulation: { kind: 'cache', config: { hitRate: 1 } } } },
+        { id: 'database', data: { simulation: { kind: 'db' } } },
+        { id: 'autoscaler', data: { simulation: { kind: 'autoscaler' } } },
+        { id: 'unreachable', data: { simulation: { kind: 'service' } } },
+      ],
+      edges: [
+        { id: 'client-cache', source: 'client', target: 'cache' },
+        { id: 'cache-db', source: 'cache', target: 'database' },
+        { id: 'scale-db', source: 'autoscaler', target: 'unreachable', data: { simulation: { mode: 'control' } } },
+      ],
+    });
+    expect(result.diagnostics.some(item => item.code === 'unreachable-component' && item.nodeId === 'database')).toBe(false);
+    expect(result.diagnostics).toContainEqual(expect.objectContaining({ code: 'unreachable-component', nodeId: 'unreachable', severity: 'info' }));
+  });
+
   it('requires a chosen model for an unknown component on a request path', () => {
     const result = compileGraph({
       nodes: [

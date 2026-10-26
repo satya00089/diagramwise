@@ -3,7 +3,7 @@ import type { FailureKind, FailureOpts, SimSnapshot, Topology, TrafficPattern } 
 import { isNodeKind } from './catalog';
 import { defaultConfig } from './presets';
 
-export const ENGINE_VERSION = 'event-v1' as const;
+export const ENGINE_VERSION = 'event-v2' as const;
 export const PROFILE_VERSION = 'profiles-v1' as const;
 
 export type SimulationCommand =

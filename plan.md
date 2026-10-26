@@ -6,14 +6,14 @@ Updated: 2026-10-25. Intended reader: local Codex with the **Computer Use** brow
 
 Reproduce the document-management guided walkthrough in the running product, investigate why four downstream nodes show **Idle**, and fix the verified causes. The user explicitly requested real UI testing rather than conclusions based only on screenshots or engine tests. They authorized local testing and a disposable account if needed, and allowed implementation once the diagnosis is supported.
 
-**Start with the browser reproduction below.** Read and follow the locally available Computer Use plugin instructions. The cloud session could start both services and test live API data, but had no browser-control tool. Local Codex should complete that missing work, revise the diagnosis if evidence differs, and continue with implementation and verification.
+**Start with the browser reproduction below.** The local Computer Use reproduction confirmed the queue behavior and idle downstream nodes before implementation. A successful retry now verifies the missing-consumer warnings, the controlled Stream broker change, lag, local save/replay/reset, and desktop themes in the rendered product. Evidence and remaining gaps are recorded in [document-management-simulator-browser-reproduction-2026-10-25.md](docs/research/document-management-simulator-browser-reproduction-2026-10-25.md).
 
 - Frontend repository: `diagramwise` (package name `diagrammatic`).
 - Backend repository: sibling `diagramwise-api`.
 - Branch used in both: `feat/architecture-simulator`. Preserve this explicitly requested feature-branch workflow and unrelated edits; inspect current Git state before working.
 - Reviewed frontend commit: `5169367e48a32ca6f781ce60523c5408aa9c5568`.
 - Backend baseline: `bd3774f40801603a55bcc06a110b4569662533d9`.
-- No application fix was made during this investigation. This document and the research plan are handoff documentation, not evidence of a shipped fix.
+- Local frontend fixes and focused verification are recorded below. The authoritative API walkthrough was not changed or published; these changes are not deployed.
 - Read each repository's `AGENTS.md`. Both require an independent review before every commit. This handoff does not require publishing or merging a release.
 
 The more extensive design is in [simulation-diagnostics-plan-2026-10-25.md](docs/research/simulation-diagnostics-plan-2026-10-25.md). This file is self-contained for the immediate reproduction and fix; do not depend on cloud-session `/tmp` files or running processes being available locally.
@@ -57,22 +57,31 @@ In the seed-1 original run, the presentation helper returns **“3,044 waiting�
 7. **Configuration and operation mismatch.** The guide specifies 24 Kafka partitions in ordinary component properties, but simulation uses explicit simulation configuration/defaults. Cache-invalidation labels do not execute invalidation. Search/index writes and snapshot batching need explicit semantics or a visible limitation. Simply making all paths animate is insufficient.
 8. **Backlog color gap.** Edge pressure currently depends on destination utilization >= 80%. Queue/broker utilization is zero by design, so buffered-work pressure is not reliably represented by that condition.
 
-### What remains unverified
+### Local Computer Use reproduction and implementation status
 
-The cloud session did **not** test React rendering, actual guided-step clicks, browser-worker communication, toolbar interactions, canvas colors, screenshots, authentication, or save/replay UI. The user's exact saved diagram was not retrieved. The screenshot is consistent with the live-data engine results, but is not proof of identical saved settings. Complete these checks locally before claiming end-to-end reproduction or a production-ready fix.
+- The real anonymous UI flow applied all 21 component/connection actions in the served 41-step walkthrough and produced the 11-node/10-connection graph. The simulation ran through the UI at 100 requests/sec, steady traffic, and 1× speed; it reproduced the growing queue and four idle destinations. The behavior selector showed **Message queue**.
+- The successful retry confirmed the warnings on the queue and all four destinations. The existing signed-in design was only simulated and inspected. A separate anonymous canvas was rebuilt through all 21 actions for the model experiment.
+- Added behavior-aware compiler warnings for reachable work queues without pull consumers and information/warnings for executable nodes unreachable from traffic. Direct queue-to-sink edges no longer imply delivery. Control edges do not create traffic reachability, and statically reachable cache-to-database paths remain valid when cache hits suppress observed database traffic.
+- Queue consumers now retain link identity, transfer flow is counted once per pulled message, parallel links are round-robin accounted, reverse-drawn consumer edges stay out of normal request routing, and partitioned consumers stop pulling. UI labels distinguish queue acknowledgements/publications from background delivery and show queue backlog or broker consumer lag as pressure.
+- The local 41-step Kafka candidate explicitly selects `streambroker` and maps its documented 24 partitions into simulation config. It routes to all four downstream destinations for seeds 1, 42, and 1337 in the local engine. It remains a local candidate: the running API still serves DynamoDB version 1.0.
+- In the anonymous browser canvas, changing only the queue model to Stream broker (default four partitions) restored traffic to all four destinations. Lag was about 1.3k messages at 49 simulated seconds. Newly saved local history replayed successfully, reset removed old readings, and light/dark desktop themes were inspected. A [sanitized screenshot](docs/research/evidence/simulation-2026-10-25/streambroker-browser.jpg) is now saved.
+- The browser exposed duplicate accessible Inspect names and setup notes obscuring the selected controls. Badges now use component names, setup notes are collapsed after the selected controls, and attention entries use component labels. The guide header/progress now follow navigation order rather than stale persisted lesson numbers.
+- Focused Vitest coverage (compiler, engine, walkthrough) and TypeScript build checks pass. See [the reproduction record](docs/research/document-management-simulator-browser-reproduction-2026-10-25.md) for the browser baseline and remaining limits.
+- Final source checks after the browser-found UI fixes: TypeScript and diff checks passed. The regression run passed 220 tests and timed out in the all-presets goodput test at its default five-second budget; that test passed when rerun alone with a 30-second budget. No assertion or simulation behavior was changed to pass it.
+
+Still unverified: browser worker variant, disconnected-node case, cache-hit negative control, legacy/cloud replay, authentication, full keyboard/mobile/reduced-motion checks, and delay semantics on queue-pull links. User browser input interrupted the viewport-size probe, so no narrow-width result is claimed. Authentication sequencing, snapshot batching, cache invalidation, and the exact persistence/indexing semantics described by lesson prose are not implemented by this slice. The shared DynamoDB walkthrough has not been changed.
 
 ## Step 1 — Start the real services and reproduce through Computer Use
 
-- [ ] Read repository setup instructions and inspect current branches/dependencies. Use the user's existing local environment configuration without printing secrets. Determine which database it points to before creating test records.
-- [ ] Start the API using the local Python environment: `python -m uvicorn app.main:app --host 127.0.0.1 --port 8000` from `diagramwise-api`. Supply the project's required configuration through the normal local setup. For local HTTP authentication, use the existing supported `AUTH_COOKIE_SECURE=false` setting if needed, with appropriate localhost CORS/trusted-host settings.
-- [ ] Start the frontend from `diagramwise`: `VITE_API_URL=http://localhost:8000 VITE_ASSESSMENT_API_URL=http://localhost:8000 npm run dev -- --host 127.0.0.1`. Adapt shell syntax and ports to the local machine. Confirm the browser actually calls this API.
-- [ ] Check `/health`, the problem endpoint, and the walkthrough endpoint. Record the served version and step count. If unavailable, diagnose startup/data access; report any fixture substitution explicitly rather than calling it the live reproduction.
-- [ ] Open `http://localhost:5173/playground/6901ef1b9420d83630aca871` through Computer Use. Use a new disposable attempt/design. Preserve the user's existing work. Use a disposable account only if the actual workflow requires one; don't bypass authentication.
-- [ ] Open the guided walkthrough and apply all component/connection steps with the real controls. Record skipped or failed steps and browser errors. Do not seed the canvas through a store or script as a substitute for this baseline.
-- [ ] Capture the completed topology, broker properties, and connections. Compare it with the 11-node/10-edge live-data baseline. Investigate differences instead of assuming the baseline is current.
-- [ ] Start simulation from the UI at 100 requests/sec, steady traffic, default seed 1 where configurable. Record playback speed. Observe around 44–60 **simulated** seconds. Pause for inspection if available; exact rolling rates may differ by observation time.
-- [ ] Capture the system summary, broker backlog, four idle node badges, and connecting edges. Inspect each node through the UI and record the explanation it provides. Confirm the behavior assigned to the broker.
-- [ ] Save before-change screenshots and a sanitized reproduction record in the repository's chosen evidence location. Record commits, guide version, configuration, steps, simulated time, errors, and observed results. Keep credentials, cookies, and personal account information out of artifacts.
+- [x] Read repository setup instructions and inspect current branches/dependencies. Use the user's existing local environment configuration without printing secrets. No test records or account were created.
+- [x] Start/use the API and frontend locally and confirm browser traffic reaches the configured API. The route returned the live DynamoDB-backed walkthrough.
+- [x] Check `/health`, the problem endpoint, and the walkthrough endpoint. Health and both API endpoints returned HTTP 200; served guide version 1.0 has 41 steps.
+- [x] Open `http://localhost:5173/playground/6901ef1b9420d83630aca871` through Computer Use without changing authentication or creating a saved diagram.
+- [x] Open the guided walkthrough and apply all 21 component/connection actions with the real controls.
+- [x] Capture and compare the completed topology, broker behavior, and connections: 11 nodes, 10 edges, broker model Message queue.
+- [x] Start simulation from the UI at 100 requests/sec, steady traffic, 1× playback and observe the queue growth at about 34 and 80 simulated seconds.
+- [x] Inspect the system summary, broker backlog, four idle destination badges, their connecting edges, and the broker's behavior model.
+- [x] Save a sanitized reproduction record and post-fix browser screenshot under `docs/research`. The before-change screenshot was not exported.
 
 If the browser result differs from the engine result, investigate the UI-created graph, component overrides, guide application, worker protocol, stale snapshots, and display mapping before editing behavior.
 
@@ -80,44 +89,44 @@ If the browser result differs from the engine result, investigate the UI-created
 
 Use copies or resettable test designs. Keep the unchanged baseline.
 
-- [ ] In the original graph, explicitly change the broker's simulation behavior to **Stream broker** through the inspector, restart, and observe all four destinations. Record lag as well as traffic. Confirm the UI uses the same intended configuration as the engine experiment.
-- [ ] In a separate copy, use a work queue with an explicit background worker and downstream connections. Verify node arrivals against edge activity; reproduce the zero-flow defect visually if it still exists.
-- [ ] Disconnect a destination and record whether the product explains why it is idle.
-- [ ] Test a cache with 100% hits before a database. Preserve this legitimate inactivity as a negative control for future diagnostics.
-- [ ] Record remaining differences between the guide's prose and simulated operations. Do not mark persistence, indexing, or invalidation correct merely because requests arrive at those nodes.
+- [x] In an anonymous copy of the original graph, explicitly change the broker to **Stream broker**, restart, and observe all four destinations. The browser used default four partitions and showed about 1.3k consumer lag after 49 simulated seconds; the local 24-partition candidate is engine-verified separately.
+- [ ] In a separate browser copy, use a work queue with an explicit background worker and downstream connections. The queue/worker transfer and edge accounting are covered by engine tests; the visual variant remains unverified.
+- [ ] Disconnect a destination and record whether the product explains why it is idle. The compiler behavior is covered in source tests; the UI experiment remains unverified.
+- [ ] Test a cache with 100% hits before a database. The compiler test preserves this as a legitimate statically reachable path; the browser negative control remains unverified.
+- [x] Record remaining differences between the guide's prose and simulated operations. Authentication ordering, snapshots/batching, cache invalidation, and exact search/persistence semantics remain unsupported or unverified.
 
 ## Step 3 — Implement the verified corrections in this order
 
 ### A. Align the served walkthrough and executable model
 
-- Preserve the original broken graph as a regression fixture.
-- Use explicit stream-broker semantics for this Kafka event-broadcast lesson, unless browser/content review establishes that explicit worker stages better represent its intended architecture. Record the chosen semantics and assumptions.
-- Map supported settings deliberately and validate them; do not infer behavior from display labels or globally change every generic `message-broker` into Kafka.
-- Correct the authoritative walkthrough source and its publishing/versioning path. Updating only a repository test fixture will **not** change the current DynamoDB-backed API response. Prepare a reviewable content update and validate it locally before any shared-data publication.
-- Preserve replay compatibility. Old saved runs must retain their original model/version; existing canvases need an explicit, understandable migration or model choice.
-- Model auth dependencies and relevant operations correctly, or clearly identify unsupported semantics. Do not invent cache invalidation, document writes, indexing, or batching from prose.
+- [x] Preserve the original queue graph in the document walkthrough regression and assert the missing-consumer cause.
+- [x] Use explicit stream-broker semantics in the local Kafka event-broadcast candidate; no global `message-broker` mapping changed.
+- [x] Map and compile the supported 24-partition setting explicitly. Retention hours and other prose-only operations are not mapped to unsupported config.
+- [ ] Correct the authoritative walkthrough source and its publishing/versioning path. Only the local candidate is updated; the live DynamoDB source was not changed or published.
+- [ ] Preserve replay compatibility for existing saved runs and existing canvases; save/replay UI and migration behavior were not retested.
+- [x] Record unsupported auth ordering, batching, cache invalidation, persistence, and indexing semantics instead of inferring them from labels.
 
 ### B. Explain invalid paths before and during execution
 
-- Detect queues without compatible consumers and executable nodes unreachable from the selected traffic source.
-- Base reachability on behavior capabilities, including pull consumers, asynchronous fan-out, and control/annotation edges.
-- Use appropriate error/warning/information severity; optional disconnected nodes and legitimate cache bypasses should not become blanket errors.
-- Give stable diagnostic codes, affected node/edge IDs, a causal path, evidence, and actionable suggestions. Keep this framework independent so repair challenges can reuse it.
-- Show the actual assigned model, relevant defaults, and unsupported settings in the inspector.
+- [x] Detect reachable queues without compatible consumers and executable nodes unreachable from the selected traffic source.
+- [x] Base reachability on behavior capabilities, pull consumers, fan-out source behavior, and control/annotation edges.
+- [x] Use warning severity for blocked queue paths and informational severity for otherwise disconnected optional nodes; cache-hit paths remain statically reachable.
+- [x] Add stable diagnostic codes, affected nodes, a causal first edge where present, and actionable message text. Full causal-path highlighting remains unimplemented.
+- [x] Keep the selected behavior model and model assumptions visible in the existing inspector.
 
 ### C. Fix accounting and metric meaning
 
-- Preserve edge identity when registering queue consumers and count actual transfers once. Cover reverse-drawn consumer links, duplicate links, multiple consumers, delay, and partition faults.
-- Separate request acknowledgement/completion from background delivery, backlog, and failures. Label rolling measurements and run totals clearly.
-- Ensure pause/reset/replay/topology changes cannot retain stale metrics or explanations.
+- [x] Preserve queue-consumer edge identity and count actual transfers once. Tests cover both drawing orientations, duplicate links, multiple consumers, and partitioned consumers. Queue-pull latency/delay behavior remains unverified.
+- [x] Distinguish queue acknowledgements and broker publications from background delivery; show buffered messages and consumer lag separately from caller responses.
+- [x] Verify pause, model-change stale state, restart, reset, and replay of a newly saved local run in the browser. Legacy/cloud replay and arbitrary topology edits remain unverified.
 
 ### D. Show the cause on the canvas
 
-- For this case, target concise messages such as **“No active consumer · 3,044 buffered”** on the broker and **“No delivery from Operation Event Bus”** on downstream nodes.
-- Selecting the explanation should highlight the causal path and expose the model/consumer action in the inspector.
-- Base buffered-work pressure on backlog/drain/lag rather than CPU-style utilization alone. Preserve accessible icons/text alongside colors and reduced-motion behavior.
-- Keep expected inactivity neutral. Use **“No traffic observed yet”** when evidence is insufficient; don't claim a cause from zero counters alone.
-- Use the product's shared dropdowns and controls. Keep detailed evidence in the inspector while making the important condition visible on the canvas.
+- [x] Show a no-consumer/backlog condition on the queue and a “No delivery from …” explanation on affected downstream components.
+- [ ] Selecting an explanation does not yet highlight the whole causal path; the inspector and node selection remain available.
+- [x] Base queue and broker pressure on buffered messages/consumer lag. Preserve text, icons, wrapping, and the existing reduced-motion rule; rendered verification remains open.
+- [x] Keep unrelated disconnected components neutral and cache-hit paths undiagnosed based on zero counters alone.
+- [x] Reuse the product's existing behavior selector and shared simulation controls; keep details in the inspector.
 
 ## Code map
 
@@ -141,15 +150,15 @@ Paths below are relative to the frontend unless marked API. Search symbols rathe
 
 Tests and real simulation runs are authorized by the user's request. Add regressions for the actual defects and use Computer Use for the product journey.
 
-- [ ] Original graph produces a clear missing-consumer explanation and identifies the common upstream cause for the four inactive destinations.
-- [ ] Corrected walkthrough agrees with its documented model, produces downstream delivery, and reports remaining capacity limits truthfully.
-- [ ] Active queue-consumer edges report flow that reconciles with actual transfers; fault/delay behavior remains correct.
-- [ ] Acknowledged requests cannot make stalled background delivery appear wholly successful.
-- [ ] Disconnected paths, cache hits, zero load, slow consumers, full queues, multiple paths, scheduled/standby work, and unsupported operations are handled accurately.
-- [ ] Deterministic scenarios cover seeds 1, 42, and 1337. Persist reproducible fixtures rather than depending on mutable live data for unit tests.
-- [ ] Repeat the full guided UI journey after changes: start, inspect, change model/settings, pause/resume, reset, and rerun. Test save/replay separately if available, including API validation when its contract changes.
-- [ ] Check keyboard interaction, narrow layouts, light/dark themes, reduced motion, stale-state handling, and supported graph/workload limits. Simulator resource limits must not be described as architecture bottlenecks.
-- [ ] Update this plan with actual browser findings, before/after evidence, changes made, commands/results, and remaining limitations. Report blocked checks as blocked.
+- [x] The original graph's regression explains the absent consumer and names the same upstream queue as the cause of its four inactive destinations.
+- [x] The explicit Stream broker browser variant delivers to all four destinations and reports consumer lag separately from publications. The local candidate's 24 partitions are verified through engine tests; the browser model-only experiment used default four partitions.
+- [ ] Pull-edge flow reconciles with actual transfers, including reverse/parallel links; partition faults are covered. Pull-link delay behavior remains unverified.
+- [x] Queue acknowledgements and broker publications are labeled separately from background backlog/lag, so caller completion does not stand alone as delivery evidence.
+- [ ] Finish browser checks for disconnected paths, cache hits, zero load, slow consumers, full queues, multiple paths, and scheduled/standby work. Existing static/engine checks cover only a subset.
+- [x] The local corrected guide candidate is exercised after 44 simulated seconds at seeds 1, 42, and 1337, using a persisted repository fixture.
+- [x] Repeat the guided UI journey after changes: all 21 actions, start, inspect, change model, restart, pause, reset, local save, and replay. No API replay contract changed; legacy/cloud replay remains unverified.
+- [ ] Check keyboard interaction, narrow layouts, light/dark themes, reduced motion, stale-state handling, and supported graph/workload limits in the rendered product.
+- [x] Update this plan with actual browser findings, code changes, test results, and remaining limitations. Report blocked checks as blocked.
 - [ ] Obtain the repository-required independent review before any commit. Keep delivery scoped to the user's feature branch and preserve unrelated work.
 
 Completion means the actual product explains and correctly executes this scenario. A green path, passing core test, or model-only change is not sufficient evidence of production readiness.

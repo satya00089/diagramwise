@@ -5,7 +5,7 @@ import type { EventRunArtifact } from "./protocol";
 
 function artifact(): EventRunArtifact {
   return {
-    contractVersion: "2", engineVersion: "event-v1", profileVersion: "profiles-v1",
+    contractVersion: "2", engineVersion: "event-v2", profileVersion: "profiles-v1",
     scope: { designId: "design", canvasId: "canvas", exerciseId: null },
     graphFingerprint: "fingerprint",
     topology: {
@@ -41,6 +41,13 @@ describe("parseEventRun", () => {
     const value = artifact();
     (value.topology.nodes[1] as { kind: string }).kind = "made-up-model";
     expect(() => parseEventRun(value)).toThrow("invalid model");
+  });
+
+  it("rejects event-v1 replays after the runtime semantics change", () => {
+    const value = artifact();
+    (value as { engineVersion: string }).engineVersion = "event-v1";
+    expect(() => parseEventRun(value)).toThrow("event-v1 can no longer be replayed");
+    expect(parseEventRun(value, { allowLegacyExport: true })).toEqual(value);
   });
 
   it("rejects zero-weight imported connections", () => {

@@ -8,6 +8,13 @@
  */
 import type { FailureReason, NodeConfig, NodeKind, SimEdge } from './types';
 
+/** A queue and the drawn consumer links that pull from it. */
+export interface QueueSourceLike {
+  readonly queueId: string;
+  readonly edgeIds: readonly string[];
+  readonly nextEdgeIndex: number;
+}
+
 /** The engine's per-node runtime state, as far as a behaviour may see it. */
 export interface NodeStateLike {
   readonly id: string;
@@ -17,8 +24,8 @@ export interface NodeStateLike {
   readonly busy: number;
   /** Outgoing edges, resolved from the topology. */
   readonly out: readonly SimEdge[];
-  /** Queue nodes feeding this node, for pull-based kinds. */
-  readonly sources: readonly string[];
+  /** Queue links feeding this node, for pull-based kinds. */
+  readonly sources: readonly QueueSourceLike[];
   /**
    * Behaviour-private scratch state, created once by the behaviour's
    * initState() hook and owned entirely by that behaviour. The engine never

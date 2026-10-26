@@ -16,9 +16,12 @@ const LegacySimulationPanel = lazy(() => import("../components/SimulationPanel")
 export function SimulationCanvasControls({ onInspect, onDemo }: { onInspect: () => void; onDemo: () => void }) {
   const s = useSimulationSession();
   if (!s.visible) return null;
+  const hasBackgroundDelivery = Object.values(s.compilation?.profiles ?? {}).some(profile =>
+    profile.kind === "queue" || profile.kind === "streambroker" || profile.kind === "retryqueue" || profile.kind === "writebehind");
   return <Panel position="top-center" style={{ width: "min(900px, calc(100% - 24px))", marginTop: 12, pointerEvents: "auto" }}>
     <SimulationToolbar status={s.status} rps={s.rps} pattern={s.pattern} speed={s.speed} snapshot={s.snapshot}
       timeMs={s.snapshot?.system.timeMs ?? 0} achievedSpeed={s.achievedSpeed} diagnostics={s.compilation?.diagnostics}
+      hasBackgroundDelivery={hasBackgroundDelivery}
       onStart={() => simulationSession.start()} onPause={() => simulationSession.pause()} onReset={() => simulationSession.reset()}
       onRpsChange={rps => simulationSession.setWorkload(rps)} onPatternChange={pattern => simulationSession.setWorkload(s.rps, pattern)}
       onSpeedChange={speed => simulationSession.setSpeed(speed)} onInspect={onInspect} onDemo={onDemo} />
@@ -52,6 +55,8 @@ export function SimulationDetails({ nodes, edges, problem, signedIn, selectedNod
   const node = nodes.find(n => n.id === nodeId);
   const modeled = s.compilation?.topology?.nodes.find(n => n.id === nodeId);
   const profile = nodeId ? s.compilation?.profiles[nodeId] : undefined;
+  const hasBackgroundDelivery = Object.values(s.compilation?.profiles ?? {}).some(item =>
+    item.kind === "queue" || item.kind === "streambroker" || item.kind === "retryqueue" || item.kind === "writebehind");
   const scopeKey = JSON.stringify(s.scope);
   const challengeActive = Boolean(s.compilation?.topology) &&
     databaseBottleneckScenario.initialTopology.nodes.every((baseline) => {
@@ -133,7 +138,8 @@ export function SimulationDetails({ nodes, edges, problem, signedIn, selectedNod
     </li>);
   }
 
-  return <SimulationInspector status={s.status} snapshot={s.snapshot} diagnostics={s.compilation?.diagnostics}
+  return <SimulationInspector status={s.status} snapshot={s.snapshot} diagnostics={s.compilation?.diagnostics} hasBackgroundDelivery={hasBackgroundDelivery}
+    modeledNodes={s.compilation?.topology?.nodes} virtualSourceId={s.compilation?.virtualSourceId}
     selectedNode={node ? { id: node.id, label: String(node.data.label ?? node.id), kind: profile?.kind, config: modeled?.config, assumption: profile?.assumption, classification: profile?.classification } : undefined}
     onSelectModel={onModelChange} onReplicasChange={(id, instances) => simulationSession.command({ type: "replicas", nodeId: id, instances })}
     onFault={(id, kind) => simulationSession.command({ type: "fault", nodeId: id, kind, opts: kind === "slow" ? { factor: 5 } : kind === "errors" ? { rate: 0.25 } : undefined })}

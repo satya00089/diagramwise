@@ -732,6 +732,7 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
       </g>
       <SimulationEdgeRuntimeOverlay
         id={id}
+        source={source}
         target={target}
         path={edgePath}
         x={centerX}

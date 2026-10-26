@@ -18,7 +18,7 @@ export type WorkerResponse =
 export type SimulationScope = { designId: string; canvasId: string; exerciseId: string | null };
 export type EventRunArtifact = {
   contractVersion: "2";
-  engineVersion: "event-v1";
+  engineVersion: "event-v1" | "event-v2";
   profileVersion: "profiles-v1";
   scope: SimulationScope;
   graphFingerprint: string;

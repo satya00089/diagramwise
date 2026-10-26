@@ -30,7 +30,7 @@ export const SimulationEdgeOverlay = memo(function SimulationEdgeOverlay({id, pa
       <title>{description}</title>
       <path className="sim-edge__underlay" d={path} fill="none" />
       <path className="sim-edge__flow" d={path} fill="none" />
-      {showLabel && labelX !== undefined && labelY !== undefined && state !== "standby" && (rate > 0 || effectiveTone === "danger") && (
+      {showLabel && labelX !== undefined && labelY !== undefined && state !== "standby" && (rate > 0 || effectiveTone === "danger" || failureLabel !== undefined) && (
         <g transform={`translate(${labelX},${labelY})`} className="sim-edge__label">
           <rect x={-width / 2} y={-11} width={width} height={22} rx={5} />
           <text textAnchor="middle" dominantBaseline="central">{label}</text>

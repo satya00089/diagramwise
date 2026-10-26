@@ -331,8 +331,8 @@ interface NodeState {
    * looks at this list.
    */
   ctrl: SimEdge[];
-  /** Queue nodes that feed this worker. */
-  sources: string[];
+  /** Pull links grouped by queue; parallel drawn links share one message stream. */
+  sources: QueueSource[];
   /** Integrated busy-slot-milliseconds, for utilization. */
   busyMsAccum: number;
   /** Simulated time busyMsAccum was last integrated. */
@@ -415,6 +415,12 @@ interface NodeState {
    * scaling it down.
    */
   ownOccupancy: { busy: number; capacity: number } | null;
+}
+
+interface QueueSource {
+  queueId: string;
+  edgeIds: string[];
+  nextEdgeIndex: number;
 }
 
 /* ------------------------------------------------------------------ *
@@ -657,6 +663,8 @@ export class Engine implements BehaviourCtx {
     const state = this.nodes.get(nodeId);
     // A healed node may have callers' work waiting on it right now.
     if (state) this.pumpQueue(state);
+    // Healing a buffer's pull links must drain work even if publishers stopped.
+    if (state?.behaviour.buffersForConsumers) this.wakeWorkersFor(nodeId);
   }
 
   /** Every fault in force, for the UI. */
@@ -716,6 +724,17 @@ export class Engine implements BehaviourCtx {
       if (!state) continue;
       for (const edge of state.out) this.cutEdges.add(edge.id);
       for (const edge of state.ctrl) this.cutEdges.add(edge.id);
+      for (const source of state.sources) {
+        for (const id of source.edgeIds) this.cutEdges.add(id);
+      }
+      for (const consumer of this.nodes.values()) {
+        if (!consumer.behaviour.pullsFromQueues) continue;
+        for (const source of consumer.sources) {
+          if (source.queueId === nodeId) {
+            for (const id of source.edgeIds) this.cutEdges.add(id);
+          }
+        }
+      }
     }
   }
 
@@ -931,9 +950,7 @@ export class Engine implements BehaviourCtx {
    */
   private snapshotEdgeState(rates: Record<string, number>): Record<string, EdgeState> {
     const out = this.snapEdgeState;
-    for (const key of Object.keys(out)) {
-      if (!this.edgeFlow.has(key)) delete out[key];
-    }
+    for (const key of Object.keys(out)) delete out[key];
 
     for (const state of this.nodes.values()) {
       const hook = state.behaviour.edgeStateFor;
@@ -966,7 +983,9 @@ export class Engine implements BehaviourCtx {
     // An edge whose source node no longer exists still has a flow counter, so
     // give it a state rather than leaving a hole the UI has to guard against.
     for (const id of this.edgeFlow.keys()) {
-      if (out[id] === undefined) out[id] = (rates[id] ?? 0) > 0 ? 'live' : 'idle';
+      if (out[id] === undefined) {
+        out[id] = this.cutEdges.has(id) ? 'cut' : (rates[id] ?? 0) > 0 ? 'live' : 'idle';
+      }
     }
     return out;
   }
@@ -1114,28 +1133,30 @@ export class Engine implements BehaviourCtx {
         from.ctrl.push(edge);
         continue;
       }
-      from.out.push(edge);
       // Structural wiring: a pull-based consumer drains whatever buffers feed
       // it. Both traits come off the behaviour, so a future kind that also
-      // pulls (or also buffers) is wired up here with no edit.
+      // pulls (or also buffers) is wired up here with no edit. This is a
+      // relationship, not a pushed request route: keep the edge out of
+      // `out` in either drawing orientation.
       if (to.behaviour.pullsFromQueues && from.behaviour.buffersForConsumers) {
-        to.sources.push(from.id);
-      }
-    }
-    // A consumer may be drawn in either direction relative to its buffer;
-    // treat an outgoing edge to a buffer as a pull source too.
-    for (const state of next.values()) {
-      if (!state.behaviour.pullsFromQueues) continue;
-      for (const edge of state.out) {
-        const target = next.get(edge.to);
-        if (
-          target &&
-          target.behaviour.buffersForConsumers &&
-          !state.sources.includes(target.id)
-        ) {
-          state.sources.push(target.id);
+        let source = to.sources.find(item => item.queueId === from.id);
+        if (!source) {
+          source = { queueId: from.id, edgeIds: [], nextEdgeIndex: 0 };
+          to.sources.push(source);
         }
+        source.edgeIds.push(edge.id);
+        continue;
       }
+      if (from.behaviour.pullsFromQueues && to.behaviour.buffersForConsumers) {
+        let source = from.sources.find(item => item.queueId === to.id);
+        if (!source) {
+          source = { queueId: to.id, edgeIds: [], nextEdgeIndex: 0 };
+          from.sources.push(source);
+        }
+        source.edgeIds.push(edge.id);
+        continue;
+      }
+      from.out.push(edge);
     }
 
     // Drop state belonging to removed nodes: their in-flight requests are gone.
@@ -1690,7 +1711,7 @@ export class Engine implements BehaviourCtx {
   private wakeWorkersFor(queueId: string): void {
     for (const state of this.nodes.values()) {
       if (!state.behaviour.pullsFromQueues) continue;
-      if (!state.sources.includes(queueId)) continue;
+      if (!state.sources.some(source => source.queueId === queueId)) continue;
       this.pumpWorker(state);
     }
   }
@@ -1778,8 +1799,10 @@ export class Engine implements BehaviourCtx {
   private pumpWorker(state: NodeState): void {
     const capacity = this.effectiveCapacity(state);
     while (state.busy < capacity) {
-      const msg = this.takeFromSources(state);
-      if (!msg) break;
+      const transfer = this.takeFromSources(state);
+      if (!transfer) break;
+      const { message: msg, edgeId } = transfer;
+      this.edgeFlow.get(edgeId)?.add(this.now, 1);
       msg.nodeId = state.id;
       msg.enterMs = this.now;
       state.arrivals.add(this.now, 1);
@@ -1787,25 +1810,36 @@ export class Engine implements BehaviourCtx {
     }
   }
 
-  /** Round-robin-free deterministic pull: oldest message across feeding queues. */
-  private takeFromSources(state: NodeState): Req | null {
+  /** Pull the oldest message, retaining which consumer link carried it. */
+  private takeFromSources(state: NodeState): { message: Req; edgeId: string } | null {
     let best: NodeState | null = null;
+    let bestSource: QueueSource | null = null;
+    let bestEdgeId: string | null = null;
+    let bestNextEdgeIndex = 0;
     let bestTime = Infinity;
     for (let i = 0; i < state.sources.length; i++) {
-      const q = this.nodes.get(state.sources[i]);
-      if (!q || q.waitHead >= q.waiting.length) continue;
+      const source = state.sources[i];
+      const q = this.nodes.get(source.queueId);
+      if (!q || q.waitHead >= q.waiting.length || source.edgeIds.length === 0) continue;
+      let edgeOffset = 0;
+      while (edgeOffset < source.edgeIds.length && this.cutEdges.has(source.edgeIds[(source.nextEdgeIndex + edgeOffset) % source.edgeIds.length])) edgeOffset++;
+      if (edgeOffset === source.edgeIds.length) continue;
       const head = q.waiting[q.waitHead];
       if (head.enterMs < bestTime) {
         bestTime = head.enterMs;
         best = q;
+        bestSource = source;
+        bestEdgeId = source.edgeIds[(source.nextEdgeIndex + edgeOffset) % source.edgeIds.length];
+        bestNextEdgeIndex = (source.nextEdgeIndex + edgeOffset + 1) % source.edgeIds.length;
       }
     }
-    if (!best) return null;
+    if (!best || !bestSource || bestEdgeId === null) return null;
+    bestSource.nextEdgeIndex = bestNextEdgeIndex;
     const msg = best.waiting[best.waitHead];
     best.waiting[best.waitHead] = undefined as unknown as Req;
     best.waitHead++;
     this.compactWaiting(best);
-    return msg;
+    return { message: msg, edgeId: bestEdgeId };
   }
 
   private compactWaiting(state: NodeState): void {
