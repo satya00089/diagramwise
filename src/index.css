@@ -267,6 +267,14 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   box-shadow: 0 24px 80px rgb(0 0 0 / 18%);
 }
 
+.repair-challenge-dialog {
+  width: min(28rem, calc(100vw - 2rem));
+}
+
+.repair-challenge-dialog::backdrop {
+  background: rgb(0 0 0 / 58%);
+}
+
 /* Keep preference editing on the same paper-and-ink surfaces as Profile,
    regardless of the app-wide theme defaults used by other dialogs. */
 .quick-setup-modal {
