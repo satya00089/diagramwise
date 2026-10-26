@@ -1,0 +1,5204 @@
+{
+  "version": "profiles-v1",
+  "inventoryDate": "2026-10-24",
+  "source": "Fully paginated active component catalog; explicit assignments, no runtime name inference.",
+  "entries": {
+    "aws-activate-customer-enablement": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-alexa-for-business-applications": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-amplify-front-end-web-mobile": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-apache-mxnet-on-aws-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-api-gateway-app-integration": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "apigateway"
+    },
+    "aws-app-mesh-networking-content-delivery": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "sidecar"
+    },
+    "aws-app-runner-compute": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "aws-appconfig-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-appflow-app-integration": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-application-auto-scaling-compute": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "autoscaler"
+    },
+    "aws-application-auto-scaling-management-governance": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "autoscaler"
+    },
+    "aws-application-composer-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-application-cost-profiler-cloud-financial-management": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-application-discovery-service-migration-transfer": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-application-migration-service-migration-transfer": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-appstream-end-user-computing": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-appsync-app-integration": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-artifact-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-athena-analytics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-audit-manager-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-augmented-ai-a2i-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-aurora-database": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "aws-auto-scaling-management-governance": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "autoscaler"
+    },
+    "aws-backint-agent-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-backup-storage": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-batch-compute": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "worker"
+    },
+    "aws-billing-conductor-cloud-financial-management": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-bottlerocket-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-braket-quantum-technologies": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-budgets-cloud-financial-management": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-certificate-manager-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-chatbot-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-chime-business-applications": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-chime-sdk-business-applications": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-chime-voice-connector-business-applications": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-clean-rooms-analytics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-client-vpn-networking-content-delivery": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cloud-control-api-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cloud-development-kit-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cloud-directory-networking-content-delivery": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cloud-directory-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cloud-map-networking-content-delivery": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cloud-wan-networking-content-delivery": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cloud9-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cloudformation-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cloudfront-networking-content-delivery": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "cdn"
+    },
+    "aws-cloudhsm-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cloudsearch-analytics": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "searchindex"
+    },
+    "aws-cloudshell-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cloudtrail-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cloudwatch-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-codebuild-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-codecatalyst-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-codecommit-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-codedeploy-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-codeguru-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-codepipeline-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-codestar-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-codewhisperer-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cognito-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-command-line-interface-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-comprehend-machine-learning": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-comprehend-medical-machine-learning": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-compute-optimizer-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-config-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-connect-business-applications": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-console-mobile-application-app-integration": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-control-tower-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-corretto-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cost-and-usage-report-cloud-financial-management": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-cost-explorer-cloud-financial-management": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-data-exchange-analytics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-data-pipeline-analytics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-database-migration-service-database": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-datasync-migration-transfer": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-datazone-analytics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-deep-learning-amis-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-deep-learning-containers-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-deepcomposer-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-deeplens-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-deepracer-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-detective-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-device-farm-front-end-web-mobile": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-devops-guru-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-direct-connect-networking-content-delivery": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-directory-service-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-distro-for-opentelemetry-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-documentdb-database": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "aws-dynamodb-database": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "aws-ec2-auto-scaling-compute": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "autoscaler"
+    },
+    "aws-ec2-compute": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "aws-ec2-image-builder-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-ecs-anywhere-containers": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "aws-efs-storage": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "aws-eks-anywhere-containers": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "aws-eks-cloud-containers": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "aws-eks-distro-containers": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elastic-beanstalk-compute": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "aws-elastic-block-store-storage": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elastic-container-registry-containers": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elastic-container-service-containers": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "aws-elastic-disaster-recovery-storage": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elastic-fabric-adapter-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elastic-inference-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elastic-kubernetes-service-containers": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "aws-elastic-load-balancing-networking-content-delivery": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "lb"
+    },
+    "aws-elastic-transcoder-media-services": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "transcoder"
+    },
+    "aws-elasticache-database": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "cache"
+    },
+    "aws-elemental-appliances-software-media-services": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elemental-conductor-media-services": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elemental-delta-media-services": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elemental-link-media-services": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elemental-live-media-services": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elemental-mediaconnect-media-services": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elemental-mediaconvert-media-services": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "transcoder"
+    },
+    "aws-elemental-medialive-media-services": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elemental-mediapackage-media-services": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elemental-mediastore-media-services": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elemental-mediatailor-media-services": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-elemental-server-media-services": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-emr-analytics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-eventbridge-app-integration": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "pubsub"
+    },
+    "aws-express-workflows-app-integration": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-fargate-compute": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "aws-fargate-containers": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "aws-fault-injection-simulator-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-file-cache-storage": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "cache"
+    },
+    "aws-finspace-analytics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-firewall-manager-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-forecast-machine-learning": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-fraud-detector-machine-learning": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-freertos-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-fsx-for-lustre-storage": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "aws-fsx-for-netapp-ontap-storage": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "aws-fsx-for-openzfs-storage": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "aws-fsx-for-wfs-storage": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "aws-fsx-storage": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "aws-gamekit-games": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-gamelift-games": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-gamesparks-games": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-genomics-cli-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-global-accelerator-networking-content-delivery": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-glue-analytics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-glue-databrew-analytics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-glue-elastic-views-analytics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-ground-station-satellite": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-guardduty-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-healthlake-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-honeycode-business-applications": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iam-identity-center-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iam-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-inspector-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-interactive-video-service-media-services": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-internet-gateway-networking": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-1-click-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-analytics-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-button-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-core-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-device-defender-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-device-management-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-edukit-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-events-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-expresslink-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-fleetwise-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-greengrass-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-roborunner-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-sitewise-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-things-graph-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iot-twinmaker-internet-of-things": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-iq-customer-enablement": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-kendra-machine-learning": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-key-management-service-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-keyspaces-database": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "aws-kinesis-analytics": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "streambroker"
+    },
+    "aws-kinesis-data-analytics-analytics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-kinesis-data-streams-analytics": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "streambroker"
+    },
+    "aws-kinesis-firehose-analytics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-kinesis-video-streams-analytics": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "streambroker"
+    },
+    "aws-lake-formation-analytics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-lambda-compute": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "lambda"
+    },
+    "aws-launch-wizard-management": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-lex-ml": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-license-manager-management": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-lightsail-compute": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "aws-local-zones-compute": {
+      "provider": "aws",
+      "classification": "structural"
+    },
+    "aws-location-service-front-end-web-mobile": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-lookout-for-equipment-ml": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-lookout-for-metrics-ml": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-lookout-for-vision-ml": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-lumberyard-games": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-macie-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-mainframe-modernization-migration-transfer": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-managed-blockchain-blockchain": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-managed-grafana-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-managed-service-for-prometheus-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-managed-services-customer-enablement": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-managed-streaming-for-apache-kafka-analytics": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "streambroker"
+    },
+    "aws-managed-workflows-for-apache-airflow-app-integration": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-management-console-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-marketplace-dark-general-icons": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-marketplace-light-general-icons": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-memorydb-for-redis-database": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "cache"
+    },
+    "aws-migration-evaluator-migration-transfer": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-migration-hub-migration-transfer": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-monitron-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-mq-app-integration": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "queue"
+    },
+    "aws-neptune-database": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "graphdb"
+    },
+    "aws-network-firewall-security-identity-compliance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-neuron-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-nice-dcv-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-nice-enginframe-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-nimble-studio-media-services": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-nitro-enclaves-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-omics-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-open-3d-engine-games": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-opensearch-service-analytics": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "searchindex"
+    },
+    "aws-opsworks-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-organizations-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-outposts-family-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-outposts-rack-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-outposts-servers-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-panorama-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-parallelcluster-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-personal-health-dashboard-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-personalize-machine-learning": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-pinpoint-apis-business-applications": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-pinpoint-business-applications": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-polly-machine-learning": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-private-5g-networking": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-private-ca-security": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-privatelink-networking": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-professional-services-customer-enablement": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-proton-management-governance": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-qldb-blockchain": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-quicksight-analytics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-rds-database": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "aws-rds-vmware-database": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "aws-red-hat-openshift-containers": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-redshift-analytics": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "aws-rekognition-machine-learning": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-repost-customer-enablement": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-reserved-instance-reporting-financial": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-resilience-hub-management": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-resource-access-manager-security": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-resource-explorer-management": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-robomaker-robotics": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-route-table-networking": {
+      "provider": "aws",
+      "classification": "structural"
+    },
+    "aws-route53-networking": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-s3-on-outposts-storage": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "aws-sagemaker-ground-truth-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-sagemaker-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-sagemaker-studio-lab-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-savings-plans-financial": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-secrets-manager-security": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-security-hub-security": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-security-lake-security": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-server-migration-service-migration": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-serverless-application-repository-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-service-catalog-management": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-service-management-connector-management": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-shield-security": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-signer-security": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-simple-email-service-business": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-simple-notification-service-integration": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "pubsub"
+    },
+    "aws-simple-queue-service-integration": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "queue"
+    },
+    "aws-simple-storage-service-glacier-storage": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "coldstorage"
+    },
+    "aws-simple-storage-service-storage": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "aws-simspace-weaver-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-site-to-site-vpn-networking": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-snowball-edge-storage": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-snowball-storage": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-snowcone-storage": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-snowmobile-storage": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-step-functions-integration": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-storage-gateway-storage": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-subnet-networking": {
+      "provider": "aws",
+      "classification": "structural"
+    },
+    "aws-sumerian-vr-ar": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-supply-chain-business": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-support-customer-enablement": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-systems-manager-management": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-tensorflow-on-aws-machine-learning": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-textract-machine-learning": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-thinkbox-deadline-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-thinkbox-frost-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-thinkbox-krakatoa-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-thinkbox-sequoia-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-thinkbox-stoke-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-thinkbox-xmesh-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-timestream-database": {
+      "provider": "aws",
+      "classification": "dedicated",
+      "kind": "timeseriesdb"
+    },
+    "aws-tools-and-sdks-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-torchserve-machine-learning": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-training-certification-customer-enablement": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-transcribe-machine-learning": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-transfer-family-migration": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-transit-gateway-networking": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-translate-machine-learning": {
+      "provider": "aws",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "aws-trusted-advisor-management": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-verified-access-networking": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-verified-permissions-security": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-virtual-private-cloud-networking": {
+      "provider": "aws",
+      "classification": "structural"
+    },
+    "aws-vmware-cloud-on-aws-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-vpc-lattice-networking": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-waf-security": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-wavelength-compute": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-well-architected-tool-management": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-wickr-business": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-workdocs-business": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-workdocs-sdk-business": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-worklink-end-user-computing": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-workmail-business": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-workspaces-family-end-user-computing": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "aws-x-ray-developer-tools": {
+      "provider": "aws",
+      "classification": "requires-model"
+    },
+    "azure-abs-member": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-active-directory-connect-health": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-activity-log-management-governance": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-activity-log-monitor": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-administrative-units": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-advisor": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-ai-at-edge": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-ai-studio": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-aks-automatic": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-aks-istio": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "sidecar"
+    },
+    "azure-alerts": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-all-resources": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-analysis-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-anomaly-detector": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-api-center": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-api-connections-devops": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-api-connections-integration": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-api-connections-web": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-api-management-services-devops": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "apigateway"
+    },
+    "azure-api-management-services-integration": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "apigateway"
+    },
+    "azure-api-management-services-web": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "apigateway"
+    },
+    "azure-api-proxy": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "apigateway"
+    },
+    "azure-app-compliance-automation": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-app-configuration": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-app-registrations": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-app-registrations-identity": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-app-service-certificates-app-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-app-service-certificates-web": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-app-service-domains-app-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-app-service-domains-web": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-app-service-environments-app-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-app-service-environments-web": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-app-service-plans-app-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-app-service-plans-web": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-app-services-app-services": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-app-services-compute": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-app-services-containers": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-app-services-mobile": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-app-services-web": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-app-space": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-app-space-component": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-applens": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-application-gateway-containers": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "lb"
+    },
+    "azure-application-gateways": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "lb"
+    },
+    "azure-application-group": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-application-insights-devops": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-application-insights-management-governance": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-application-insights-monitor": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-application-security-groups": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-aquila": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-arc-data-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-arc-kubernetes": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-arc-machines": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-arc-postgresql": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-arc-sql-managed-instance": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-arc-sql-server": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-atm-multistack": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-auto-scale": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "autoscaler"
+    },
+    "azure-automanaged-vm": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-automation-accounts": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-availability-sets": {
+      "provider": "azure",
+      "classification": "structural"
+    },
+    "azure-avs-vm": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-az-logo": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-az-logo-1": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-a": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-ad-b2c": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-api-for-fhir": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-azure-applied-ai-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-arc": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-backup-center": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-blockchain-service": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-center-for-sap": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-chaos-studio": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-cloud-shell": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-communication-services": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-azure-communications-gateway": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-compute-galleries": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-compute-galleries-compute": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-consumption-commitment": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-cosmos-db-databases": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-azure-cosmos-db-iot": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-azure-data-catalog": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-data-explorer-clusters-analytics": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-data-explorer-clusters-databases": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-database-mariadb-server": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-azure-database-migration-services-databases": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-database-migration-services-migration": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-database-mysql-server": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-azure-database-postgresql-server": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-azure-database-postgresql-server-group": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-azure-databox-gateway-integration": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-databox-gateway-iot": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-databox-gateway-migrate": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-databox-gateway-storage": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-databricks": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-deployment-environments": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-dev-tunnels": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-devops": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-edge-hardware-center": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-experimentation-studio": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-fileshares": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "azure-azure-firewall-manager": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-firewall-policy": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-hcp-cache": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-hpc-workbenches": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-hybrid-center": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-information-protection-identity": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-information-protection-security": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-iot-operations": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-lighthouse": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-load-testing": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-managed-grafana": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-managed-redis": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "cache"
+    },
+    "azure-azure-maps-accounts": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-media-service": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-migrate": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-monitor-dashboard": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-monitor-pipeline": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-monitors-for-sap-solutions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-netapp-files": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-network-function-manager": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-network-function-manager-functions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-object-understanding": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-openai": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-azure-operator-5g-core": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-operator-insights": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-operator-nexus": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-operator-service-manager": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-azure-orbital": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-backlog": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-backup-vault": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-bare-metal-infrastructure": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-bastions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-batch-accounts-compute": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "worker"
+    },
+    "azure-batch-accounts-containers": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "worker"
+    },
+    "azure-batch-ai": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-biz-talk": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-blob-block": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "azure-blob-page": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "azure-blockchain-applications": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-blueprints": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-bonsai": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-bot-services": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-branch": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-breeze": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-browser": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "client"
+    },
+    "azure-bug": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-builds": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-business-process-tracking": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-cache": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "cache"
+    },
+    "azure-cache-redis": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "cache"
+    },
+    "azure-capacity": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-capacity-reservation-groups": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-cdn-profiles-app-services": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "cdn"
+    },
+    "azure-cdn-profiles-networking": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "cdn"
+    },
+    "azure-central-service-instance-for-sap": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-ceres": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-change-analysis-devops": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-change-analysis-monitor": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-client-apps": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "client"
+    },
+    "azure-cloud-services-classic": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-cloud-services-extended-support": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-cloudtest": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-code": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-code-optimization": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-cognitive-search-ai-and-machine-learning": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "searchindex"
+    },
+    "azure-cognitive-search-app-services": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "searchindex"
+    },
+    "azure-cognitive-search-web": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "searchindex"
+    },
+    "azure-cognitive-services-ai-and-machine-learning": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-cognitive-services-decisions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-cognitive-services-web": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-collaborative-service": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-commit": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-community-images": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-compliance": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-compliance-center": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-compute-fleet": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-computer-vision": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-conditional-access": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-confidential-ledgers": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-connected-cache": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "cache"
+    },
+    "azure-connected-vehicle-platform": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-connections": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-consortium": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-container-apps-environments": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-container-instances-compute": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-container-instances-containers": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-container-registries": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-container-services-deprecated": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-content-moderators": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-content-safety": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-controls": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-controls-horizontal": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-cost-alerts": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-cost-analysis": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-cost-budgets": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-cost-export": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-cost-management": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-cost-management-and-billing-general": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-cost-management-and-billing-management-and-governance": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-cost-management-and-billing-migrate": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-counter": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-cubes": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-custom-ip-prefix": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-custom-vision": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-customer-lockbox-for-microsoft-azure": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-dashboard": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-dashboard-hub": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-data-box-migrate": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-data-box-storage": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-data-collection-rules": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-data-factories-analytics": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-data-factories-databases": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-data-factories-integration": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-data-lake-analytics": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-data-lake-storage-gen1": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-data-lake-store-gen1": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-data-share-invitations": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-data-shares": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-data-virtualization": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-database-instance-for-sap": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-ddos-protection-plans": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-dedicated-hsm": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-cm-local-manager": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-dcs-controller": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-distributer-control-system": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-engineering-station": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-external-management": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-freezer-monitor": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-historian": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-hmi": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-industrial-packaging-system": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-industrial-printer": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-industrial-robot": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-industrial-scale-system": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-marquee": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-meter": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-plc": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-pneumatic-device": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-programable-board": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-relay": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-robot-controller": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-rtu": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-sensor": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-slot": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-defender-web-guiding-system": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-detonation": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-dev-console": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-device-compliance": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-device-configuration": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-device-enrollment": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-device-provisioning-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-device-security-apple": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-device-security-google": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-device-security-windows": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-device-update-iot-hub": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-devices": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-devops-starter": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-devtest-labs": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-diagnostics-settings-management-and-governance": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-diagnostics-settings-monitor": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-digital-twins": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-disk-encryption-sets": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-disk-pool": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-disks": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-disks-classic": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-disks-snapshots": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-dns-multistack": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-dns-private-resolver": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-dns-security-policy": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-dns-zones": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-download": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-ebooks": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-edge-actions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-edge-management": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-edge-storage-accelerator": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-education": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-elastic-job-agents": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-elastic-san": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-endpoint-analytics": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-engage-center-connect": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-enterprise-applications": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-connect": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-connect-health": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-connect-sync": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-domain-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-global-secure-access": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-id-protection": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-identity-custom-roles": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-identity-licenses-identity": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-identity-licenses-other": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-identity-risky-signins": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-identity-risky-users": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-identity-roles-and-administrators-identity": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-identity-roles-and-administrators-intune": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-internet-access": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-managed-identities": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-private-access": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-privleged-identity-management": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-entra-verified-id": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-error": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-event-grid-domains": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "pubsub"
+    },
+    "azure-event-grid-subscriptions-integration": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "pubsub"
+    },
+    "azure-event-grid-subscriptions-iot": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "pubsub"
+    },
+    "azure-event-grid-topics": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "pubsub"
+    },
+    "azure-event-hub-clusters-analytics": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "streambroker"
+    },
+    "azure-event-hub-clusters-iot": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "streambroker"
+    },
+    "azure-event-hubs-analytics": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "streambroker"
+    },
+    "azure-event-hubs-iot": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "streambroker"
+    },
+    "azure-exchange-access": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-exchange-on-premises-access": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-express-route-traffic-collector": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-expressroute-circuits": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-expressroute-direct": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-extendedsecurityupdates": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-extensions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-external-id": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-external-id-modified": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-external-identities": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-face-apis": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-feature-previews": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-fhir-service": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-fiji": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-file": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-files": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "azure-firewalls": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-folder-blank": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-folder-website": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-form-recognizers": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-frd-qa": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-free-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-front-door-and-cdn-profiles-networking": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "cdn"
+    },
+    "azure-front-door-and-cdn-profiles-web": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "cdn"
+    },
+    "azure-ftp": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-function-apps-compute": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "lambda"
+    },
+    "azure-function-apps-iot": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "lambda"
+    },
+    "azure-gear": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-genomics": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-genomics-accounts": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-globe-error": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-globe-success": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-globe-warning": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-groups": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-guide": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-hd-insight-clusters": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-hdi-aks-cluster": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-heart": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-help-and-support": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-host-groups": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-host-pools": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-hosts": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-icm-troubleshooting": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-identity-governance": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-identity-secure-score": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-image": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-image-definitions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-image-templates": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-image-versions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-images": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-immersive-readers": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-import-export-jobs": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-industrial-iot": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-information": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-infrastructure-backup": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-input-output": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-instance-pools-databases": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-instance-pools-other": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-integration-accounts": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-integration-environments": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-integration-service-environments": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-internet-analyzer-profiles": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-intune": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-intune-app-protection": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-intune-for-education": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-intune-trends": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-iot-central-applications": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-iot-edge": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-iot-hub": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-ip-address-manager": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-ip-groups": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-journey-hub": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-key-vaults": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-keys": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-kubernetes-fleet-manager": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-kubernetes-services-compute": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-kubernetes-services-containers": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-lab-accounts": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-lab-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-landing-zone": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-language": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-language-understanding": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-launch-portal": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-learn": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-load-balancer-hub": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-load-balancers": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "lb"
+    },
+    "azure-load-test": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-load-testing": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-local-network-gateways-networking": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-local-network-gateways-other": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-location": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-log-analytics-query-pack": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-log-analytics-workspaces-analytics": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-log-analytics-workspaces-management": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-log-analytics-workspaces-monitor": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-log-streaming": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-logic-apps-custom-connector": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-logic-apps-integration": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-logic-apps-iot": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-machine-learning": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-machine-learning-studio-classic-web-services-ai": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-machine-learning-studio-classic-web-services-iot": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-machine-learning-studio-web-service-plans-ai": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-machine-learning-studio-web-service-plans-iot": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-machine-learning-studio-workspaces-ai": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-machine-learning-studio-workspaces-iot": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-machinesazurearc": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-maintenance-configuration": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-managed-applications-center": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-managed-database": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-managed-desktop": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-managed-devops-pools": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-managed-file-shares": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "azure-managed-identities": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-managed-instance-apache-cassandra": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-managed-service-fabric": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-management-groups": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-management-portal": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-marketplace": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-marketplace-management": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-media": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-media-file": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-medtech-service": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-mesh-applications": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-metrics-advisor-ai-and-machine-learning": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-metrics-advisor-compute": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-metrics-management-and-governance": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-metrics-monitor": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-microsoft-defender-easm": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-microsoft-defender-for-cloud": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-microsoft-defender-for-iot": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-microsoft-dev-box": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-mindaro": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-mission-landing-zone": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-mobile": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "client"
+    },
+    "azure-mobile-engagement": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-mobile-networks": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-modular-data-center": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-module": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-monitor-health-models": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-monitor-management-and-governance": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-monitor-monitor": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-multi-factor-authentication": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-multi-tenancy": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-multifactor-authentication": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-my-customers": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-nat": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-network-interfaces": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-network-managers": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-network-security-groups": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-network-security-perimeters": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-network-watcher-monitor": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-network-watcher-networking": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-notification-hub-namespaces-iot": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-notification-hub-namespaces-web": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-notification-hubs-app-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-notification-hubs-iot": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-notification-hubs-mobile": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-offers": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-on-premises-data-gateways": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-open-supply-chain-platform": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-operation-log-classic": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-oracle-database": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-os-images-classic": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-osconfig": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-outbound-connection": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-partner-namespace": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-partner-registration": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-partner-topic": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-peering-service": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-peerings": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-personalizers": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-plans": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-policy": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-power": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-power-bi-embedded": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-power-platform-analytics": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-power-platform-integration": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-power-platform-mobile": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-power-platform-web": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-power-up": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-powershell": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-preview-features": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-private-endpoints": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-private-link": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-private-link-service": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-private-link-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-private-link-services-analytics": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-process-explorer": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-production-ready-database": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-programmable-connectivity": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-proximity-placement-groups": {
+      "provider": "azure",
+      "classification": "structural"
+    },
+    "azure-public-ip-addresses": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-public-ip-addresses-classic": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-public-ip-prefixes": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-purview-accounts": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-qna-makers": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-quickstart-center": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-quotas": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-recent": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-recovery-services-vaults-management-and-governance": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-recovery-services-vaults-migrate": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-recovery-services-vaults-storage": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-red-hat-openshift": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-region-management": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-relays": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-remote-rendering": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-reservations": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-reserved-capacity": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-reserved-ip-addresses-classic": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-resource-explorer": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-resource-graph-explorer": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-resource-group-list": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-resource-groups": {
+      "provider": "azure",
+      "classification": "structural"
+    },
+    "azure-resource-guard": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-resource-linked": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-resource-management-private-link": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-resource-mover": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-resources-provider": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-restore-points": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-restore-points-collections": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-route-filters": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-route-tables": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-rtos": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-savings-plans": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-scheduler": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "cron"
+    },
+    "azure-scheduler-job-collections": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "cron"
+    },
+    "azure-scvmm-management-servers": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-search": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "searchindex"
+    },
+    "azure-search-grid": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-security": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-security-baselines": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-sendgrid-accounts": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-sentinel": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-server-farm": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-serverless-search": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "searchindex"
+    },
+    "azure-service-bus": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "queue"
+    },
+    "azure-service-catalog-mad": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-service-endpoint-policies": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-service-fabric-clusters-compute": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-service-fabric-clusters-containers": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-service-health": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-service-providers": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-shared-image-galleries": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-signalr": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "websocket"
+    },
+    "azure-software-as-a-service": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-software-updates": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-solutions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-sonic-dash": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-spatial-anchor-accounts": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-speech-services": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-sphere": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-spot-vm": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-spot-vmss": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-spring-apps-compute": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-spring-apps-web": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-sql": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-sql-data-warehouses-databases": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-sql-data-warehouses-integration": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-sql-database": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-sql-database-fleet-manager": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-sql-edge": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-sql-elastic-pools": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-sql-managed-instance": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-sql-server": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-sql-server-registries": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-sql-server-stretch-databases-databases": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-sql-server-stretch-databases-integration": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-sql-vm": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "azure-ssd": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-ssh-keys": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-ssis-lift-and-shift-ir": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-stack": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-stack-edge-integration": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-stack-edge-migrate": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-stack-edge-storage": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-stack-hci-premium": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-stack-hci-sizer": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-static-apps": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-storage-accounts": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "azure-storage-accounts-classic": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "azure-storage-actions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-storage-azure-files": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "azure-storage-container": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "azure-storage-explorer": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-storage-functions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-storage-mover": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-storage-queue": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "queue"
+    },
+    "azure-storage-sync-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-storsimple-data-managers": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-storsimple-device-managers-integration": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-storsimple-device-managers-storage": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-stream-analytics-jobs-analytics": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-stream-analytics-jobs-iot": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-subnet": {
+      "provider": "azure",
+      "classification": "structural"
+    },
+    "azure-subscriptions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-support-center-blue": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-sustainability": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-synapse-analytics-analytics": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-synapse-analytics-databases": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-system-topic": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-table": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-tag": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-tags": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-targets-management": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-template-specs": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-templates": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-tenant-properties": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-tenant-status": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-test-base": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-tfs-vc-repository": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-time-series-data-sets": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-time-series-insights-access-policies": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-time-series-insights-environments": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "timeseriesdb"
+    },
+    "azure-time-series-insights-event-sources": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-token-service": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-toolbox": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-toolchain-orchestrator": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-traffic-manager-profiles": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "lb"
+    },
+    "azure-translator-text": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-troubleshoot": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-universal-print": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-update-management-center": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-updates": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-user-privacy": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-user-settings-identity": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-user-settings-security": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-user-subscriptions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-users": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-verifiable-credentials": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-verification-as-a-service": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-versions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-video-analyzers": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-video-indexer": {
+      "provider": "azure",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "azure-virtual-clusters": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-virtual-desktop": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-virtual-enclaves": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-virtual-instance-for-sap": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-virtual-machine": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-virtual-machines-classic": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-virtual-network-gateways": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-virtual-networks": {
+      "provider": "azure",
+      "classification": "structural"
+    },
+    "azure-virtual-networks-classic": {
+      "provider": "azure",
+      "classification": "structural"
+    },
+    "azure-virtual-router": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-virtual-visits-builder": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-virtual-wan-hub": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-virtual-wans": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-vm-app-definitions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-vm-app-versions": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-vm-image-version": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-vm-images-classic": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-vm-scale-sets": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-vmware-solution": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-vpnclientwindows": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-wac": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-wac-installer": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-web-app-and-database": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-web-application-firewall-policies-waf": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-web-jobs": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "worker"
+    },
+    "azure-web-slots": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-web-test": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-website-power": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-website-staging": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-windows-notification-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-windows10-core-services": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-workbooks": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-workbooks-analytics": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-workbooks-monitor": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-worker-container-app": {
+      "provider": "azure",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "azure-workflow": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-workload-orchestration": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-workspace-gateway": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azure-workspaces": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azureattestation": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "azurite": {
+      "provider": "azure",
+      "classification": "requires-model"
+    },
+    "gcp-access-context-manager": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-administration": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-advanced-agent-modeling": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-advanced-solutions-lab": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-agent-assist": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-ai-hub": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-ai-platform": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-ai-platform-unified": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-analytics-hub": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-anthos": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-anthos-config-management": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-anthos-service-mesh": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "sidecar"
+    },
+    "gcp-api": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-api-analytics": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-api-monetization": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-apigee-api-platform": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "apigateway"
+    },
+    "gcp-apigee-sense": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-app-engine": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "gcp-artifact-registry": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-asset-inventory": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-assured-workloads": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-automl": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-automl-natural-language": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-automl-tables": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-automl-translation": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-automl-video-intelligence": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-automl-vision": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-bare-metal-solutions": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-batch": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "worker"
+    },
+    "gcp-beyondcorp": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-bigquery": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "gcp-bigtable": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "gcp-billing": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-binary-authorization": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-catalog": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-certificate-authority-service": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-certificate-manager": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-api-gateway": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "apigateway"
+    },
+    "gcp-cloud-apis": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-armor": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-asset-inventory": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-audit-logs": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-build": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-cdn": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "cdn"
+    },
+    "gcp-cloud-code": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-composer": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-data-fusion": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-deploy": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-deployment-manager": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-dns": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-domains": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-ekm": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-endpoints": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "apigateway"
+    },
+    "gcp-cloud-external-ip-addresses": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-firewall-rules": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-for-marketing": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-functions": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "lambda"
+    },
+    "gcp-cloud-generic": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-gpu": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-healthcare-api": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-cloud-healthcare-marketplace": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-hsm": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-ids": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-inference-api": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-cloud-interconnect": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-jobs-api": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-load-balancing": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "lb"
+    },
+    "gcp-cloud-logging": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-media-edge": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-monitoring": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-nat": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-natural-language-api": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-cloud-network": {
+      "provider": "gcp",
+      "classification": "structural"
+    },
+    "gcp-cloud-ops": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-optimization-ai": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-optimization-ai-fleet-routing-api": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-router": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-routes": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-run": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "gcp-cloud-run-for-anthos": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "gcp-cloud-scheduler": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "cron"
+    },
+    "gcp-cloud-security-scanner": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-shell": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-spanner": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "gcp-cloud-sql": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "gcp-cloud-storage": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "gcp-cloud-tasks": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "queue"
+    },
+    "gcp-cloud-test-lab": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-tpu": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-cloud-translation-api": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-cloud-vision-api": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-cloud-vpn": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-compute-engine": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "gcp-configuration-management": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-connectivity-test": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-connectors": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-contact-center-ai": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-container-optimized-os": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-container-registry": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-data-catalog": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-data-labeling": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-data-layers": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-data-loss-prevention-api": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-data-qna": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-data-studio": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-data-transfer": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-database-migration-service": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-dataflow": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "worker"
+    },
+    "gcp-datalab": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-dataplex": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-datapol": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-dataprep": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-dataproc": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-dataproc-metastore": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-datashare": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-datastore": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "gcp-datastream": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "streambroker"
+    },
+    "gcp-debugger": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-developer-portal": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-dialogflow": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-dialogflow-cx": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-dialogflow-insights": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-document-ai": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-early-access-center": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-error-reporting": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-eventarc": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "pubsub"
+    },
+    "gcp-filestore": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "gcp-financial-services-marketplace": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-firestore": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "gcp-fleet-engine": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-free-trial": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-game-servers": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "gcp-gce-systems-management": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-gcp-logo": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-gcp-logo-1": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-genomics": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-gke-on-prem": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-google-cloud-marketplace": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-google-maps-platform": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-healthcare-nlp-api": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-home": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-identity-and-access-management": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-identity-aware-proxy": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-identity-platform": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-iot-core": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-iot-edge": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-key-access-justifications": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-key-management-service": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-kuberun": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "gcp-launcher": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-local-ssd": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-looker": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-managed-service-for-microsoft-active-directory": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-media-translation-api": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-memorystore": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "cache"
+    },
+    "gcp-migrate-for-anthos": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-migrate-for-compute-engine": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-my-cloud": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-network-connectivity-center": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-network-intelligence-center": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-network-security": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-network-tiers": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-network-topology": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-onboarding": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-os-configuration-management": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-os-inventory-management": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-os-patch-management": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-partner-interconnect": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-partner-portal": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-performance-dashboard": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-permissions": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-persistent-disk": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-phishing-protection": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-policy-analyzer": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-premium-network-tier": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-private-connectivity": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-private-service-connect": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-producer-portal": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-profiler": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-project": {
+      "provider": "gcp",
+      "classification": "structural"
+    },
+    "gcp-pubsub": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "pubsub"
+    },
+    "gcp-quantum-engine": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-quotas": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-real-world-insights": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-recommendations-ai": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-release-notes": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-retail-api": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-risk-manager": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-runtime-config": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-secret-manager": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-security": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-security-command-center": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-security-health-advisor": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-security-key-enforcement": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-service-discovery": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-speech-to-text": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-stackdriver": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-standard-network-tier": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-stream-suite": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-support": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-tensorflow-enterprise": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-text-to-speech": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-tools-for-powershell": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-trace": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-traffic-director": {
+      "provider": "gcp",
+      "classification": "dedicated",
+      "kind": "lb"
+    },
+    "gcp-transfer": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-transfer-appliance": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-user-preferences": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-vertex-ai": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-video-intelligence-api": {
+      "provider": "gcp",
+      "classification": "generic",
+      "kind": "service"
+    },
+    "gcp-virtual-private-cloud": {
+      "provider": "gcp",
+      "classification": "structural"
+    },
+    "gcp-visual-inspection": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-vmware-engine": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-web-risk": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-web-security-scanner": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-workflows": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "gcp-workload-identity-pool": {
+      "provider": "gcp",
+      "classification": "requires-model"
+    },
+    "kubernetes-api-server": {
+      "provider": "kubernetes",
+      "classification": "requires-model"
+    },
+    "kubernetes-cloud-controller-manager": {
+      "provider": "kubernetes",
+      "classification": "requires-model"
+    },
+    "kubernetes-config-map": {
+      "provider": "kubernetes",
+      "classification": "requires-model"
+    },
+    "kubernetes-control-plane": {
+      "provider": "kubernetes",
+      "classification": "requires-model"
+    },
+    "kubernetes-controller-manager": {
+      "provider": "kubernetes",
+      "classification": "requires-model"
+    },
+    "kubernetes-cron-job": {
+      "provider": "kubernetes",
+      "classification": "dedicated",
+      "kind": "cron"
+    },
+    "kubernetes-daemon-set": {
+      "provider": "kubernetes",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "kubernetes-deployment": {
+      "provider": "kubernetes",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "kubernetes-etcd": {
+      "provider": "kubernetes",
+      "classification": "dedicated",
+      "kind": "db"
+    },
+    "kubernetes-horizontal-pod-autoscaler": {
+      "provider": "kubernetes",
+      "classification": "dedicated",
+      "kind": "autoscaler"
+    },
+    "kubernetes-ingress": {
+      "provider": "kubernetes",
+      "classification": "dedicated",
+      "kind": "lb"
+    },
+    "kubernetes-job": {
+      "provider": "kubernetes",
+      "classification": "dedicated",
+      "kind": "worker"
+    },
+    "kubernetes-kube-proxy": {
+      "provider": "kubernetes",
+      "classification": "dedicated",
+      "kind": "sidecar"
+    },
+    "kubernetes-kubelet": {
+      "provider": "kubernetes",
+      "classification": "requires-model"
+    },
+    "kubernetes-namespace": {
+      "provider": "kubernetes",
+      "classification": "structural"
+    },
+    "kubernetes-network-policy": {
+      "provider": "kubernetes",
+      "classification": "requires-model"
+    },
+    "kubernetes-node": {
+      "provider": "kubernetes",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "kubernetes-persistent-volume": {
+      "provider": "kubernetes",
+      "classification": "dedicated",
+      "kind": "objectstore"
+    },
+    "kubernetes-persistent-volume-claim": {
+      "provider": "kubernetes",
+      "classification": "structural"
+    },
+    "kubernetes-pod": {
+      "provider": "kubernetes",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "kubernetes-replica-set": {
+      "provider": "kubernetes",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "kubernetes-scheduler": {
+      "provider": "kubernetes",
+      "classification": "requires-model"
+    },
+    "kubernetes-secret": {
+      "provider": "kubernetes",
+      "classification": "requires-model"
+    },
+    "kubernetes-service": {
+      "provider": "kubernetes",
+      "classification": "dedicated",
+      "kind": "lb"
+    },
+    "kubernetes-stateful-set": {
+      "provider": "kubernetes",
+      "classification": "dedicated",
+      "kind": "service"
+    },
+    "kubernetes-storage-class": {
+      "provider": "kubernetes",
+      "classification": "structural"
+    }
+  }
+}

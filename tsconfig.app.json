@@ -13,6 +13,11 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
+    "baseUrl": ".",
+    "paths": {
+      "@diagramwise/simulation-core": ["packages/simulation-core/src/index.ts"],
+      "@diagramwise/simulation-core/*": ["packages/simulation-core/src/*"]
+    },
     "noEmit": true,
     "jsx": "react-jsx",
 
@@ -24,5 +29,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true
   },
-  "include": ["src"]
+  "include": ["src", "packages/simulation-core/src"]
 }

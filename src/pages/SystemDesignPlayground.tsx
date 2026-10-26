@@ -40,6 +40,7 @@ import {
   MdHelpOutline,
   MdPublic,
   MdExtension,
+  MdPlayArrow,
 } from "react-icons/md";
 
 // Routing
@@ -146,6 +147,11 @@ import DiagramCanvas from "../components/DiagramCanvas";
 import CanvasActionControls from "../components/CanvasActionControls";
 import ComponentPalette from "../components/ComponentPalette";
 import InspectorPanel from "../components/InspectorPanel";
+import { SimulationCanvasControls, SimulationDetails } from "../simulation/SimulationHost";
+import { topologyToCanvas, useSimulationDocument } from "../simulation/canvas";
+import { simulationSession } from "../simulation/session";
+import { databaseBottleneckScenario } from "@diagramwise/simulation-core/scenarios";
+import type { NodeKind } from "@diagramwise/simulation-core";
 
 // UI Components - Nodes
 import CustomNode from "../components/Node";
@@ -2801,7 +2807,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
   // which tab is active in the right sidebar: 'details' or 'inspector'
   const [activeRightTab, setActiveRightTab] = useState<
-    "details" | "inspector" | "assessment" | "guide"
+    "details" | "inspector" | "assessment" | "guide" | "simulation"
   >(
     idFromUrl &&
       idFromUrl !== "free" &&
@@ -2809,10 +2815,52 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       ? "guide"
       : "details",
   );
+  const simulationScope = {
+    designId: currentDiagramId ?? attemptWorkspaceId ?? `local:${idFromUrl ?? "free"}`,
+    canvasId: canvasWorkspaceState.activeCanvasId ?? "primary",
+    exerciseId: idFromUrl && idFromUrl !== "free" ? idFromUrl : null,
+  };
+  useSimulationDocument(simulationScope, nodes, edges);
+
+  const updateSimulationModel = useCallback((nodeId: string, kind: NodeKind) => {
+    setNodes((current) => current.map((node) => {
+      if (node.id !== nodeId) return node;
+      const existing = node.data?.simulation;
+      const simulation = existing && typeof existing === "object" && !Array.isArray(existing)
+        ? existing as Record<string, unknown> : {};
+      return { ...node, data: { ...node.data, simulation: { ...simulation, kind } } };
+    }));
+  }, [setNodes]);
+  const setSimulationEntrypoint = useCallback((nodeId: string) => {
+    setNodes((current) => current.map((node) => {
+      const existing = node.data?.simulation;
+      const simulation = existing && typeof existing === "object" && !Array.isArray(existing)
+        ? existing as Record<string, unknown> : {};
+      return { ...node, data: { ...node.data, simulation: { ...simulation, entrypoint: node.id === nodeId } } };
+    }));
+  }, [setNodes]);
+  const openRepairDemo = useCallback(() => {
+    if (nodes.length > 0 && !globalThis.confirm("Replace this canvas with the repair challenge? You can undo this change.")) return;
+    const demo = topologyToCanvas(databaseBottleneckScenario.initialTopology);
+    setCanvasState({ nodes: demo.nodes, edges: demo.edges });
+    simulationSession.reset();
+    setActiveRightTab("simulation");
+  }, [nodes.length, setCanvasState]);
+  useEffect(() => {
+    const inspect = (event: Event) => {
+      const nodeId = (event as CustomEvent<{ nodeId?: string }>).detail?.nodeId;
+      if (nodeId) setInspectedNodeId(nodeId);
+      setActiveRightTab("simulation");
+    };
+    globalThis.addEventListener("diagram:simulation-inspect", inspect);
+    return () => globalThis.removeEventListener("diagram:simulation-inspect", inspect);
+  }, []);
   useEffect(() => {
     if (
       compactViewport &&
-      (activeRightTab === "assessment" || activeRightTab === "inspector")
+      (activeRightTab === "assessment" ||
+        activeRightTab === "inspector" ||
+        activeRightTab === "simulation")
     ) {
       setMobileSidebar("inspector");
     }
@@ -5730,6 +5778,22 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                     </button>
                   </div>
                 )}
+                {!isSharedView && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      simulationSession.reveal();
+                      simulationSession.start();
+                      setActiveRightTab("simulation");
+                    }}
+                    className="flex items-center gap-1.5 rounded-md border border-white/25 px-3 py-1.5 text-sm font-semibold text-white/90 transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                    aria-label="Start simulation"
+                    data-tooltip="Start a live architecture simulation"
+                  >
+                    <MdPlayArrow className="h-4 w-4" aria-hidden="true" />
+                    <span>Simulate</span>
+                  </button>
+                )}
                 {/* Tour trigger */}
                 {!isSharedView && (
                   <button
@@ -5966,6 +6030,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             }
           >
             {/* Render collaborator cursors (always shown when connected) */}
+            {!isSharedView && <SimulationCanvasControls
+              onInspect={() => setActiveRightTab("simulation")}
+              onDemo={openRepairDemo}
+            />}
             {cursors.map((cursor) => {
               // Convert flow coordinates to screen coordinates for proper rendering
               const screenPosition = flowToScreenPosition(cursor.position);
@@ -5989,6 +6057,18 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             problem={problem}
             activeTab={activeRightTab}
             setActiveTab={setActiveRightTab}
+            simulationContent={
+              <SimulationDetails
+                nodes={nodes}
+                edges={edges}
+                problem={problem}
+                signedIn={isAuthenticated}
+                selectedNodeId={inspectedNodeId}
+                onModelChange={updateSimulationModel}
+                onEntrypoint={setSimulationEntrypoint}
+                onDemo={openRepairDemo}
+              />
+            }
             problemId={problem?.id ?? null}
             onApplyStep={handleApplyStep}
             guideCurrentStep={guideCurrentStep}

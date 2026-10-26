@@ -162,6 +162,14 @@
           "durable": true,
           "componentName": "Operation Event Bus (Kafka)",
           "retention": 168
+        },
+        "data": {
+          "simulation": {
+            "kind": "streambroker",
+            "config": {
+              "partitions": 24
+            }
+          }
         }
       },
       "id": "app_001_step_11",

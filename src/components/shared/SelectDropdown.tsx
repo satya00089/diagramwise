@@ -31,46 +31,62 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
     Math.max(0, options.indexOf(value)),
   );
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
+  const optionsKey = options.join("\u0000");
 
   useEffect(() => {
     if (!open) return;
-    setHighlightedIndex(Math.max(0, options.indexOf(value)));
+    setHighlightedIndex((current) => {
+      const currentOptions = optionsRef.current;
+      const selectedIndex = currentOptions.indexOf(value);
+      return selectedIndex >= 0 ? selectedIndex : Math.min(current, currentOptions.length - 1);
+    });
     const handlePointerDown = (event: PointerEvent) => {
       if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false);
     };
     document.addEventListener("pointerdown", handlePointerDown);
     return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [open, options, value]);
+  }, [open, optionsKey, value]);
 
   const choose = (nextValue: string) => {
     onChange(nextValue);
     setOpen(false);
+    triggerRef.current?.focus();
   };
 
   return (
     <div ref={wrapperRef} className="dashboard-select-wrapper">
       <button
         id={id}
+        ref={triggerRef}
         type="button"
         className={`dashboard-select-trigger ${disabled ? "opacity-60 cursor-not-allowed" : ""} ${className}`}
+        role="combobox"
         aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={`${id}-menu`}
+        aria-activedescendant={open ? `${id}-option-${highlightedIndex}` : undefined}
         disabled={disabled}
         onClick={() => setOpen((current) => !current)}
         onFocus={onFocus}
-        onBlur={onBlur}
+        onBlur={(event) => {
+          if (!wrapperRef.current?.contains(event.relatedTarget as Node | null)) setOpen(false);
+          onBlur?.(event);
+        }}
         onKeyDown={(event) => {
           if (!options.length) return;
           if (event.key === "ArrowDown" || event.key === "ArrowUp") {
             event.preventDefault();
-            setOpen(true);
-            setHighlightedIndex((current) =>
-              event.key === "ArrowDown"
-                ? Math.min(options.length - 1, current + 1)
-                : Math.max(0, current - 1),
-            );
+            if (!open) {
+              setOpen(true);
+              const selected = options.indexOf(value);
+              setHighlightedIndex(selected >= 0 ? selected : event.key === "ArrowDown" ? 0 : options.length - 1);
+            } else {
+              setHighlightedIndex((current) => (current + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length);
+            }
           } else if (event.key === "Home") {
             event.preventDefault();
             setOpen(true);
@@ -84,6 +100,7 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
             if (open) choose(options[highlightedIndex]);
             else setOpen(true);
           } else if (event.key === "Escape") {
+            event.preventDefault();
             setOpen(false);
           }
         }}
@@ -104,8 +121,9 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
           {options.map((option, index) => (
             <div
               key={option}
+              id={`${id}-option-${index}`}
               role="option"
-              tabIndex={0}
+              tabIndex={-1}
               aria-selected={option === value}
               className={`dashboard-select-option ${
                 index === highlightedIndex
@@ -113,13 +131,8 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
                   : ""
               } ${option === value ? "dashboard-select-option--selected" : ""}`}
               onMouseEnter={() => setHighlightedIndex(index)}
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => choose(option)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  choose(option);
-                }
-              }}
             >
               {option}
             </div>

@@ -19,6 +19,14 @@ export class ComponentProviderService {
       baseUrl || import.meta.env.VITE_API_URL || "http://localhost:3000";
   }
 
+  /** The API accepts DynamoDB cursors as base64-encoded JSON. */
+  private encodePaginationKey(key: Record<string, string>): string {
+    const bytes = new TextEncoder().encode(JSON.stringify(key));
+    let binary = "";
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return btoa(binary);
+  }
+
   /**
    * Get components by provider
    */
@@ -26,6 +34,7 @@ export class ComponentProviderService {
     provider: ComponentProvider,
     limit = 100,
     minimal = false,
+    lastEvaluatedKey?: Record<string, string>,
   ): Promise<ComponentsResponse> {
     try {
       const params = new URLSearchParams({
@@ -33,6 +42,12 @@ export class ComponentProviderService {
         limit: limit.toString(),
         minimal: minimal.toString(),
       });
+      if (lastEvaluatedKey) {
+        params.set(
+          "last_evaluated_key",
+          this.encodePaginationKey(lastEvaluatedKey),
+        );
+      }
 
       const response = await fetch(
         `${this.baseUrl}/api/components?${params.toString()}`,
@@ -61,12 +76,19 @@ export class ComponentProviderService {
   async getComponentsByCategory(
     category: ComponentCategory,
     limit = 100,
+    lastEvaluatedKey?: Record<string, string>,
   ): Promise<ComponentsResponse> {
     try {
       const params = new URLSearchParams({
         category,
         limit: limit.toString(),
       });
+      if (lastEvaluatedKey) {
+        params.set(
+          "last_evaluated_key",
+          this.encodePaginationKey(lastEvaluatedKey),
+        );
+      }
 
       const response = await fetch(
         `${this.baseUrl}/api/components?${params.toString()}`,
@@ -106,8 +128,8 @@ export class ComponentProviderService {
       if (params?.limit) queryParams.set("limit", params.limit.toString());
       if (params?.lastEvaluatedKey) {
         queryParams.set(
-          "lastEvaluatedKey",
-          JSON.stringify(params.lastEvaluatedKey),
+          "last_evaluated_key",
+          this.encodePaginationKey(params.lastEvaluatedKey),
         );
       }
       if (params?.minimal)

@@ -224,10 +224,11 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
   }, [currentStep, onStepChange]);
 
   const step = walkthrough?.steps[currentStep] ?? null;
-  const total = walkthrough?.totalSteps ?? 0;
+  const total = walkthrough?.steps.length ?? 0;
 
-  // Derive current phase index
-  const phaseIndex =
+  // Persisted lesson numbers can differ from navigation order after inserts.
+  const namedPhaseIndex = walkthrough?.phases.findIndex(phase => phase.name === step?.phase) ?? -1;
+  const phaseIndex = namedPhaseIndex >= 0 ? namedPhaseIndex :
     walkthrough?.phases.findIndex(
       (p) =>
         step &&
@@ -372,7 +373,8 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
               key={phase.name}
               type="button"
               onClick={() => {
-                const targetIdx =
+                const firstPhaseStep = walkthrough.steps.findIndex(item => item.phase === phase.name);
+                const targetIdx = firstPhaseStep >= 0 ? firstPhaseStep :
                   walkthrough.steps.findIndex(
                     (s) => s.stepNumber === phase.stepRange[0],
                   ) ?? 0;
@@ -395,7 +397,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
       <div className="flex-shrink-0 px-3 pb-2">
         <div className="flex items-center justify-between mb-1">
           <span className="text-[10px] text-muted/50">
-            Lesson step {step.stepNumber} of {total}
+            Lesson step {currentStep + 1} of {total}
           </span>
           <span className="text-[10px] text-muted/50">
             {completedActions} / {actionSteps.length} design actions applied
@@ -404,7 +406,7 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
         <div className="h-1 bg-[var(--border)] rounded-full overflow-hidden">
           <div
             className="h-full bg-[var(--brand)] rounded-full transition-all duration-300"
-            style={{ width: `${(step.stepNumber / total) * 100}%` }}
+            style={{ width: `${((currentStep + 1) / total) * 100}%` }}
           />
         </div>
       </div>
