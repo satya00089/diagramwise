@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "format": "prettier --write .",
     "test": "vitest --exclude scripts/hairline-figures.test.mjs",
+    "test:simulation": "vitest run packages/simulation-core/src src/simulation/history.test.ts",
     "test:figures": "node --test scripts/hairline-figures.test.mjs",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",

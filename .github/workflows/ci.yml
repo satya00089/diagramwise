@@ -26,7 +26,7 @@ jobs:
         run: npm run lint --if-present
 
       - name: Run simulator tests
-        run: npx vitest run packages/simulation-core/src src/simulation/history.test.ts
+        run: npm run test:simulation
 
       - name: Build public routes and run SEO checks
         run: npm run build

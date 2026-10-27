@@ -49,6 +49,7 @@ const fractions = new Set(['hitRate', 'errorRate', 'targetUtil', 'scaleStepPct',
 const positiveIntegers = new Set(['capacity', 'instances', 'replicaCount', 'shardCount', 'shardCapacity', 'partitions', 'regions', 'halfOpenProbes', 'maxConcurrency', 'bulkheadMax', 'renditions', 'batchSize', 'traversalDepth', 'minCapacity', 'maxCapacity', 'outlierAfter']);
 const zeroIntegers = new Set(['queueLimit', 'retries', 'activeRegion', 'acquireQueueMax']);
 const own = (object: object, key: PropertyKey) => Object.prototype.hasOwnProperty.call(object, key);
+const compareStrings = (left: string, right: string) => left.localeCompare(right);
 const record = (value: unknown): Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 
@@ -56,7 +57,7 @@ function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
   if (value !== null && typeof value === 'object') {
     const object = value as Record<string, unknown>;
-    return `{${Object.keys(object).sort().map(key => `${JSON.stringify(key)}:${canonical(object[key])}`).join(',')}}`;
+    return `{${Object.keys(object).sort(compareStrings).map(key => `${JSON.stringify(key)}:${canonical(object[key])}`).join(',')}}`;
   }
   return JSON.stringify(value) ?? 'null';
 }
@@ -346,7 +347,7 @@ export function compileGraph(document: SimulationDocument, options: CompileOptio
     profileVersion: PROFILE_VERSION,
     nodes: nodes.map(({ id, kind, config }) => ({ id, kind, config })),
     edges: [...edges].sort((a, b) => a.id.localeCompare(b.id)),
-    unsupported: [...nodeIds].filter(id => !modeled.has(id) && !structural.has(id)).sort(),
+    unsupported: [...nodeIds].filter(id => !modeled.has(id) && !structural.has(id)).sort(compareStrings),
     errors: diagnostics.filter(item => item.severity === 'error').map(({ code, nodeId, edgeId }) => ({ code, nodeId, edgeId })),
   };
   return { topology: diagnostics.some(item => item.severity === 'error') ? null : { nodes, edges }, diagnostics, profiles, fingerprint: fingerprint(semantic), ...(virtualSourceId ? { virtualSourceId } : {}) };
