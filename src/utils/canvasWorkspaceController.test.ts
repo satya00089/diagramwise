@@ -10,6 +10,7 @@ import {
   type CanvasWorkspaceApi,
 } from "./canvasWorkspaceController";
 import { normalizeEdgeDataPurpose } from "./purposeMigration";
+import { persistProblemAttempt } from "./persistProblemAttempt";
 
 const WS = "design-1";
 
@@ -523,6 +524,99 @@ describe("CanvasWorkspaceController.getActiveContent", () => {
 });
 
 describe("CanvasWorkspaceController stale versions", () => {
+  it("detects a remote edit before saving attempt metadata for an unchanged canvas", async () => {
+    const { api, state } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    state.content.main = {
+      ...state.content.main,
+      version: 2,
+      nodes: [{ id: "remote" }],
+    };
+    const writeAttempt = vi.fn(async () => undefined);
+    await expect(
+      persistProblemAttempt(async () => {
+        const result = await controller.saveActive([{ id: "m" }], [], true);
+        if (result === "conflict" || result === "error")
+          throw new Error("canvas failed");
+      }, writeAttempt),
+    ).rejects.toThrow("canvas failed");
+    expect(writeAttempt).not.toHaveBeenCalled();
+  });
+  it("does not update an attempt when the canvas has a genuine conflict", async () => {
+    const { api, state } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    state.content.main = {
+      ...state.content.main,
+      version: 2,
+      nodes: [{ id: "remote" }],
+    };
+    const writeAttempt = vi.fn(async () => undefined);
+    await expect(
+      persistProblemAttempt(async () => {
+        const result = await controller.saveActive([{ id: "mine" }], []);
+        if (result === "conflict" || result === "error")
+          throw new Error("canvas failed");
+      }, writeAttempt),
+    ).rejects.toThrow("canvas failed");
+    expect(writeAttempt).not.toHaveBeenCalled();
+    expect(
+      (await new CanvasWorkspaceController(api).load(WS, "main")).nodes,
+    ).toEqual([{ id: "remote" }]);
+  });
+
+  it("can retry the attempt after its canvas was saved but the attempt write failed", async () => {
+    const { api } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    const saveCanvas = async () => {
+      const result = await controller.saveActive([{ id: "edited" }], []);
+      if (result === "conflict" || result === "error")
+        throw new Error("canvas failed");
+    };
+    const writeAttempt = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce("saved");
+    await expect(
+      persistProblemAttempt(saveCanvas, writeAttempt),
+    ).rejects.toThrow("offline");
+    await expect(persistProblemAttempt(saveCanvas, writeAttempt)).resolves.toBe(
+      "saved",
+    );
+    expect(
+      (await new CanvasWorkspaceController(api).load(WS, "main")).nodes,
+    ).toEqual([{ id: "edited" }]);
+  });
+  it("recovers a version change when the loaded canvas was hydrated with an icon", async () => {
+    const initial = structuredClone(TWO_TABS);
+    initial.content.main.nodes = [
+      { id: "m", data: { componentId: "web-app" } },
+    ];
+    const { api, state } = fakeApi(initial);
+    const save = api.saveCanvasContent;
+    api.saveCanvasContent = (workspaceId, canvasId, body) =>
+      save(workspaceId, canvasId, JSON.parse(JSON.stringify(body)));
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    const hydrated = [
+      {
+        id: "m",
+        data: { componentId: "web-app", icon: () => null, iconUrl: undefined },
+      },
+    ];
+    controller.markActiveContentClean("main", hydrated, []);
+
+    // The server has the same original content, but another write advanced its version.
+    state.content.main = { ...state.content.main, version: 2 };
+    const edited = [...hydrated, { id: "gateway" }];
+    expect(await controller.saveActive(edited, [])).toBe("saved");
+    const reloaded = new CanvasWorkspaceController(api);
+    expect((await reloaded.load(WS, "main")).nodes).toEqual(
+      JSON.parse(JSON.stringify(edited)),
+    );
+  });
   it("adopts the latest version without writing when the server already has this content", async () => {
     const { api, state, calls } = fakeApi(TWO_TABS);
     const controller = new CanvasWorkspaceController(api);
