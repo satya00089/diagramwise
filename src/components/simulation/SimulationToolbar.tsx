@@ -32,6 +32,19 @@ function sliderToRate(position: number): number {
   return Math.round(1_000 * 100 ** ((position - 500) / 500));
 }
 
+function simulationStartLabel(status: SimulationStatus): string {
+  if (status === "stale") return "Restart with changes";
+  if (status === "paused") return "Resume";
+  return "Start simulation";
+}
+
+function simulationNotice(status: SimulationStatus, errors: readonly SimulationDiagnostic[], achievedSpeed: number | undefined): string {
+  if (status === "resource-limited") return "This run reached a simulator limit. Its results are incomplete.";
+  if (status === "error") return "The simulation stopped. Your design is safe; reset and try again.";
+  if (errors.length) return errors[0].message;
+  return `Processing at ${formatSimulationNumber(achievedSpeed ?? 0)}×. Simulated events are preserved.`;
+}
+
 export type SimulationToolbarProps = {
   status: SimulationStatus;
   rps: number;
@@ -59,7 +72,7 @@ export function SimulationToolbar({
   const id = useId();
   const running = status === "running";
   const errors = diagnostics.filter((item) => item.severity === "error");
-  const startLabel = status === "stale" ? "Restart with changes" : status === "paused" ? "Resume" : "Start simulation";
+  const startLabel = simulationStartLabel(status);
   const slower = running && achievedSpeed !== undefined && timeMs > 2000 && achievedSpeed < speed * 0.75;
   const sliderPosition = rateToSlider(rps);
   const rateProgress = `${sliderPosition / 10}%`;
@@ -151,12 +164,12 @@ export function SimulationToolbar({
           <span className="sim-toolbar__clock">{formatSimulationNumber(timeMs / 1000)} s simulated</span>
         </>}
         {!snapshot && status === "idle" && <span>Start, increase traffic, and watch the paths.</span>}
-        {onDemo && !running && !snapshot && <button type="button" className="sim-text-button" onClick={onDemo}>Try a repair challenge</button>}
+        {onDemo && <button type="button" className="sim-text-button" onClick={onDemo}>Try a repair challenge</button>}
       </div>
       {(errors.length > 0 || status === "resource-limited" || status === "error" || slower) && (
         <div className="sim-toolbar__notice">
           <MdWarningAmber aria-hidden="true" size={16} />
-          <span>{status === "resource-limited" ? "This run reached a simulator limit. Its results are incomplete." : status === "error" ? "The simulation stopped. Your design is safe; reset and try again." : errors.length ? errors[0].message : `Processing at ${formatSimulationNumber(achievedSpeed ?? 0)}×. Simulated events are preserved.`}</span>
+          <span>{simulationNotice(status, errors, achievedSpeed)}</span>
           {onInspect && <button type="button" className="sim-text-button" onClick={onInspect}>Details</button>}
         </div>
       )}

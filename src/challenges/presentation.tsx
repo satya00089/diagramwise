@@ -5,9 +5,19 @@ import { nodeSimulationSignal } from "../components/simulation/presentation";
 
 export function formatGoalActual(goal: ScenarioGoalResult): string {
   if (goal.actual === null) return "No samples";
-  if (goal.metric === "completionFraction")
-    return `${(goal.actual * 100).toFixed(3)}%`;
-  return goal.actual.toFixed(2);
+  const scale = goal.metric === "completionFraction" ? 100 : 1;
+  const actual = goal.actual * scale;
+  const threshold = goal.threshold * scale;
+  const initialPrecision = scale === 100 ? 3 : 2;
+  let formatted = actual.toFixed(initialPrecision);
+  if (!goal.met && Number(formatted) === threshold && actual !== threshold) {
+    for (let precision = initialPrecision + 1; precision <= 12; precision++) {
+      formatted = actual.toFixed(precision);
+      if (Number(formatted) !== threshold) break;
+    }
+    if (Number(formatted) === threshold) formatted = String(actual);
+  }
+  return `${formatted}${scale === 100 ? "%" : ""}`;
 }
 
 export function formatGoalTarget(goal: ScenarioGoalResult): string {
