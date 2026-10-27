@@ -11,7 +11,7 @@ import type { SystemDesignProblem } from "../types/systemDesign";
 
 const LegacySimulationPanel = lazy(() => import("../components/SimulationPanel"));
 
-export function SimulationCanvasControls({ onInspect, onDemo }: { onInspect: () => void; onDemo?: () => void }) {
+export function SimulationCanvasControls({ onInspect, onDemo }: Readonly<{ onInspect: () => void; onDemo?: () => void }>) {
   const s = useSimulationSession();
   if (!s.visible) return null;
   const hasBackgroundDelivery = Object.values(s.compilation?.profiles ?? {}).some(profile =>
@@ -34,7 +34,7 @@ type DetailsProps = {
   onDemo?: () => void;
 };
 
-export function SimulationDetails({ nodes, edges, problem, signedIn, selectedNodeId, onModelChange, onEntrypoint, onDemo }: DetailsProps) {
+export function SimulationDetails({ nodes, edges, problem, signedIn, selectedNodeId, onModelChange, onEntrypoint, onDemo }: Readonly<DetailsProps>) {
   const s = useSimulationSession();
   const { fitView } = useReactFlow();
   const [localRuns, setLocalRuns] = useState<SavedEventRun[]>([]);
