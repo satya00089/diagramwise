@@ -107,6 +107,10 @@ import {
 import { getCollaboratorColor } from "../utils/collaborationUtils";
 import { getDiagramLoadMode } from "../utils/diagramLoadMode";
 import {
+  getProblemSaveStatus,
+  persistProblemAttempt,
+} from "../utils/persistProblemAttempt";
+import {
   exportAsJSON,
   exportAsXML,
   importFromJSON,
@@ -871,6 +875,11 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   >("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
+  const [failedAssessmentKey, setFailedAssessmentKey] = useState<string | null>(null);
+  const failedAssessmentKeyRef = useRef<string | null>(null);
+  const assessmentKey = `${user?.id ?? ""}:${idFromUrl ?? ""}`;
+  const assessmentSaveFailed = failedAssessmentKey === assessmentKey;
+  const problemSaveStatus = getProblemSaveStatus(autoSaveStatus, assessmentSaveFailed);
 
   // Timer state - always running for problems
   const [elapsedTime, setElapsedTime] = useState<number>(0); // in seconds
@@ -1201,13 +1210,14 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         canvasWorkspace.getSnapshot().workspaceId !== attemptWorkspaceId ||
         !canvasWorkspace.getSnapshot().activeCanvasId
       ) {
-        return;
+        throw new Error("The problem canvas is not available to save.");
       }
       const result = await canvasWorkspace.saveActive(
         currentNodes,
         currentEdges,
+        true,
       );
-      if (result === "error") {
+      if (result === "error" || result === "conflict") {
         throw new Error("Could not save the active problem canvas.");
       }
     },
@@ -1823,6 +1833,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         edges,
         idFromUrl,
         currentDiagramId,
+        canvasWorkspaceId: canvasWorkspaceState.workspaceId,
+        activeCanvasId: canvasWorkspaceState.activeCanvasId,
         userId: user?.id,
         problem,
         userIntent,
@@ -1836,6 +1848,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       edges,
       idFromUrl,
       currentDiagramId,
+      canvasWorkspaceState.workspaceId,
+      canvasWorkspaceState.activeCanvasId,
       user?.id,
       problem,
       userIntent,
@@ -1906,7 +1920,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                 description: currentDiagram?.description || "Auto-saved design",
                 reasoningContext,
               });
-              await canvasWorkspace.saveActive(nodes, edges);
+              const result = await canvasWorkspace.saveActive(nodes, edges);
+              if (result === "error" || result === "conflict") {
+                throw new Error("Could not save the active design canvas.");
+              }
             } else {
               // Update existing diagram
               await apiService.updateDiagram(currentDiagramId, {
@@ -1959,21 +1976,24 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             return;
           }
 
-          await apiService.saveAttempt({
-            problemId: idFromUrl,
-            title: problem?.title || "Unknown Problem",
-            difficulty: problem?.difficulty,
-            category: problem?.category,
-            nodes,
-            edges,
-            elapsedTime,
-            reasoningContext,
-            interviewSession,
-            addressedFindingIds,
-            problemRequirementSpec: problem?.requirementSpec,
-            // Don't save assessment in auto-save, only when assessment is explicitly run
-          });
-          await saveActiveProblemCanvas(nodes, edges);
+          // Check and persist the versioned canvas before updating the attempt.
+          // Stop before updating the attempt if the canvas reports a conflict.
+          await persistProblemAttempt(
+            () => saveActiveProblemCanvas(nodes, edges),
+            () => apiService.saveAttempt({
+              problemId: idFromUrl,
+              title: problem?.title || "Unknown Problem",
+              difficulty: problem?.difficulty,
+              category: problem?.category,
+              nodes,
+              edges,
+              elapsedTime,
+              reasoningContext,
+              interviewSession,
+              addressedFindingIds,
+              problemRequirementSpec: problem?.requirementSpec,
+            }),
+          );
           lastSavedAttemptContentRef.current = attemptContentSnapshot;
         }
 
@@ -1984,8 +2004,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         const lastToastTime = localStorage.getItem("lastAutoSaveToast");
         const now = Date.now();
         if (
-          !lastToastTime ||
-          now - Number.parseInt(lastToastTime) > 60000 // Show toast max once per minute
+          failedAssessmentKeyRef.current !== assessmentKey &&
+          (!lastToastTime || now - Number.parseInt(lastToastTime) > 60000)
         ) {
           toast.success(
             idFromUrl === "free"
@@ -1995,14 +2015,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           localStorage.setItem("lastAutoSaveToast", now.toString());
         }
 
-        // Reset status after 3 seconds
-        setTimeout(() => setAutoSaveStatus("idle"), 3000);
       } catch (error) {
         console.error("Auto-save failed:", error);
         setAutoSaveStatus("error");
-
-        // Reset status after 5 seconds
-        setTimeout(() => setAutoSaveStatus("idle"), 5000);
+        toast.error("Could not save your changes. Check Pages before reloading.");
       }
     };
 
@@ -2196,26 +2212,30 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       // Save assessment to database for problem-solving mode
       if (idFromUrl && idFromUrl !== "free" && isAuthenticated) {
         try {
-          const savedAttempt = (await apiService.saveAttempt({
-            problemId: idFromUrl,
-            title: problem?.title || "Unknown Problem",
-            difficulty: problem?.difficulty,
-            category: problem?.category,
-            nodes,
-            edges,
-            elapsedTime,
-            lastAssessment: res,
-            problemRequirementSpec: problem?.requirementSpec,
-            reasoningContext,
-            interviewSession: followUpSession,
-            addressedFindingIds,
-          })) as {
+          const savedAttempt = (await persistProblemAttempt(
+            () => saveActiveProblemCanvas(nodes, edges),
+            () => apiService.saveAttempt({
+              problemId: idFromUrl,
+              title: problem?.title || "Unknown Problem",
+              difficulty: problem?.difficulty,
+              category: problem?.category,
+              nodes,
+              edges,
+              elapsedTime,
+              lastAssessment: res,
+              problemRequirementSpec: problem?.requirementSpec,
+              reasoningContext,
+              interviewSession: followUpSession,
+              addressedFindingIds,
+            }),
+          )) as {
             id?: string;
             isPublic?: boolean;
             assessmentCount?: number;
             assessmentHistory?: AssessmentHistoryEntry[];
           };
-          await saveActiveProblemCanvas(nodes, edges);
+          failedAssessmentKeyRef.current = null;
+          setFailedAssessmentKey(null);
           persistedAssessmentCountRef.current =
             savedAttempt.assessmentCount ?? 0;
           if (savedAttempt.assessmentHistory) {
@@ -2241,6 +2261,14 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           });
         } catch (error) {
           console.error("Failed to save assessment:", error);
+          const canvasSaveStatus = canvasWorkspace.getSnapshot().saveStatus;
+          if (canvasSaveStatus === "error" || canvasSaveStatus === "conflict" ||
+              !canvasWorkspace.getSnapshot().activeCanvasId) {
+            setAutoSaveStatus("error");
+          }
+          failedAssessmentKeyRef.current = assessmentKey;
+          setFailedAssessmentKey(assessmentKey);
+          toast.error("Your assessment could not be saved. Check Pages before leaving.");
         }
       }
     } catch (error) {
@@ -5643,15 +5671,27 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
                 {/* Auto-save indicator for problem-solving mode */}
                 {idFromUrl && idFromUrl !== "free" && autoSaveEnabled && (
-                  <div className="hidden sm:flex items-center gap-2 border-white/20">
+                  <div className={problemSaveStatus === "assessment-error" || problemSaveStatus === "both-error" || problemSaveStatus === "error" ? "flex items-center gap-2 border-white/20" : "hidden sm:flex items-center gap-2 border-white/20"}>
                     <div className="flex items-center gap-2 px-2 py-1 text-xs text-white/80">
-                      {autoSaveStatus === "saving" && (
+                      {problemSaveStatus === "both-error" && (
+                        <>
+                          <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                          <span>Diagram and assessment not saved</span>
+                        </>
+                      )}
+                      {problemSaveStatus === "assessment-error" && (
+                        <>
+                          <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                          <span>Assessment not saved</span>
+                        </>
+                      )}
+                      {problemSaveStatus === "saving" && (
                         <>
                           <div className="w-3 h-3 border border-white/60 border-t-transparent rounded-full animate-spin"></div>
                           <span>Saving progress...</span>
                         </>
                       )}
-                      {autoSaveStatus === "saved" && (
+                      {problemSaveStatus === "saved" && (
                         <>
                           <div className="w-3 h-3 bg-green-400 rounded-full"></div>
                           <span>
@@ -5660,13 +5700,13 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                           </span>
                         </>
                       )}
-                      {autoSaveStatus === "error" && (
+                      {problemSaveStatus === "error" && (
                         <>
                           <div className="w-3 h-3 bg-red-400 rounded-full"></div>
                           <span>Save failed</span>
                         </>
                       )}
-                      {autoSaveStatus === "idle" && lastSavedAt && (
+                      {problemSaveStatus === "idle" && lastSavedAt && (
                         <>
                           <div className="w-3 h-3 bg-white/40 rounded-full"></div>
                           <span>

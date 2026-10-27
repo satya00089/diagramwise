@@ -131,6 +131,8 @@ export class CanvasWorkspaceController {
   private readonly listeners = new Set<() => void>();
   private readonly versions = new Map<string, number>();
   private readonly lastSavedKey = new Map<string, string>();
+  // Server content is tracked separately from the hydrated editor baseline.
+  private readonly lastServerKey = new Map<string, string>();
   private queue: Promise<unknown> = Promise.resolve();
   /** Last known content of the open canvas: what was loaded or last saved. */
   private activeContent: { nodes: unknown[]; edges: unknown[] } | null = null;
@@ -176,6 +178,7 @@ export class CanvasWorkspaceController {
   reset(): void {
     this.versions.clear();
     this.lastSavedKey.clear();
+    this.lastServerKey.clear();
     this.activeContent = null;
     this.update(INITIAL_SNAPSHOT);
   }
@@ -214,10 +217,20 @@ export class CanvasWorkspaceController {
   }
 
   /** Persist the active canvas's nodes and edges. Unchanged content is not sent. */
-  saveActive(nodes: unknown[], edges: unknown[]): Promise<CanvasPersistResult> {
+  saveActive(
+    nodes: unknown[],
+    edges: unknown[],
+    verifyUnchanged = false,
+  ): Promise<CanvasPersistResult> {
     const { workspaceId, activeCanvasId } = this.snapshot;
     if (!workspaceId || !activeCanvasId) return Promise.resolve("error");
-    return this.persist(workspaceId, activeCanvasId, nodes, edges);
+    return this.persist(
+      workspaceId,
+      activeCanvasId,
+      nodes,
+      edges,
+      verifyUnchanged,
+    );
   }
 
   /**
@@ -347,6 +360,7 @@ export class CanvasWorkspaceController {
     await this.api.deleteCanvas(workspaceId, canvasId);
     this.versions.delete(canvasId);
     this.lastSavedKey.delete(canvasId);
+    this.lastServerKey.delete(canvasId);
     await this.refreshList(workspaceId);
 
     if (fallback) {
@@ -370,13 +384,27 @@ export class CanvasWorkspaceController {
     canvasId: string,
     nodes: unknown[],
     edges: unknown[],
+    verifyUnchanged = false,
   ): Promise<CanvasPersistResult> {
     return this.enqueue(async () => {
       const key = contentKey(nodes, edges);
-      if (this.lastSavedKey.get(canvasId) === key) return "unchanged";
+      if (this.lastSavedKey.get(canvasId) === key && !verifyUnchanged)
+        return "unchanged";
 
       this.update({ saveStatus: "saving" });
       try {
+        if (this.lastSavedKey.get(canvasId) === key) {
+          const stored = await this.api.getCanvas(workspaceId, canvasId);
+          if (
+            contentKey(stored.nodes, stored.edges) !==
+            this.lastServerKey.get(canvasId)
+          ) {
+            return this.reportConflict();
+          }
+          this.versions.set(canvasId, stored.version);
+          this.update({ saveStatus: "saved", message: null });
+          return "unchanged";
+        }
         return await this.sendSave(
           workspaceId,
           canvasId,
@@ -416,7 +444,7 @@ export class CanvasWorkspaceController {
         edges,
         version,
       });
-      this.recordSavedContent(canvasId, nodes, edges, key, saved.version);
+      this.recordSavedContent(canvasId, nodes, edges, key, saved);
       return "saved";
     } catch (error) {
       if (!(error instanceof CanvasVersionConflictError)) throw error;
@@ -446,10 +474,10 @@ export class CanvasWorkspaceController {
     if (storedKey === key) {
       // The requested content is already saved. A second PUT would only
       // advance its version and make other open tabs stale again.
-      this.recordSavedContent(canvasId, nodes, edges, key, stored.version);
+      this.recordSavedContent(canvasId, nodes, edges, key, stored);
       return "saved";
     }
-    if (storedKey === this.lastSavedKey.get(canvasId)) {
+    if (storedKey === this.lastServerKey.get(canvasId)) {
       this.versions.set(canvasId, stored.version);
       return this.sendSave(workspaceId, canvasId, nodes, edges, key, false);
     }
@@ -462,14 +490,19 @@ export class CanvasWorkspaceController {
     nodes: unknown[],
     edges: unknown[],
     key: string,
-    version: number,
+    saved: CanvasDetail,
   ): void {
-    this.versions.set(canvasId, version);
+    this.versions.set(canvasId, saved.version);
     this.lastSavedKey.set(canvasId, key);
+    this.lastServerKey.set(canvasId, contentKey(saved.nodes, saved.edges));
     if (this.snapshot.activeCanvasId === canvasId) {
       this.activeContent = { nodes, edges };
     }
-    this.update({ saveStatus: "saved", lastSavedAt: Date.now(), message: null });
+    this.update({
+      saveStatus: "saved",
+      lastSavedAt: Date.now(),
+      message: null,
+    });
   }
 
   private reportConflict(): CanvasPersistResult {
@@ -486,6 +519,7 @@ export class CanvasWorkspaceController {
   private openCanvas(detail: CanvasDetail): void {
     this.versions.set(detail.id, detail.version);
     this.lastSavedKey.set(detail.id, contentKey(detail.nodes, detail.edges));
+    this.lastServerKey.set(detail.id, contentKey(detail.nodes, detail.edges));
     this.activeContent = { nodes: detail.nodes, edges: detail.edges };
   }
 
@@ -504,6 +538,7 @@ export class CanvasWorkspaceController {
       if (!liveIds.has(id)) {
         this.versions.delete(id);
         this.lastSavedKey.delete(id);
+        this.lastServerKey.delete(id);
       }
     }
     this.update({
