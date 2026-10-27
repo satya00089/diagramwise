@@ -2687,7 +2687,7 @@ export class Engine implements BehaviourCtx {
     if (pooled) {
       this.freeReq = pooled.next;
       pooled.next = null;
-      pooled.token = (pooled.token + 1) | 0;
+      pooled.token = Math.trunc(pooled.token + 1);
       pooled.nodeId = '';
       pooled.parent = null;
       pooled.pending = 0;
@@ -2750,7 +2750,7 @@ export class Engine implements BehaviourCtx {
     this.liveRequests--;
     req.observation = null;
     // Bump the token so any timer still referencing this incarnation is stale.
-    req.token = (req.token + 1) | 0;
+    req.token = Math.trunc(req.token + 1);
     req.parent = null;
     req.next = this.freeReq;
     this.freeReq = req;
