@@ -1,14 +1,15 @@
 import { defaultConfig } from './presets';
 import type { ScenarioDefinition } from './scenario';
+import { ENGINE_VERSION, PROFILE_VERSION } from './runtime';
 
 /** Authored model assumptions. Values are educational concurrency/service-time units. */
 export const databaseBottleneckScenario: ScenarioDefinition = {
   id: 'repair-database-bottleneck',
-  revision: '1',
+  revision: '2',
   name: 'Clear the database queue',
   brief: 'This API receives 150 requests a second. Every request must complete a database read. Keep at least 99% successful, p95 under 200 ms and p99 under 350 ms, within 24 concurrency units. Find the bottleneck and repair its capacity.',
-  modelVersion: 'event-v1',
-  profileVersion: 'profiles-v1',
+  modelVersion: ENGINE_VERSION,
+  profileVersion: PROFILE_VERSION,
   initialTopology: {
     nodes: [
       { id: 'client', kind: 'client', label: 'Clients', x: 80, y: 180, config: { ...defaultConfig('client'), rps: 150, timeoutMs: 2_000, retries: 0 } },

@@ -1,5 +1,7 @@
 # Simulator investigation and implementation handoff
 
+> **Current priority — 2026-10-27:** Follow [Repair challenge: product and implementation plan](docs/research/repair-challenge-production-plan-2026-10-27.md) for the “Try a repair challenge” redesign. It records the current develop baseline, confirmed source findings, isolated workspace design, delivery milestones, and production release gates. The document below retains the earlier document-management simulator investigation and its separate browser evidence.
+
 Updated: 2026-10-25. Intended reader: local Codex with the **Computer Use** browser plugin.
 
 ## Task and current status
