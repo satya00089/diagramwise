@@ -149,10 +149,14 @@ import CanvasActionControls from "../components/CanvasActionControls";
 import ComponentPalette from "../components/ComponentPalette";
 import InspectorPanel from "../components/InspectorPanel";
 import { SimulationCanvasControls, SimulationDetails } from "../simulation/SimulationHost";
-import { topologyToCanvas, useSimulationDocument } from "../simulation/canvas";
+import { useSimulationDocument } from "../simulation/canvas";
 import { simulationSession } from "../simulation/session";
-import { databaseBottleneckScenario } from "@diagramwise/simulation-core/scenarios";
+import { challengeUrl } from "../challenges/model";
 import type { NodeKind } from "@diagramwise/simulation-core";
+
+// Enable the entry locally while browser release checks are completed.
+const REPAIR_CHALLENGE_ENABLED = import.meta.env.DEV || import.meta.env.VITE_REPAIR_CHALLENGES_ENABLED === "true";
+
 
 // UI Components - Nodes
 import CustomNode from "../components/Node";
@@ -2842,19 +2846,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       return { ...node, data: { ...node.data, simulation: { ...simulation, entrypoint: node.id === nodeId } } };
     }));
   }, [setNodes]);
-  const loadRepairDemo = useCallback(() => {
-    const demo = topologyToCanvas(databaseBottleneckScenario.initialTopology);
-    setCanvasState({ nodes: demo.nodes, edges: demo.edges });
-    simulationSession.reset();
-    setActiveRightTab("simulation");
-  }, [setCanvasState]);
   const openRepairDemo = useCallback(() => {
-    if (nodes.length > 0) {
-      setIsRepairDemoConfirmOpen(true);
-      return;
-    }
-    loadRepairDemo();
-  }, [loadRepairDemo, nodes.length]);
+    setIsRepairDemoConfirmOpen(true);
+  }, []);
   useEffect(() => {
     const inspect = (event: Event) => {
       const nodeId = (event as CustomEvent<{ nodeId?: string }>).detail?.nodeId;
@@ -6044,7 +6038,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             {/* Render collaborator cursors (always shown when connected) */}
             {!isSharedView && <SimulationCanvasControls
               onInspect={() => setActiveRightTab("simulation")}
-              onDemo={openRepairDemo}
+              onDemo={REPAIR_CHALLENGE_ENABLED ? openRepairDemo : undefined}
             />}
             {cursors.map((cursor) => {
               // Convert flow coordinates to screen coordinates for proper rendering
@@ -6078,7 +6072,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                 selectedNodeId={inspectedNodeId}
                 onModelChange={updateSimulationModel}
                 onEntrypoint={setSimulationEntrypoint}
-                onDemo={openRepairDemo}
+                onDemo={REPAIR_CHALLENGE_ENABLED ? openRepairDemo : undefined}
               />
             }
             problemId={problem?.id ?? null}
@@ -6185,7 +6179,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             <button
               type="button"
               className="repair-challenge-dialog__backdrop"
-              aria-label="Keep the current canvas and close the confirmation"
+              aria-label="Close challenge preview"
               tabIndex={-1}
               onClick={() => setIsRepairDemoConfirmOpen(false)}
             />
@@ -6195,14 +6189,14 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                   id="repair-challenge-dialog-title"
                   className="app-modal__title"
                 >
-                  Load the repair challenge?
+                  Try a database repair challenge?
                 </h2>
                 <p
                   id="repair-challenge-dialog-description"
                   className="mt-3 text-sm leading-relaxed text-muted"
                 >
-                  This will replace your current canvas. You can undo the change
-                  after loading the challenge.
+                  Open a separate practice workspace to repair a database bottleneck.
+                  Your current canvas stays open in this tab, including unsaved edits.
                 </p>
                 <div className="mt-7 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                   <button
@@ -6211,18 +6205,17 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                     className="app-modal__secondary"
                     onClick={() => setIsRepairDemoConfirmOpen(false)}
                   >
-                    Keep my canvas
+                    Stay here
                   </button>
-                  <button
-                    type="button"
+                  <a
                     className="app-modal__primary"
-                    onClick={() => {
-                      setIsRepairDemoConfirmOpen(false);
-                      loadRepairDemo();
-                    }}
+                    href={challengeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setIsRepairDemoConfirmOpen(false)}
                   >
-                    Replace canvas
-                  </button>
+                    Open challenge in a new tab
+                  </a>
                 </div>
               </div>
             </div>

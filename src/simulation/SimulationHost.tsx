@@ -2,8 +2,6 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Panel, useReactFlow } from "@xyflow/react";
 import type { Edge, Node } from "@xyflow/react";
 import type { NodeKind } from "@diagramwise/simulation-core";
-import { databaseBottleneckScenario } from "@diagramwise/simulation-core/scenarios";
-import type { ScenarioResult } from "@diagramwise/simulation-core/scenario";
 import { SimulationToolbar, SimulationInspector } from "../components/simulation";
 import { simulationSession, useSimulationSession } from "./session";
 import type { EventRunArtifact } from "./protocol";
@@ -13,7 +11,7 @@ import type { SystemDesignProblem } from "../types/systemDesign";
 
 const LegacySimulationPanel = lazy(() => import("../components/SimulationPanel"));
 
-export function SimulationCanvasControls({ onInspect, onDemo }: { onInspect: () => void; onDemo: () => void }) {
+export function SimulationCanvasControls({ onInspect, onDemo }: Readonly<{ onInspect: () => void; onDemo?: () => void }>) {
   const s = useSimulationSession();
   if (!s.visible) return null;
   const hasBackgroundDelivery = Object.values(s.compilation?.profiles ?? {}).some(profile =>
@@ -33,10 +31,10 @@ type DetailsProps = {
   nodes: Node[]; edges: Edge[]; problem?: SystemDesignProblem | null; signedIn: boolean; selectedNodeId?: string | null;
   onModelChange: (nodeId: string, kind: NodeKind) => void;
   onEntrypoint: (nodeId: string) => void;
-  onDemo: () => void;
+  onDemo?: () => void;
 };
 
-export function SimulationDetails({ nodes, edges, problem, signedIn, selectedNodeId, onModelChange, onEntrypoint, onDemo }: DetailsProps) {
+export function SimulationDetails({ nodes, edges, problem, signedIn, selectedNodeId, onModelChange, onEntrypoint, onDemo }: Readonly<DetailsProps>) {
   const s = useSimulationSession();
   const { fitView } = useReactFlow();
   const [localRuns, setLocalRuns] = useState<SavedEventRun[]>([]);
@@ -44,10 +42,6 @@ export function SimulationDetails({ nodes, edges, problem, signedIn, selectedNod
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [showLegacy, setShowLegacy] = useState(false);
-  const [evaluation, setEvaluation] = useState<ScenarioResult | null>(null);
-  const [checking, setChecking] = useState(false);
-  const evaluator = useRef<Worker | null>(null);
-  const evaluationTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const fileInput = useRef<HTMLInputElement>(null);
   // The regular inspector remains the source of truth when the user selects
   // another canvas component; simulation badges can still focus a component.
@@ -58,24 +52,12 @@ export function SimulationDetails({ nodes, edges, problem, signedIn, selectedNod
   const hasBackgroundDelivery = Object.values(s.compilation?.profiles ?? {}).some(item =>
     item.kind === "queue" || item.kind === "streambroker" || item.kind === "retryqueue" || item.kind === "writebehind");
   const scopeKey = JSON.stringify(s.scope);
-  const challengeActive = Boolean(s.compilation?.topology) &&
-    databaseBottleneckScenario.initialTopology.nodes.every((baseline) => {
-      const candidate = s.compilation?.topology?.nodes.find(node => node.id === baseline.id);
-      return candidate?.kind === baseline.kind;
-    }) &&
-    databaseBottleneckScenario.initialTopology.edges.every((baseline) =>
-      s.compilation?.topology?.edges.some(edge =>
-        edge.id === baseline.id && edge.from === baseline.from && edge.to === baseline.to,
-      ),
-    );
-
   useEffect(() => {
     let active = true;
     const scope = useSimulationSession.getState().scope;
     if (scope) void listLocalRuns(scope).then(runs => { if (active) setLocalRuns(runs); }).catch(() => { if (active) setLocalRuns([]); });
-    setCloudRuns([]); setEvaluation(null); setChecking(false); setMessage(null);
-    evaluator.current?.terminate(); clearTimeout(evaluationTimer.current);
-    return () => { active = false; evaluator.current?.terminate(); clearTimeout(evaluationTimer.current); };
+    setCloudRuns([]); setMessage(null);
+    return () => { active = false; };
   }, [scopeKey]);
 
   async function action(work: () => Promise<void>) {
@@ -92,30 +74,6 @@ export function SimulationDetails({ nodes, edges, problem, signedIn, selectedNod
     const value = simulationSession.artifact();
     if (!value) throw new Error("Start a simulation before saving a run.");
     return value;
-  }
-  function checkSolution() {
-    const topology = s.compilation?.topology;
-    if (!topology) { setMessage("Resolve the model issues before checking your solution."); return; }
-    simulationSession.pause();
-    evaluator.current?.terminate();
-    setChecking(true); setEvaluation(null); setMessage(null);
-    const evaluationWorker = new Worker(new URL("./evaluation.worker.ts", import.meta.url), { type: "module" });
-    evaluator.current = evaluationWorker;
-    evaluationTimer.current = setTimeout(() => {
-      evaluationWorker.terminate(); setChecking(false); setMessage("Evaluation exceeded its processing budget. The result is incomplete; reduce the design size and try again.");
-    }, 30000);
-    evaluationWorker.onerror = () => { clearTimeout(evaluationTimer.current); evaluationWorker.terminate(); setChecking(false); setMessage("The evaluation worker stopped. Your design is unchanged."); };
-    evaluationWorker.onmessage = event => {
-      clearTimeout(evaluationTimer.current); evaluationWorker.terminate(); setChecking(false);
-      if (event.data.error) setMessage(event.data.error); else setEvaluation(event.data.result as ScenarioResult);
-    };
-    // Apply deliberate replica adjustments to the submitted design; the evaluator fixes load itself.
-    const submitted = structuredClone(topology);
-    for (const entry of s.commands) if (entry.command.type === "replicas") {
-      const command = entry.command;
-      const item = submitted.nodes.find(n => n.id === command.nodeId); if (item) item.config.instances = command.instances;
-    }
-    evaluationWorker.postMessage({ topology: submitted });
   }
   async function importFile(file: File) {
     if (file.size > 240 * 1024) throw new Error("Run files must be smaller than 240 KiB.");
@@ -147,17 +105,7 @@ export function SimulationDetails({ nodes, edges, problem, signedIn, selectedNod
     onSelectNode={focus} onFocusDiagnostic={diagnostic => { if (diagnostic.nodeId) focus(diagnostic.nodeId); else if (diagnostic.edgeId) { const edge = edges.find(e => e.id === diagnostic.edgeId); if (edge) focus(edge.target); } }}>
     {node && <button className="sim-text-button" type="button" onClick={() => onEntrypoint(node.id)}>Use {String(node.data.label ?? node.id)} as traffic entrypoint</button>}
     {s.error && <p role="alert" className="sim-notice">{s.error}</p>}
-    <section className="sim-section">
-      <h3>Repair challenge</h3>
-      {challengeActive ? <>
-        <p>{databaseBottleneckScenario.brief}</p>
-        <p>Checking uses fixed traffic and three seeds, with a 10-second warmup and 60-second measurement.</p>
-        <button className="sim-button" type="button" disabled={checking} onClick={checkSolution}>{checking ? "Checking solution…" : "Check solution"}</button>
-        {checking && <button className="sim-text-button" type="button" onClick={() => { evaluator.current?.terminate(); clearTimeout(evaluationTimer.current); setChecking(false); }}>Cancel</button>}
-        {evaluation && <div role="status"><strong>{evaluation.status === "pass" ? "Solution passed" : `Solution ${evaluation.status}`}</strong><p>{evaluation.status === "pass" ? databaseBottleneckScenario.lesson : "Check the required workload, dependency path, latency, and resource budget."}</p><details><summary>Evaluation evidence</summary><pre className="sim-evidence">{JSON.stringify(evaluation, null, 2)}</pre></details></div>}
-        <details><summary>Hints</summary><ol>{databaseBottleneckScenario.hints.map(hint => <li key={hint}>{hint}</li>)}</ol></details>
-      </> : <><p>Find and repair a database bottleneck, then check your solution against a fixed workload.</p><button className="sim-button" type="button" onClick={onDemo}>Open repair demo</button></>}
-    </section>
+    {onDemo && <section className="sim-section"><h3>Practice a repair</h3><p>Explore a separate database-capacity challenge. Your current design stays here.</p><button className="sim-button" type="button" onClick={onDemo}>Try a repair challenge</button></section>}
     <section className="sim-section">
       <h3>Saved runs</h3><p>Local history works without an account. Runs preserve the model, seed, and your changes.</p>
       <div className="sim-actions">
