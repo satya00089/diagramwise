@@ -7,24 +7,25 @@ describe('repair scenarios', () => {
     const initial = repairDemoScenario();
     expect(runScenario(initial.initialTopology, initial).status).toBe('fail');
 
-    const widerDatabase = repairDemoScenario();
-    widerDatabase.initialTopology.nodes.find(node => node.id === 'database')!.config.capacity = 8;
-    expect(runScenario(widerDatabase.initialTopology, widerDatabase).status).toBe('pass');
+    const widerDatabase = structuredClone(initial.initialTopology);
+    widerDatabase.nodes.find(node => node.id === 'database')!.config.capacity = 8;
+    expect(runScenario(widerDatabase, initial).status).toBe('pass');
 
-    const moreDatabaseInstances = repairDemoScenario();
-    const database = moreDatabaseInstances.initialTopology.nodes.find(node => node.id === 'database')!;
+    const moreDatabaseInstances = structuredClone(initial.initialTopology);
+    const database = moreDatabaseInstances.nodes.find(node => node.id === 'database')!;
     database.config.capacity = 2;
     database.config.instances = 4;
-    expect(runScenario(moreDatabaseInstances.initialTopology, moreDatabaseInstances).status).toBe('pass');
+    expect(runScenario(moreDatabaseInstances, initial).status).toBe('pass');
   }, 30_000);
 
   it('rejects attempts that remove required work or exceed the resource budget', () => {
-    const missingDependency = repairDemoScenario();
-    missingDependency.initialTopology.edges = [missingDependency.initialTopology.edges[0]];
-    expect(runScenario(missingDependency.initialTopology, missingDependency).status).toBe('invalid');
+    const scenario = repairDemoScenario();
+    const missingDependency = structuredClone(scenario.initialTopology);
+    missingDependency.edges = [missingDependency.edges[0]];
+    expect(runScenario(missingDependency, scenario).status).toBe('invalid');
 
-    const oversized = repairDemoScenario();
-    oversized.initialTopology.nodes.find(node => node.id === 'database')!.config.capacity = 100;
-    expect(runScenario(oversized.initialTopology, oversized).status).toBe('invalid');
+    const oversized = structuredClone(scenario.initialTopology);
+    oversized.nodes.find(node => node.id === 'database')!.config.capacity = 100;
+    expect(runScenario(oversized, scenario).status).toBe('invalid');
   });
 });

@@ -58,6 +58,7 @@ const SystemDesignPlayground = lazyWithRetry(
   () => import("./pages/SystemDesignPlayground"),
   "system-design-playground",
 );
+const ChallengePage = lazyWithRetry(() => import("./challenges/ChallengePage"), "repair-challenge");
 const SharedCanvasPage = lazyWithRetry(
   () => import("./pages/SharedCanvasPage"),
   "shared-canvas-page",
@@ -272,6 +273,7 @@ const AppContent: React.FC = () => {
                       </StoreBoundary>
                     }
                   />
+                  <Route path="/challenges/:id" element={<ChallengePage />} />
                   <Route path="/admin" element={<SuperAdminDashboard />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/verify-email" element={<VerifyEmail />} />

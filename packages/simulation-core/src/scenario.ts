@@ -1,6 +1,6 @@
 import { LatencyHistogram } from './histogram';
 import { defaultConfig } from './presets';
-import { createSimulation } from './runtime';
+import { createSimulation, ENGINE_VERSION, PROFILE_VERSION } from './runtime';
 import type { NodeConfig, Topology, TrafficPattern } from './types';
 
 export type ScenarioStatus = 'pass' | 'fail' | 'invalid' | 'incomplete';
@@ -11,8 +11,8 @@ export interface ScenarioDefinition {
   revision: string;
   name: string;
   brief: string;
-  modelVersion: 'event-v1';
-  profileVersion: 'profiles-v1';
+  modelVersion: typeof ENGINE_VERSION;
+  profileVersion: typeof PROFILE_VERSION;
   initialTopology: Topology;
   workload: { rps: number; pattern: TrafficPattern };
   seeds: readonly number[];
@@ -70,8 +70,8 @@ export interface ScenarioSeedResult {
 export interface ScenarioResult {
   scenarioId: string;
   scenarioRevision: string;
-  modelVersion: 'event-v1';
-  profileVersion: 'profiles-v1';
+  modelVersion: typeof ENGINE_VERSION;
+  profileVersion: typeof PROFILE_VERSION;
   status: ScenarioStatus;
   resourceUnits: number;
   seedResults: ScenarioSeedResult[];
@@ -87,8 +87,7 @@ export interface ScenarioRunOptions {
   maxEventsPerSeed?: number;
 }
 
-const MODEL_VERSION = 'event-v1';
-const PROFILE_VERSION = 'profiles-v1';
+const MODEL_VERSION = ENGINE_VERSION;
 const WORKLOAD_FIELDS = new Set(['rps', 'traffic', 'trafficPeriodS']);
 const INTEGER_FIELDS = new Set(['capacity', 'instances', 'queueLimit', 'retries']);
 const DEFAULT_MAX_EVENTS = 2_000_000;
