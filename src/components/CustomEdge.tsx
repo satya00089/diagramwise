@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useSyncExternalStore } from "react";
 import type {
   Edge,
   EdgeProps,
@@ -20,7 +20,7 @@ import {
 } from "../utils/edgeLabelLayout";
 import { SimulationEdgeRuntimeOverlay } from "../simulation/RuntimeOverlays";
 import { getFallbackHandlePositions, getMeasuredHandleAnchor } from "../utils/edgeHandlePositions";
-import { getEdgeLabelFont, measureEdgeLabelText } from "../utils/edgeLabelTextWidth";
+import { getEdgeLabelFont, getEdgeLabelFontRevision, measureEdgeLabelHeight, measureEdgeLabelText, subscribeToEdgeLabelFonts } from "../utils/edgeLabelTextWidth";
 
 export type EdgePathType = "bezier" | "straight" | "step" | "smoothstep";
 export type EdgeLabelPosition = "source" | "center" | "target";
@@ -267,6 +267,7 @@ const estimateEdgeLabelRect = ({
     nodes: nodes as EdgeLabelNode[],
     occupiedLabels,
     labelMaxWidth: data.labelMaxWidth,
+    measureHeight: (text, width) => measureEdgeLabelHeight(text, width, labelFont),
   });
 };
 
@@ -359,6 +360,7 @@ const EdgeLabelContent: React.FC<{
   const boxShadow = selected ? `0 0 0 1px ${colors.brand}` : "none";
   const labelStyle: React.CSSProperties = {
     fontSize: "11px",
+    fontFamily: "inherit",
     padding: "2px 8px",
     borderRadius: "4px",
     backgroundColor: colors.surface,
@@ -526,11 +528,18 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
   const labelDirection = { source: -1, target: 1, center: 0 };
   const labelShift = (labelDirection[edgeData?.labelPosition ?? "center"] ?? 0) * labelOffset;
   const labelText = value || "Connection";
+  const fontRevision = useSyncExternalStore(subscribeToEdgeLabelFonts, getEdgeLabelFontRevision, () => 0);
+  const labelFont = useMemo(() => {
+    void fontRevision;
+    return getEdgeLabelFont();
+  }, [fontRevision]);
   const textWidth = useMemo(() => {
-    return measureEdgeLabelText(labelText);
-  }, [labelText]);
+    void fontRevision;
+    return measureEdgeLabelText(labelText, labelFont);
+  }, [labelText, labelFont, fontRevision]);
   const labelVisible = hasLabel || (!readOnly && Boolean(selected));
   const occupiedLabels = useMemo(() => {
+    void fontRevision;
     if (!labelVisible) return [];
 
     const orderedEdges = [...flowEdges].sort((first, second) =>
@@ -538,7 +547,6 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
     );
     const currentIndex = orderedEdges.findIndex((edge) => edge.id === id);
     const labels: EdgeLabelRect[] = [];
-    const labelFont = getEdgeLabelFont();
     for (const edge of orderedEdges.slice(0, Math.max(currentIndex, 0))) {
       const rect = estimateEdgeLabelRect({
         edge,
@@ -551,7 +559,7 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
       if (rect) labels.push(rect);
     }
     return labels;
-  }, [flowEdges, flowNodes, nodeLookup, id, labelVisible]);
+  }, [flowEdges, flowNodes, nodeLookup, id, labelVisible, labelFont, fontRevision]);
   const labelLayout = getEdgeLabelLayout({
     label: labelText,
     edgePath,
@@ -566,6 +574,7 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
     nodes: flowNodes as EdgeLabelNode[],
     occupiedLabels,
     labelMaxWidth: edgeData?.labelMaxWidth,
+    measureHeight: (text, width) => measureEdgeLabelHeight(text, width, labelFont),
   });
 
   const onLabelDoubleClick = (e: React.MouseEvent) => {
@@ -705,6 +714,17 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
           markerStart={isBidirectional ? `url(#arrow-start-${id})` : undefined}
           className="transition-colors"
         />
+
+        {labelContent && labelLayout.pathAnchor && (
+          <path
+            d={`M ${labelLayout.pathAnchor.x} ${labelLayout.pathAnchor.y} L ${labelLayout.center.x} ${labelLayout.center.y}`}
+            fill="none"
+            stroke={edgeColor}
+            strokeWidth={1}
+            strokeDasharray="3 3"
+            pointerEvents="none"
+          />
+        )}
 
       </g>
       <SimulationEdgeRuntimeOverlay
