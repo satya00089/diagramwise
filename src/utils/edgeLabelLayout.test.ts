@@ -15,6 +15,49 @@ const baseOptions = {
 };
 
 describe("getEdgeLabelLayout", () => {
+  it("keeps a routed label on the path when another label blocks its midpoint", () => {
+    const layout = getEdgeLabelLayout({
+      ...baseOptions,
+      edgePath: "M 0,0 L 300,0 L 300,100",
+      centerX: 150,
+      centerY: 0,
+      targetX: 300,
+      targetY: 100,
+      textWidth: 80,
+      occupiedLabels: [{ center: { x: 150, y: 0 }, width: 100, height: 18 }],
+    });
+
+    expect(layout.center.y === 0 || layout.center.x === 300).toBe(true);
+    expect(layout.center).not.toEqual({ x: 150, y: 0 });
+  });
+  it("keeps source-shifted labels on a curved path", () => {
+    const layout = getEdgeLabelLayout({
+      ...baseOptions,
+      edgePath: "M 0 0 C 0 100 100 100 100 0",
+      centerX: 50,
+      centerY: 75,
+      targetX: 100,
+      labelShift: -0.5,
+      textWidth: 80,
+    });
+
+    expect(layout.center.x).toBeLessThan(50);
+    expect(layout.center.y).toBeGreaterThan(40);
+  });
+  it("follows a quadratic path when shifting a bidirectional edge label", () => {
+    const layout = getEdgeLabelLayout({
+      ...baseOptions,
+      edgePath: "M 0 0 Q 50 100 100 0",
+      centerX: 50,
+      centerY: 50,
+      targetX: 100,
+      labelShift: -0.5,
+      textWidth: 80,
+    });
+
+    expect(layout.center.x).toBeLessThan(50);
+    expect(layout.center.y).toBeGreaterThan(25);
+  });
   it("wraps long labels to the usable path width", () => {
     const layout = getEdgeLabelLayout({
       ...baseOptions,

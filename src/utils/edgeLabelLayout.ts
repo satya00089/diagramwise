@@ -120,12 +120,42 @@ export const getPathPoints = (edgePath: string): EdgePoint[] => {
   return points;
 };
 
+/** Approximate standalone Bezier curves for distance-based placement. */
+const getCurvePathPoints = (edgePath: string, source: EdgePoint): EdgePoint[] | null => {
+  const isCubic = edgePath.includes("C");
+  if (!isCubic && edgePath.includes("L")) return null;
+  const commandIndex = edgePath.indexOf(isCubic ? "C" : "Q");
+  if (commandIndex < 0) return null;
+  const values: number[] = [];
+  let index = commandIndex + 1;
+  while (values.length < (isCubic ? 6 : 4)) {
+    const number = readPathNumber(edgePath, skipPathSeparators(edgePath, index));
+    if (!number) return null;
+    values.push(number.value);
+    index = number.next;
+  }
+  const [x1, y1, x2, y2, x3, y3] = values;
+  const points = [source];
+  for (let step = 1; step <= 24; step++) {
+    const t = step / 24;
+    const u = 1 - t;
+    points.push(isCubic ? {
+      x: u ** 3 * source.x + 3 * u ** 2 * t * x1 + 3 * u * t ** 2 * x2 + t ** 3 * x3,
+      y: u ** 3 * source.y + 3 * u ** 2 * t * y1 + 3 * u * t ** 2 * y2 + t ** 3 * y3,
+    } : {
+      x: u ** 2 * source.x + 2 * u * t * x1 + t ** 2 * x2,
+      y: u ** 2 * source.y + 2 * u * t * y1 + t ** 2 * y2,
+    });
+  }
+  return points;
+};
+
 const getPathSegments = (
   edgePath: string,
   source: EdgePoint,
   target: EdgePoint,
 ): EdgePathSegment[] => {
-  const parsedPoints = getPathPoints(edgePath);
+  const parsedPoints = getCurvePathPoints(edgePath, source) ?? getPathPoints(edgePath);
   const points = parsedPoints.length > 1 ? parsedPoints : [source, target];
 
   return points.slice(1).reduce<EdgePathSegment[]>((segments, point, index) => {
@@ -229,7 +259,7 @@ return centerPathDistance;
 };
 
 const getShiftedLabelCenter = ({
-  edgePath,
+  segments,
   centerX,
   centerY,
   sourceX,
@@ -238,7 +268,7 @@ const getShiftedLabelCenter = ({
   targetY,
   labelShift,
 }: {
-  edgePath: string;
+  segments: EdgePathSegment[];
   centerX: number;
   centerY: number;
   sourceX: number;
@@ -249,11 +279,6 @@ const getShiftedLabelCenter = ({
 }) => {
   if (labelShift === 0) return { x: centerX, y: centerY };
 
-  const segments = getPathSegments(
-    edgePath,
-    { x: sourceX, y: sourceY },
-    { x: targetX, y: targetY },
-  );
   const totalPathLength = segments.reduce(
     (length, segment) => length + segment.length,
     0,
@@ -394,10 +419,22 @@ const getLabelDimensions = (
   };
 };
 
-const getCandidateCenters = (
+const getOnPathCandidateCenters = (
   segment: EdgePathSegment,
   preferredCenter: EdgePoint,
 ) => {
+  const midpoint = getSegmentMidpoint(segment);
+  const at = (progress: number) => ({
+    x: segment.start.x + segment.deltaX * progress,
+    y: segment.start.y + segment.deltaY * progress,
+  });
+
+  // Try alternative positions along the line before moving away from it.
+  // Node and label collision checks decide whether each position is usable.
+  return [preferredCenter, midpoint, at(0.25), at(0.75), at(0.1), at(0.9)];
+};
+
+const getOffPathCandidateCenters = (segment: EdgePathSegment) => {
   const midpoint = getSegmentMidpoint(segment);
   const normalLength = segment.length || 1;
   const normal = {
@@ -406,8 +443,6 @@ const getCandidateCenters = (
   };
 
   return [
-    preferredCenter,
-    midpoint,
     { x: midpoint.x + normal.x * 16, y: midpoint.y + normal.y * 16 },
     { x: midpoint.x - normal.x * 16, y: midpoint.y - normal.y * 16 },
     { x: midpoint.x + normal.x * 28, y: midpoint.y + normal.y * 28 },
@@ -452,7 +487,7 @@ export const getEdgeLabelLayout = ({
   };
   const usableSegments = segments.length > 0 ? segments : [fallbackSegment];
   const preferredCenter = getShiftedLabelCenter({
-    edgePath,
+    segments: usableSegments,
     centerX,
     centerY,
     sourceX,
@@ -461,49 +496,63 @@ export const getEdgeLabelLayout = ({
     targetY,
     labelShift,
   });
-  const sortedSegments = [...usableSegments].sort(
-    (first, second) => second.length - first.length,
-  );
   const preferredSegment = getNearestSegment(usableSegments, preferredCenter);
-  const candidateSegments = [
-    preferredSegment,
-    ...sortedSegments.filter((segment) => segment !== preferredSegment),
-  ];
-  const candidates = candidateSegments.flatMap((segment, index) => {
-    const centers = getCandidateCenters(
-      segment,
-      index === 0 ? preferredCenter : getSegmentMidpoint(segment),
-    );
-    const dimensions = getLabelDimensions(
-      safeTextWidth,
-      segment.length,
-      labelMaxWidth,
-    );
-
-    return centers.map((center) => ({ center, dimensions }));
-  });
-
+  const isStandaloneCurve = edgePath.includes("C") ||
+    (edgePath.includes("Q") && !edgePath.includes("L"));
+  const curvePathLength = isStandaloneCurve
+    ? usableSegments.reduce((length, segment) => length + segment.length, 0)
+    : undefined;
   const preferredDimensions = getLabelDimensions(
     safeTextWidth,
-    preferredSegment.length,
+    curvePathLength ?? preferredSegment.length,
     labelMaxWidth,
   );
-  const safeCandidate = candidates.find(
-    ({ center, dimensions }) =>
+  const isAvailable = (center: EdgePoint, dimensions: typeof preferredDimensions) =>
       !intersectsNode(center, dimensions.width, dimensions.height, nodes) &&
       !intersectsLabel(
         center,
         dimensions.width,
         dimensions.height,
         occupiedLabels,
-      ),
-  );
+      );
+  if (isAvailable(preferredCenter, preferredDimensions)) {
+    return { center: preferredCenter, ...preferredDimensions };
+  }
 
-  if (safeCandidate) {
-    return {
-      center: safeCandidate.center,
-      ...safeCandidate.dimensions,
-    };
+  // A curve is sampled into many short segments for accurate arc length.
+  // Search a bounded subset so dense graphs do not multiply collision checks.
+  const searchSegments = isStandaloneCurve
+    ? usableSegments.filter((_, index) => index % 6 === 0 || index === usableSegments.length - 1)
+    : usableSegments;
+  const sortedSegments = [...searchSegments].sort(
+    (first, second) => second.length - first.length,
+  );
+  const candidateSegments = [
+    preferredSegment,
+    ...sortedSegments.filter((segment) => segment !== preferredSegment),
+  ];
+  for (const offPath of [false, true]) {
+    const segmentsToTry = offPath && isStandaloneCurve ? [preferredSegment] : candidateSegments;
+    for (const [index, segment] of segmentsToTry.entries()) {
+      const dimensions = getLabelDimensions(
+        safeTextWidth,
+        curvePathLength ?? segment.length,
+        labelMaxWidth,
+      );
+      const centers = offPath
+        ? getOffPathCandidateCenters(segment)
+        : isStandaloneCurve
+          ? index === 0
+            ? [preferredCenter, getSegmentMidpoint(segment)]
+            : [getSegmentMidpoint(segment)]
+        : getOnPathCandidateCenters(
+            segment,
+            index === 0 ? preferredCenter : getSegmentMidpoint(segment),
+          );
+      for (const center of centers) {
+        if (isAvailable(center, dimensions)) return { center, ...dimensions };
+      }
+    }
   }
 
   // If the graph is too dense for a clear candidate, preserve the preferred
