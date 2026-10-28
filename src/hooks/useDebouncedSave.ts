@@ -1,13 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { createDebouncedSave } from "../utils/debouncedSave";
 
 /** The callback stays current without timer ticks restarting the content debounce. */
 export function useDebouncedSave(
   enabled: boolean,
   contentKey: string,
-  save: () => Promise<void>,
+  save: (force?: boolean) => Promise<void>,
   delay = 3000,
-) {
+): () => void {
   const latestSave = useRef(save);
   const scheduler = useRef<ReturnType<typeof createDebouncedSave> | null>(null);
   useEffect(() => {
@@ -25,4 +25,7 @@ export function useDebouncedSave(
     if (enabled) scheduler.current?.schedule(() => latestSave.current());
     else scheduler.current?.cancel();
   }, [enabled, contentKey, delay]);
+  return useCallback(() => {
+    if (enabled) scheduler.current?.schedule(() => latestSave.current(true), 0);
+  }, [enabled]);
 }

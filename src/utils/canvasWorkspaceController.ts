@@ -117,6 +117,8 @@ function summaryFromDetail(detail: CanvasDetail): CanvasSummary {
 
 const CONFLICT_MESSAGE =
   "The saved page changed while this page was open. Your edits were not overwritten; copy anything you need before reloading.";
+const CONFLICT_RECOVERY_LIMIT = 3;
+const CONFLICT_READ_DELAYS = [0, 100, 250];
 
 /**
  * Owns the multi-canvas state for one workspace: which tab is active, the version
@@ -394,7 +396,9 @@ export class CanvasWorkspaceController {
       this.update({ saveStatus: "saving" });
       try {
         if (this.lastSavedKey.get(canvasId) === key) {
-          const stored = await this.api.getCanvas(workspaceId, canvasId);
+          const minimumVersion = this.versions.get(canvasId) ?? 0;
+          const stored = await this.readFreshCanvas(workspaceId, canvasId, minimumVersion);
+          if (!stored) return this.reportUnverified();
           if (
             contentKey(stored.nodes, stored.edges) !==
             this.lastServerKey.get(canvasId)
@@ -402,8 +406,13 @@ export class CanvasWorkspaceController {
             return this.reportConflict();
           }
           this.versions.set(canvasId, stored.version);
-          this.update({ saveStatus: "saved", message: null });
-          return "unchanged";
+          // A read may be stale even when its version equals our last version.
+          // A conditional write confirms the server has not changed since then.
+          const result = await this.sendSave(
+            workspaceId, canvasId, nodes, edges, key, CONFLICT_RECOVERY_LIMIT,
+            { nodes: stored.nodes, edges: stored.edges },
+          );
+          return result === "saved" ? "unchanged" : result;
         }
         return await this.sendSave(
           workspaceId,
@@ -411,7 +420,7 @@ export class CanvasWorkspaceController {
           nodes,
           edges,
           key,
-          true,
+          CONFLICT_RECOVERY_LIMIT,
         );
       } catch (error) {
         const message = error instanceof Error ? error.message : "Save failed";
@@ -424,8 +433,8 @@ export class CanvasWorkspaceController {
   /**
    * Save with the version this tab last saw. A stale version is not a conflict when the
    * stored content is still what this tab last saved: the version moved without the
-   * content changing, so adopt the server version and retry once. Only different content
-   * from elsewhere is reported as a conflict.
+   * content changing, so adopt the server version and retry. Each retry verifies the
+   * content again, and both reads and writes are bounded under ongoing contention.
    */
   private async sendSave(
     workspaceId: string,
@@ -433,15 +442,16 @@ export class CanvasWorkspaceController {
     nodes: unknown[],
     edges: unknown[],
     key: string,
-    canRecover: boolean,
+    recoveriesRemaining: number,
+    confirmationContent?: { nodes: unknown[]; edges: unknown[] },
   ): Promise<CanvasPersistResult> {
     const version = this.versions.get(canvasId);
     if (version === undefined) return "error";
 
     try {
       const saved = await this.api.saveCanvasContent(workspaceId, canvasId, {
-        nodes,
-        edges,
+        nodes: confirmationContent?.nodes ?? nodes,
+        edges: confirmationContent?.edges ?? edges,
         version,
       });
       this.recordSavedContent(canvasId, nodes, edges, key, saved);
@@ -454,7 +464,10 @@ export class CanvasWorkspaceController {
         nodes,
         edges,
         key,
-        canRecover,
+        version,
+        error.currentVersion,
+        recoveriesRemaining,
+        Boolean(confirmationContent),
       );
     }
   }
@@ -465,21 +478,28 @@ export class CanvasWorkspaceController {
     nodes: unknown[],
     edges: unknown[],
     key: string,
-    canRecover: boolean,
+    attemptedVersion: number,
+    currentVersion: number | null,
+    recoveriesRemaining: number,
+    confirmingStoredContent: boolean,
   ): Promise<CanvasPersistResult> {
-    if (!canRecover) return this.reportConflict();
+    if (recoveriesRemaining <= 0) return this.reportUnverified();
 
-    const stored = await this.api.getCanvas(workspaceId, canvasId);
+    // A 409 proves the attempted version was not current. Never use an older
+    // read to decide that it is safe to overwrite a more recent canvas.
+    const minimumVersion = Math.max(attemptedVersion + 1, currentVersion ?? 0);
+    const stored = await this.readFreshCanvas(workspaceId, canvasId, minimumVersion);
+    if (!stored) return this.reportUnverified();
+
     const storedKey = contentKey(stored.nodes, stored.edges);
-    if (storedKey === key) {
-      // The requested content is already saved. A second PUT would only
-      // advance its version and make other open tabs stale again.
-      this.recordSavedContent(canvasId, nodes, edges, key, stored);
-      return "saved";
-    }
-    if (storedKey === this.lastServerKey.get(canvasId)) {
+    if (storedKey === key || storedKey === this.lastServerKey.get(canvasId)) {
+      // Even matching content can come from a stale read; the conditional PUT
+      // verifies this version before accepting or replacing the current graph.
       this.versions.set(canvasId, stored.version);
-      return this.sendSave(workspaceId, canvasId, nodes, edges, key, false);
+      return this.sendSave(
+        workspaceId, canvasId, nodes, edges, key, recoveriesRemaining - 1,
+        confirmingStoredContent ? { nodes: stored.nodes, edges: stored.edges } : undefined,
+      );
     }
 
     return this.reportConflict();
@@ -508,6 +528,23 @@ export class CanvasWorkspaceController {
   private reportConflict(): CanvasPersistResult {
     this.update({ saveStatus: "conflict", message: CONFLICT_MESSAGE });
     return "conflict";
+  }
+
+  private reportUnverified(): CanvasPersistResult {
+    this.update({
+      saveStatus: "error",
+      message: "Could not verify the latest saved page. Your edits are still here; try saving again.",
+    });
+    return "error";
+  }
+
+  private async readFreshCanvas(workspaceId: string, canvasId: string, minimumVersion: number): Promise<CanvasDetail | null> {
+    for (const delay of CONFLICT_READ_DELAYS) {
+      if (delay) await new Promise<void>((resolve) => setTimeout(resolve, delay));
+      const stored = await this.api.getCanvas(workspaceId, canvasId);
+      if (stored.version >= minimumVersion) return stored;
+    }
+    return null;
   }
 
   private enqueue<T>(task: () => Promise<T>): Promise<T> {
