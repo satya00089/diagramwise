@@ -16,6 +16,7 @@ export type EdgeLabelNode = {
 
 export type EdgeLabelLayout = {
   center: EdgePoint;
+  pathAnchor?: EdgePoint;
   width: number;
   height: number;
   lineCount: number;
@@ -49,10 +50,11 @@ type EdgeLabelLayoutOptions = {
   nodes?: EdgeLabelNode[];
   occupiedLabels?: EdgeLabelRect[];
   labelMaxWidth?: number;
+  measureHeight?: (label: string, width: number) => number | null;
 };
 
 const LABEL_PADDING_X = 16;
-const LABEL_PADDING_Y = 4;
+const LABEL_PADDING_Y = 6;
 const LABEL_MIN_WIDTH = 100;
 const LABEL_MAX_WIDTH = 240;
 const PATH_CLEARANCE = 24;
@@ -394,6 +396,7 @@ const getLabelDimensions = (
   textWidth: number,
   segmentLength: number,
   labelMaxWidth?: number,
+  measureHeight?: (width: number) => number | null,
 ) => {
   const maxWidth = clamp(
     labelMaxWidth ?? LABEL_MAX_WIDTH,
@@ -414,9 +417,57 @@ const getLabelDimensions = (
 
   return {
     width,
-    height: lineCount * LABEL_LINE_HEIGHT + LABEL_PADDING_Y,
+    height: measureHeight?.(width) ?? lineCount * LABEL_LINE_HEIGHT + LABEL_PADDING_Y,
     lineCount,
   };
+};
+
+// Find the nearest open position along the segment normal, including beyond the
+// fixed nearby candidates. Each obstacle contributes a blocked interval on the
+// normal; an interval boundary is the only place a new gap can begin.
+const getEscapeCenters = (
+  center: EdgePoint,
+  segment: EdgePathSegment,
+  width: number,
+  height: number,
+  nodes: EdgeLabelNode[],
+  labels: EdgeLabelRect[],
+) => {
+  const length = segment.length || 1;
+  const normal = { x: -segment.deltaY / length, y: segment.deltaX / length };
+  if (normal.x === 0 && normal.y === 0) normal.y = 1;
+  const rects = [
+    ...nodes.map(getNodeRect).filter((rect) => rect !== null),
+    ...labels.map((label) => ({
+      left: label.center.x - label.width / 2 - LABEL_CLEARANCE,
+      right: label.center.x + label.width / 2 + LABEL_CLEARANCE,
+      top: label.center.y - label.height / 2 - LABEL_CLEARANCE,
+      bottom: label.center.y + label.height / 2 + LABEL_CLEARANCE,
+    })),
+  ];
+  const offsets: number[] = [];
+  for (const rect of rects) {
+    let min = Number.NEGATIVE_INFINITY;
+    let max = Number.POSITIVE_INFINITY;
+    for (const [position, direction, lower, upper] of [
+      [center.x, normal.x, rect.left - width / 2, rect.right + width / 2],
+      [center.y, normal.y, rect.top - height / 2, rect.bottom + height / 2],
+    ]) {
+      if (Math.abs(direction) < 1e-9) {
+        if (position <= lower || position >= upper) { min = 1; max = 0; break; }
+        continue;
+      }
+      const first = (lower - position) / direction;
+      const second = (upper - position) / direction;
+      min = Math.max(min, Math.min(first, second));
+      max = Math.min(max, Math.max(first, second));
+    }
+    if (min < max) offsets.push(min - 0.01, max + 0.01);
+  }
+  return offsets.sort((a, b) => Math.abs(a) - Math.abs(b)).map((offset) => ({
+    x: center.x + normal.x * offset,
+    y: center.y + normal.y * offset,
+  }));
 };
 
 const getOnPathCandidateCenters = (
@@ -473,6 +524,7 @@ export const getEdgeLabelLayout = ({
   nodes = [],
   occupiedLabels = [],
   labelMaxWidth,
+  measureHeight,
 }: EdgeLabelLayoutOptions): EdgeLabelLayout => {
   const safeTextWidth = Math.max(textWidth, label.length * 6);
   const source = { x: sourceX, y: sourceY };
@@ -506,6 +558,7 @@ export const getEdgeLabelLayout = ({
     safeTextWidth,
     curvePathLength ?? preferredSegment.length,
     labelMaxWidth,
+    measureHeight ? (width) => measureHeight(label, width) : undefined,
   );
   const isAvailable = (center: EdgePoint, dimensions: typeof preferredDimensions) =>
       !intersectsNode(center, dimensions.width, dimensions.height, nodes) &&
@@ -515,8 +568,25 @@ export const getEdgeLabelLayout = ({
         dimensions.height,
         occupiedLabels,
       );
+  const place = (center: EdgePoint, dimensions: typeof preferredDimensions): EdgeLabelLayout => {
+    const segment = getNearestSegment(usableSegments, center);
+    const progress = segment.length === 0 ? 0 : clamp(
+      ((center.x - segment.start.x) * segment.deltaX +
+        (center.y - segment.start.y) * segment.deltaY) / segment.length ** 2,
+      0, 1,
+    );
+    const pathAnchor = {
+      x: segment.start.x + segment.deltaX * progress,
+      y: segment.start.y + segment.deltaY * progress,
+    };
+    return {
+      center,
+      ...dimensions,
+      ...(Math.hypot(center.x - pathAnchor.x, center.y - pathAnchor.y) > 1 ? { pathAnchor } : {}),
+    };
+  };
   if (isAvailable(preferredCenter, preferredDimensions)) {
-    return { center: preferredCenter, ...preferredDimensions };
+    return place(preferredCenter, preferredDimensions);
   }
 
   // A curve is sampled into many short segments for accurate arc length.
@@ -538,6 +608,7 @@ export const getEdgeLabelLayout = ({
         safeTextWidth,
         curvePathLength ?? segment.length,
         labelMaxWidth,
+        measureHeight ? (width) => measureHeight(label, width) : undefined,
       );
       const centers = offPath
         ? getOffPathCandidateCenters(segment)
@@ -550,14 +621,17 @@ export const getEdgeLabelLayout = ({
             index === 0 ? preferredCenter : getSegmentMidpoint(segment),
           );
       for (const center of centers) {
-        if (isAvailable(center, dimensions)) return { center, ...dimensions };
+        if (isAvailable(center, dimensions)) return place(center, dimensions);
       }
     }
   }
 
-  // If the graph is too dense for a clear candidate, preserve the preferred
-  // path location. The label still wraps and remains available via title/
-  // aria-label, while later layout updates can retry collision-free anchors.
+  for (const center of getEscapeCenters(preferredCenter, preferredSegment,
+    preferredDimensions.width, preferredDimensions.height, nodes, occupiedLabels)) {
+    if (isAvailable(center, preferredDimensions)) return place(center, preferredDimensions);
+  }
+
+  // Degenerate paths can have no usable direction; retain a stable position.
   return {
     center: preferredCenter,
     ...preferredDimensions,
