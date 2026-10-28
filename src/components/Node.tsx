@@ -424,7 +424,11 @@ const Node: React.FC<Props> = React.memo(({ id, data, onCopy, isInGroup, disable
         onMouseLeave={() => setIsHovered(false)}
       >
         <legend className="sr-only">{displayLabel}</legend>
-        <SimulationNodeRuntimeBadge nodeId={id} />
+        <SimulationNodeRuntimeBadge nodeId={id} appearance={{
+          backgroundColor: typeof data.backgroundColor === "string" ? data.backgroundColor : undefined,
+          borderColor: typeof data.borderColor === "string" ? data.borderColor : undefined,
+          textColor: typeof data.textColor === "string" ? data.textColor : undefined,
+        }} />
 
         {/* Node actions stay quiet until the node is hovered, focused, or active. */}
         <motion.div
