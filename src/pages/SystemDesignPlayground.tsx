@@ -1218,7 +1218,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         true,
       );
       if (result === "error" || result === "conflict") {
-        throw new Error("Could not save the active problem canvas.");
+        throw new Error(canvasWorkspace.getSnapshot().message || "Could not save the active problem canvas.");
       }
     },
     [attemptWorkspaceId, canvasWorkspace],
@@ -1859,9 +1859,11 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       remixOrigin,
     ],
   );
-  useDebouncedSave(autoSaveEnabled, autoSaveContentKey, async () => {
-    if (nodes.length === 0 && lastSavedAttemptContentRef.current === null)
+  const retryAutoSave = useDebouncedSave(autoSaveEnabled, autoSaveContentKey, async (force = false) => {
+    if (nodes.length === 0 && lastSavedAttemptContentRef.current === null) {
+      if (force) setAutoSaveStatus("idle");
       return;
+    }
 
     const isProblemAttempt = Boolean(idFromUrl && idFromUrl !== "free");
     const attemptContentSnapshot =
@@ -1881,7 +1883,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
     // Timer ticks alone never enqueue writes of unchanged content.
     if (
-      isProblemAttempt &&
+      isProblemAttempt && !force &&
       attemptContentSnapshot === lastSavedAttemptContentRef.current
     ) {
       return;
@@ -1971,8 +1973,12 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           }
         } else {
           // For Problem-solving: save progress to database
-          if (!idFromUrl || !attemptContentSnapshot) return; // Safety check
-          if (attemptContentSnapshot === lastSavedAttemptContentRef.current) {
+          if (!idFromUrl || !attemptContentSnapshot) {
+            setAutoSaveStatus("idle");
+            return;
+          }
+          if (!force && attemptContentSnapshot === lastSavedAttemptContentRef.current) {
+            setAutoSaveStatus("idle");
             return;
           }
 
@@ -2018,7 +2024,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       } catch (error) {
         console.error("Auto-save failed:", error);
         setAutoSaveStatus("error");
-        toast.error("Could not save your changes. Check Pages before reloading.");
+        toast.error(
+          (isProblemAttempt && canvasWorkspace.getSnapshot().message) ||
+            "Could not save your changes. Check Pages before reloading.",
+        );
       }
     };
 
@@ -5705,6 +5714,15 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                           <div className="w-3 h-3 bg-red-400 rounded-full"></div>
                           <span>Save failed</span>
                         </>
+                      )}
+                      {autoSaveStatus === "error" && (
+                        <button
+                          type="button"
+                          className="rounded px-1.5 py-0.5 text-white underline underline-offset-2 hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-white"
+                          onClick={retryAutoSave}
+                        >
+                          Retry diagram save
+                        </button>
                       )}
                       {problemSaveStatus === "idle" && lastSavedAt && (
                         <>
