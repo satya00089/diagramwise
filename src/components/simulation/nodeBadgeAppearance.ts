@@ -14,8 +14,8 @@ function parseColor(color: string): Rgba | undefined {
   if (hex) {
     const digits = hex[1].length <= 4 ? [...hex[1]].map((character) => character + character).join("") : hex[1];
     return {
-      red: parseInt(digits.slice(0, 2), 16), green: parseInt(digits.slice(2, 4), 16),
-      blue: parseInt(digits.slice(4, 6), 16), alpha: digits.length === 8 ? parseInt(digits.slice(6, 8), 16) / 255 : 1,
+      red: Number.parseInt(digits.slice(0, 2), 16), green: Number.parseInt(digits.slice(2, 4), 16),
+      blue: Number.parseInt(digits.slice(4, 6), 16), alpha: digits.length === 8 ? Number.parseInt(digits.slice(6, 8), 16) / 255 : 1,
     };
   }
   const rgb = /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)$/i.exec(color);
