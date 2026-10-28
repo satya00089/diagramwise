@@ -133,6 +133,12 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
               onMouseEnter={() => setHighlightedIndex(index)}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => choose(option)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  choose(option);
+                }
+              }}
             >
               {option}
             </div>
