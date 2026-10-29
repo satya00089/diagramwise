@@ -276,9 +276,15 @@ describe("InspectorPanel assessment trust", () => {
     expect(html).toContain('aria-expanded="true"');
   });
   it("reserves separate touch targets for both mobile drawers", () => {
-    const html = renderInspector(review(), [], undefined, { compact: true, compactOpen: true });
+    const html = renderInspector(review(), [], undefined, {
+      compact: true,
+      compactOpen: true,
+    });
     expect(html).toContain("max-width:calc(100vw - 6rem)");
-    const collapsed = renderInspector(review(), [], undefined, { compact: true, compactOpen: false });
+    const collapsed = renderInspector(review(), [], undefined, {
+      compact: true,
+      compactOpen: false,
+    });
     expect(collapsed).toContain('aria-expanded="false"');
     expect(collapsed).toContain("width:24px");
     expect(collapsed).not.toContain("Architecture review");
@@ -378,20 +384,37 @@ describe("InspectorPanel assessment trust", () => {
     const oldSpec: RequirementSpec = {
       ...spec,
       revision: "brief-1",
-      functional: [{ id: "old-read", text: "Read original documents", scope: "core" }],
+      functional: [
+        { id: "old-read", text: "Read original documents", scope: "core" },
+      ],
       nonFunctional: [],
     };
-    const html = renderInspector(review({
-      requirementRevision: "brief-1",
-      requirementCoverage: [{ requirement_id: "old-read", status: "supported",
-        explanation: "Original read path", evidence_ids: [] }],
-    }), [], undefined, { reviewedRequirementSpec: oldSpec });
+    const html = renderInspector(
+      review({
+        requirementRevision: "brief-1",
+        requirementCoverage: [
+          {
+            requirement_id: "old-read",
+            status: "supported",
+            explanation: "Original read path",
+            evidence_ids: [],
+          },
+        ],
+      }),
+      [],
+      undefined,
+      { reviewedRequirementSpec: oldSpec },
+    );
     expect(html).toContain("This review uses an earlier problem brief");
     expect(html).toContain("a new review will use that current brief");
     expect(html).toContain("Read original documents");
     expect(html).not.toContain("Create documents");
-    const withoutSnapshot = renderInspector(review({ requirementRevision: "brief-1" }));
-    expect(withoutSnapshot).toContain("This review uses an earlier problem brief");
+    const withoutSnapshot = renderInspector(
+      review({ requirementRevision: "brief-1" }),
+    );
+    expect(withoutSnapshot).toContain(
+      "This review uses an earlier problem brief",
+    );
   });
 
   it("labels the fallback tab without a numeric badge or a publish-reviewed prompt", () => {

@@ -285,7 +285,8 @@ const Profile: React.FC = () => {
   const startedPathCount = pathSummaries.filter(
     (path) => path.completed > 0,
   ).length;
-  const selectedAvatarChoiceIndex = getBlobatarAvatarChoiceIndex(draftAvatarKey);
+  const selectedAvatarChoiceIndex =
+    getBlobatarAvatarChoiceIndex(draftAvatarKey);
   const selectedAvatarIsOutsideLoadedOptions =
     selectedAvatarChoiceIndex >= visibleAvatarCount;
   const avatarOptionCount =
@@ -342,7 +343,9 @@ const Profile: React.FC = () => {
           type="button"
           className={`profile-avatar-option${draftAvatarKey === null ? " is-selected" : ""}`}
           aria-pressed={draftAvatarKey === null}
-          aria-label={user.picture ? "Use Google photo" : "Use default Blobatar"}
+          aria-label={
+            user.picture ? "Use Google photo" : "Use default Blobatar"
+          }
           onClick={() => setDraftAvatarKey(null)}
         >
           <UserAvatar
@@ -363,7 +366,11 @@ const Profile: React.FC = () => {
       );
     }
 
-    if (selectedAvatarIsOutsideLoadedOptions && optionIndex === 1 && selectedAvatarKey) {
+    if (
+      selectedAvatarIsOutsideLoadedOptions &&
+      optionIndex === 1 &&
+      selectedAvatarKey
+    ) {
       return (
         <div
           className="profile-avatar-option is-selected"
@@ -842,10 +849,7 @@ const Profile: React.FC = () => {
                           {renderAvatarOption(optionIndex)}
                         </span>
                       ) : (
-                        <span
-                          key={`empty-${optionIndex}`}
-                          aria-hidden="true"
-                        />
+                        <span key={`empty-${optionIndex}`} aria-hidden="true" />
                       );
                     })}
                   </div>

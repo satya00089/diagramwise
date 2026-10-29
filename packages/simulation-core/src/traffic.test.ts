@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { Engine } from './engine';
-import { makeNode } from './presets';
-import { TRAFFIC_PATTERNS, type Topology, type TrafficPattern } from './types';
+import { describe, expect, it } from "vitest";
+import { Engine } from "./engine";
+import { makeNode } from "./presets";
+import { TRAFFIC_PATTERNS, type Topology, type TrafficPattern } from "./types";
 
 /**
  * Traffic patterns vary a client's offered rate over time.
@@ -16,8 +16,8 @@ const PERIOD_S = 20;
 const BASELINE_RPS = 100;
 
 function clientTopology(pattern?: TrafficPattern): Topology {
-  const client = makeNode('client', 0, 0, 'Client');
-  const service = makeNode('service', 240, 0, 'Service');
+  const client = makeNode("client", 0, 0, "Client");
+  const service = makeNode("service", 240, 0, "Service");
   client.config.rps = BASELINE_RPS;
   if (pattern) {
     client.config.traffic = pattern;
@@ -30,7 +30,7 @@ function clientTopology(pattern?: TrafficPattern): Topology {
   service.config.queueLimit = 100_000;
   return {
     nodes: [client, service],
-    edges: [{ id: 'e1', from: client.id, to: service.id, weight: 1 }],
+    edges: [{ id: "e1", from: client.id, to: service.id, weight: 1 }],
   };
 }
 
@@ -51,9 +51,9 @@ function arrivalsPerSecond(
   return perSecond;
 }
 
-describe('traffic patterns', () => {
-  it('steady holds the baseline', () => {
-    const arrivals = arrivalsPerSecond('steady', 30);
+describe("traffic patterns", () => {
+  it("steady holds the baseline", () => {
+    const arrivals = arrivalsPerSecond("steady", 30);
     const mean = arrivals.reduce((a, b) => a + b, 0) / arrivals.length;
     // Poisson arrivals scatter around the mean; the shape claim is that it
     // does not trend, not that every second is identical.
@@ -61,8 +61,8 @@ describe('traffic patterns', () => {
     expect(mean).toBeLessThan(BASELINE_RPS * 1.1);
   });
 
-  it('ramp climbs, then holds at the baseline', () => {
-    const arrivals = arrivalsPerSecond('ramp', PERIOD_S * 2);
+  it("ramp climbs, then holds at the baseline", () => {
+    const arrivals = arrivalsPerSecond("ramp", PERIOD_S * 2);
     const firstQuarter = arrivals.slice(0, 5).reduce((a, b) => a + b, 0);
     const lastQuarter = arrivals
       .slice(PERIOD_S - 5, PERIOD_S)
@@ -76,25 +76,25 @@ describe('traffic patterns', () => {
     expect(held).toBeLessThan(BASELINE_RPS * 1.2);
   });
 
-  it('spike is quiet, then bursts above the baseline', () => {
-    const arrivals = arrivalsPerSecond('spike', PERIOD_S);
+  it("spike is quiet, then bursts above the baseline", () => {
+    const arrivals = arrivalsPerSecond("spike", PERIOD_S);
     const peak = Math.max(...arrivals);
     const quiet = Math.min(...arrivals);
     expect(peak).toBeGreaterThan(BASELINE_RPS * 2);
     expect(quiet).toBeLessThan(BASELINE_RPS * 0.5);
   });
 
-  it('spike moves the same work, not more of it', () => {
+  it("spike moves the same work, not more of it", () => {
     // The lesson is burstiness. If a spike simply offered more traffic, any
     // failure it caused would be explained by volume and teach nothing.
-    const spiked = arrivalsPerSecond('spike', PERIOD_S * 3);
-    const steady = arrivalsPerSecond('steady', PERIOD_S * 3);
+    const spiked = arrivalsPerSecond("spike", PERIOD_S * 3);
+    const steady = arrivalsPerSecond("steady", PERIOD_S * 3);
     const total = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
     expect(total(spiked)).toBeLessThan(total(steady));
   });
 
-  it('diurnal peaks and troughs within one cycle', () => {
-    const arrivals = arrivalsPerSecond('diurnal', PERIOD_S);
+  it("diurnal peaks and troughs within one cycle", () => {
+    const arrivals = arrivalsPerSecond("diurnal", PERIOD_S);
     const peak = Math.max(...arrivals);
     const trough = Math.min(...arrivals);
     expect(peak).toBeGreaterThan(trough * 2);
@@ -103,14 +103,14 @@ describe('traffic patterns', () => {
   });
 });
 
-describe('traffic patterns leave existing designs alone', () => {
-  it('an absent pattern matches steady exactly', () => {
-    const withField = arrivalsPerSecond('steady', 20);
+describe("traffic patterns leave existing designs alone", () => {
+  it("an absent pattern matches steady exactly", () => {
+    const withField = arrivalsPerSecond("steady", 20);
     const without = arrivalsPerSecond(undefined, 20);
     expect(without).toEqual(withField);
   });
 
-  it('replays identically for the same seed', () => {
+  it("replays identically for the same seed", () => {
     for (const pattern of TRAFFIC_PATTERNS) {
       const a = arrivalsPerSecond(pattern, 15);
       const b = arrivalsPerSecond(pattern, 15);

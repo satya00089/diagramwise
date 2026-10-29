@@ -24,10 +24,10 @@
  * on how often it happened to act, which is exactly the kind of coupling that
  * makes a "deterministic" simulator quietly non-reproducible.
  */
-import type { NodeStats } from './types';
-import type { BehaviourCtx, NodeStateLike } from './engine-types';
-import type { ComponentBehaviour } from './behaviour';
-import { clamp01 } from './behaviour';
+import type { NodeStats } from "./types";
+import type { BehaviourCtx, NodeStateLike } from "./engine-types";
+import type { ComponentBehaviour } from "./behaviour";
+import { clamp01 } from "./behaviour";
 
 /* ------------------------------------------------------------------ *
  * autoscaler
@@ -140,7 +140,7 @@ function asAutoscaler(state: NodeStateLike): AutoscalerState | null {
  * oscillate downward faster than they recover.
  */
 const autoscaler: ComponentBehaviour = {
-  kind: 'autoscaler',
+  kind: "autoscaler",
   // A controller is not in the request path: it serves nothing, holds nothing,
   // and reports no utilisation of its own. Marking it servesRequests:false is
   // what keeps its (permanently zero) slot count out of the utilisation
@@ -154,7 +154,7 @@ const autoscaler: ComponentBehaviour = {
   controlsTarget: true,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: false,
 
   initState: (): AutoscalerState => ({
@@ -162,7 +162,7 @@ const autoscaler: ComponentBehaviour = {
     targetInstances: 0,
     warmupDueMs: -1,
     pendingInstances: 0,
-    watchedId: '',
+    watchedId: "",
     observeUntilMs: -1,
   }),
 
@@ -174,8 +174,8 @@ const autoscaler: ComponentBehaviour = {
    * controller look like a hop that mysteriously adds latency.
    */
   onAdmit: (ctx, state, req) => {
-    ctx.reject(state, req, 'no-route');
-    return 'handled';
+    ctx.reject(state, req, "no-route");
+    return "handled";
   },
 
   /**
@@ -200,9 +200,10 @@ const autoscaler: ComponentBehaviour = {
       // ...and starts a fresh observation window, because the new node's
       // smoothed utilisation is not a signal yet.
       st.observeUntilMs =
-        ctx.now + Math.max(0, knob(state.config.cooldownMs, DEFAULT_COOLDOWN_MS));
+        ctx.now +
+        Math.max(0, knob(state.config.cooldownMs, DEFAULT_COOLDOWN_MS));
     }
-    if (watched === '') return;
+    if (watched === "") return;
 
     // How many instances the target is running. Null means the target is a
     // kind with no fleet to move (a queue, a breaker): the controller stays
@@ -352,27 +353,37 @@ const autoscaler: ComponentBehaviour = {
     stats.watchedId = st.watchedId;
     stats.targetInstances = wanted;
     stats.watchedInstances = live;
-    stats.watchedUnscalable = st.watchedId !== '' && scale === null;
+    stats.watchedUnscalable = st.watchedId !== "" && scale === null;
     stats.pendingInstances = scaling ? Math.max(0, wanted - live) : 0;
     stats.scaling = scaling;
-    stats.watchedUtil = st.watchedId ? (ctx.utilizationOf(st.watchedId) ?? 0) : 0;
-    stats.setpoint = clamp01(knob(state.config.targetUtil, DEFAULT_TARGET_UTIL));
+    stats.watchedUtil = st.watchedId
+      ? (ctx.utilizationOf(st.watchedId) ?? 0)
+      : 0;
+    stats.setpoint = clamp01(
+      knob(state.config.targetUtil, DEFAULT_TARGET_UTIL),
+    );
 
     // Which of the three waits it is in, and how much of it is left. Resolved
     // in the same order onTick() applies them, so the label never claims the
     // controller is free to act when the next tick will find it blocked.
-    const cooldown = Math.max(0, knob(state.config.cooldownMs, DEFAULT_COOLDOWN_MS));
+    const cooldown = Math.max(
+      0,
+      knob(state.config.cooldownMs, DEFAULT_COOLDOWN_MS),
+    );
     if (scaling) {
-      stats.scalePhase = 'warming';
+      stats.scalePhase = "warming";
       stats.phaseRemainingMs = Math.max(0, st.warmupDueMs - ctx.now);
     } else if (st.observeUntilMs >= 0 && ctx.now < st.observeUntilMs) {
-      stats.scalePhase = 'observing';
+      stats.scalePhase = "observing";
       stats.phaseRemainingMs = Math.max(0, st.observeUntilMs - ctx.now);
     } else if (ctx.now - st.lastDecisionMs < cooldown) {
-      stats.scalePhase = 'cooldown';
-      stats.phaseRemainingMs = Math.max(0, cooldown - (ctx.now - st.lastDecisionMs));
+      stats.scalePhase = "cooldown";
+      stats.phaseRemainingMs = Math.max(
+        0,
+        cooldown - (ctx.now - st.lastDecisionMs),
+      );
     } else {
-      stats.scalePhase = 'steady';
+      stats.scalePhase = "steady";
       stats.phaseRemainingMs = 0;
     }
   },
@@ -418,7 +429,10 @@ function regionCount(state: NodeStateLike): number {
   // loop that counts healthy regions runs zero times -- and the readout is
   // meant to be derived from the very predicate the routing uses.
   if (!Number.isFinite(declared)) return state.out.length;
-  return Math.max(1, Math.min(Math.floor(declared as number), state.out.length));
+  return Math.max(
+    1,
+    Math.min(Math.floor(declared as number), state.out.length),
+  );
 }
 
 /**
@@ -443,7 +457,11 @@ function configuredRegion(state: NodeStateLike, count: number): number {
  * because the link to it is partitioned. Both are injected failures, which is
  * what lets a student cause a regional outage without deleting anything.
  */
-function regionHealthy(ctx: BehaviourCtx, state: NodeStateLike, i: number): boolean {
+function regionHealthy(
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  i: number,
+): boolean {
   const edge = state.out[i];
   if (!edge) return false;
   if (ctx.isEdgeCut(edge.id)) return false;
@@ -471,13 +489,13 @@ function regionHealthy(ctx: BehaviourCtx, state: NodeStateLike, i: number): bool
  * SimEdge.latencyMs is where that will go in the networking phase.
  */
 const region: ComponentBehaviour = {
-  kind: 'region',
+  kind: "region",
   // A pure switch: it forwards without holding slots of its own.
   servesRequests: true,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'own',
+  pump: "own",
   creditsJoinCompletion: true,
 
   initState: (): RegionState => ({
@@ -487,11 +505,11 @@ const region: ComponentBehaviour = {
     lastConfigured: -1,
   }),
 
-  onAdmit: () => 'passthru',
-  route: () => 'one',
+  onAdmit: () => "passthru",
+  route: () => "one",
   // pickEdge returning null here is not a wiring mistake: it means no region
   // is serving, either mid-failover or with every region down.
-  noRouteReason: 'region-down',
+  noRouteReason: "region-down",
 
   /**
    * Returning null means "no region is serving", which the engine resolves as
@@ -581,8 +599,8 @@ const region: ComponentBehaviour = {
     const live = liveRegionIndex(ctx, state, st);
     // Nothing is serving -- mid-failover, or every region down. No edge is
     // live, and calling the others 'standby' would still be true.
-    if (live === -1) return 'standby';
-    return index === live ? 'live' : 'standby';
+    if (live === -1) return "standby";
+    return index === live ? "live" : "standby";
   },
 
   decorateStats: (ctx, state, stats: NodeStats) => {

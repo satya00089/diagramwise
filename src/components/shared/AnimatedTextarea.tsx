@@ -175,7 +175,11 @@ const AnimatedTextarea: React.FC<AnimatedTextareaProps> = ({
     content: value,
     editable: !disabled,
     editorProps: {
-      attributes: { "aria-label": label ?? placeholder, "aria-multiline": "true", role: "textbox" },
+      attributes: {
+        "aria-label": label ?? placeholder,
+        "aria-multiline": "true",
+        role: "textbox",
+      },
     },
     onUpdate: ({ editor }) => {
       if (editor.isDestroyed || !editor.schema) return;

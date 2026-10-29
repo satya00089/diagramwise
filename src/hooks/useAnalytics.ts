@@ -138,12 +138,14 @@ export function useAnalytics({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEnabled]);
 
-  const trackEvent = useCallback<(event_name: ProductEventName, event_props?: Record<string, unknown>, immediate?: boolean) => void>(
+  const trackEvent = useCallback<
     (
       event_name: ProductEventName,
       event_props?: Record<string, unknown>,
-
-    ) => {
+      immediate?: boolean,
+    ) => void
+  >(
+    (event_name: ProductEventName, event_props?: Record<string, unknown>) => {
       if (!isEnabled) return;
       const evt: AnalyticsEvent = {
         ts: Date.now(),

@@ -1,18 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from "vitest";
 import {
   LATENCY_MAX_MS,
   LATENCY_MIN_MS,
   LatencyHistogram,
   RollingLatencyHistogram,
-} from './histogram';
+} from "./histogram";
 
 function expectWithinBucket(actual: number, expected: number): void {
   expect(actual).toBeGreaterThanOrEqual(expected * (1 - 1e-12));
   expect(actual).toBeLessThanOrEqual(expected * 1.01 * (1 + 1e-12));
 }
 
-describe('LatencyHistogram', () => {
-  it('is empty until a finite observation arrives and resets completely', () => {
+describe("LatencyHistogram", () => {
+  it("is empty until a finite observation arrives and resets completely", () => {
     const histogram = new LatencyHistogram();
     expect(histogram.quantile(0.99)).toBe(0);
     for (const ms of [NaN, Infinity, -Infinity]) histogram.record(ms);
@@ -24,7 +24,7 @@ describe('LatencyHistogram', () => {
     expect(histogram.quantile(0.5)).toBe(0);
   });
 
-  it('keeps every observation and estimates percentiles within 1%', () => {
+  it("keeps every observation and estimates percentiles within 1%", () => {
     const histogram = new LatencyHistogram();
     for (let ms = 1; ms <= 10_000; ms += 1) histogram.record(ms);
     expect(histogram.count).toBe(10_000);
@@ -33,7 +33,7 @@ describe('LatencyHistogram', () => {
     expectWithinBucket(histogram.quantile(0.99), 9_900);
   });
 
-  it('preserves zero and bounds finite observations to the declared range', () => {
+  it("preserves zero and bounds finite observations to the declared range", () => {
     const histogram = new LatencyHistogram();
     histogram.record(-1);
     histogram.record(0);
@@ -45,8 +45,10 @@ describe('LatencyHistogram', () => {
     expect(histogram.quantile(1)).toBe(LATENCY_MAX_MS);
   });
 
-  it('retains accuracy over the full representable scale', () => {
-    for (const sample of [0.001, 0.00101, 0.1, 1, 17, 100, 10_000, 500_000, 3_600_000]) {
+  it("retains accuracy over the full representable scale", () => {
+    for (const sample of [
+      0.001, 0.00101, 0.1, 1, 17, 100, 10_000, 500_000, 3_600_000,
+    ]) {
       const histogram = new LatencyHistogram();
       histogram.record(sample);
       expectWithinBucket(histogram.quantile(0.99), sample);
@@ -54,8 +56,8 @@ describe('LatencyHistogram', () => {
   });
 });
 
-describe('RollingLatencyHistogram', () => {
-  it('reports sample adequacy and expires whole 500ms buckets', () => {
+describe("RollingLatencyHistogram", () => {
+  it("reports sample adequacy and expires whole 500ms buckets", () => {
     const histogram = new RollingLatencyHistogram();
     const output = new Float64Array(3);
     histogram.percentiles(0, output);
@@ -71,10 +73,11 @@ describe('RollingLatencyHistogram', () => {
     expect([...output]).toEqual([0, 0, 0]);
   });
 
-  it('includes all observations at high load instead of strided samples', () => {
+  it("includes all observations at high load instead of strided samples", () => {
     const histogram = new RollingLatencyHistogram();
     const output = new Float64Array(3);
-    for (let i = 0; i < 100_000; i += 1) histogram.add(100, i < 98_000 ? 10 : 1_000);
+    for (let i = 0; i < 100_000; i += 1)
+      histogram.add(100, i < 98_000 ? 10 : 1_000);
     histogram.percentiles(100, output);
     expect(histogram.sampleCount(100)).toBe(100_000);
     expectWithinBucket(output[0], 10);
@@ -82,7 +85,7 @@ describe('RollingLatencyHistogram', () => {
     expectWithinBucket(output[2], 1_000);
   });
 
-  it('is independent of snapshot polling including future reads', () => {
+  it("is independent of snapshot polling including future reads", () => {
     const a = new RollingLatencyHistogram();
     const b = new RollingLatencyHistogram();
     const output = new Float64Array(3);
@@ -100,7 +103,7 @@ describe('RollingLatencyHistogram', () => {
     expect(a.sampleCount(12_000)).toBe(b.sampleCount(12_000));
   });
 
-  it('resets all time state and rejects observations from past epochs', () => {
+  it("resets all time state and rejects observations from past epochs", () => {
     const histogram = new RollingLatencyHistogram();
     histogram.add(5_000, 100);
     expect(() => histogram.add(0, 1)).toThrow(RangeError);

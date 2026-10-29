@@ -7,7 +7,10 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   resolve: {
     alias: {
-      "@diagramwise/simulation-core": resolve(__dirname, "packages/simulation-core/src"),
+      "@diagramwise/simulation-core": resolve(
+        __dirname,
+        "packages/simulation-core/src",
+      ),
     },
   },
   base: "/",

@@ -216,7 +216,13 @@
         "id": "request-path",
         "label": "Cache operation path",
         "description": "Client -> gateway -> router -> cache cluster, with the membership store supplying the partition map.",
-        "componentIds": ["client", "gateway", "router", "cache-cluster", "membership-store"]
+        "componentIds": [
+          "client",
+          "gateway",
+          "router",
+          "cache-cluster",
+          "membership-store"
+        ]
       },
       {
         "id": "replication-path",
@@ -228,7 +234,12 @@
         "id": "recovery-path",
         "label": "Maintenance and recovery path",
         "description": "Monitoring -> maintenance and warmup workers -> partitioned cache cluster for eviction, movement, and repair.",
-        "componentIds": ["monitoring", "maintenance-workers", "warmup-workers", "cache-cluster"]
+        "componentIds": [
+          "monitoring",
+          "maintenance-workers",
+          "warmup-workers",
+          "cache-cluster"
+        ]
       }
     ],
     "components": [
@@ -239,7 +250,9 @@
         "label": "Application clients",
         "description": "Services use GET, SET, DELETE, and atomic cache operations with namespace credentials.",
         "position": { "x": 0, "y": 260 },
-        "properties": { "traffic": "Reads, writes, invalidations, and bounded batches" }
+        "properties": {
+          "traffic": "Reads, writes, invalidations, and bounded batches"
+        }
       },
       {
         "id": "gateway",
@@ -248,7 +261,9 @@
         "label": "Cache API gateway",
         "description": "Authenticates namespaces, validates payload size and TTL, applies quotas, and bounds request fan-out.",
         "position": { "x": 480, "y": 260 },
-        "properties": { "protection": "mTLS or tokens, quotas, payload limits, and abuse controls" }
+        "properties": {
+          "protection": "mTLS or tokens, quotas, payload limits, and abuse controls"
+        }
       },
       {
         "id": "router",
@@ -257,7 +272,9 @@
         "label": "Partition router",
         "description": "Hashes namespace and key, caches the partition map, and routes to an owner using the current epoch.",
         "position": { "x": 960, "y": 260 },
-        "properties": { "strategy": "Consistent hashing or fixed hash slots with epoch-aware ownership" }
+        "properties": {
+          "strategy": "Consistent hashing or fixed hash slots with epoch-aware ownership"
+        }
       },
       {
         "id": "cache-cluster",
@@ -266,7 +283,10 @@
         "label": "Partitioned cache cluster",
         "description": "In-memory primaries and replicas execute bounded key operations, enforce TTL, and maintain per-partition versions.",
         "position": { "x": 1440, "y": 260 },
-        "properties": { "capacity": "1TB working set plus replica and failover headroom", "hotKeys": "Request coalescing, replication, and per-key protection" }
+        "properties": {
+          "capacity": "1TB working set plus replica and failover headroom",
+          "hotKeys": "Request coalescing, replication, and per-key protection"
+        }
       },
       {
         "id": "membership-store",
@@ -275,7 +295,9 @@
         "label": "Membership and partition store",
         "description": "Stores node membership, hash ranges, epochs, replica assignments, namespace policy, and recovery state.",
         "position": { "x": 1440, "y": 520 },
-        "properties": { "consistency": "Quorum or strongly consistent updates for ownership changes" }
+        "properties": {
+          "consistency": "Quorum or strongly consistent updates for ownership changes"
+        }
       },
       {
         "id": "replication-log",
@@ -284,7 +306,10 @@
         "label": "Partition replication log",
         "description": "Carries ordered mutations and checkpoints so replicas can catch up, be audited, or be rebuilt.",
         "position": { "x": 1920, "y": 520 },
-        "properties": { "ordering": "Per-partition ordering", "delivery": "At least once with offset deduplication" }
+        "properties": {
+          "ordering": "Per-partition ordering",
+          "delivery": "At least once with offset deduplication"
+        }
       },
       {
         "id": "maintenance-workers",
@@ -293,7 +318,9 @@
         "label": "Eviction and rebalance workers",
         "description": "Apply TTL cleanup, LRU or LFU policy, partition movement, throttled repair, and failure promotion.",
         "position": { "x": 1920, "y": 760 },
-        "properties": { "safety": "Bounded concurrency, leases, epochs, and resumable checkpoints" }
+        "properties": {
+          "safety": "Bounded concurrency, leases, epochs, and resumable checkpoints"
+        }
       },
       {
         "id": "warmup-workers",
@@ -302,7 +329,9 @@
         "label": "Replica warmup workers",
         "description": "Preload selected keys after movement or promotion without allowing warmup traffic to starve foreground requests.",
         "position": { "x": 2400, "y": 760 },
-        "properties": { "backpressure": "Priority and rate limits per namespace and partition" }
+        "properties": {
+          "backpressure": "Priority and rate limits per namespace and partition"
+        }
       },
       {
         "id": "monitoring",
@@ -311,7 +340,9 @@
         "label": "Cache reliability monitoring",
         "description": "Tracks p99 latency, hit rate, memory pressure, evictions, hot keys, ownership churn, and replica lag.",
         "position": { "x": 2400, "y": 260 },
-        "properties": { "signals": "SLOs, saturation, freshness, failovers, and namespace-level quotas" }
+        "properties": {
+          "signals": "SLOs, saturation, freshness, failovers, and namespace-level quotas"
+        }
       }
     ],
     "connections": [

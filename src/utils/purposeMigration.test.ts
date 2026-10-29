@@ -27,25 +27,22 @@ describe("purpose migration helpers", () => {
     expect(getPurposeValue({ purpose: "new", description: "old" })).toBe("new");
 
     expect(
-      normalizeNodeDataPurpose(
-        { description: "old" },
-        [{ key: "purpose", label: "Purpose" }],
-      ),
+      normalizeNodeDataPurpose({ description: "old" }, [
+        { key: "purpose", label: "Purpose" },
+      ]),
     ).toEqual({ purpose: "old" });
     expect(
-      normalizeNodeDataPurpose(
-        { purpose: "new", description: "old" },
-        [{ key: "purpose", label: "Purpose" }],
-      ),
+      normalizeNodeDataPurpose({ purpose: "new", description: "old" }, [
+        { key: "purpose", label: "Purpose" },
+      ]),
     ).toEqual({ purpose: "new" });
   });
 
   it("does not rename specialized content fields", () => {
     expect(
-      normalizeNodeDataPurpose(
-        { description: "body" },
-        [{ key: "description", label: "Body" }],
-      ),
+      normalizeNodeDataPurpose({ description: "body" }, [
+        { key: "description", label: "Body" },
+      ]),
     ).toEqual({ description: "body" });
   });
 
@@ -53,7 +50,9 @@ describe("purpose migration helpers", () => {
     const first = normalizeEdgeDataPurpose({ description: "carries data" });
     expect(first).toEqual({ purpose: "carries data" });
     expect(normalizeEdgeDataPurpose(first)).toEqual(first);
-    expect(normalizeEdgeDataPurpose({ purpose: "new", description: "old" })).toEqual({
+    expect(
+      normalizeEdgeDataPurpose({ purpose: "new", description: "old" }),
+    ).toEqual({
       purpose: "new",
     });
   });

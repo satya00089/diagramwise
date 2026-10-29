@@ -34,24 +34,29 @@ interface ProblemsState {
   loadingMore: boolean;
 }
 
-export const dedupeProblems = (problems: SystemDesignProblem[]): SystemDesignProblem[] => {
+export const dedupeProblems = (
+  problems: SystemDesignProblem[],
+): SystemDesignProblem[] => {
   const seen = new Set<string>();
   return problems.filter((problem) => {
-    const key = problem.slug || problem.id || problem.title.trim().toLowerCase();
+    const key =
+      problem.slug || problem.id || problem.title.trim().toLowerCase();
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
 };
 
-const fallbackProblems = dedupeProblems(featuredProblems.map((problem) => ({
-  ...problem,
-  id: "",
-  domain: "",
-  requirements: [],
-  constraints: [],
-  hints: [],
-})) as SystemDesignProblem[]);
+const fallbackProblems = dedupeProblems(
+  featuredProblems.map((problem) => ({
+    ...problem,
+    id: "",
+    domain: "",
+    requirements: [],
+    constraints: [],
+    hints: [],
+  })) as SystemDesignProblem[],
+);
 
 const initialState: ProblemsState = {
   problems: fallbackProblems,
@@ -138,7 +143,9 @@ export const fetchMoreProblems = createAsyncThunk(
       import.meta.env.VITE_API_URL,
       import.meta.env.VITE_ASSESSMENT_API_URL,
     );
-    const response = await fetch(getProblemsUrl(apiUrl, state.problems.nextCursor));
+    const response = await fetch(
+      getProblemsUrl(apiUrl, state.problems.nextCursor),
+    );
     if (!response.ok)
       throw new Error(`Problem catalog returned ${response.status}`);
     return (await response.json()) as ProblemPageResponse;
@@ -209,8 +216,7 @@ const problemsSlice = createSlice({
           has_more,
           total_count,
           fromCache,
-        } =
-          action.payload;
+        } = action.payload;
         const firstPage = items ?? problems;
 
         const uniqueProblems = dedupeProblems(firstPage);

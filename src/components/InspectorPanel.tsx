@@ -553,10 +553,15 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
   };
 
   return (
-    <div className="relative z-40 shrink-0 max-md:absolute max-md:inset-y-0 max-md:right-0" data-tour="inspector-panel">
+    <div
+      className="relative z-40 shrink-0 max-md:absolute max-md:inset-y-0 max-md:right-0"
+      data-tour="inspector-panel"
+    >
       <button
         type="button"
-        onClick={() => compact ? onCompactOpenChange?.(!open) : setOpen(!open)}
+        onClick={() =>
+          compact ? onCompactOpenChange?.(!open) : setOpen(!open)
+        }
         aria-expanded={open}
         aria-label={
           open ? "Collapse inspector panel" : "Expand inspector panel"
@@ -658,7 +663,9 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                     className="h-4 w-4 shrink-0"
                     aria-hidden="true"
                   />
-                  <span className="text-sm font-medium">{assessmentTabLabel}</span>
+                  <span className="text-sm font-medium">
+                    {assessmentTabLabel}
+                  </span>
                 </button>
               )}
 
@@ -1063,9 +1070,10 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                           {reviewUsesOlderBrief && (
                             <p className="break-words rounded-lg border border-theme/10 px-3 py-2 text-xs leading-relaxed text-muted">
                               This review uses an earlier problem brief. The
-                              Details tab shows requirements {problem.requirementSpec?.revision}.
-                              Review the updated requirements before assessing
-                              again; a new review will use that current brief.
+                              Details tab shows requirements{" "}
+                              {problem.requirementSpec?.revision}. Review the
+                              updated requirements before assessing again; a new
+                              review will use that current brief.
                             </p>
                           )}
                         </section>

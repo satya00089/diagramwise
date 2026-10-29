@@ -1,4 +1,3 @@
-
 {
   "prompt": {
     "brief": "Design a fair, abuse-resistant flash-distribution system that gives away six million vouchers or burgers in one hour while keeping inventory, eligibility, and redemption correct under extreme concurrency.",

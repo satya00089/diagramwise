@@ -19,10 +19,10 @@
  * transitions are evaluated lazily when a request arrives, rather than from
  * onTick.
  */
-import type { NodeStats } from './types';
-import type { BehaviourCtx, NodeStateLike, ReqLike } from './engine-types';
-import type { ComponentBehaviour } from './behaviour';
-import { clamp01 } from './behaviour';
+import type { NodeStats } from "./types";
+import type { BehaviourCtx, NodeStateLike, ReqLike } from "./engine-types";
+import type { ComponentBehaviour } from "./behaviour";
+import { clamp01 } from "./behaviour";
 
 /* ------------------------------------------------------------------ *
  * cdn
@@ -44,12 +44,12 @@ import { clamp01 } from './behaviour';
  * costs, including any edge latency wired onto the link.
  */
 const cdn: ComponentBehaviour = {
-  kind: 'cdn',
+  kind: "cdn",
   servesRequests: true,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'own',
+  pump: "own",
   creditsJoinCompletion: true,
 
   onServiceComplete: (ctx, state, _req) => {
@@ -57,20 +57,20 @@ const cdn: ComponentBehaviour = {
     // some paths would make the stream depend on config and break replay.
     if (ctx.roll() < clamp01(state.config.hitRate)) {
       ctx.countHit(state);
-      return 'complete';
+      return "complete";
     }
     ctx.countMiss(state);
     // A miss must be fetched from origin. Book it separately from the generic
     // miss counter so the UI can show origin load in requests/sec -- "what
     // actually reached your servers" is the number worth teaching.
-    ctx.countCustom(state, 'originFetch', 1);
+    ctx.countCustom(state, "originFetch", 1);
     // Nothing behind the CDN: it still answers, it just cannot demonstrate
     // the origin-offload lesson.
-    return state.out.length === 0 ? 'complete' : 'downstream';
+    return state.out.length === 0 ? "complete" : "downstream";
   },
 
   decorateStats: (ctx, state, stats: NodeStats) => {
-    stats.originFetchRate = ctx.counterRate(state, 'originFetch');
+    stats.originFetchRate = ctx.counterRate(state, "originFetch");
   },
 };
 
@@ -171,14 +171,14 @@ function projectedTokens(
  * Zero RNG draws, so a limiter never perturbs the random stream.
  */
 const ratelimiter: ComponentBehaviour = {
-  kind: 'ratelimiter',
+  kind: "ratelimiter",
   // A limiter is a doorman, not a server: it holds no slots and its
   // utilisation would be meaningless, so it reports none.
   servesRequests: false,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
 
   initState: (state): BucketState => ({
@@ -197,25 +197,25 @@ const ratelimiter: ComponentBehaviour = {
     // rate <= 0 means "no limit configured": pass everything rather than
     // silently black-holing the topology a student just wired up.
     if (limitRate(state) <= 0) {
-      ctx.countCustom(state, 'admitted', 1);
-      return 'passthru';
+      ctx.countCustom(state, "admitted", 1);
+      return "passthru";
     }
 
     if (b.tokens >= 1) {
       b.tokens -= 1;
-      ctx.countCustom(state, 'admitted', 1);
-      return 'passthru';
+      ctx.countCustom(state, "admitted", 1);
+      return "passthru";
     }
 
-    ctx.countCustom(state, 'throttled', 1);
-    ctx.reject(state, req, 'throttled');
-    return 'handled';
+    ctx.countCustom(state, "throttled", 1);
+    ctx.reject(state, req, "throttled");
+    return "handled";
   },
 
   decorateStats: (ctx, state, stats: NodeStats) => {
     const b = state.ext as BucketState | null;
-    stats.admittedRate = ctx.counterRate(state, 'admitted');
-    stats.throttledRate = ctx.counterRate(state, 'throttled');
+    stats.admittedRate = ctx.counterRate(state, "admitted");
+    stats.throttledRate = ctx.counterRate(state, "throttled");
     // Report the bucket as of NOW, not as of the last arrival. Refill is
     // lazy -- b.tokens is only brought up to date when a request turns up --
     // so reading the stored value straight out would show an idle limiter's
@@ -231,7 +231,7 @@ const ratelimiter: ComponentBehaviour = {
  * breaker
  * ------------------------------------------------------------------ */
 
-export type BreakerPhase = 'closed' | 'open' | 'half-open';
+export type BreakerPhase = "closed" | "open" | "half-open";
 
 /** How many buckets the trailing error window is split into. */
 const BREAKER_BUCKETS = 10;
@@ -362,19 +362,19 @@ const BREAKER_MIN_SAMPLES = 5;
  * instant to the frame cadence and lose determinism.
  */
 const breaker: ComponentBehaviour = {
-  kind: 'breaker',
+  kind: "breaker",
   // Like the limiter, a pass-through gate rather than a server.
   servesRequests: false,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
   // The whole point: it needs to see how its dependency is doing.
   observesOutcome: true,
 
   initState: (): BreakerState => ({
-    phase: 'closed',
+    phase: "closed",
     openedAtMs: 0,
     probesSent: 0,
     probesOk: 0,
@@ -388,46 +388,46 @@ const breaker: ComponentBehaviour = {
     const b = state.ext as BreakerState;
 
     // Lazy transition: OPEN has served its time, start probing.
-    if (b.phase === 'open' && ctx.now - b.openedAtMs >= cfgOpenMs(state)) {
-      b.phase = 'half-open';
+    if (b.phase === "open" && ctx.now - b.openedAtMs >= cfgOpenMs(state)) {
+      b.phase = "half-open";
       b.probesSent = 0;
       b.probesOk = 0;
     }
 
-    if (b.phase === 'open') {
+    if (b.phase === "open") {
       // Fail fast. No downstream call is made at all -- this is the entire
       // value of the component, and it is why the check lives in onAdmit
       // rather than in route(): by the time route() runs the request has
       // already been admitted and costed.
-      ctx.countCustom(state, 'rejected', 1);
-      ctx.reject(state, req, 'rejected');
-      return 'handled';
+      ctx.countCustom(state, "rejected", 1);
+      ctx.reject(state, req, "rejected");
+      return "handled";
     }
 
-    if (b.phase === 'half-open') {
+    if (b.phase === "half-open") {
       // Only a fixed number of probes are allowed through; everything else is
       // still refused, so a recovering dependency gets a trickle rather than
       // the full firehose the instant the timer expires.
       if (b.probesSent >= cfgHalfOpenProbes(state)) {
-        ctx.countCustom(state, 'rejected', 1);
-        ctx.reject(state, req, 'rejected');
-        return 'handled';
+        ctx.countCustom(state, "rejected", 1);
+        ctx.reject(state, req, "rejected");
+        return "handled";
       }
       b.probesSent++;
     }
 
-    ctx.countCustom(state, 'admitted', 1);
-    return 'passthru';
+    ctx.countCustom(state, "admitted", 1);
+    return "passthru";
   },
 
   onDownstreamResult: (ctx, state, _req, ok, _reason) => {
     const b = state.ext as BreakerState;
 
-    if (b.phase === 'half-open') {
+    if (b.phase === "half-open") {
       if (!ok) {
         // One failed probe is enough: the dependency is still sick. Back to
         // OPEN for another full openMs.
-        b.phase = 'open';
+        b.phase = "open";
         b.openedAtMs = ctx.now;
         b.trips++;
         clearWindow(b);
@@ -436,20 +436,20 @@ const breaker: ComponentBehaviour = {
       b.probesOk++;
       if (b.probesOk >= cfgHalfOpenProbes(state)) {
         // Every probe came back clean: the dependency is healthy again.
-        b.phase = 'closed';
+        b.phase = "closed";
         clearWindow(b);
       }
       return;
     }
 
-    if (b.phase !== 'closed') return;
+    if (b.phase !== "closed") return;
 
     const windowMs = cfgWindowMs(state);
     recordOutcome(b, ctx.now, windowMs, ok);
 
     const { rate, total } = windowStats(b, ctx.now, windowMs);
     if (total >= BREAKER_MIN_SAMPLES && rate > cfgErrorThreshold(state)) {
-      b.phase = 'open';
+      b.phase = "open";
       b.openedAtMs = ctx.now;
       b.trips++;
       // Drop the evidence that tripped it. Keeping it would make the breaker
@@ -473,8 +473,9 @@ const breaker: ComponentBehaviour = {
     if (!b) return null;
     // Same lazy transition decorateStats reports, so the wire and the badge
     // never disagree: a circuit whose openMs has elapsed is already probing.
-    const open = b.phase === 'open' && ctx.now - b.openedAtMs < cfgOpenMs(state);
-    return open ? 'blocked' : null;
+    const open =
+      b.phase === "open" && ctx.now - b.openedAtMs < cfgOpenMs(state);
+    return open ? "blocked" : null;
   },
 
   decorateStats: (ctx, state, stats: NodeStats) => {
@@ -483,21 +484,27 @@ const breaker: ComponentBehaviour = {
     // Report the phase the breaker would act on if a request arrived right
     // now, so the UI never shows OPEN for a circuit whose timer has expired.
     const phase =
-      b.phase === 'open' && ctx.now - b.openedAtMs >= cfgOpenMs(state)
-        ? 'half-open'
+      b.phase === "open" && ctx.now - b.openedAtMs >= cfgOpenMs(state)
+        ? "half-open"
         : b.phase;
     stats.breakerState = phase;
     stats.breakerErrorRate = windowStats(b, ctx.now, cfgWindowMs(state)).rate;
-    stats.rejectedRate = ctx.counterRate(state, 'rejected');
+    stats.rejectedRate = ctx.counterRate(state, "rejected");
     stats.breakerTrips = b.trips;
     // Countdown to the half-open probe, on exactly the phase that has one.
     stats.openRemainingMs =
-      phase === 'open' ? Math.max(0, cfgOpenMs(state) - (ctx.now - b.openedAtMs)) : 0;
+      phase === "open"
+        ? Math.max(0, cfgOpenMs(state) - (ctx.now - b.openedAtMs))
+        : 0;
   },
 };
 
 /** The behaviours defined in this module, for registration in behaviour.ts. */
-export const EDGE_BEHAVIOURS: ComponentBehaviour[] = [cdn, ratelimiter, breaker];
+export const EDGE_BEHAVIOURS: ComponentBehaviour[] = [
+  cdn,
+  ratelimiter,
+  breaker,
+];
 
 /* Re-exported for the verification harness; not used by the engine. */
 export type { BucketState, BreakerState };

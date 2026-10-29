@@ -36,7 +36,8 @@ const ReasoningPanel: React.FC<ReasoningPanelProps> = ({
     context.consistencyRequirements,
   ].filter(Boolean);
 
-  const componentNoun = canvasStats.disconnectedCount === 1 ? "component" : "components";
+  const componentNoun =
+    canvasStats.disconnectedCount === 1 ? "component" : "components";
   return (
     <section
       className="mt-5 border-t border-theme/15 pt-4"

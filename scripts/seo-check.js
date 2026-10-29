@@ -293,12 +293,7 @@ if (fs.existsSync(distDir)) {
   );
   for (const learningPath of learningPaths) {
     const learningPathHtml = fs.readFileSync(
-      path.join(
-        distDir,
-        "learning-paths",
-        learningPath.slug,
-        "index.html",
-      ),
+      path.join(distDir, "learning-paths", learningPath.slug, "index.html"),
       "utf-8",
     );
     check(

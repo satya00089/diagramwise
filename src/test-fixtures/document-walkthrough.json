@@ -31,9 +31,7 @@
       "type": "add_component",
       "title": "Add the API Gateway",
       "content": "## API Gateway — REST Entry Point\n\nAll HTTP requests — create document, fetch metadata, list folders, share settings — enter through the API Gateway.\n\n**Authentication**: Every request carries a JWT issued after OAuth 2.0 login. The gateway validates the token signature and rejects unauthenticated calls before they reach downstream services.\n\n**Routing**: `/api/v1/documents/*` → Document Service; `/api/v1/search` → Search Service; `/api/v1/users/*` → Auth Service. WebSocket upgrades (`Upgrade: websocket`) are passed through to the load balancer without buffering.\n\n**Rate limiting**: Per-user limits prevent a script from hammering the document creation endpoint. Bulk export operations get a separate lower limit.",
-      "requirementIds": [
-        "req-8d63a3c104e1ed12"
-      ]
+      "requirementIds": ["req-8d63a3c104e1ed12"]
     },
     {
       "phase": "Phase 1: Entry Point & Connection Interface",
@@ -362,9 +360,7 @@
       "type": "add_component",
       "title": "Add Full-Text Search",
       "content": "## Elasticsearch — Content Search\n\nAn Elasticsearch cluster indexes the plain-text content of every document, updated asynchronously by the Search Indexer Kafka consumer after each periodic snapshot.\n\nWith 5 primary shards and 2 replicas, the index can hold hundreds of millions of documents while serving sub-100ms search queries.",
-      "requirementIds": [
-        "req-b087750c8d4a065c"
-      ]
+      "requirementIds": ["req-b087750c8d4a065c"]
     },
     {
       "phase": "Phase 3: Search, Session State & Version History",
@@ -410,9 +406,7 @@
       "type": "add_component",
       "title": "Add the Auth & Permission Service",
       "content": "## Auth Service — Identity & Access Control\n\nHandles OAuth 2.0 login flows and is the single source of truth for permission checks. Every document open and API request calls this service to verify the requesting user's role.\n\nRedis session store means token lookups never hit PostgreSQL on the hot path.",
-      "requirementIds": [
-        "req-b9b1d9a7b793399e"
-      ]
+      "requirementIds": ["req-b9b1d9a7b793399e"]
     },
     {
       "phase": "Phase 4: Permissions, Caching & Observability",
@@ -446,9 +440,7 @@
       "type": "add_component",
       "title": "Add the Document Response Cache",
       "content": "## Redis — Read Cache for Inactive Documents\n\nFor documents not in an active editing session, this cache serves the rendered JSON snapshot directly — bypassing Postgres and S3 entirely. Cache hit rate target: 90%+ for read-only traffic.",
-      "requirementIds": [
-        "req-36df71cf6e4fc4ed"
-      ]
+      "requirementIds": ["req-36df71cf6e4fc4ed"]
     },
     {
       "phase": "Phase 4: Permissions, Caching & Observability",
@@ -639,9 +631,7 @@
           "alerts": "Alert on edit-ack latency, operation-log lag, reconnect failures, snapshot failures and permission-invalidations; attach recovery runbooks"
         }
       },
-      "requirementIds": [
-        "req-36df71cf6e4fc4ed"
-      ]
+      "requirementIds": ["req-36df71cf6e4fc4ed"]
     }
   ]
 }

@@ -136,9 +136,7 @@ describe("getEdgeLabelLayout", () => {
       centerX: 150,
       targetX: 300,
       textWidth: 90,
-      occupiedLabels: [
-        { center: { x: 150, y: 0 }, width: 100, height: 18 },
-      ],
+      occupiedLabels: [{ center: { x: 150, y: 0 }, width: 100, height: 18 }],
     });
 
     expect(Math.abs(layout.center.y)).toBeGreaterThan(0);
@@ -152,12 +150,26 @@ describe("getEdgeLabelLayout", () => {
       textWidth: 750,
       occupiedLabels: [occupied],
       nodes: [
-        { id: "source", position: { x: -200, y: -100 }, width: 200, height: 200 },
-        { id: "target", position: { x: 120, y: -100 }, width: 200, height: 200 },
+        {
+          id: "source",
+          position: { x: -200, y: -100 },
+          width: 200,
+          height: 200,
+        },
+        {
+          id: "target",
+          position: { x: 120, y: -100 },
+          width: 200,
+          height: 200,
+        },
       ],
     });
-    const verticallySeparated = Math.abs(layout.center.y - occupied.center.y) >= (layout.height + occupied.height) / 2;
-    const horizontallySeparated = Math.abs(layout.center.x - occupied.center.x) >= (layout.width + occupied.width) / 2;
+    const verticallySeparated =
+      Math.abs(layout.center.y - occupied.center.y) >=
+      (layout.height + occupied.height) / 2;
+    const horizontallySeparated =
+      Math.abs(layout.center.x - occupied.center.x) >=
+      (layout.width + occupied.width) / 2;
     expect(verticallySeparated || horizontallySeparated).toBe(true);
     expect(layout.pathAnchor).toEqual({ x: 60, y: 0 });
   });

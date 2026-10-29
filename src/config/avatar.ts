@@ -15,7 +15,8 @@ export const getBlobatarAvatarChoice = (index: number) => {
 };
 
 export const isAvatarKey = (value?: string | null): value is AvatarKey =>
-  typeof value === "string" && /^blobatar-v2-(?:0[1-9]|[1-9]\d{0,8})$/.test(value);
+  typeof value === "string" &&
+  /^blobatar-v2-(?:0[1-9]|[1-9]\d{0,8})$/.test(value);
 
 export const getBlobatarAvatarChoiceIndex = (value?: string | null) =>
   isAvatarKey(value) ? Number(value.slice("blobatar-v2-".length)) - 1 : -1;

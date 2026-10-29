@@ -141,14 +141,19 @@ const guideFiles = fs
   .readdirSync(guideDirectory)
   .filter((fileName) => fileName.endsWith(".json"));
 for (const fileName of guideFiles) {
-  const guideText = fs.readFileSync(path.join(guideDirectory, fileName), "utf8");
+  const guideText = fs.readFileSync(
+    path.join(guideDirectory, fileName),
+    "utf8",
+  );
   if (/\$\{(?:lower|noun)\}/i.test(guideText)) {
     issues.push(`${fileName}: unresolved generated placeholder`);
   }
 }
 
 if (issues.length > 0) {
-  console.error(`Problem guide validation failed with ${issues.length} issue(s):`);
+  console.error(
+    `Problem guide validation failed with ${issues.length} issue(s):`,
+  );
   for (const issue of issues) console.error(`- ${issue}`);
   process.exitCode = 1;
 } else {

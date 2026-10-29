@@ -34,7 +34,8 @@ export function runCapacitySimulationInWorker(
     const abort = () =>
       fail(new DOMException("Capacity analysis cancelled", "AbortError"));
     const timeout = setTimeout(
-      () => fail(new Error("Capacity analysis took too long. Please try again.")),
+      () =>
+        fail(new Error("Capacity analysis took too long. Please try again.")),
       10000,
     );
 
@@ -58,7 +59,9 @@ export function runCapacitySimulationInWorker(
     try {
       worker.postMessage({ solution, preparation, input });
     } catch (error) {
-      fail(error instanceof Error ? error : new Error("Capacity analysis failed."));
+      fail(
+        error instanceof Error ? error : new Error("Capacity analysis failed."),
+      );
     }
   });
 }

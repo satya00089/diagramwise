@@ -73,17 +73,20 @@ const isPathLetter = (value: string | undefined) =>
 
 const skipPathSeparators = (path: string, start: number) => {
   let index = start;
-  while (index < path.length && (path[index] === " " || path[index] === ",")) index += 1;
+  while (index < path.length && (path[index] === " " || path[index] === ","))
+    index += 1;
   return index;
 };
 
 const readPathNumber = (path: string, start: number) => {
   let index = start;
   if (path[index] === "+" || path[index] === "-") index += 1;
-  while (index < path.length && path[index] >= "0" && path[index] <= "9") index += 1;
+  while (index < path.length && path[index] >= "0" && path[index] <= "9")
+    index += 1;
   if (path[index] === ".") {
     index += 1;
-    while (index < path.length && path[index] >= "0" && path[index] <= "9") index += 1;
+    while (index < path.length && path[index] >= "0" && path[index] <= "9")
+      index += 1;
   }
   if (index === start) return null;
   const value = Number(path.slice(start, index));
@@ -101,7 +104,10 @@ const readPathCoordinates = (path: string, start: number, command: string) => {
     index = number.next;
   }
   const offset = command === "Q" ? 2 : 0;
-  const point = values.length > offset + 1 ? { x: values[offset], y: values[offset + 1] } : null;
+  const point =
+    values.length > offset + 1
+      ? { x: values[offset], y: values[offset + 1] }
+      : null;
   return { point, next: index };
 };
 
@@ -123,7 +129,10 @@ export const getPathPoints = (edgePath: string): EdgePoint[] => {
 };
 
 /** Approximate standalone Bezier curves for distance-based placement. */
-const getCurvePathPoints = (edgePath: string, source: EdgePoint): EdgePoint[] | null => {
+const getCurvePathPoints = (
+  edgePath: string,
+  source: EdgePoint,
+): EdgePoint[] | null => {
   const isCubic = edgePath.includes("C");
   if (!isCubic && edgePath.includes("L")) return null;
   const commandIndex = edgePath.indexOf(isCubic ? "C" : "Q");
@@ -131,7 +140,10 @@ const getCurvePathPoints = (edgePath: string, source: EdgePoint): EdgePoint[] | 
   const values: number[] = [];
   let index = commandIndex + 1;
   while (values.length < (isCubic ? 6 : 4)) {
-    const number = readPathNumber(edgePath, skipPathSeparators(edgePath, index));
+    const number = readPathNumber(
+      edgePath,
+      skipPathSeparators(edgePath, index),
+    );
     if (!number) return null;
     values.push(number.value);
     index = number.next;
@@ -141,13 +153,25 @@ const getCurvePathPoints = (edgePath: string, source: EdgePoint): EdgePoint[] | 
   for (let step = 1; step <= 24; step++) {
     const t = step / 24;
     const u = 1 - t;
-    points.push(isCubic ? {
-      x: u ** 3 * source.x + 3 * u ** 2 * t * x1 + 3 * u * t ** 2 * x2 + t ** 3 * x3,
-      y: u ** 3 * source.y + 3 * u ** 2 * t * y1 + 3 * u * t ** 2 * y2 + t ** 3 * y3,
-    } : {
-      x: u ** 2 * source.x + 2 * u * t * x1 + t ** 2 * x2,
-      y: u ** 2 * source.y + 2 * u * t * y1 + t ** 2 * y2,
-    });
+    points.push(
+      isCubic
+        ? {
+            x:
+              u ** 3 * source.x +
+              3 * u ** 2 * t * x1 +
+              3 * u * t ** 2 * x2 +
+              t ** 3 * x3,
+            y:
+              u ** 3 * source.y +
+              3 * u ** 2 * t * y1 +
+              3 * u * t ** 2 * y2 +
+              t ** 3 * y3,
+          }
+        : {
+            x: u ** 2 * source.x + 2 * u * t * x1 + t ** 2 * x2,
+            y: u ** 2 * source.y + 2 * u * t * y1 + t ** 2 * y2,
+          },
+    );
   }
   return points;
 };
@@ -157,7 +181,8 @@ const getPathSegments = (
   source: EdgePoint,
   target: EdgePoint,
 ): EdgePathSegment[] => {
-  const parsedPoints = getCurvePathPoints(edgePath, source) ?? getPathPoints(edgePath);
+  const parsedPoints =
+    getCurvePathPoints(edgePath, source) ?? getPathPoints(edgePath);
   const points = parsedPoints.length > 1 ? parsedPoints : [source, target];
 
   return points.slice(1).reduce<EdgePathSegment[]>((segments, point, index) => {
@@ -228,36 +253,40 @@ const getNearestSegment = (
   )!.segment;
 };
 
-const getCenterPathDistance = (segments: EdgePathSegment[], centerX: number, centerY: number) => {
-    let centerPathDistance = 0;
-    let closestDistance = Number.POSITIVE_INFINITY;
-    let pathDistance = 0;
+const getCenterPathDistance = (
+  segments: EdgePathSegment[],
+  centerX: number,
+  centerY: number,
+) => {
+  let centerPathDistance = 0;
+  let closestDistance = Number.POSITIVE_INFINITY;
+  let pathDistance = 0;
 
-    for (const segment of segments) {
-      const lengthSquared = segment.length ** 2;
-      const projectedProgress = clamp(
-        ((centerX - segment.start.x) * segment.deltaX +
-          (centerY - segment.start.y) * segment.deltaY) /
-          lengthSquared,
-        0,
-        1,
-      );
-      const projectedX = segment.start.x + segment.deltaX * projectedProgress;
-      const projectedY = segment.start.y + segment.deltaY * projectedProgress;
-      const distanceToCenter = Math.hypot(
-        projectedX - centerX,
-        projectedY - centerY,
-      );
+  for (const segment of segments) {
+    const lengthSquared = segment.length ** 2;
+    const projectedProgress = clamp(
+      ((centerX - segment.start.x) * segment.deltaX +
+        (centerY - segment.start.y) * segment.deltaY) /
+        lengthSquared,
+      0,
+      1,
+    );
+    const projectedX = segment.start.x + segment.deltaX * projectedProgress;
+    const projectedY = segment.start.y + segment.deltaY * projectedProgress;
+    const distanceToCenter = Math.hypot(
+      projectedX - centerX,
+      projectedY - centerY,
+    );
 
-      if (distanceToCenter < closestDistance) {
-        closestDistance = distanceToCenter;
-        centerPathDistance = pathDistance + segment.length * projectedProgress;
-      }
-
-      pathDistance += segment.length;
+    if (distanceToCenter < closestDistance) {
+      closestDistance = distanceToCenter;
+      centerPathDistance = pathDistance + segment.length * projectedProgress;
     }
 
-return centerPathDistance;
+    pathDistance += segment.length;
+  }
+
+  return centerPathDistance;
 };
 
 const getShiftedLabelCenter = ({
@@ -287,7 +316,11 @@ const getShiftedLabelCenter = ({
   );
 
   if (totalPathLength > 0) {
-    const centerPathDistance = getCenterPathDistance(segments, centerX, centerY);
+    const centerPathDistance = getCenterPathDistance(
+      segments,
+      centerX,
+      centerY,
+    );
 
     const targetPathDistance =
       labelShift > 0
@@ -417,7 +450,8 @@ const getLabelDimensions = (
 
   return {
     width,
-    height: measureHeight?.(width) ?? lineCount * LABEL_LINE_HEIGHT + LABEL_PADDING_Y,
+    height:
+      measureHeight?.(width) ?? lineCount * LABEL_LINE_HEIGHT + LABEL_PADDING_Y,
     lineCount,
   };
 };
@@ -454,7 +488,11 @@ const getEscapeCenters = (
       [center.y, normal.y, rect.top - height / 2, rect.bottom + height / 2],
     ]) {
       if (Math.abs(direction) < 1e-9) {
-        if (position <= lower || position >= upper) { min = 1; max = 0; break; }
+        if (position <= lower || position >= upper) {
+          min = 1;
+          max = 0;
+          break;
+        }
         continue;
       }
       const first = (lower - position) / direction;
@@ -464,10 +502,12 @@ const getEscapeCenters = (
     }
     if (min < max) offsets.push(min - 0.01, max + 0.01);
   }
-  return offsets.sort((a, b) => Math.abs(a) - Math.abs(b)).map((offset) => ({
-    x: center.x + normal.x * offset,
-    y: center.y + normal.y * offset,
-  }));
+  return offsets
+    .sort((a, b) => Math.abs(a) - Math.abs(b))
+    .map((offset) => ({
+      x: center.x + normal.x * offset,
+      y: center.y + normal.y * offset,
+    }));
 };
 
 const getOnPathCandidateCenters = (
@@ -549,7 +589,8 @@ export const getEdgeLabelLayout = ({
     labelShift,
   });
   const preferredSegment = getNearestSegment(usableSegments, preferredCenter);
-  const isStandaloneCurve = edgePath.includes("C") ||
+  const isStandaloneCurve =
+    edgePath.includes("C") ||
     (edgePath.includes("Q") && !edgePath.includes("L"));
   const curvePathLength = isStandaloneCurve
     ? usableSegments.reduce((length, segment) => length + segment.length, 0)
@@ -560,21 +601,32 @@ export const getEdgeLabelLayout = ({
     labelMaxWidth,
     measureHeight ? (width) => measureHeight(label, width) : undefined,
   );
-  const isAvailable = (center: EdgePoint, dimensions: typeof preferredDimensions) =>
-      !intersectsNode(center, dimensions.width, dimensions.height, nodes) &&
-      !intersectsLabel(
-        center,
-        dimensions.width,
-        dimensions.height,
-        occupiedLabels,
-      );
-  const place = (center: EdgePoint, dimensions: typeof preferredDimensions): EdgeLabelLayout => {
-    const segment = getNearestSegment(usableSegments, center);
-    const progress = segment.length === 0 ? 0 : clamp(
-      ((center.x - segment.start.x) * segment.deltaX +
-        (center.y - segment.start.y) * segment.deltaY) / segment.length ** 2,
-      0, 1,
+  const isAvailable = (
+    center: EdgePoint,
+    dimensions: typeof preferredDimensions,
+  ) =>
+    !intersectsNode(center, dimensions.width, dimensions.height, nodes) &&
+    !intersectsLabel(
+      center,
+      dimensions.width,
+      dimensions.height,
+      occupiedLabels,
     );
+  const place = (
+    center: EdgePoint,
+    dimensions: typeof preferredDimensions,
+  ): EdgeLabelLayout => {
+    const segment = getNearestSegment(usableSegments, center);
+    const progress =
+      segment.length === 0
+        ? 0
+        : clamp(
+            ((center.x - segment.start.x) * segment.deltaX +
+              (center.y - segment.start.y) * segment.deltaY) /
+              segment.length ** 2,
+            0,
+            1,
+          );
     const pathAnchor = {
       x: segment.start.x + segment.deltaX * progress,
       y: segment.start.y + segment.deltaY * progress,
@@ -582,7 +634,9 @@ export const getEdgeLabelLayout = ({
     return {
       center,
       ...dimensions,
-      ...(Math.hypot(center.x - pathAnchor.x, center.y - pathAnchor.y) > 1 ? { pathAnchor } : {}),
+      ...(Math.hypot(center.x - pathAnchor.x, center.y - pathAnchor.y) > 1
+        ? { pathAnchor }
+        : {}),
     };
   };
   if (isAvailable(preferredCenter, preferredDimensions)) {
@@ -592,7 +646,9 @@ export const getEdgeLabelLayout = ({
   // A curve is sampled into many short segments for accurate arc length.
   // Search a bounded subset so dense graphs do not multiply collision checks.
   const searchSegments = isStandaloneCurve
-    ? usableSegments.filter((_, index) => index % 6 === 0 || index === usableSegments.length - 1)
+    ? usableSegments.filter(
+        (_, index) => index % 6 === 0 || index === usableSegments.length - 1,
+      )
     : usableSegments;
   const sortedSegments = [...searchSegments].sort(
     (first, second) => second.length - first.length,
@@ -602,7 +658,8 @@ export const getEdgeLabelLayout = ({
     ...sortedSegments.filter((segment) => segment !== preferredSegment),
   ];
   for (const offPath of [false, true]) {
-    const segmentsToTry = offPath && isStandaloneCurve ? [preferredSegment] : candidateSegments;
+    const segmentsToTry =
+      offPath && isStandaloneCurve ? [preferredSegment] : candidateSegments;
     for (const [index, segment] of segmentsToTry.entries()) {
       const dimensions = getLabelDimensions(
         safeTextWidth,
@@ -616,19 +673,26 @@ export const getEdgeLabelLayout = ({
           ? index === 0
             ? [preferredCenter, getSegmentMidpoint(segment)]
             : [getSegmentMidpoint(segment)]
-        : getOnPathCandidateCenters(
-            segment,
-            index === 0 ? preferredCenter : getSegmentMidpoint(segment),
-          );
+          : getOnPathCandidateCenters(
+              segment,
+              index === 0 ? preferredCenter : getSegmentMidpoint(segment),
+            );
       for (const center of centers) {
         if (isAvailable(center, dimensions)) return place(center, dimensions);
       }
     }
   }
 
-  for (const center of getEscapeCenters(preferredCenter, preferredSegment,
-    preferredDimensions.width, preferredDimensions.height, nodes, occupiedLabels)) {
-    if (isAvailable(center, preferredDimensions)) return place(center, preferredDimensions);
+  for (const center of getEscapeCenters(
+    preferredCenter,
+    preferredSegment,
+    preferredDimensions.width,
+    preferredDimensions.height,
+    nodes,
+    occupiedLabels,
+  )) {
+    if (isAvailable(center, preferredDimensions))
+      return place(center, preferredDimensions);
   }
 
   // Degenerate paths can have no usable direction; retain a stable position.

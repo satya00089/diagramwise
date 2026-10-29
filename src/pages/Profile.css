@@ -247,7 +247,8 @@
   color: var(--text);
 }
 
-.profile-avatar-dialog-actions .profile-avatar-cancel-button:hover:not(:disabled) {
+.profile-avatar-dialog-actions
+  .profile-avatar-cancel-button:hover:not(:disabled) {
   background: var(--surface);
   opacity: 1;
 }

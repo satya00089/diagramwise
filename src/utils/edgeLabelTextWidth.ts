@@ -41,7 +41,10 @@ export function getEdgeLabelFont(): string | null {
 }
 
 /** Measure labels consistently for the rendered edge and collision estimates. */
-export function measureEdgeLabelText(label: string, font = getEdgeLabelFont()): number {
+export function measureEdgeLabelText(
+  label: string,
+  font = getEdgeLabelFont(),
+): number {
   const fallback = Math.max(6, label.length * 6);
   if (!font) return fallback;
   const key = `${font}\0${label}`;
@@ -57,17 +60,31 @@ export function measureEdgeLabelText(label: string, font = getEdgeLabelFont()): 
 }
 
 /** Measure word wrapping using the same box model as the displayed label. */
-export function measureEdgeLabelHeight(label: string, width: number, font: string | null): number | null {
+export function measureEdgeLabelHeight(
+  label: string,
+  width: number,
+  font: string | null,
+): number | null {
   if (!font || typeof document === "undefined" || !document.body) return null;
   const key = `${font}\0${width}\0${label}`;
   const cached = heightCache.get(key);
   if (cached !== undefined) return cached;
   const element = document.createElement("div");
   Object.assign(element.style, {
-    position: "fixed", left: "-10000px", top: "0", visibility: "hidden",
-    font, lineHeight: "14px", padding: "2px 8px", border: "1px solid transparent",
-    boxSizing: "border-box", width: `${width}px`, whiteSpace: "normal",
-    overflowWrap: "anywhere", wordBreak: "normal", display: "block",
+    position: "fixed",
+    left: "-10000px",
+    top: "0",
+    visibility: "hidden",
+    font,
+    lineHeight: "14px",
+    padding: "2px 8px",
+    border: "1px solid transparent",
+    boxSizing: "border-box",
+    width: `${width}px`,
+    whiteSpace: "normal",
+    overflowWrap: "anywhere",
+    wordBreak: "normal",
+    display: "block",
   });
   element.textContent = label;
   document.body.appendChild(element);

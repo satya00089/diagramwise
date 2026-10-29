@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { Engine } from './engine';
-import { makeNode } from './presets';
-import type { Topology } from './types';
+import { describe, expect, it } from "vitest";
+import { Engine } from "./engine";
+import { makeNode } from "./presets";
+import type { Topology } from "./types";
 
 /* ------------------------------------------------------------------ *
  * What a design past the engine's own ceiling reports.
@@ -17,9 +17,9 @@ import type { Topology } from './types';
  * ------------------------------------------------------------------ */
 
 function overloaded(): Topology {
-  const client = { ...makeNode('client', 0, 0), id: 'client' };
+  const client = { ...makeNode("client", 0, 0), id: "client" };
   client.config.rps = 50_000;
-  const service = { ...makeNode('service', 240, 0), id: 'service' };
+  const service = { ...makeNode("service", 240, 0), id: "service" };
   /*
    * No queue limit, which is what makes this about the ENGINE's ceiling
    * rather than the design's own. A service with its default queue sheds
@@ -30,7 +30,7 @@ function overloaded(): Topology {
   service.config.queueLimit = Number.MAX_SAFE_INTEGER;
   return {
     nodes: [client, service],
-    edges: [{ id: 'e', from: 'client', to: 'service', weight: 1 }],
+    edges: [{ id: "e", from: "client", to: "service", weight: 1 }],
   };
 }
 
@@ -43,8 +43,8 @@ function run() {
   return engine.snapshot();
 }
 
-describe('a design past the live-request ceiling', () => {
-  it('reports the rate the client is actually sending', () => {
+describe("a design past the live-request ceiling", () => {
+  it("reports the rate the client is actually sending", () => {
     /*
      * Not merely "more than zero". Past the ceiling the uncounted
      * arrivals used to drag this down to roughly a quarter of the real
@@ -55,15 +55,15 @@ describe('a design past the live-request ceiling', () => {
     expect(run().system.offeredRps).toBeGreaterThan(40_000);
   });
 
-  it('reports the loss rather than a quiet zero', () => {
+  it("reports the loss rather than a quiet zero", () => {
     expect(run().system.errorRate).toBeGreaterThan(0.5);
   });
 
-  it('shows the bottleneck as busy, not idle', () => {
-    expect(run().nodes['service']!.utilization).toBeGreaterThan(0.9);
+  it("shows the bottleneck as busy, not idle", () => {
+    expect(run().nodes["service"]!.utilization).toBeGreaterThan(0.9);
   });
 
-  it('never reports serving more than was offered', () => {
+  it("never reports serving more than was offered", () => {
     const { system } = run();
     expect(system.goodputRps).toBeLessThanOrEqual(system.offeredRps);
   });

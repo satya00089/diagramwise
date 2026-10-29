@@ -826,7 +826,10 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-hover, color-mix(in srgb, currentColor 12%, transparent));
+  background: var(
+    --bg-hover,
+    color-mix(in srgb, currentColor 12%, transparent)
+  );
   color: inherit;
   font-size: 11px;
 }
@@ -844,7 +847,9 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   transition: transform 160ms ease;
 }
 
-.account-menu__chevron--open { transform: rotate(180deg); }
+.account-menu__chevron--open {
+  transform: rotate(180deg);
+}
 
 .account-menu__panel {
   position: absolute;
@@ -874,8 +879,13 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   white-space: nowrap;
 }
 
-.account-menu__identity strong { font-size: 13px; }
-.account-menu__identity span { color: var(--muted); font-size: 12px; }
+.account-menu__identity strong {
+  font-size: 13px;
+}
+.account-menu__identity span {
+  color: var(--muted);
+  font-size: 12px;
+}
 
 .account-menu__item {
   display: flex;
@@ -898,8 +908,12 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   background: var(--bg-hover, color-mix(in srgb, currentColor 8%, transparent));
 }
 
-.account-menu__item--current { color: var(--product-accent, var(--accent)); }
-.account-menu__item--sign-out { border-top: 1px solid var(--border); }
+.account-menu__item--current {
+  color: var(--product-accent, var(--accent));
+}
+.account-menu__item--sign-out {
+  border-top: 1px solid var(--border);
+}
 .account-menu__item--sign-out:hover {
   background: color-mix(in srgb, #b42318 10%, var(--surface, var(--bg)));
   color: #b42318;
@@ -908,10 +922,18 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   background: color-mix(in srgb, #ff8a80 14%, var(--surface, var(--bg)));
   color: #ff8a80;
 }
-.account-menu--inverse { color: #fff; }
-.account-menu--inverse .account-menu__trigger:hover { background: rgb(255 255 255 / 14%); }
-.account-menu--inverse .account-menu__avatar--initials { background: rgb(255 255 255 / 18%); }
-.account-menu--landing { color: var(--systema-text, var(--text)); }
+.account-menu--inverse {
+  color: #fff;
+}
+.account-menu--inverse .account-menu__trigger:hover {
+  background: rgb(255 255 255 / 14%);
+}
+.account-menu--inverse .account-menu__avatar--initials {
+  background: rgb(255 255 255 / 18%);
+}
+.account-menu--landing {
+  color: var(--systema-text, var(--text));
+}
 .account-menu--landing .account-menu__panel {
   --text: var(--systema-text, #151513);
   --muted: var(--systema-muted, #686863);
@@ -921,7 +943,9 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
 }
 
 @media (max-width: 560px) {
-  .account-menu__name { display: none; }
+  .account-menu__name {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2349,13 +2373,22 @@ h6 {
   background: transparent !important;
 }
 
-.diagram-canvas-toolbar .react-flow__controls .react-flow__controls-button > svg {
+.diagram-canvas-toolbar
+  .react-flow__controls
+  .react-flow__controls-button
+  > svg {
   width: 16px !important;
   height: 16px !important;
 }
 
-.diagram-canvas-toolbar .react-flow__controls .react-flow__controls-button:hover {
-  background: color-mix(in srgb, var(--surface) 80%, var(--text) 20%) !important;
+.diagram-canvas-toolbar
+  .react-flow__controls
+  .react-flow__controls-button:hover {
+  background: color-mix(
+    in srgb,
+    var(--surface) 80%,
+    var(--text) 20%
+  ) !important;
 }
 
 /* Semantic utility classes that reference theme variables */

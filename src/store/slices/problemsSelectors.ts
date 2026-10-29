@@ -15,7 +15,8 @@ export const selectProblemsLoading = (state: RootState) =>
   state.problems.loading;
 export const selectProblemsLoadingMore = (state: RootState) =>
   state.problems.loadingMore;
-export const selectProblemsHasMore = (state: RootState) => state.problems.hasMore;
+export const selectProblemsHasMore = (state: RootState) =>
+  state.problems.hasMore;
 export const selectProblemsTotalCount = (state: RootState) =>
   state.problems.totalCount;
 export const selectProblemsError = (state: RootState) => state.problems.error;

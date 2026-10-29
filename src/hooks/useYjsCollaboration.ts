@@ -424,7 +424,15 @@ export const useYjsCollaboration = ({
     }
     // Only re-initialize if diagramId, user info, or enabled changes
     // NOT when nodes/edges change - that's handled by the sync effect below
-  }, [diagramId, userId, userName, userEmail, userPictureUrl, userAvatarKey, enabled]); // Removed: nodes, edges, onNodesChange, onEdgesChange, onUserJoined, onUserLeft
+  }, [
+    diagramId,
+    userId,
+    userName,
+    userEmail,
+    userPictureUrl,
+    userAvatarKey,
+    enabled,
+  ]); // Removed: nodes, edges, onNodesChange, onEdgesChange, onUserJoined, onUserLeft
 
   /**
    * Sync local changes to Yjs with smart delta updates

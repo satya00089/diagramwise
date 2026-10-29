@@ -75,7 +75,23 @@ describe("challenge result presentation", () => {
   });
 
   it("does not round a missed target to its passing boundary", () => {
-    expect(formatGoalActual({ metric: "p95", actual: 200.004, threshold: 200, comparison: "<=", met: false })).toBe("200.004");
-    expect(formatGoalActual({ metric: "completionFraction", actual: 0.9899999, threshold: 0.99, comparison: ">=", met: false })).toBe("98.99999%");
+    expect(
+      formatGoalActual({
+        metric: "p95",
+        actual: 200.004,
+        threshold: 200,
+        comparison: "<=",
+        met: false,
+      }),
+    ).toBe("200.004");
+    expect(
+      formatGoalActual({
+        metric: "completionFraction",
+        actual: 0.9899999,
+        threshold: 0.99,
+        comparison: ">=",
+        met: false,
+      }),
+    ).toBe("98.99999%");
   });
 });

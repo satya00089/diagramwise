@@ -93,7 +93,9 @@ export default function ArchitectureDiagram({
   const id = useId().replaceAll(":", "");
   const improved = phase === 2;
   const reviewing = phase === 1;
-  const phaseTitle = ["first draft", "design review", "cache-first design"][phase];
+  const phaseTitle = ["first draft", "design review", "cache-first design"][
+    phase
+  ];
   const phaseCaption = [
     "One request. A system of decisions.",
     "Every redirect reaches the database.",

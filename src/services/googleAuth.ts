@@ -62,7 +62,5 @@ export const consumeGoogleAuthReturnTo = (): string => {
 export const startGoogleLogin = (startUri: string, returnTo: string): void => {
   const target = returnTo || "/";
   storeGoogleAuthReturnTo(target);
-  window.location.assign(
-    `${startUri}?return_to=${encodeURIComponent(target)}`,
-  );
+  window.location.assign(`${startUri}?return_to=${encodeURIComponent(target)}`);
 };

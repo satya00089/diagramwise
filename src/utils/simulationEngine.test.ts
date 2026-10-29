@@ -5,11 +5,41 @@ import { runCapacitySimulation } from "./simulationEngine";
 
 const solution: SystemDesignSolution = {
   components: [
-    { id: "client", type: "client", label: "Clients", position: { x: 0, y: 0 }, properties: {} },
-    { id: "gateway", type: "api-gateway", label: "API Gateway", position: { x: 0, y: 0 }, properties: {} },
-    { id: "app", type: "microservice", label: "Application service", position: { x: 0, y: 0 }, properties: {} },
-    { id: "cache", type: "cache", label: "Redis", position: { x: 0, y: 0 }, properties: {} },
-    { id: "db", type: "database", label: "PostgreSQL", position: { x: 0, y: 0 }, properties: {} },
+    {
+      id: "client",
+      type: "client",
+      label: "Clients",
+      position: { x: 0, y: 0 },
+      properties: {},
+    },
+    {
+      id: "gateway",
+      type: "api-gateway",
+      label: "API Gateway",
+      position: { x: 0, y: 0 },
+      properties: {},
+    },
+    {
+      id: "app",
+      type: "microservice",
+      label: "Application service",
+      position: { x: 0, y: 0 },
+      properties: {},
+    },
+    {
+      id: "cache",
+      type: "cache",
+      label: "Redis",
+      position: { x: 0, y: 0 },
+      properties: {},
+    },
+    {
+      id: "db",
+      type: "database",
+      label: "PostgreSQL",
+      position: { x: 0, y: 0 },
+      properties: {},
+    },
   ],
   connections: [
     { id: "client-gateway", source: "client", target: "gateway", type: "http" },
@@ -49,17 +79,17 @@ const preparation = (
     {
       operation: "redirect",
       node_ids: redirectNodeIds,
-      edge_ids: redirectNodeIds.slice(1).map((nodeId, index) =>
-        `${redirectNodeIds[index]}-${nodeId}`,
-      ),
+      edge_ids: redirectNodeIds
+        .slice(1)
+        .map((nodeId, index) => `${redirectNodeIds[index]}-${nodeId}`),
       explanation: "Redirect route",
     },
     {
       operation: "create-link",
       node_ids: createLinkNodeIds,
-      edge_ids: createLinkNodeIds.slice(1).map((nodeId, index) =>
-        `${createLinkNodeIds[index]}-${nodeId}`,
-      ),
+      edge_ids: createLinkNodeIds
+        .slice(1)
+        .map((nodeId, index) => `${createLinkNodeIds[index]}-${nodeId}`),
       explanation: "Create-link route",
     },
   ],
@@ -106,7 +136,9 @@ describe("runCapacitySimulation", () => {
       input,
     );
 
-    const database = result.nodeMetrics.find((metric) => metric.nodeId === "db");
+    const database = result.nodeMetrics.find(
+      (metric) => metric.nodeId === "db",
+    );
     expect(database?.redirectDemandPerSecond).toBe(950);
     expect(database?.createLinkDemandPerSecond).toBe(50);
     expect(database?.capacityPerSecond).toBe(600);
@@ -126,8 +158,12 @@ describe("runCapacitySimulation", () => {
       { ...input, cacheHitPercent: 90 },
     );
 
-    const cache = result.nodeMetrics.find((metric) => metric.nodeId === "cache");
-    const database = result.nodeMetrics.find((metric) => metric.nodeId === "db");
+    const cache = result.nodeMetrics.find(
+      (metric) => metric.nodeId === "cache",
+    );
+    const database = result.nodeMetrics.find(
+      (metric) => metric.nodeId === "db",
+    );
     expect(cache?.redirectDemandPerSecond).toBe(950);
     expect(database?.redirectDemandPerSecond).toBeCloseTo(95, 10);
     expect(database?.createLinkDemandPerSecond).toBe(50);

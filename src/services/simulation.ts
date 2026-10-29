@@ -1,5 +1,8 @@
 import { getApiBaseUrl } from "./api";
-import type { SystemDesignProblem, SystemDesignSolution } from "../types/systemDesign";
+import type {
+  SystemDesignProblem,
+  SystemDesignSolution,
+} from "../types/systemDesign";
 import type { SimulationPreparation } from "../types/simulation";
 
 const SIMULATION_API_BASE_URL = getApiBaseUrl(
@@ -18,7 +21,9 @@ export async function prepareSimulation(
     );
   }
   if (!problem || problem.slug !== "url-shortener-like-bit-ly") {
-    throw new Error("Choose the URL-shortener exercise before preparing a simulation.");
+    throw new Error(
+      "Choose the URL-shortener exercise before preparing a simulation.",
+    );
   }
 
   const payload = {
@@ -30,11 +35,20 @@ export async function prepareSimulation(
       requirementRevision: problem.requirementSpec?.revision ?? null,
     },
     components: solution.components.map(({ id, type, label, properties }) => ({
-      id, type, label, properties,
+      id,
+      type,
+      label,
+      properties,
     })),
     connections: solution.connections.map(
       ({ id, source, target, type, label, description, properties }) => ({
-        id, source, target, type, label, description, properties,
+        id,
+        source,
+        target,
+        type,
+        label,
+        description,
+        properties,
       }),
     ),
   };
@@ -60,8 +74,8 @@ export async function prepareSimulation(
     const message =
       typeof detail === "string"
         ? detail
-        : detail?.message ??
-          "AI could not prepare this diagram. No simulation metrics were produced.";
+        : (detail?.message ??
+          "AI could not prepare this diagram. No simulation metrics were produced.");
     throw new Error(message);
   }
 
@@ -71,7 +85,9 @@ export async function prepareSimulation(
     result.exercise_id !== problem.id ||
     result.requirement_revision !== (problem.requirementSpec?.revision ?? null)
   ) {
-    throw new Error("The preparation does not match this exercise. Reload and prepare again.");
+    throw new Error(
+      "The preparation does not match this exercise. Reload and prepare again.",
+    );
   }
   return result;
 }

@@ -13,9 +13,8 @@ export const LATENCY_WINDOW_MS = 5_000;
 export const LATENCY_TIME_BUCKET_MS = 500;
 
 const LOG_RATIO = Math.log(LATENCY_BUCKET_RATIO);
-const POSITIVE_BUCKETS = Math.ceil(
-  Math.log(LATENCY_MAX_MS / LATENCY_MIN_MS) / LOG_RATIO,
-) + 1;
+const POSITIVE_BUCKETS =
+  Math.ceil(Math.log(LATENCY_MAX_MS / LATENCY_MIN_MS) / LOG_RATIO) + 1;
 const BUCKET_COUNT = POSITIVE_BUCKETS + 1;
 const TIME_BUCKET_COUNT = LATENCY_WINDOW_MS / LATENCY_TIME_BUCKET_MS;
 
@@ -32,7 +31,10 @@ function bucketFor(ms: number): number {
 function upperBound(bucket: number): number {
   return bucket === 0
     ? 0
-    : Math.min(LATENCY_MAX_MS, LATENCY_MIN_MS * LATENCY_BUCKET_RATIO ** (bucket - 1));
+    : Math.min(
+        LATENCY_MAX_MS,
+        LATENCY_MIN_MS * LATENCY_BUCKET_RATIO ** (bucket - 1),
+      );
 }
 
 function quantileOf(buckets: Float64Array, count: number, p: number): number {
@@ -92,10 +94,13 @@ export class RollingLatencyHistogram {
   private newestEpoch = -1;
 
   add(nowMs: number, latencyMs: number): void {
-    if (!Number.isFinite(nowMs) || nowMs < 0 || !Number.isFinite(latencyMs)) return;
+    if (!Number.isFinite(nowMs) || nowMs < 0 || !Number.isFinite(latencyMs))
+      return;
     const epoch = Math.floor(nowMs / LATENCY_TIME_BUCKET_MS);
     if (epoch < this.newestEpoch) {
-      throw new RangeError('Latency observations must arrive in simulated-time order.');
+      throw new RangeError(
+        "Latency observations must arrive in simulated-time order.",
+      );
     }
     this.newestEpoch = epoch;
     const slot = epoch % TIME_BUCKET_COUNT;
@@ -114,13 +119,15 @@ export class RollingLatencyHistogram {
     const first = current - TIME_BUCKET_COUNT + 1;
     let count = 0;
     for (let i = 0; i < TIME_BUCKET_COUNT; i += 1) {
-      if (this.epochs[i] >= first && this.epochs[i] <= current) count += this.counts[i];
+      if (this.epochs[i] >= first && this.epochs[i] <= current)
+        count += this.counts[i];
     }
     return count;
   }
 
   percentiles(nowMs: number, out: Float64Array): void {
-    if (out.length < 3) throw new RangeError('Percentile output needs three entries.');
+    if (out.length < 3)
+      throw new RangeError("Percentile output needs three entries.");
     this.scratch.fill(0);
     const count = this.sampleCount(nowMs);
     if (count === 0) {

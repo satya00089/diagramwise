@@ -80,8 +80,8 @@ const VerifyEmail: React.FC = () => {
             {STATUS_HEADING[status]}
           </h1>
           <p className="mt-4 text-muted">{message}</p>
-          {status !== "loading" && (
-            continuation && status === "success" ? (
+          {status !== "loading" &&
+            (continuation && status === "success" ? (
               <a
                 className="mt-6 inline-block rounded-lg bg-[var(--brand)] px-5 py-3 font-semibold text-white"
                 href={continuation}
@@ -95,8 +95,7 @@ const VerifyEmail: React.FC = () => {
               >
                 Go to Diagramwise
               </Link>
-            )
-          )}
+            ))}
         </section>
       </main>
     </>

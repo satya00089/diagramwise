@@ -152,15 +152,19 @@ import DiagramCanvas from "../components/DiagramCanvas";
 import CanvasActionControls from "../components/CanvasActionControls";
 import ComponentPalette from "../components/ComponentPalette";
 import InspectorPanel from "../components/InspectorPanel";
-import { SimulationCanvasControls, SimulationDetails } from "../simulation/SimulationHost";
+import {
+  SimulationCanvasControls,
+  SimulationDetails,
+} from "../simulation/SimulationHost";
 import { useSimulationDocument } from "../simulation/canvas";
 import { simulationSession } from "../simulation/session";
 import { challengeUrl } from "../challenges/model";
 import type { NodeKind } from "@diagramwise/simulation-core";
 
 // Enable the entry locally while browser release checks are completed.
-const REPAIR_CHALLENGE_ENABLED = import.meta.env.DEV || import.meta.env.VITE_REPAIR_CHALLENGES_ENABLED === "true";
-
+const REPAIR_CHALLENGE_ENABLED =
+  import.meta.env.DEV ||
+  import.meta.env.VITE_REPAIR_CHALLENGES_ENABLED === "true";
 
 // UI Components - Nodes
 import CustomNode from "../components/Node";
@@ -875,11 +879,16 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   >("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
-  const [failedAssessmentKey, setFailedAssessmentKey] = useState<string | null>(null);
+  const [failedAssessmentKey, setFailedAssessmentKey] = useState<string | null>(
+    null,
+  );
   const failedAssessmentKeyRef = useRef<string | null>(null);
   const assessmentKey = `${user?.id ?? ""}:${idFromUrl ?? ""}`;
   const assessmentSaveFailed = failedAssessmentKey === assessmentKey;
-  const problemSaveStatus = getProblemSaveStatus(autoSaveStatus, assessmentSaveFailed);
+  const problemSaveStatus = getProblemSaveStatus(
+    autoSaveStatus,
+    assessmentSaveFailed,
+  );
 
   // Timer state - always running for problems
   const [elapsedTime, setElapsedTime] = useState<number>(0); // in seconds
@@ -1218,7 +1227,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         true,
       );
       if (result === "error" || result === "conflict") {
-        throw new Error(canvasWorkspace.getSnapshot().message || "Could not save the active problem canvas.");
+        throw new Error(
+          canvasWorkspace.getSnapshot().message ||
+            "Could not save the active problem canvas.",
+        );
       }
     },
     [attemptWorkspaceId, canvasWorkspace],
@@ -1859,180 +1871,190 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       remixOrigin,
     ],
   );
-  const retryAutoSave = useDebouncedSave(autoSaveEnabled, autoSaveContentKey, async (force = false) => {
-    if (nodes.length === 0 && lastSavedAttemptContentRef.current === null) {
-      if (force) setAutoSaveStatus("idle");
-      return;
-    }
+  const retryAutoSave = useDebouncedSave(
+    autoSaveEnabled,
+    autoSaveContentKey,
+    async (force = false) => {
+      if (nodes.length === 0 && lastSavedAttemptContentRef.current === null) {
+        if (force) setAutoSaveStatus("idle");
+        return;
+      }
 
-    const isProblemAttempt = Boolean(idFromUrl && idFromUrl !== "free");
-    const attemptContentSnapshot =
-      isProblemAttempt && idFromUrl
-        ? getAttemptContentSnapshot({
-            problemId: idFromUrl,
-            title: problem?.title || "Unknown Problem",
-            difficulty: problem?.difficulty,
-            category: problem?.category,
-            nodes,
-            edges,
-            reasoningContext,
-            interviewSession,
-            addressedFindingIds,
-          })
-        : null;
-
-    // Timer ticks alone never enqueue writes of unchanged content.
-    if (
-      isProblemAttempt && !force &&
-      attemptContentSnapshot === lastSavedAttemptContentRef.current
-    ) {
-      return;
-    }
-
-    const autoSave = async () => {
-      try {
-        if (
-          idFromUrl === "free" &&
-          !currentDiagramId &&
-          !userIntent?.title &&
-          !userIntent?.description
-        ) {
-          const saveDialogDismissed =
-            localStorage.getItem(SAVE_DIALOG_DISMISSED_KEY) === "true";
-
-          if (!userDeclinedSaveRef.current && !saveDialogDismissed) {
-            // No user intent - prompt for title and description (first time only)
-            setShowTitleDialog(true);
-            setAutoSaveStatus("idle");
-          }
-          // If declined, do nothing — no "saving" flash, no API call
-          return;
-        }
-
-        setAutoSaveStatus("saving");
-
-        if (idFromUrl === "free") {
-          // For Design Studio: save to API as diagrams
-          if (currentDiagramId) {
-            if (canvasWorkspace.getSnapshot().activeCanvasId) {
-              // Content goes to the active tab. The diagram itself gets metadata only,
-              // so a non-primary tab never overwrites the diagram's own nodes and edges.
-              await apiService.updateDiagramMetadata(currentDiagramId, {
-                title: currentDiagram?.title || "Auto-saved Design",
-                description: currentDiagram?.description || "Auto-saved design",
-                reasoningContext,
-              });
-              const result = await canvasWorkspace.saveActive(nodes, edges);
-              if (result === "error" || result === "conflict") {
-                throw new Error("Could not save the active design canvas.");
-              }
-            } else {
-              // Update existing diagram
-              await apiService.updateDiagram(currentDiagramId, {
-                title: currentDiagram?.title || "Auto-saved Design",
-                description: currentDiagram?.description || "Auto-saved design",
-                nodes,
-                edges,
-                reasoningContext,
-              });
-            }
-
-            // Ensure the diagram ID is stored for restoration on refresh
-            const lastDiagramKey = `last-diagram-${user?.id || "anonymous"}`;
-            localStorage.setItem(lastDiagramKey, currentDiagramId);
-          } else if (
-            userIntent &&
-            (userIntent.title || userIntent.description)
-          ) {
-            // First save - use chat bot's user intent for first save
-            const newDiagram = await apiService.saveDiagram({
-              title: userIntent.title || "Untitled Design",
-              description: userIntent.description || "",
-              nodes,
-              edges,
-              reasoningContext,
-              sourceDiagramId: remixOrigin?.sourceDiagramId,
-              familyId: remixOrigin?.familyId ?? undefined,
-            });
-            setCurrentDiagramId(newDiagram.id);
-            setCurrentDiagram(newDiagram);
-            setRemixOrigin(null);
-            try {
-              // Opens the design's first canvas. It is the legacy diagram content until the first tab save.
-              await canvasWorkspace.load(newDiagram.id);
-            } catch (canvasError) {
-              console.warn(
-                "Canvas tabs unavailable, saving on the legacy path",
-                canvasError,
-              );
-            }
-
-            // Store the diagram ID for restoration
-            const lastDiagramKey = `last-diagram-${user?.id || "anonymous"}`;
-            localStorage.setItem(lastDiagramKey, newDiagram.id);
-          }
-        } else {
-          // For Problem-solving: save progress to database
-          if (!idFromUrl || !attemptContentSnapshot) {
-            setAutoSaveStatus("idle");
-            return;
-          }
-          if (!force && attemptContentSnapshot === lastSavedAttemptContentRef.current) {
-            setAutoSaveStatus("idle");
-            return;
-          }
-
-          // Check and persist the versioned canvas before updating the attempt.
-          // Stop before updating the attempt if the canvas reports a conflict.
-          await persistProblemAttempt(
-            () => saveActiveProblemCanvas(nodes, edges),
-            () => apiService.saveAttempt({
+      const isProblemAttempt = Boolean(idFromUrl && idFromUrl !== "free");
+      const attemptContentSnapshot =
+        isProblemAttempt && idFromUrl
+          ? getAttemptContentSnapshot({
               problemId: idFromUrl,
               title: problem?.title || "Unknown Problem",
               difficulty: problem?.difficulty,
               category: problem?.category,
               nodes,
               edges,
-              elapsedTime,
               reasoningContext,
               interviewSession,
               addressedFindingIds,
-              problemRequirementSpec: problem?.requirementSpec,
-            }),
-          );
-          lastSavedAttemptContentRef.current = attemptContentSnapshot;
-        }
+            })
+          : null;
 
-        setAutoSaveStatus("saved");
-        setLastSavedAt(new Date());
-
-        // Show toast notification for successful auto-save (only show occasionally to avoid spam)
-        const lastToastTime = localStorage.getItem("lastAutoSaveToast");
-        const now = Date.now();
-        if (
-          failedAssessmentKeyRef.current !== assessmentKey &&
-          (!lastToastTime || now - Number.parseInt(lastToastTime) > 60000)
-        ) {
-          toast.success(
-            idFromUrl === "free"
-              ? "Design auto-saved successfully!"
-              : "Progress auto-saved successfully!",
-          );
-          localStorage.setItem("lastAutoSaveToast", now.toString());
-        }
-
-      } catch (error) {
-        console.error("Auto-save failed:", error);
-        setAutoSaveStatus("error");
-        toast.error(
-          (isProblemAttempt && canvasWorkspace.getSnapshot().message) ||
-            "Could not save your changes. Check Pages before reloading.",
-        );
+      // Timer ticks alone never enqueue writes of unchanged content.
+      if (
+        isProblemAttempt &&
+        !force &&
+        attemptContentSnapshot === lastSavedAttemptContentRef.current
+      ) {
+        return;
       }
-    };
 
-    await autoSave();
-  });
+      const autoSave = async () => {
+        try {
+          if (
+            idFromUrl === "free" &&
+            !currentDiagramId &&
+            !userIntent?.title &&
+            !userIntent?.description
+          ) {
+            const saveDialogDismissed =
+              localStorage.getItem(SAVE_DIALOG_DISMISSED_KEY) === "true";
+
+            if (!userDeclinedSaveRef.current && !saveDialogDismissed) {
+              // No user intent - prompt for title and description (first time only)
+              setShowTitleDialog(true);
+              setAutoSaveStatus("idle");
+            }
+            // If declined, do nothing — no "saving" flash, no API call
+            return;
+          }
+
+          setAutoSaveStatus("saving");
+
+          if (idFromUrl === "free") {
+            // For Design Studio: save to API as diagrams
+            if (currentDiagramId) {
+              if (canvasWorkspace.getSnapshot().activeCanvasId) {
+                // Content goes to the active tab. The diagram itself gets metadata only,
+                // so a non-primary tab never overwrites the diagram's own nodes and edges.
+                await apiService.updateDiagramMetadata(currentDiagramId, {
+                  title: currentDiagram?.title || "Auto-saved Design",
+                  description:
+                    currentDiagram?.description || "Auto-saved design",
+                  reasoningContext,
+                });
+                const result = await canvasWorkspace.saveActive(nodes, edges);
+                if (result === "error" || result === "conflict") {
+                  throw new Error("Could not save the active design canvas.");
+                }
+              } else {
+                // Update existing diagram
+                await apiService.updateDiagram(currentDiagramId, {
+                  title: currentDiagram?.title || "Auto-saved Design",
+                  description:
+                    currentDiagram?.description || "Auto-saved design",
+                  nodes,
+                  edges,
+                  reasoningContext,
+                });
+              }
+
+              // Ensure the diagram ID is stored for restoration on refresh
+              const lastDiagramKey = `last-diagram-${user?.id || "anonymous"}`;
+              localStorage.setItem(lastDiagramKey, currentDiagramId);
+            } else if (
+              userIntent &&
+              (userIntent.title || userIntent.description)
+            ) {
+              // First save - use chat bot's user intent for first save
+              const newDiagram = await apiService.saveDiagram({
+                title: userIntent.title || "Untitled Design",
+                description: userIntent.description || "",
+                nodes,
+                edges,
+                reasoningContext,
+                sourceDiagramId: remixOrigin?.sourceDiagramId,
+                familyId: remixOrigin?.familyId ?? undefined,
+              });
+              setCurrentDiagramId(newDiagram.id);
+              setCurrentDiagram(newDiagram);
+              setRemixOrigin(null);
+              try {
+                // Opens the design's first canvas. It is the legacy diagram content until the first tab save.
+                await canvasWorkspace.load(newDiagram.id);
+              } catch (canvasError) {
+                console.warn(
+                  "Canvas tabs unavailable, saving on the legacy path",
+                  canvasError,
+                );
+              }
+
+              // Store the diagram ID for restoration
+              const lastDiagramKey = `last-diagram-${user?.id || "anonymous"}`;
+              localStorage.setItem(lastDiagramKey, newDiagram.id);
+            }
+          } else {
+            // For Problem-solving: save progress to database
+            if (!idFromUrl || !attemptContentSnapshot) {
+              setAutoSaveStatus("idle");
+              return;
+            }
+            if (
+              !force &&
+              attemptContentSnapshot === lastSavedAttemptContentRef.current
+            ) {
+              setAutoSaveStatus("idle");
+              return;
+            }
+
+            // Check and persist the versioned canvas before updating the attempt.
+            // Stop before updating the attempt if the canvas reports a conflict.
+            await persistProblemAttempt(
+              () => saveActiveProblemCanvas(nodes, edges),
+              () =>
+                apiService.saveAttempt({
+                  problemId: idFromUrl,
+                  title: problem?.title || "Unknown Problem",
+                  difficulty: problem?.difficulty,
+                  category: problem?.category,
+                  nodes,
+                  edges,
+                  elapsedTime,
+                  reasoningContext,
+                  interviewSession,
+                  addressedFindingIds,
+                  problemRequirementSpec: problem?.requirementSpec,
+                }),
+            );
+            lastSavedAttemptContentRef.current = attemptContentSnapshot;
+          }
+
+          setAutoSaveStatus("saved");
+          setLastSavedAt(new Date());
+
+          // Show toast notification for successful auto-save (only show occasionally to avoid spam)
+          const lastToastTime = localStorage.getItem("lastAutoSaveToast");
+          const now = Date.now();
+          if (
+            failedAssessmentKeyRef.current !== assessmentKey &&
+            (!lastToastTime || now - Number.parseInt(lastToastTime) > 60000)
+          ) {
+            toast.success(
+              idFromUrl === "free"
+                ? "Design auto-saved successfully!"
+                : "Progress auto-saved successfully!",
+            );
+            localStorage.setItem("lastAutoSaveToast", now.toString());
+          }
+        } catch (error) {
+          console.error("Auto-save failed:", error);
+          setAutoSaveStatus("error");
+          toast.error(
+            (isProblemAttempt && canvasWorkspace.getSnapshot().message) ||
+              "Could not save your changes. Check Pages before reloading.",
+          );
+        }
+      };
+
+      await autoSave();
+    },
+  );
 
   // Apply undo/redo state to React Flow
   useEffect(() => {
@@ -2223,20 +2245,21 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         try {
           const savedAttempt = (await persistProblemAttempt(
             () => saveActiveProblemCanvas(nodes, edges),
-            () => apiService.saveAttempt({
-              problemId: idFromUrl,
-              title: problem?.title || "Unknown Problem",
-              difficulty: problem?.difficulty,
-              category: problem?.category,
-              nodes,
-              edges,
-              elapsedTime,
-              lastAssessment: res,
-              problemRequirementSpec: problem?.requirementSpec,
-              reasoningContext,
-              interviewSession: followUpSession,
-              addressedFindingIds,
-            }),
+            () =>
+              apiService.saveAttempt({
+                problemId: idFromUrl,
+                title: problem?.title || "Unknown Problem",
+                difficulty: problem?.difficulty,
+                category: problem?.category,
+                nodes,
+                edges,
+                elapsedTime,
+                lastAssessment: res,
+                problemRequirementSpec: problem?.requirementSpec,
+                reasoningContext,
+                interviewSession: followUpSession,
+                addressedFindingIds,
+              }),
           )) as {
             id?: string;
             isPublic?: boolean;
@@ -2271,13 +2294,18 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
         } catch (error) {
           console.error("Failed to save assessment:", error);
           const canvasSaveStatus = canvasWorkspace.getSnapshot().saveStatus;
-          if (canvasSaveStatus === "error" || canvasSaveStatus === "conflict" ||
-              !canvasWorkspace.getSnapshot().activeCanvasId) {
+          if (
+            canvasSaveStatus === "error" ||
+            canvasSaveStatus === "conflict" ||
+            !canvasWorkspace.getSnapshot().activeCanvasId
+          ) {
             setAutoSaveStatus("error");
           }
           failedAssessmentKeyRef.current = assessmentKey;
           setFailedAssessmentKey(assessmentKey);
-          toast.error("Your assessment could not be saved. Check Pages before leaving.");
+          toast.error(
+            "Your assessment could not be saved. Check Pages before leaving.",
+          );
         }
       }
     } catch (error) {
@@ -2851,16 +2879,15 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   const [activeRightTab, setActiveRightTab] = useState<
     "details" | "inspector" | "assessment" | "guide" | "simulation"
   >(
-    idFromUrl &&
-      idFromUrl !== "free" &&
-      requestedTab === "guide"
+    idFromUrl && idFromUrl !== "free" && requestedTab === "guide"
       ? "guide"
       : "details",
   );
   const [simulationPanelOpenRequest, setSimulationPanelOpenRequest] =
     useState(0);
   const simulationScope = {
-    designId: currentDiagramId ?? attemptWorkspaceId ?? `local:${idFromUrl ?? "free"}`,
+    designId:
+      currentDiagramId ?? attemptWorkspaceId ?? `local:${idFromUrl ?? "free"}`,
     canvasId: canvasWorkspaceState.activeCanvasId ?? "primary",
     exerciseId: idFromUrl && idFromUrl !== "free" ? idFromUrl : null,
   };
@@ -2868,23 +2895,49 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
   const [isRepairDemoConfirmOpen, setIsRepairDemoConfirmOpen] = useState(false);
   const repairDemoDialogRef = useModalDialog(isRepairDemoConfirmOpen);
 
-  const updateSimulationModel = useCallback((nodeId: string, kind: NodeKind) => {
-    setNodes((current) => current.map((node) => {
-      if (node.id !== nodeId) return node;
-      const existing = node.data?.simulation;
-      const simulation = existing && typeof existing === "object" && !Array.isArray(existing)
-        ? existing as Record<string, unknown> : {};
-      return { ...node, data: { ...node.data, simulation: { ...simulation, kind } } };
-    }));
-  }, [setNodes]);
-  const setSimulationEntrypoint = useCallback((nodeId: string | null) => {
-    setNodes((current) => current.map((node) => {
-      const existing = node.data?.simulation;
-      const simulation = existing && typeof existing === "object" && !Array.isArray(existing)
-        ? existing as Record<string, unknown> : {};
-      return { ...node, data: { ...node.data, simulation: { ...simulation, entrypoint: nodeId !== null && node.id === nodeId } } };
-    }));
-  }, [setNodes]);
+  const updateSimulationModel = useCallback(
+    (nodeId: string, kind: NodeKind) => {
+      setNodes((current) =>
+        current.map((node) => {
+          if (node.id !== nodeId) return node;
+          const existing = node.data?.simulation;
+          const simulation =
+            existing && typeof existing === "object" && !Array.isArray(existing)
+              ? (existing as Record<string, unknown>)
+              : {};
+          return {
+            ...node,
+            data: { ...node.data, simulation: { ...simulation, kind } },
+          };
+        }),
+      );
+    },
+    [setNodes],
+  );
+  const setSimulationEntrypoint = useCallback(
+    (nodeId: string | null) => {
+      setNodes((current) =>
+        current.map((node) => {
+          const existing = node.data?.simulation;
+          const simulation =
+            existing && typeof existing === "object" && !Array.isArray(existing)
+              ? (existing as Record<string, unknown>)
+              : {};
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              simulation: {
+                ...simulation,
+                entrypoint: nodeId !== null && node.id === nodeId,
+              },
+            },
+          };
+        }),
+      );
+    },
+    [setNodes],
+  );
   const openRepairDemo = useCallback(() => {
     setIsRepairDemoConfirmOpen(true);
   }, []);
@@ -2895,7 +2948,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       setActiveRightTab("simulation");
     };
     globalThis.addEventListener("diagram:simulation-inspect", inspect);
-    return () => globalThis.removeEventListener("diagram:simulation-inspect", inspect);
+    return () =>
+      globalThis.removeEventListener("diagram:simulation-inspect", inspect);
   }, []);
   useEffect(() => {
     if (
@@ -5591,9 +5645,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                   {idFromUrl !== "free" && !isSharedView && (
                     <>
                       <span
-                        className={`playground-difficulty px-2 py-1 rounded text-xs font-medium ${
-                          getPlaygroundDifficultyClass(problem.difficulty)
-                        }`}
+                        className={`playground-difficulty px-2 py-1 rounded text-xs font-medium ${getPlaygroundDifficultyClass(
+                          problem.difficulty,
+                        )}`}
                       >
                         {problem.difficulty}
                       </span>
@@ -5682,7 +5736,15 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
                 {/* Auto-save indicator for problem-solving mode */}
                 {idFromUrl && idFromUrl !== "free" && autoSaveEnabled && (
-                  <div className={problemSaveStatus === "assessment-error" || problemSaveStatus === "both-error" || problemSaveStatus === "error" ? "flex items-center gap-2 border-white/20" : "hidden sm:flex items-center gap-2 border-white/20"}>
+                  <div
+                    className={
+                      problemSaveStatus === "assessment-error" ||
+                      problemSaveStatus === "both-error" ||
+                      problemSaveStatus === "error"
+                        ? "flex items-center gap-2 border-white/20"
+                        : "hidden sm:flex items-center gap-2 border-white/20"
+                    }
+                  >
                     <div className="flex items-center gap-2 px-2 py-1 text-xs text-white/80">
                       {problemSaveStatus === "both-error" && (
                         <>
@@ -6096,14 +6158,16 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             }
           >
             {/* Render collaborator cursors (always shown when connected) */}
-            {!isSharedView && <SimulationCanvasControls
-              onInspect={() => {
-                setActiveRightTab("simulation");
-                setSimulationPanelOpenRequest((request) => request + 1);
-              }}
-              onSourceChange={setSimulationEntrypoint}
-              onDemo={REPAIR_CHALLENGE_ENABLED ? openRepairDemo : undefined}
-            />}
+            {!isSharedView && (
+              <SimulationCanvasControls
+                onInspect={() => {
+                  setActiveRightTab("simulation");
+                  setSimulationPanelOpenRequest((request) => request + 1);
+                }}
+                onSourceChange={setSimulationEntrypoint}
+                onDemo={REPAIR_CHALLENGE_ENABLED ? openRepairDemo : undefined}
+              />
+            )}
             {cursors.map((cursor) => {
               // Convert flow coordinates to screen coordinates for proper rendering
               const screenPosition = flowToScreenPosition(cursor.position);
@@ -6260,8 +6324,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                   id="repair-challenge-dialog-description"
                   className="mt-3 text-sm leading-relaxed text-muted"
                 >
-                  Open a separate practice workspace to repair a database bottleneck.
-                  Your current canvas stays open in this tab, including unsaved edits.
+                  Open a separate practice workspace to repair a database
+                  bottleneck. Your current canvas stays open in this tab,
+                  including unsaved edits.
                 </p>
                 <div className="mt-7 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                   <button
@@ -6577,7 +6642,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                           .writeText(
                             `${globalThis.location.origin}/#/playground/free?diagramId=${currentDiagramId}`,
                           )
-                          .then(() => toast.success("Link copied to clipboard!"))
+                          .then(() =>
+                            toast.success("Link copied to clipboard!"),
+                          )
                           .catch(() => toast.error("Could not copy the link."));
                       }}
                       className="px-3 py-2 bg-theme/10 hover:bg-theme/20 text-theme rounded-md transition-colors"

@@ -41,7 +41,9 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
     setHighlightedIndex((current) => {
       const currentOptions = optionsRef.current;
       const selectedIndex = currentOptions.indexOf(value);
-      return selectedIndex >= 0 ? selectedIndex : Math.min(current, currentOptions.length - 1);
+      return selectedIndex >= 0
+        ? selectedIndex
+        : Math.min(current, currentOptions.length - 1);
     });
     const handlePointerDown = (event: PointerEvent) => {
       if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false);
@@ -68,12 +70,15 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={`${id}-menu`}
-        aria-activedescendant={open ? `${id}-option-${highlightedIndex}` : undefined}
+        aria-activedescendant={
+          open ? `${id}-option-${highlightedIndex}` : undefined
+        }
         disabled={disabled}
         onClick={() => setOpen((current) => !current)}
         onFocus={onFocus}
         onBlur={(event) => {
-          if (!wrapperRef.current?.contains(event.relatedTarget as Node | null)) setOpen(false);
+          if (!wrapperRef.current?.contains(event.relatedTarget as Node | null))
+            setOpen(false);
           onBlur?.(event);
         }}
         onKeyDown={(event) => {
@@ -83,9 +88,21 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
             if (!open) {
               setOpen(true);
               const selected = options.indexOf(value);
-              setHighlightedIndex(selected >= 0 ? selected : event.key === "ArrowDown" ? 0 : options.length - 1);
+              setHighlightedIndex(
+                selected >= 0
+                  ? selected
+                  : event.key === "ArrowDown"
+                    ? 0
+                    : options.length - 1,
+              );
             } else {
-              setHighlightedIndex((current) => (current + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length);
+              setHighlightedIndex(
+                (current) =>
+                  (current +
+                    (event.key === "ArrowDown" ? 1 : -1) +
+                    options.length) %
+                  options.length,
+              );
             }
           } else if (event.key === "Home") {
             event.preventDefault();

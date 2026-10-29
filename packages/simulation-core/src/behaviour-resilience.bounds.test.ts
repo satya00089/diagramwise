@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { Engine } from './engine';
-import { makeNode } from './presets';
-import type { NodeStats, Topology } from './types';
+import { describe, expect, it } from "vitest";
+import { Engine } from "./engine";
+import { makeNode } from "./presets";
+import type { NodeStats, Topology } from "./types";
 
 /*
  * The transcoder's ladder is a loop that runs once per rendition per
@@ -11,16 +11,20 @@ import type { NodeStats, Topology } from './types';
  */
 
 function topology(renditions: unknown): Topology {
-  const client = { ...makeNode('client', 0, 0), id: 'client' };
+  const client = { ...makeNode("client", 0, 0), id: "client" };
   client.config = { ...client.config, rps: 30 };
-  const farm = { ...makeNode('transcoder', 200, 0), id: 'farm' };
-  farm.config = { ...farm.config, renditions, serviceMs: 20 } as typeof farm.config;
-  const store = { ...makeNode('objectstore', 400, 0), id: 'store' };
+  const farm = { ...makeNode("transcoder", 200, 0), id: "farm" };
+  farm.config = {
+    ...farm.config,
+    renditions,
+    serviceMs: 20,
+  } as typeof farm.config;
+  const store = { ...makeNode("objectstore", 400, 0), id: "store" };
   return {
     nodes: [client, farm, store],
     edges: [
-      { id: 'e1', from: 'client', to: 'farm', weight: 1 },
-      { id: 'e2', from: 'farm', to: 'store', weight: 1 },
+      { id: "e1", from: "client", to: "farm", weight: 1 },
+      { id: "e2", from: "farm", to: "store", weight: 1 },
     ],
   };
 }
@@ -41,25 +45,25 @@ function outputsFor(renditions: unknown): {
   const snapshot = engine.snapshot();
   return {
     ms: performance.now() - start,
-    farm: snapshot.nodes['farm'] as NodeStats,
-    uploads: (snapshot.nodes['store'] as NodeStats).totalCompleted,
+    farm: snapshot.nodes["farm"] as NodeStats,
+    uploads: (snapshot.nodes["store"] as NodeStats).totalCompleted,
   };
 }
 
-describe('the rendition ladder the transcoder will act on', () => {
-  it('runs a farm whose ladder is infinite', () => {
+describe("the rendition ladder the transcoder will act on", () => {
+  it("runs a farm whose ladder is infinite", () => {
     // `Infinity >= 1` is true and `Math.floor` leaves it alone, so the emit
     // loop had no end for it.
     const { ms } = outputsFor(Number.POSITIVE_INFINITY);
     expect(ms).toBeLessThan(2000);
   });
 
-  it('runs a farm whose ladder is longer than the editor can set', () => {
+  it("runs a farm whose ladder is longer than the editor can set", () => {
     const { ms } = outputsFor(1e9);
     expect(ms).toBeLessThan(2000);
   });
 
-  it('still encodes three renditions when the field is absent', () => {
+  it("still encodes three renditions when the field is absent", () => {
     // Between the two and four ladders, which is what a fallback of three
     // means in the only place the number is visible.
     const { uploads } = outputsFor(undefined);
@@ -67,7 +71,7 @@ describe('the rendition ladder the transcoder will act on', () => {
     expect(uploads).toBeLessThan(outputsFor(4).uploads);
   });
 
-  it('leaves a ladder the editor can set exactly where it was', () => {
+  it("leaves a ladder the editor can set exactly where it was", () => {
     // The ceiling is the inspector's own maximum, so the amplification a
     // reader can build is untouched: four renditions still write more to the
     // store than two do, and the farm still finishes jobs.

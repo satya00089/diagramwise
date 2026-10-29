@@ -139,9 +139,7 @@ const AssessmentFindings: React.FC<AssessmentFindingsProps> = ({
           </p>
           {finding.recommendation && (
             <p>
-              <span className="font-semibold">
-                {recommendationPrefix}
-              </span>
+              <span className="font-semibold">{recommendationPrefix}</span>
               {finding.recommendation}
             </p>
           )}

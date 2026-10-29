@@ -45,9 +45,7 @@ const AuthEntry: React.FC = () => {
   const returnAfterLogin = useRef(false);
   const [params] = useSearchParams();
   const { login, signup, googleLogin } = useAuth();
-  const continuationUrl = getMcpContinuationUrl(
-    params.get("mcp_continuation"),
-  );
+  const continuationUrl = getMcpContinuationUrl(params.get("mcp_continuation"));
   const returnTo = getSafeReturnTo(params.get("returnTo"));
   const initialMode = params.get("mode") === "signup" ? "signup" : "login";
 

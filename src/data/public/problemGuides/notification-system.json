@@ -199,13 +199,21 @@
         "id": "truth",
         "label": "Notification truth and policy",
         "description": "Intent, preference, template, and delivery state form the correctness boundary.",
-        "componentIds": ["notification-store", "preference-store", "template-store"]
+        "componentIds": [
+          "notification-store",
+          "preference-store",
+          "template-store"
+        ]
       },
       {
         "id": "delivery",
         "label": "Asynchronous delivery plane",
         "description": "Durable work and channel workers absorb bursts and enforce provider-specific behavior.",
-        "componentIds": ["notification-queue", "channel-workers", "provider-adapters"]
+        "componentIds": [
+          "notification-queue",
+          "channel-workers",
+          "provider-adapters"
+        ]
       },
       {
         "id": "providers",
@@ -225,19 +233,36 @@
         "id": "accept-path",
         "label": "Request acknowledgement path",
         "description": "Client -> gateway -> notification service -> notification store -> durable queue.",
-        "componentIds": ["client", "gateway", "notification-service", "notification-store", "notification-queue"]
+        "componentIds": [
+          "client",
+          "gateway",
+          "notification-service",
+          "notification-store",
+          "notification-queue"
+        ]
       },
       {
         "id": "delivery-path",
         "label": "Channel delivery path",
         "description": "Queue -> channel workers -> provider adapters -> external providers -> delivery state.",
-        "componentIds": ["notification-queue", "channel-workers", "provider-adapters", "providers", "notification-store"]
+        "componentIds": [
+          "notification-queue",
+          "channel-workers",
+          "provider-adapters",
+          "providers",
+          "notification-store"
+        ]
       },
       {
         "id": "policy-path",
         "label": "Policy and template path",
         "description": "Notification service -> preference and template stores -> channel work, with policy rechecked before send.",
-        "componentIds": ["notification-service", "preference-store", "template-store", "channel-workers"]
+        "componentIds": [
+          "notification-service",
+          "preference-store",
+          "template-store",
+          "channel-workers"
+        ]
       }
     ],
     "components": [
@@ -248,7 +273,9 @@
         "label": "Product services",
         "description": "Applications submit events or direct notification requests and query delivery status.",
         "position": { "x": 0, "y": 260 },
-        "properties": { "traffic": "Transactional, scheduled, and batch notification intents" }
+        "properties": {
+          "traffic": "Transactional, scheduled, and batch notification intents"
+        }
       },
       {
         "id": "gateway",
@@ -257,7 +284,9 @@
         "label": "Notification API gateway",
         "description": "Authenticates callers, validates payloads, applies tenant quotas, and protects the enqueue path.",
         "position": { "x": 480, "y": 260 },
-        "properties": { "protection": "Tenant auth, payload limits, idempotency, and admission control" }
+        "properties": {
+          "protection": "Tenant auth, payload limits, idempotency, and admission control"
+        }
       },
       {
         "id": "notification-service",
@@ -266,7 +295,9 @@
         "label": "Notification orchestration service",
         "description": "Commits intent, resolves eligible channels, manages cancellation, and exposes aggregate status.",
         "position": { "x": 960, "y": 260 },
-        "properties": { "criticalPath": "Persist intent and enqueue bounded work; no provider call" }
+        "properties": {
+          "criticalPath": "Persist intent and enqueue bounded work; no provider call"
+        }
       },
       {
         "id": "notification-store",
@@ -275,7 +306,9 @@
         "label": "Notification and delivery store",
         "description": "Stores NotificationRequest, DeliveryAttempt, ProviderMessage evidence, idempotency records, and status transitions.",
         "position": { "x": 1440, "y": 260 },
-        "properties": { "consistency": "Conditional writes and monotonic status transitions per request and channel" }
+        "properties": {
+          "consistency": "Conditional writes and monotonic status transitions per request and channel"
+        }
       },
       {
         "id": "preference-store",
@@ -284,7 +317,9 @@
         "label": "Preference and consent store",
         "description": "Stores channel opt-in, category policy, quiet hours, locale, suppression, and policy versions.",
         "position": { "x": 960, "y": 560 },
-        "properties": { "correctness": "A send worker rechecks effective policy before provider handoff" }
+        "properties": {
+          "correctness": "A send worker rechecks effective policy before provider handoff"
+        }
       },
       {
         "id": "template-store",
@@ -293,7 +328,9 @@
         "label": "Versioned template store",
         "description": "Stores reviewed channel and locale templates with bounded variable schemas and immutable versions.",
         "position": { "x": 1440, "y": 560 },
-        "properties": { "safety": "Validation, review, version pinning, and output-size limits" }
+        "properties": {
+          "safety": "Validation, review, version pinning, and output-size limits"
+        }
       },
       {
         "id": "notification-queue",
@@ -302,7 +339,9 @@
         "label": "Durable notification queues",
         "description": "Buffers accepted work and separates email, SMS, push, retry, scheduled, and dead-letter capacity.",
         "position": { "x": 1920, "y": 260 },
-        "properties": { "delivery": "At least once with request/channel deduplication and replay" }
+        "properties": {
+          "delivery": "At least once with request/channel deduplication and replay"
+        }
       },
       {
         "id": "channel-workers",
@@ -311,7 +350,9 @@
         "label": "Channel delivery workers",
         "description": "Render templates, recheck policy, enforce quotas, call adapters, and schedule bounded retries per channel.",
         "position": { "x": 2400, "y": 260 },
-        "properties": { "isolation": "Independent pools and rate limits for email, SMS, and push" }
+        "properties": {
+          "isolation": "Independent pools and rate limits for email, SMS, and push"
+        }
       },
       {
         "id": "provider-adapters",
@@ -320,7 +361,9 @@
         "label": "Provider adapter layer",
         "description": "Normalizes provider APIs, error classes, idempotency capabilities, quotas, and callback verification.",
         "position": { "x": 2880, "y": 260 },
-        "properties": { "failover": "Provider-specific circuit breakers and controlled failover" }
+        "properties": {
+          "failover": "Provider-specific circuit breakers and controlled failover"
+        }
       },
       {
         "id": "providers",
@@ -329,7 +372,9 @@
         "label": "Email, SMS, and push providers",
         "description": "External channel providers accept messages and emit provider message IDs and delivery callbacks.",
         "position": { "x": 3360, "y": 260 },
-        "properties": { "behavior": "Different quotas, latency, error semantics, and callback guarantees" }
+        "properties": {
+          "behavior": "Different quotas, latency, error semantics, and callback guarantees"
+        }
       },
       {
         "id": "monitoring",
@@ -338,7 +383,9 @@
         "label": "Notification reliability monitoring",
         "description": "Tracks intake, queue lag, provider errors, delivery latency, consent suppressions, retries, and duplicate signals.",
         "position": { "x": 2880, "y": 620 },
-        "properties": { "signals": "Per-channel SLOs, freshness, cost, DLQ depth, and provider saturation" }
+        "properties": {
+          "signals": "Per-channel SLOs, freshness, cost, DLQ depth, and provider saturation"
+        }
       }
     ],
     "connections": [

@@ -19,12 +19,7 @@ const LearningPath: React.FC = () => {
   useTheme();
   const { slug } = useParams();
   const navigate = useNavigate();
-  const {
-    isAuthenticated: isAuth,
-    login,
-    signup,
-    googleLogin,
-  } = useAuth();
+  const { isAuthenticated: isAuth, login, signup, googleLogin } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [path, setPath] = useState<LPType | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);

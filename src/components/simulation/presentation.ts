@@ -17,11 +17,17 @@ export function formatSimulationNumber(value: number): string {
 }
 
 export function formatSimulationPercent(value: number): string {
-  return Number.isFinite(value) ? `${numberFormatter.format(value * 100)}%` : "—";
+  return Number.isFinite(value)
+    ? `${numberFormatter.format(value * 100)}%`
+    : "—";
 }
 
-export function formatSimulationLatency(value: number, sampleCount?: number): string {
-  if (!Number.isFinite(value) || value < 0 || sampleCount === 0) return "Collecting samples";
+export function formatSimulationLatency(
+  value: number,
+  sampleCount?: number,
+): string {
+  if (!Number.isFinite(value) || value < 0 || sampleCount === 0)
+    return "Collecting samples";
   return value >= 1000
     ? `${numberFormatter.format(value / 1000)} s`
     : `${numberFormatter.format(value)} ms`;
@@ -31,57 +37,147 @@ export function nodeSimulationSignal(
   stats: NodeStats | undefined,
   kind?: NodeKind,
   faulted = false,
-  diagnostic?: { code: string; message: string; severity?: "error" | "warning" | "info" },
+  diagnostic?: {
+    code: string;
+    message: string;
+    severity?: "error" | "warning" | "info";
+  },
 ): { tone: SimulationTone; label: string; explanation: string } {
   if (faulted) {
-    return { tone: "danger", label: "Fault active", explanation: "A temporary fault is active on this component. Clear the fault to observe recovery." };
+    return {
+      tone: "danger",
+      label: "Fault active",
+      explanation:
+        "A temporary fault is active on this component. Clear the fault to observe recovery.",
+    };
   }
   if (!stats) {
-    return { tone: "neutral", label: "Waiting for traffic", explanation: "Start the simulation to observe this component." };
+    return {
+      tone: "neutral",
+      label: "Waiting for traffic",
+      explanation: "Start the simulation to observe this component.",
+    };
   }
   if (stats.breakerState === "open") {
-    return { tone: "danger", label: "Circuit open", explanation: "The circuit breaker is refusing calls while its downstream dependency recovers." };
+    return {
+      tone: "danger",
+      label: "Circuit open",
+      explanation:
+        "The circuit breaker is refusing calls while its downstream dependency recovers.",
+    };
   }
   if (stats.failingOver) {
-    return { tone: "danger", label: "Failover in progress", explanation: "Requests are affected while this region switches to a healthy destination." };
+    return {
+      tone: "danger",
+      label: "Failover in progress",
+      explanation:
+        "Requests are affected while this region switches to a healthy destination.",
+    };
   }
   if ((stats.throttledRate ?? 0) > 0) {
-    return { tone: "danger", label: "Rate limited", explanation: "The configured rate limiter is rejecting part of the incoming workload." };
+    return {
+      tone: "danger",
+      label: "Rate limited",
+      explanation:
+        "The configured rate limiter is rejecting part of the incoming workload.",
+    };
   }
   if (stats.shedRate > 0) {
-    return { tone: "danger", label: "Queue full · dropping requests", explanation: "Requests are being rejected because available service slots and the configured waiting queue are full." };
+    return {
+      tone: "danger",
+      label: "Queue full · dropping requests",
+      explanation:
+        "Requests are being rejected because available service slots and the configured waiting queue are full.",
+    };
   }
   if (stats.timeoutRate > 0) {
-    return { tone: "danger", label: "Timeouts observed", explanation: "Calls exceeded their deadline. Inspect this component and its downstream path to locate the wait." };
+    return {
+      tone: "danger",
+      label: "Timeouts observed",
+      explanation:
+        "Calls exceeded their deadline. Inspect this component and its downstream path to locate the wait.",
+    };
   }
   if (stats.errorRate > 0) {
-    return { tone: "danger", label: "Requests failing", explanation: "This component is reporting failed requests. A failure may originate here or propagate from a dependency." };
+    return {
+      tone: "danger",
+      label: "Requests failing",
+      explanation:
+        "This component is reporting failed requests. A failure may originate here or propagate from a dependency.",
+    };
   }
   if (diagnostic?.code === "queue-without-consumer") {
     return {
       tone: "warning",
-      label: stats.queued > 0 ? `No active consumer · ${formatSimulationNumber(stats.queued)} buffered` : "No active consumer",
+      label:
+        stats.queued > 0
+          ? `No active consumer · ${formatSimulationNumber(stats.queued)} buffered`
+          : "No active consumer",
       explanation: diagnostic.message,
     };
   }
-  if (diagnostic?.code === "unreachable-component" && diagnostic.severity === "warning") {
-    return { tone: "warning", label: "No delivery observed", explanation: diagnostic.message };
+  if (
+    diagnostic?.code === "unreachable-component" &&
+    diagnostic.severity === "warning"
+  ) {
+    return {
+      tone: "warning",
+      label: "No delivery observed",
+      explanation: diagnostic.message,
+    };
   }
   if (stats.queued > 0) {
-    if (kind === "queue") return { tone: "warning", label: `${formatSimulationNumber(stats.queued)} buffered`, explanation: "Messages are buffered for a background worker to pull. Watch whether the backlog drains as consumer throughput catches up." };
-    if (kind === "streambroker") return { tone: "warning", label: `${formatSimulationNumber(stats.queued)} consumer lag`, explanation: "At least one consumer group is behind the published log. Compare its lag with the publish rate and retention." };
-    return { tone: "warning", label: `${formatSimulationNumber(stats.queued)} waiting`, explanation: "Work is waiting for a service slot. Watch whether the queue drains when traffic falls." };
+    if (kind === "queue")
+      return {
+        tone: "warning",
+        label: `${formatSimulationNumber(stats.queued)} buffered`,
+        explanation:
+          "Messages are buffered for a background worker to pull. Watch whether the backlog drains as consumer throughput catches up.",
+      };
+    if (kind === "streambroker")
+      return {
+        tone: "warning",
+        label: `${formatSimulationNumber(stats.queued)} consumer lag`,
+        explanation:
+          "At least one consumer group is behind the published log. Compare its lag with the publish rate and retention.",
+      };
+    return {
+      tone: "warning",
+      label: `${formatSimulationNumber(stats.queued)} waiting`,
+      explanation:
+        "Work is waiting for a service slot. Watch whether the queue drains when traffic falls.",
+    };
   }
   if ((stats.instancesPending ?? 0) > 0 || stats.scalePhase === "warming") {
-    return { tone: "warning", label: "Instances warming up", explanation: "Additional instances have been requested and are not yet serving traffic." };
+    return {
+      tone: "warning",
+      label: "Instances warming up",
+      explanation:
+        "Additional instances have been requested and are not yet serving traffic.",
+    };
   }
   if (stats.utilization >= 0.85 && kind !== "client") {
-    return { tone: "warning", label: "Limited spare capacity", explanation: "Most available service slots are occupied. This indicates pressure; it does not by itself mean requests are failing." };
+    return {
+      tone: "warning",
+      label: "Limited spare capacity",
+      explanation:
+        "Most available service slots are occupied. This indicates pressure; it does not by itself mean requests are failing.",
+    };
   }
   if (stats.arrivalRate > 0 || stats.throughput > 0) {
-    return { tone: "healthy", label: "Traffic flowing", explanation: "Traffic is flowing with no observed failures in the current window." };
+    return {
+      tone: "healthy",
+      label: "Traffic flowing",
+      explanation:
+        "Traffic is flowing with no observed failures in the current window.",
+    };
   }
-  return { tone: "neutral", label: "Idle", explanation: "This component is not receiving traffic in the current window." };
+  return {
+    tone: "neutral",
+    label: "Idle",
+    explanation:
+      "This component is not receiving traffic in the current window.",
+  };
 }
 
 export const SIMULATION_MODEL_LABELS: Record<NodeKind, string> = {

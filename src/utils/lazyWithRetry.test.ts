@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  createChunkRetryUrl,
-  isChunkLoadError,
-} from "./lazyWithRetry";
+import { createChunkRetryUrl, isChunkLoadError } from "./lazyWithRetry";
 
 describe("lazyWithRetry helpers", () => {
   it("recognizes browser errors caused by unavailable lazy chunks", () => {
@@ -20,16 +17,11 @@ describe("lazyWithRetry helpers", () => {
 
   it("preserves the current route while adding a cache-busting retry token", () => {
     const retryUrl = new URL(
-      createChunkRetryUrl(
-        "https://diagramwise.com/problems/?q=cache",
-        "123",
-      ),
+      createChunkRetryUrl("https://diagramwise.com/problems/?q=cache", "123"),
     );
 
     expect(retryUrl.pathname).toBe("/problems/");
     expect(retryUrl.searchParams.get("q")).toBe("cache");
-    expect(retryUrl.searchParams.get("__diagrammatic_chunk_retry")).toBe(
-      "123",
-    );
+    expect(retryUrl.searchParams.get("__diagrammatic_chunk_retry")).toBe("123");
   });
 });

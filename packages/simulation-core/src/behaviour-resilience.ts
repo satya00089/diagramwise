@@ -23,10 +23,10 @@
  *     loadshedder classifies priority from a HASH of the request key rather
  *     than a roll, so it consumes zero randomness, exactly like the limiter.
  */
-import type { NodeStats } from './types';
-import type { BehaviourCtx, NodeStateLike, ReqLike } from './engine-types';
-import type { AdmitAction, ComponentBehaviour } from './behaviour';
-import { clamp01 } from './behaviour';
+import type { NodeStats } from "./types";
+import type { BehaviourCtx, NodeStateLike, ReqLike } from "./engine-types";
+import type { AdmitAction, ComponentBehaviour } from "./behaviour";
+import { clamp01 } from "./behaviour";
 
 /* ================================================================== *
  * bulkhead -- an isolated concurrency pool around one dependency
@@ -66,12 +66,16 @@ function isWaiting(b: BulkheadState, req: ReqLike): number {
   return b.waiters.findIndex((waiter) => waiter.req === req);
 }
 
-function admitWaiter(ctx: BehaviourCtx, state: NodeStateLike, b: BulkheadState): void {
+function admitWaiter(
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  b: BulkheadState,
+): void {
   const waiter = b.waiters.shift();
   if (!waiter) return;
   b.inFlight++;
   b.lastAcquireLatencyMs = ctx.now - waiter.enteredAt;
-  ctx.countCustom(state, 'admitted', 1);
+  ctx.countCustom(state, "admitted", 1);
   ctx.resumeAdmission(state, waiter.req);
 }
 
@@ -107,14 +111,14 @@ function admitWaiter(ctx: BehaviourCtx, state: NodeStateLike, b: BulkheadState):
  * defaults keep them at zero.
  */
 const bulkhead: ComponentBehaviour = {
-  kind: 'bulkhead',
+  kind: "bulkhead",
   // A gate, not a server: it holds no slots of its own and its utilisation
   // would be meaningless. The pool count is its real meter.
   servesRequests: false,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
   // The whole component is a count of downstream outcomes.
   observesOutcome: true,
@@ -129,28 +133,28 @@ const bulkhead: ComponentBehaviour = {
     // Nothing wired behind it: there is no pool to guard, so pass through
     // rather than black-holing the topology a student is mid-way through
     // wiring up.
-    if (state.out.length === 0) return 'passthru';
+    if (state.out.length === 0) return "passthru";
 
     const b = state.ext as BulkheadState;
     if (b.inFlight >= cfgBulkheadMax(state)) {
       if (
-        state.config.bulkheadMode === 'wait' &&
+        state.config.bulkheadMode === "wait" &&
         b.waiters.length < cfgAcquireQueueMax(state)
       ) {
         b.waiters.push({ req, enteredAt: ctx.now });
         ctx.wakeAfter(state, req, cfgAcquireTimeoutMs(state));
-        return 'handled';
+        return "handled";
       }
-      ctx.countCustom(state, 'bulkheadRejected', 1);
-      ctx.reject(state, req, 'bulkhead-full');
-      return 'handled';
+      ctx.countCustom(state, "bulkheadRejected", 1);
+      ctx.reject(state, req, "bulkhead-full");
+      return "handled";
     }
     b.inFlight++;
-    ctx.countCustom(state, 'admitted', 1);
-    return 'passthru';
+    ctx.countCustom(state, "admitted", 1);
+    return "passthru";
   },
 
-  route: () => 'one',
+  route: () => "one",
   pickEdge: (ctx, state, _req, out) => {
     const edge = ctx.pickWeightedOrLeastLoaded(out);
     if (edge === null) {
@@ -174,18 +178,21 @@ const bulkhead: ComponentBehaviour = {
     const idx = isWaiting(b, req);
     if (idx < 0) return;
     b.waiters.splice(idx, 1);
-    ctx.countCustom(state, 'bulkheadAcquireTimeout', 1);
-    ctx.reject(state, req, 'acquire-timeout');
+    ctx.countCustom(state, "bulkheadAcquireTimeout", 1);
+    ctx.reject(state, req, "acquire-timeout");
   },
 
   decorateStats: (ctx, state, stats: NodeStats) => {
     const b = state.ext as BulkheadState | null;
     stats.bulkheadInFlight = b ? b.inFlight : 0;
     stats.bulkheadLimit = cfgBulkheadMax(state);
-    stats.bulkheadRejectedRate = ctx.counterRate(state, 'bulkheadRejected');
+    stats.bulkheadRejectedRate = ctx.counterRate(state, "bulkheadRejected");
     stats.bulkheadWaiting = b ? b.waiters.length : 0;
     stats.bulkheadAcquireLatencyMs = b?.lastAcquireLatencyMs ?? undefined;
-    stats.bulkheadAcquireTimeoutRate = ctx.counterRate(state, 'bulkheadAcquireTimeout');
+    stats.bulkheadAcquireTimeoutRate = ctx.counterRate(
+      state,
+      "bulkheadAcquireTimeout",
+    );
     // Show the pool as this node's occupancy so the canvas meter means
     // "how full is the bulkhead" rather than sitting at zero forever.
     stats.inFlight = b ? b.inFlight : 0;
@@ -227,29 +234,29 @@ interface RetryQueueState {
  * downstream call at this same node would book a second.
  */
 const retryqueue: ComponentBehaviour = {
-  kind: 'retryqueue',
+  kind: "retryqueue",
   // Delivery slots are real work: the meter reads delivery concurrency.
   servesRequests: true,
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'own',
+  pump: "own",
   creditsJoinCompletion: false,
   observesOutcome: true,
 
   initState: (): RetryQueueState => ({ deadLetters: 0 }),
 
   onAdmit: (ctx, state, req): AdmitAction => {
-    if (ctx.queueDepth(state) >= ctx.effectiveQueueLimit(state)) return 'shed';
+    if (ctx.queueDepth(state) >= ctx.effectiveQueueLimit(state)) return "shed";
     ctx.ackAndRelay(state, req);
-    return 'handled';
+    return "handled";
   },
 
   onDownstreamResult: (ctx, state, req, ok, reason) => {
     if (ok) {
-      ctx.countCustom(state, 'delivered', 1);
+      ctx.countCustom(state, "delivered", 1);
       return;
     }
     // Mirror the engine's own retry predicate exactly, so this ledger never
@@ -257,19 +264,20 @@ const retryqueue: ComponentBehaviour = {
     // redelivered unless the budget is spent or the failure is one the
     // engine never retries (a wiring error, a depth blowout).
     const retries = Math.max(0, Math.floor(state.config.retries));
-    const final = req.attempt >= retries || reason === 'depth' || reason === 'no-route';
+    const final =
+      req.attempt >= retries || reason === "depth" || reason === "no-route";
     if (final) {
-      ctx.countCustom(state, 'deadLetter', 1);
+      ctx.countCustom(state, "deadLetter", 1);
       (state.ext as RetryQueueState).deadLetters++;
     } else {
-      ctx.countCustom(state, 'redelivery', 1);
+      ctx.countCustom(state, "redelivery", 1);
     }
   },
 
   decorateStats: (ctx, state, stats: NodeStats) => {
-    stats.deliveredRate = ctx.counterRate(state, 'delivered');
-    stats.redeliveryRate = ctx.counterRate(state, 'redelivery');
-    stats.deadLetterRate = ctx.counterRate(state, 'deadLetter');
+    stats.deliveredRate = ctx.counterRate(state, "delivered");
+    stats.redeliveryRate = ctx.counterRate(state, "redelivery");
+    stats.deadLetterRate = ctx.counterRate(state, "deadLetter");
     stats.deadLetters = (state.ext as RetryQueueState | null)?.deadLetters ?? 0;
   },
 };
@@ -322,14 +330,14 @@ function cfgRenditions(state: NodeStateLike): number {
 }
 
 const transcoder: ComponentBehaviour = {
-  kind: 'transcoder',
+  kind: "transcoder",
   servesRequests: true,
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
   generatesLoad: false,
   pullsFromQueues: true,
   buffersForConsumers: false,
-  pump: 'sources',
+  pump: "sources",
   // FALSE, and it must be: a finished job is booked here by the 'complete'
   // path below, and the detached uploads join back through this node -- were
   // joins credited too, every rendition landing on storage would count as a
@@ -343,16 +351,16 @@ const transcoder: ComponentBehaviour = {
       const edge = state.out[i];
       for (let n = 0; n < renditions; n++) {
         if (!ctx.emitDetached(state, edge, req.key)) break;
-        ctx.countCustom(state, 'output', 1);
+        ctx.countCustom(state, "output", 1);
       }
     }
     // The job is finished HERE: uploads are detached, so a slow store makes
     // artifacts queue at the store, never the encode slot wait on it.
-    return 'complete';
+    return "complete";
   },
 
   decorateStats: (ctx, state, stats: NodeStats) => {
-    stats.outputRate = ctx.counterRate(state, 'output');
+    stats.outputRate = ctx.counterRate(state, "output");
   },
 };
 
@@ -387,14 +395,14 @@ const transcoder: ComponentBehaviour = {
  * the same replay-stability reason the cache documents.
  */
 const edgecompute: ComponentBehaviour = {
-  kind: 'edgecompute',
+  kind: "edgecompute",
   servesRequests: true,
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'own',
+  pump: "own",
   creditsJoinCompletion: true,
 
   onServiceComplete: (ctx, state, req) => {
@@ -410,23 +418,23 @@ const edgecompute: ComponentBehaviour = {
       // trade a student makes when pushing logic outward.
       const cap = state.config.cpuMsCap;
       if (cap !== undefined && cap > 0 && req.ownMs > cap) {
-        ctx.countCustom(state, 'cpuExceeded', 1);
-        ctx.countCustom(state, 'passedThrough', 1);
-        return state.out.length === 0 ? 'complete' : 'downstream';
+        ctx.countCustom(state, "cpuExceeded", 1);
+        ctx.countCustom(state, "passedThrough", 1);
+        return state.out.length === 0 ? "complete" : "downstream";
       }
-      ctx.countCustom(state, 'edgeHandled', 1);
-      return 'complete';
+      ctx.countCustom(state, "edgeHandled", 1);
+      return "complete";
     }
-    ctx.countCustom(state, 'passedThrough', 1);
+    ctx.countCustom(state, "passedThrough", 1);
     // Nothing behind it: it still answers, it just cannot demonstrate the
     // pass-through lesson.
-    return state.out.length === 0 ? 'complete' : 'downstream';
+    return state.out.length === 0 ? "complete" : "downstream";
   },
 
   decorateStats: (ctx, state, stats: NodeStats) => {
-    stats.edgeHandledRate = ctx.counterRate(state, 'edgeHandled');
-    stats.passedThroughRate = ctx.counterRate(state, 'passedThrough');
-    stats.cpuExceededRate = ctx.counterRate(state, 'cpuExceeded');
+    stats.edgeHandledRate = ctx.counterRate(state, "edgeHandled");
+    stats.passedThroughRate = ctx.counterRate(state, "passedThrough");
+    stats.cpuExceededRate = ctx.counterRate(state, "cpuExceeded");
   },
 };
 
@@ -465,37 +473,37 @@ function cfgFlushDelayMs(state: NodeStateLike): number {
  * retry queue: the ack already booked the completion.
  */
 const writebehind: ComponentBehaviour = {
-  kind: 'writebehind',
+  kind: "writebehind",
   servesRequests: true,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'own',
+  pump: "own",
   creditsJoinCompletion: false,
   observesOutcome: true,
 
   onAdmit: (ctx, state, req): AdmitAction => {
-    if (ctx.queueDepth(state) >= ctx.effectiveQueueLimit(state)) return 'shed';
+    if (ctx.queueDepth(state) >= ctx.effectiveQueueLimit(state)) return "shed";
     // The relayed copy carries the flush delay as extra service time, so a
     // dirty write HOLDS its buffer slot for the whole residence interval --
     // which is what makes the buffer a real population a crash can lose,
     // not an accounting fiction.
     ctx.ackAndRelay(state, req, cfgFlushDelayMs(state));
-    return 'handled';
+    return "handled";
   },
 
   onDownstreamResult: (ctx, state, _req, ok, _reason) => {
-    ctx.countCustom(state, ok ? 'flushed' : 'flushFailed', 1);
+    ctx.countCustom(state, ok ? "flushed" : "flushFailed", 1);
   },
 
   decorateStats: (ctx, state, stats: NodeStats) => {
     // Dirty writes: acknowledged, not yet landed on the store. Buffered
     // (queued) plus mid-residence (inFlight); both die with the node.
     stats.dirtyWrites = stats.inFlight + stats.queued;
-    stats.flushedRate = ctx.counterRate(state, 'flushed');
+    stats.flushedRate = ctx.counterRate(state, "flushed");
     // The 'flushFailed' counter was already booked in onDownstreamResult;
     // publish it. Every one of these is a write the caller believes is safe.
-    stats.flushFailRate = ctx.counterRate(state, 'flushFailed');
+    stats.flushFailRate = ctx.counterRate(state, "flushFailed");
   },
 };
 
@@ -530,7 +538,11 @@ function shedBurst(state: NodeStateLike): number {
  * and for exactly the reasons documented there: over T seconds the bucket
  * grants rate*T tokens no matter how the frames fell.
  */
-function shedRefill(ctx: BehaviourCtx, state: NodeStateLike, b: ShedderState): void {
+function shedRefill(
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  b: ShedderState,
+): void {
   const burst = shedBurst(state);
   if (burst !== b.lastBurst) {
     if (b.tokens > burst) b.tokens = burst;
@@ -599,13 +611,13 @@ function isLowPriority(state: NodeStateLike, req: ReqLike): boolean {
  * readouts let a student verify exactly that trade. Zero RNG draws.
  */
 const loadshedder: ComponentBehaviour = {
-  kind: 'loadshedder',
+  kind: "loadshedder",
   // A doorman, like the limiter: no slots, no meaningful utilisation.
   servesRequests: false,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
 
   initState: (state): ShedderState => ({
@@ -623,8 +635,8 @@ const loadshedder: ComponentBehaviour = {
     // No rate configured means no limit: pass everything, as the limiter
     // does, rather than black-holing a half-configured node.
     if (shedRate(state) <= 0) {
-      ctx.countCustom(state, low ? 'lowAdmitted' : 'highAdmitted', 1);
-      return 'passthru';
+      ctx.countCustom(state, low ? "lowAdmitted" : "highAdmitted", 1);
+      return "passthru";
     }
 
     // The admission floor this request must find in the bucket. High
@@ -636,21 +648,21 @@ const loadshedder: ComponentBehaviour = {
 
     if (b.tokens >= floor) {
       b.tokens -= 1;
-      ctx.countCustom(state, low ? 'lowAdmitted' : 'highAdmitted', 1);
-      return 'passthru';
+      ctx.countCustom(state, low ? "lowAdmitted" : "highAdmitted", 1);
+      return "passthru";
     }
 
-    ctx.countCustom(state, low ? 'lowShed' : 'highShed', 1);
-    ctx.reject(state, req, low ? 'deprioritized' : 'throttled');
-    return 'handled';
+    ctx.countCustom(state, low ? "lowShed" : "highShed", 1);
+    ctx.reject(state, req, low ? "deprioritized" : "throttled");
+    return "handled";
   },
 
   decorateStats: (ctx, state, stats: NodeStats) => {
     const b = state.ext as ShedderState | null;
-    stats.highAdmittedRate = ctx.counterRate(state, 'highAdmitted');
-    stats.lowAdmittedRate = ctx.counterRate(state, 'lowAdmitted');
-    stats.highSheddedRate = ctx.counterRate(state, 'highShed');
-    stats.lowSheddedRate = ctx.counterRate(state, 'lowShed');
+    stats.highAdmittedRate = ctx.counterRate(state, "highAdmitted");
+    stats.lowAdmittedRate = ctx.counterRate(state, "lowAdmitted");
+    stats.highSheddedRate = ctx.counterRate(state, "highShed");
+    stats.lowSheddedRate = ctx.counterRate(state, "lowShed");
     stats.admittedRate = stats.highAdmittedRate + stats.lowAdmittedRate;
     // Projected, not stored: refill is lazy, same reasoning as the limiter.
     stats.tokens = b ? shedProjected(ctx, state, b) : 0;

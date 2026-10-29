@@ -14,7 +14,8 @@ vi.mock("react", () => ({
       !slot.deps ||
       deps.length !== slot.deps.length ||
       deps.some(
-        (dependency, dependencyIndex) => dependency !== slot.deps?.[dependencyIndex],
+        (dependency, dependencyIndex) =>
+          dependency !== slot.deps?.[dependencyIndex],
       )
     ) {
       hookRuntime.slots[index] = { value: callback, deps };

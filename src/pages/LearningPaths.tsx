@@ -131,12 +131,7 @@ const LearningPathGridContent: React.FC<{
 const LearningPaths: React.FC = () => {
   useTheme();
   const navigate = useNavigate();
-  const {
-    isAuthenticated: isAuth,
-    login,
-    signup,
-    googleLogin,
-  } = useAuth();
+  const { isAuthenticated: isAuth, login, signup, googleLogin } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { isNewToPage, markPageVisited } = useOnboarding();
   const { startTour } = useTour("learning_paths");

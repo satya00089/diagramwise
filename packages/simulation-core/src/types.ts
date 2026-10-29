@@ -1,37 +1,37 @@
 export type NodeKind =
-  | 'client'
-  | 'lb'
-  | 'service'
-  | 'cache'
-  | 'db'
-  | 'queue'
-  | 'worker'
-  | 'autoscaler'
-  | 'region'
-  | 'cdn'
-  | 'ratelimiter'
-  | 'breaker'
-  | 'replica'
-  | 'shard'
-  | 'objectstore'
-  | 'searchindex'
-  | 'timeseriesdb'
-  | 'graphdb'
-  | 'coldstorage'
-  | 'vectordb'
-  | 'streambroker'
-  | 'pubsub'
-  | 'websocket'
-  | 'apigateway'
-  | 'sidecar'
-  | 'lambda'
-  | 'cron'
-  | 'bulkhead'
-  | 'retryqueue'
-  | 'transcoder'
-  | 'edgecompute'
-  | 'writebehind'
-  | 'loadshedder';
+  | "client"
+  | "lb"
+  | "service"
+  | "cache"
+  | "db"
+  | "queue"
+  | "worker"
+  | "autoscaler"
+  | "region"
+  | "cdn"
+  | "ratelimiter"
+  | "breaker"
+  | "replica"
+  | "shard"
+  | "objectstore"
+  | "searchindex"
+  | "timeseriesdb"
+  | "graphdb"
+  | "coldstorage"
+  | "vectordb"
+  | "streambroker"
+  | "pubsub"
+  | "websocket"
+  | "apigateway"
+  | "sidecar"
+  | "lambda"
+  | "cron"
+  | "bulkhead"
+  | "retryqueue"
+  | "transcoder"
+  | "edgecompute"
+  | "writebehind"
+  | "loadshedder";
 
 /** Tunable knobs per node kind. Not every field applies to every kind. */
 export interface NodeConfig {
@@ -633,7 +633,7 @@ export interface Topology {
    * shape lives in annotations.ts, which is where the engine-free reasoning
    * for it belongs.
    */
-  annotations?: import('./annotations').Annotation[];
+  annotations?: import("./annotations").Annotation[];
 }
 
 /** Rolling stats for one node over the last window. */
@@ -838,7 +838,7 @@ export interface NodeStats {
    * This is the field that turns the component from a silent box into
    * something a student can read a sentence off.
    */
-  scalePhase?: 'observing' | 'warming' | 'cooldown' | 'steady';
+  scalePhase?: "observing" | "warming" | "cooldown" | "steady";
   /**
    * Autoscaler only: ms until the current phase ends -- until observation
    * completes, until booked instances land, or until the cooldown expires.
@@ -917,7 +917,7 @@ export interface NodeStats {
   /* ---- breaker readouts -------------------------------------------- */
 
   /** Breaker only: the circuit's current state. */
-  breakerState?: 'closed' | 'open' | 'half-open';
+  breakerState?: "closed" | "open" | "half-open";
   /**
    * Breaker only: downstream error fraction measured over the trailing
    * `windowMs`, 0..1. This is the quantity compared against
@@ -1234,13 +1234,13 @@ export interface SystemStats {
  * after a recovery. That is a different mechanism, not a different curve, and
  * modelling it as a tall thin spike would be a plausible-looking lie.
  */
-export type TrafficPattern = 'steady' | 'ramp' | 'spike' | 'diurnal';
+export type TrafficPattern = "steady" | "ramp" | "spike" | "diurnal";
 
 export const TRAFFIC_PATTERNS: readonly TrafficPattern[] = [
-  'steady',
-  'ramp',
-  'spike',
-  'diurnal',
+  "steady",
+  "ramp",
+  "spike",
+  "diurnal",
 ];
 
 /**
@@ -1251,7 +1251,7 @@ export const TRAFFIC_PATTERNS: readonly TrafficPattern[] = [
  * which is how a client connection pool behaves and is the whole point of
  * modelling one.
  */
-export type BulkheadMode = 'reject' | 'wait';
+export type BulkheadMode = "reject" | "wait";
 
 /**
  * The same list at runtime, for the validators that cannot read a type.
@@ -1259,7 +1259,7 @@ export type BulkheadMode = 'reject' | 'wait';
  * TRAFFIC_PATTERNS is: a union and an array cannot be generated from one
  * another in TypeScript, so the pairing is checked by a test instead.
  */
-export const BULKHEAD_MODES: readonly BulkheadMode[] = ['reject', 'wait'];
+export const BULKHEAD_MODES: readonly BulkheadMode[] = ["reject", "wait"];
 
 /**
  * Seconds for one cycle when a client does not say.
@@ -1270,31 +1270,31 @@ export const BULKHEAD_MODES: readonly BulkheadMode[] = ['reject', 'wait'];
 export const DEFAULT_TRAFFIC_PERIOD_S = 60;
 
 export type FailureReason =
-  | 'error'
-  | 'shed'
-  | 'timeout'
-  | 'no-route'
-  | 'depth'
+  | "error"
+  | "shed"
+  | "timeout"
+  | "no-route"
+  | "depth"
   /** Refused by a rate limiter: no token was available in its bucket. */
-  | 'throttled'
+  | "throttled"
   /** Refused by an open circuit breaker: failed fast without calling downstream. */
-  | 'rejected'
+  | "rejected"
   /** The node is crashed by an injected failure, or was in flight when it crashed. */
-  | 'crashed'
+  | "crashed"
   /** The edge the call needed is cut by an injected network partition. */
-  | 'partitioned'
+  | "partitioned"
   /** No region was serving: the active one is down and failover has not landed. */
-  | 'region-down'
+  | "region-down"
   /** Refused by a websocket gateway: every connection slot was already held. */
-  | 'conn-refused'
+  | "conn-refused"
   /** Refused by an API gateway: the request failed authentication. */
-  | 'unauthorized'
+  | "unauthorized"
   /** Refused by a bulkhead: its concurrency pool was already full. */
-  | 'bulkhead-full'
+  | "bulkhead-full"
   /** A bulkhead waiter exceeded its acquire deadline before a slot opened. */
-  | 'acquire-timeout'
+  | "acquire-timeout"
   /** Dropped by a load shedder protecting higher-priority traffic. */
-  | 'deprioritized';
+  | "deprioritized";
 
 /* ------------------------------------------------------------------ *
  * Failure injection
@@ -1305,13 +1305,13 @@ export type FailureReason =
 
 export type FailureKind =
   /** The node is dead: in-flight work fails now, new work fails on arrival. */
-  | 'crash'
+  | "crash"
   /** The node still works, but every service time is multiplied by `factor`. */
-  | 'slow'
+  | "slow"
   /** The node returns errors at `rate`, on top of its configured errorRate. */
-  | 'errors'
+  | "errors"
   /** Named edges are cut: a request offered to one fails as 'partitioned'. */
-  | 'partition';
+  | "partition";
 
 /** Knobs for an injected failure. Which ones apply depends on the kind. */
 export interface FailureOpts {
@@ -1364,21 +1364,21 @@ export interface ActiveFailure {
  */
 export type EdgeState =
   /** Cut by an injected 'partition' failure. Nothing crosses it at all. */
-  | 'cut'
+  | "cut"
   /**
    * The source node is refusing to send: a breaker OPEN or half-open past its
    * probe budget. The link is fine; the component decided not to use it.
    */
-  | 'blocked'
+  | "blocked"
   /**
    * A region node's non-active edge. Wired, healthy, deliberately unused --
    * this is the standby region, and it must not look like a dead link.
    */
-  | 'standby'
+  | "standby"
   /** Carrying traffic now. */
-  | 'live'
+  | "live"
   /** Wired and permitted, but nothing is flowing. Ordinary idleness. */
-  | 'idle';
+  | "idle";
 
 export interface SimSnapshot {
   system: SystemStats;

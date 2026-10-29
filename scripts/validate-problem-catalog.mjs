@@ -3,7 +3,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url));
-const catalogPath = path.resolve(scriptDir, "../src/data/featuredProblems.json");
+const catalogPath = path.resolve(
+  scriptDir,
+  "../src/data/featuredProblems.json",
+);
 const problems = JSON.parse(fs.readFileSync(catalogPath, "utf8"));
 
 const failures = [];
@@ -14,8 +17,18 @@ if (!Array.isArray(problems)) {
 } else {
   for (const [index, problem] of problems.entries()) {
     const label = `entry ${index + 1}`;
-    for (const field of ["title", "slug", "description", "difficulty", "category", "tags"]) {
-      if (!problem?.[field] || (Array.isArray(problem[field]) && problem[field].length === 0)) {
+    for (const field of [
+      "title",
+      "slug",
+      "description",
+      "difficulty",
+      "category",
+      "tags",
+    ]) {
+      if (
+        !problem?.[field] ||
+        (Array.isArray(problem[field]) && problem[field].length === 0)
+      ) {
         failures.push(`${label} is missing ${field}`);
       }
     }
@@ -41,7 +54,9 @@ if (!Array.isArray(problems)) {
 }
 
 if (failures.length > 0) {
-  console.error(`Problem catalog validation failed with ${failures.length} issue(s):`);
+  console.error(
+    `Problem catalog validation failed with ${failures.length} issue(s):`,
+  );
   for (const failure of failures) console.error(`- ${failure}`);
   process.exitCode = 1;
 } else {

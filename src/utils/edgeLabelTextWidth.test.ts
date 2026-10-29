@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getEdgeLabelFont, measureEdgeLabelHeight, measureEdgeLabelText, subscribeToEdgeLabelFonts } from "./edgeLabelTextWidth";
+import {
+  getEdgeLabelFont,
+  measureEdgeLabelHeight,
+  measureEdgeLabelText,
+  subscribeToEdgeLabelFonts,
+} from "./edgeLabelTextWidth";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -24,22 +29,39 @@ describe("edge label text measurement", () => {
   it("remeasures wrapped text after fonts finish loading", () => {
     const fonts = new EventTarget();
     let height = 34;
-    const element = { style: {}, textContent: "", getBoundingClientRect: () => ({ height }), remove: vi.fn() };
-    vi.stubGlobal("document", { body: { appendChild: vi.fn() }, fonts, createElement: () => element });
+    const element = {
+      style: {},
+      textContent: "",
+      getBoundingClientRect: () => ({ height }),
+      remove: vi.fn(),
+    };
+    vi.stubGlobal("document", {
+      body: { appendChild: vi.fn() },
+      fonts,
+      createElement: () => element,
+    });
     const onChange = vi.fn();
     const unsubscribe = subscribeToEdgeLabelFonts(onChange);
     onChange.mockClear();
 
-    expect(measureEdgeLabelHeight("Document Writer Consumer", 100, "11px test-font")).toBe(34);
+    expect(
+      measureEdgeLabelHeight("Document Writer Consumer", 100, "11px test-font"),
+    ).toBe(34);
     height = 48;
-    expect(measureEdgeLabelHeight("Document Writer Consumer", 100, "11px test-font")).toBe(34);
+    expect(
+      measureEdgeLabelHeight("Document Writer Consumer", 100, "11px test-font"),
+    ).toBe(34);
     fonts.dispatchEvent(new Event("loadingdone"));
     expect(onChange).toHaveBeenCalledOnce();
-    expect(measureEdgeLabelHeight("Document Writer Consumer", 100, "11px test-font")).toBe(48);
+    expect(
+      measureEdgeLabelHeight("Document Writer Consumer", 100, "11px test-font"),
+    ).toBe(48);
     unsubscribe();
     height = 62;
     const unsubscribeAfterRemount = subscribeToEdgeLabelFonts(onChange);
-    expect(measureEdgeLabelHeight("Document Writer Consumer", 100, "11px test-font")).toBe(62);
+    expect(
+      measureEdgeLabelHeight("Document Writer Consumer", 100, "11px test-font"),
+    ).toBe(62);
     unsubscribeAfterRemount();
   });
 });

@@ -1,4 +1,8 @@
-import { parseMermaidEdge, scanMermaidLine, splitSqlDefinitions } from "./sourceScanning";
+import {
+  parseMermaidEdge,
+  scanMermaidLine,
+  splitSqlDefinitions,
+} from "./sourceScanning";
 import type { Edge, Node } from "@xyflow/react";
 import type { ExtensionImportResult, ExtensionKind } from "../types/extensions";
 import { COMPONENTS } from "../config/components";
@@ -223,7 +227,8 @@ const parseMermaid = (source: string): ExtensionImportResult => {
   };
   for (const line of lines) {
     const { declarations, edgeSource } = scanMermaidLine(line);
-    for (const declaration of declarations) ensureNode(declaration.key, declaration.label);
+    for (const declaration of declarations)
+      ensureNode(declaration.key, declaration.label);
     addEdge(parseMermaidEdge(edgeSource));
   }
 

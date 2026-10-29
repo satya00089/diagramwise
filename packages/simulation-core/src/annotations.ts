@@ -15,7 +15,7 @@
 /** A free-standing piece of text placed anywhere on the canvas. */
 export interface Note {
   id: string;
-  kind: 'note';
+  kind: "note";
   text: string;
   x: number;
   y: number;
@@ -40,7 +40,7 @@ export interface Note {
    * whole diagram, and a small aside next to one component. One scale would
    * make one of those wrong.
    */
-  size: 'sm' | 'md' | 'lg';
+  size: "sm" | "md" | "lg";
   /**
    * Continuous multiplier on the size preset, set by dragging a corner.
    *
@@ -99,7 +99,7 @@ export interface Note {
  */
 export interface Section {
   id: string;
-  kind: 'section';
+  kind: "section";
   label: string;
   x: number;
   y: number;
@@ -144,7 +144,7 @@ export type NoteTone = number;
  * that were visibly identical and did the same thing. A choice the reader
  * cannot see is not a choice.
  */
-export const ANNOTATION_FONTS = ['sans', 'hand', 'serif', 'mono'] as const;
+export const ANNOTATION_FONTS = ["sans", "hand", "serif", "mono"] as const;
 
 export type AnnotationFont = (typeof ANNOTATION_FONTS)[number];
 
@@ -152,11 +152,11 @@ export type Annotation = Note | Section;
 
 /** Sections render behind nodes; notes render in front. */
 export function isSection(a: Annotation): a is Section {
-  return a.kind === 'section';
+  return a.kind === "section";
 }
 
 export function isNote(a: Annotation): a is Note {
-  return a.kind === 'note';
+  return a.kind === "note";
 }
 
 export const NOTE_DEFAULT_WIDTH = 220;
@@ -207,16 +207,16 @@ export const SECTION_TONE_COUNT = 13;
 
 let counter = 0;
 
-export function makeNote(x: number, y: number, text = 'Note'): Note {
+export function makeNote(x: number, y: number, text = "Note"): Note {
   counter += 1;
   return {
     id: `note-${counter}`,
-    kind: 'note',
+    kind: "note",
     text,
     x,
     y,
     width: NOTE_DEFAULT_WIDTH,
-    size: 'md',
+    size: "md",
     autoResize: true,
   };
 }
@@ -226,12 +226,12 @@ export function makeSection(
   y: number,
   width = 320,
   height = 220,
-  label = 'Section',
+  label = "Section",
 ): Section {
   counter += 1;
   return {
     id: `section-${counter}`,
-    kind: 'section',
+    kind: "section",
     label,
     x,
     y,
@@ -256,29 +256,33 @@ export function sanitizeAnnotations(input: unknown): Annotation[] {
   const seen = new Set<string>();
 
   for (const raw of input) {
-    if (!raw || typeof raw !== 'object') continue;
+    if (!raw || typeof raw !== "object") continue;
     const a = raw as Record<string, unknown>;
-    const id = typeof a.id === 'string' && a.id ? a.id : null;
+    const id = typeof a.id === "string" && a.id ? a.id : null;
     if (!id || seen.has(id)) continue;
 
     const x = num(a.x);
     const y = num(a.y);
     if (x === null || y === null) continue;
 
-    if (a.kind === 'note') {
-      const text = typeof a.text === 'string' ? a.text : '';
+    if (a.kind === "note") {
+      const text = typeof a.text === "string" ? a.text : "";
       // An empty note is invisible and unselectable, so it would be a piece of
       // litter the reader cannot remove. Drop it.
       if (!text.trim()) continue;
       const width = num(a.width);
       out.push({
         id,
-        kind: 'note',
+        kind: "note",
         text: text.slice(0, NOTE_MAX_CHARS),
         x,
         y,
-        width: clamp(width ?? NOTE_DEFAULT_WIDTH, NOTE_MIN_WIDTH, NOTE_MAX_WIDTH),
-        size: a.size === 'sm' || a.size === 'lg' ? a.size : 'md',
+        width: clamp(
+          width ?? NOTE_DEFAULT_WIDTH,
+          NOTE_MIN_WIDTH,
+          NOTE_MAX_WIDTH,
+        ),
+        size: a.size === "sm" || a.size === "lg" ? a.size : "md",
         ...font(a.font),
         ...colour(a.color),
         ...noteTone(a.tone),
@@ -289,14 +293,14 @@ export function sanitizeAnnotations(input: unknown): Annotation[] {
         ...(a.autoResize === true ? { autoResize: true } : {}),
       });
       seen.add(id);
-    } else if (a.kind === 'section') {
+    } else if (a.kind === "section") {
       const width = num(a.width);
       const height = num(a.height);
       const tone = num(a.tone);
       out.push({
         id,
-        kind: 'section',
-        label: typeof a.label === 'string' ? a.label.slice(0, 200) : '',
+        kind: "section",
+        label: typeof a.label === "string" ? a.label.slice(0, 200) : "",
         x,
         y,
         width: clamp(width ?? 320, SECTION_MIN_WIDTH, 4000),
@@ -322,7 +326,8 @@ export function sanitizeAnnotations(input: unknown): Annotation[] {
  * default is the only safe reading.
  */
 function font(v: unknown): { font?: AnnotationFont } {
-  return typeof v === 'string' && (ANNOTATION_FONTS as readonly string[]).includes(v)
+  return typeof v === "string" &&
+    (ANNOTATION_FONTS as readonly string[]).includes(v)
     ? { font: v as AnnotationFont }
     : {};
 }
@@ -341,7 +346,7 @@ const COLOUR_RE =
   /^(#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})|(?:rgb|hsl)a?\([0-9a-z%.,\s/+-]{1,64}\)|[a-z]{3,24})$/i;
 
 function colour(v: unknown): { color?: string } {
-  if (typeof v !== 'string') return {};
+  if (typeof v !== "string") return {};
   const c = v.trim();
   if (!c || c.length > 72 || !COLOUR_RE.test(c)) return {};
   return { color: c };
@@ -371,12 +376,13 @@ function noteTone(v: unknown): { tone?: number } {
   const n = num(v);
   if (n === null) return {};
   const i =
-    ((Math.floor(n) % SECTION_TONE_COUNT) + SECTION_TONE_COUNT) % SECTION_TONE_COUNT;
+    ((Math.floor(n) % SECTION_TONE_COUNT) + SECTION_TONE_COUNT) %
+    SECTION_TONE_COUNT;
   return { tone: i };
 }
 
 function num(v: unknown): number | null {
-  return typeof v === 'number' && Number.isFinite(v) ? v : null;
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
 }
 
 function clamp(v: number, lo: number, hi: number): number {

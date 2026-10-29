@@ -397,7 +397,11 @@ export class CanvasWorkspaceController {
       try {
         if (this.lastSavedKey.get(canvasId) === key) {
           const minimumVersion = this.versions.get(canvasId) ?? 0;
-          const stored = await this.readFreshCanvas(workspaceId, canvasId, minimumVersion);
+          const stored = await this.readFreshCanvas(
+            workspaceId,
+            canvasId,
+            minimumVersion,
+          );
           if (!stored) return this.reportUnverified();
           if (
             contentKey(stored.nodes, stored.edges) !==
@@ -409,7 +413,12 @@ export class CanvasWorkspaceController {
           // A read may be stale even when its version equals our last version.
           // A conditional write confirms the server has not changed since then.
           const result = await this.sendSave(
-            workspaceId, canvasId, nodes, edges, key, CONFLICT_RECOVERY_LIMIT,
+            workspaceId,
+            canvasId,
+            nodes,
+            edges,
+            key,
+            CONFLICT_RECOVERY_LIMIT,
             { nodes: stored.nodes, edges: stored.edges },
           );
           return result === "saved" ? "unchanged" : result;
@@ -488,7 +497,11 @@ export class CanvasWorkspaceController {
     // A 409 proves the attempted version was not current. Never use an older
     // read to decide that it is safe to overwrite a more recent canvas.
     const minimumVersion = Math.max(attemptedVersion + 1, currentVersion ?? 0);
-    const stored = await this.readFreshCanvas(workspaceId, canvasId, minimumVersion);
+    const stored = await this.readFreshCanvas(
+      workspaceId,
+      canvasId,
+      minimumVersion,
+    );
     if (!stored) return this.reportUnverified();
 
     const storedKey = contentKey(stored.nodes, stored.edges);
@@ -497,8 +510,15 @@ export class CanvasWorkspaceController {
       // verifies this version before accepting or replacing the current graph.
       this.versions.set(canvasId, stored.version);
       return this.sendSave(
-        workspaceId, canvasId, nodes, edges, key, recoveriesRemaining - 1,
-        confirmingStoredContent ? { nodes: stored.nodes, edges: stored.edges } : undefined,
+        workspaceId,
+        canvasId,
+        nodes,
+        edges,
+        key,
+        recoveriesRemaining - 1,
+        confirmingStoredContent
+          ? { nodes: stored.nodes, edges: stored.edges }
+          : undefined,
       );
     }
 
@@ -533,14 +553,20 @@ export class CanvasWorkspaceController {
   private reportUnverified(): CanvasPersistResult {
     this.update({
       saveStatus: "error",
-      message: "Could not verify the latest saved page. Your edits are still here; try saving again.",
+      message:
+        "Could not verify the latest saved page. Your edits are still here; try saving again.",
     });
     return "error";
   }
 
-  private async readFreshCanvas(workspaceId: string, canvasId: string, minimumVersion: number): Promise<CanvasDetail | null> {
+  private async readFreshCanvas(
+    workspaceId: string,
+    canvasId: string,
+    minimumVersion: number,
+  ): Promise<CanvasDetail | null> {
     for (const delay of CONFLICT_READ_DELAYS) {
-      if (delay) await new Promise<void>((resolve) => setTimeout(resolve, delay));
+      if (delay)
+        await new Promise<void>((resolve) => setTimeout(resolve, delay));
       const stored = await this.api.getCanvas(workspaceId, canvasId);
       if (stored.version >= minimumVersion) return stored;
     }

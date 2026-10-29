@@ -17,13 +17,13 @@ This is fresh local browser evidence, not the earlier service smoke results or d
 
 Every listed design was built by clicking real **Apply to Canvas**, **Draw Connection**, and **Use this design decision** controls. No prebuilt canvas or helper-built graph was injected. Optional interview questions were skipped, so answers did not supply missing design evidence.
 
-| Revised candidate | Lessons / applied actions | Nodes / edges | Real result |
-| --- | --- | --- | --- |
-| Document Management | 41 / 28 | 11 / 10 | 97/100, Strong alignment |
-| Job Scheduler | 46 / 27 | 12 / 14 | 97/100, Strong alignment |
-| Price Alert | 47 / 42 | 21 / 21 | Unavailable; explicit retry also unavailable |
-| Parts Compatibility | 22 / 16 | 8 / 8 | 97/100, Strong alignment |
-| LLM Serving | 25 / 21 | 10 / 7 | 97/100, Strong alignment |
+| Revised candidate   | Lessons / applied actions | Nodes / edges | Real result                                  |
+| ------------------- | ------------------------- | ------------- | -------------------------------------------- |
+| Document Management | 41 / 28                   | 11 / 10       | 97/100, Strong alignment                     |
+| Job Scheduler       | 46 / 27                   | 12 / 14       | 97/100, Strong alignment                     |
+| Price Alert         | 47 / 42                   | 21 / 21       | Unavailable; explicit retry also unavailable |
+| Parts Compatibility | 22 / 16                   | 8 / 8         | 97/100, Strong alignment                     |
+| LLM Serving         | 25 / 21                   | 10 / 7        | 97/100, Strong alignment                     |
 
 The LLM guide has four applied decisions embedded in decision/scale lessons; they count as actions despite not having `update_component` as their step type. The initial test assertion incorrectly expected 17 and was corrected to 21, without changing product code.
 

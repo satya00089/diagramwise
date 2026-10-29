@@ -82,9 +82,7 @@ const FeatureAnnouncement: React.FC = () => {
   const announcement =
     isAuthLoading || deferForTour || dismissedThisSession
       ? undefined
-      : ANNOUNCEMENTS.find(
-          (item) => !isAnnouncementSeen(item.id, user?.id),
-        );
+      : ANNOUNCEMENTS.find((item) => !isAnnouncementSeen(item.id, user?.id));
   const isVisible = Boolean(announcement);
 
   // Keep fixed page headers below the strip without assuming a fixed height.
@@ -95,7 +93,8 @@ const FeatureAnnouncement: React.FC = () => {
     }
 
     const updateHeight = () => {
-      const height = announcementRef.current?.getBoundingClientRect().height ?? 0;
+      const height =
+        announcementRef.current?.getBoundingClientRect().height ?? 0;
       document.documentElement.style.setProperty(
         "--announcement-h",
         `${height}px`,

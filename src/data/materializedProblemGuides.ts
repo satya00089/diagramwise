@@ -162,8 +162,7 @@ export const materializedProblemGuides: Record<string, ProblemGuide> = {
     guide17Data as ProblemGuide,
   "create-a-distributed-file-transfer-system-like-bittorrent":
     guide18Data as ProblemGuide,
-  "document-management-system":
-    guide19Data as ProblemGuide,
+  "document-management-system": guide19Data as ProblemGuide,
   "create-a-system-to-migrate-large-data-to-google-cloud":
     guide20Data as ProblemGuide,
   "design-a-blockchain-network-solution": guide21Data as ProblemGuide,
@@ -248,8 +247,7 @@ export const materializedProblemGuides: Record<string, ProblemGuide> = {
   "design-a-system-to-view-latest-stock-prices-worldwide":
     guide81Data as ProblemGuide,
   "design-a-user-login-and-authentication-system": guide82Data as ProblemGuide,
-  "video-transcoding-pipeline":
-    guide83Data as ProblemGuide,
+  "video-transcoding-pipeline": guide83Data as ProblemGuide,
   "design-an-a-b-testing-framework-for-ml-models": guide84Data as ProblemGuide,
   "design-an-a-b-testing-system": guide85Data as ProblemGuide,
   "design-an-ai-based-real-time-fraud-detection-system":
@@ -279,8 +277,7 @@ export const materializedProblemGuides: Record<string, ProblemGuide> = {
   "design-an-end-to-end-ml-pipeline-orchestration-platform":
     guide101Data as ProblemGuide,
   "design-an-enterprise-data-warehouse-solution": guide102Data as ProblemGuide,
-  "eta-location-sharing":
-    guide103Data as ProblemGuide,
+  "eta-location-sharing": guide103Data as ProblemGuide,
   "design-an-intelligent-capacity-planning-system":
     guide104Data as ProblemGuide,
   "design-an-intelligent-incident-management-system":
@@ -310,8 +307,7 @@ export const materializedProblemGuides: Record<string, ProblemGuide> = {
   "uber-rider-matching": guide126Data as ProblemGuide,
   "identify-the-k-most-shared-articles-in-various-time-windows":
     guide129Data as ProblemGuide,
-  "netflix-concurrent-stream-limits":
-    guide131Data as ProblemGuide,
+  "netflix-concurrent-stream-limits": guide131Data as ProblemGuide,
   "notification-system": guide132Data as ProblemGuide,
   "real-time-chat-system": guide138Data as ProblemGuide,
   "ride-sharing-system": guide141Data as ProblemGuide,
@@ -319,8 +315,7 @@ export const materializedProblemGuides: Record<string, ProblemGuide> = {
   "surge-pricing-system-uber-stream-processing": guide146Data as ProblemGuide,
   "system-to-collect-performance-metrics-from-thousands-of-servers":
     guide147Data as ProblemGuide,
-  "top-k-ranking-system":
-    guide148Data as ProblemGuide,
+  "top-k-ranking-system": guide148Data as ProblemGuide,
   "url-shortener-like-bit-ly": guide150Data as ProblemGuide,
   "video-streaming-platform": guide151Data as ProblemGuide,
   "web-search-engine": guide154Data as ProblemGuide,

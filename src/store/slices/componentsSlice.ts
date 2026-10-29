@@ -72,12 +72,15 @@ async function fetchAllPages(
 
   do {
     const response = await fetchPage(cursor);
-    for (const component of response.items) components.set(component.id, component);
+    for (const component of response.items)
+      components.set(component.id, component);
     cursor = response.lastEvaluatedKey;
     if (cursor) {
       const serialized = JSON.stringify(cursor);
       if (cursors.has(serialized)) {
-        throw new Error("The component catalog returned a repeated page cursor.");
+        throw new Error(
+          "The component catalog returned a repeated page cursor.",
+        );
       }
       cursors.add(serialized);
     }

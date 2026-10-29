@@ -45,10 +45,7 @@ type Props = Readonly<{
   onDone: () => void;
 }>;
 
-export default function AutoArrangeChooser({
-  onArrange,
-  onDone,
-}: Props) {
+export default function AutoArrangeChooser({ onArrange, onDone }: Props) {
   const [direction, setDirection] = useState<"LR" | "TB">("LR");
 
   return (
