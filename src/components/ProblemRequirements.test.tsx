@@ -424,9 +424,11 @@ describe("InspectorPanel assessment trust", () => {
       undefined,
       { onShareToWorld: vi.fn() },
     );
+    // The tab row ends at the divider rule rendered right after it.
+    const tabsStart = html.indexOf('role="tablist"');
     const tabs = html.slice(
-      html.indexOf('role="tablist"'),
-      html.indexOf('aria-hidden="true"', html.indexOf(">Properties<")),
+      tabsStart,
+      html.indexOf("h-px bg-[var(--muted)]", tabsStart),
     );
     expect(tabs).toContain("Structure checks");
     expect(tabs).not.toContain(">0<");

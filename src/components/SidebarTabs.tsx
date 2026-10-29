@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { NavIcon } from "./navIcons/NavIcon";
 import type { StoryIconName } from "./navIcons/NavIcon";
+import { LABEL_GAP, tabsShowingLabel } from "./tabLabelFit";
 
 /**
  * Single-row tab strip with three states, chosen by available width:
@@ -9,11 +10,6 @@ import type { StoryIconName } from "./navIcons/NavIcon";
  *   3. icons only.
  * A tab without a label shows its name as a tooltip.
  */
-
-// px-3 on both sides + the 16px icon. Matches the button classes below.
-const COLLAPSED_WIDTH = 40;
-const GAP = 8; // gap-2 between tabs
-const LABEL_GAP = 8; // pl-2 between icon and label
 
 export type SidebarTab<T extends string> = Readonly<{
   id: T;
@@ -38,7 +34,11 @@ export function SidebarTabs<T extends string>({
   const [expanded, setExpanded] = useState<readonly string[]>(
     tabs.map((t) => t.id),
   );
+  // Callers usually build `tabs` inline, so it is a new array every render.
+  // Key the effect on its content instead, to keep one resize observer.
   const layoutKey = tabs.map((t) => `${t.id}:${t.label}`).join("|");
+  const idsRef = useRef<string[]>([]);
+  idsRef.current = tabs.map((t) => t.id);
 
   useLayoutEffect(() => {
     const wrap = wrapRef.current;
@@ -53,15 +53,12 @@ export function SidebarTabs<T extends string>({
           el.getBoundingClientRect().width + LABEL_GAP,
         );
       }
-      const available = wrap.clientWidth;
-      const iconsOnly = tabs.length * COLLAPSED_WIDTH + (tabs.length - 1) * GAP;
-      const labelOf = (id: string) => labelWidths.get(id) ?? 0;
-      const allLabels = tabs.reduce((sum, t) => sum + labelOf(t.id), iconsOnly);
-
-      // Three states only: all labels, the active label, or icons only.
-      let ordered: string[] = [];
-      if (allLabels <= available) ordered = tabs.map((t) => t.id);
-      else if (iconsOnly + labelOf(active) <= available) ordered = [active];
+      const ordered = tabsShowingLabel(
+        idsRef.current,
+        active,
+        labelWidths,
+        wrap.clientWidth,
+      );
       setExpanded((prev) =>
         prev.join("|") === ordered.join("|") ? prev : ordered,
       );
@@ -71,7 +68,7 @@ export function SidebarTabs<T extends string>({
     const observer = new ResizeObserver(compute);
     observer.observe(wrap);
     return () => observer.disconnect();
-  }, [active, layoutKey, tabs]);
+  }, [active, layoutKey]);
 
   return (
     <div ref={wrapRef} className="relative w-full">

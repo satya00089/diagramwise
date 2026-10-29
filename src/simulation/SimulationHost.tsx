@@ -19,6 +19,8 @@ import {
   saveLocalRun,
 } from "./history";
 import type { SavedEventRun } from "./history";
+import { RUN_SAVED_EVENT, RUN_SAVE_FAILED_EVENT } from "./autosave";
+import { compareRuns, describeRunOutcome } from "./runComparison";
 
 export function SimulationCanvasControls({
   onInspect,
@@ -139,6 +141,25 @@ export function SimulationDetails({
     };
   }, [scopeKey]);
 
+  // Runs are saved in the background; show them as soon as they land.
+  useEffect(() => {
+    const reload = () => {
+      const scope = useSimulationSession.getState().scope;
+      if (scope)
+        void listLocalRuns(scope)
+          .then(setLocalRuns)
+          .catch(() => undefined);
+    };
+    const failed = (event: Event) =>
+      setMessage((event as CustomEvent<string>).detail);
+    globalThis.addEventListener(RUN_SAVED_EVENT, reload);
+    globalThis.addEventListener(RUN_SAVE_FAILED_EVENT, failed);
+    return () => {
+      globalThis.removeEventListener(RUN_SAVED_EVENT, reload);
+      globalThis.removeEventListener(RUN_SAVE_FAILED_EVENT, failed);
+    };
+  }, []);
+
   async function action(work: () => void | Promise<void>) {
     setBusy(true);
     setMessage(null);
@@ -195,50 +216,97 @@ export function SimulationDetails({
     return undefined;
   }
   function historyList(rows: SavedEventRun[], cloud: boolean) {
-    return rows.map((row) => (
-      <li key={row.runId} className="sim-history-row">
-        <span>
-          {new Date(row.createdAt).toLocaleString()}
-          <small>
-            {Math.round(row.snapshot.workload.rps)} requests/sec · seed{" "}
-            {row.snapshot.workload.seed}
-          </small>
-        </span>
-        <div className="sim-actions">
-          <button
-            type="button"
-            className="sim-text-button"
-            disabled={
-              busy ||
-              row.snapshot.graphFingerprint !== s.compilation?.fingerprint
-            }
-            title="Replay requires the same canvas design"
-            onClick={() =>
-              void action(() =>
-                simulationSession.replay(parseEventRun(row.snapshot)),
-              )
-            }
-          >
-            Replay
-          </button>
-          <button
-            type="button"
-            className="sim-text-button"
-            onClick={() => downloadRun(row.snapshot)}
-          >
-            Export
-          </button>
-          <button
-            type="button"
-            className="sim-text-button"
-            disabled={busy}
-            onClick={() => void action(() => removeRun(row, cloud))}
-          >
-            Delete
-          </button>
-        </div>
-      </li>
-    ));
+    // Comparison pairs each run with the next older one, so order by time
+    // here rather than trusting the source (local and cloud differ).
+    const ordered = [...rows].sort((a, b) =>
+      b.createdAt.localeCompare(a.createdAt),
+    );
+    return ordered.map((row, index) => {
+      const older = ordered[index + 1];
+      const comparison = older
+        ? compareRuns(row.snapshot, older.snapshot)
+        : undefined;
+      const designChanged =
+        row.snapshot.graphFingerprint !== s.compilation?.fingerprint;
+      return (
+        <li key={row.runId} className="sim-history-row">
+          <div className="sim-history-body">
+            <strong>
+              {new Date(row.createdAt).toLocaleString(undefined, {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </strong>
+            <small
+              title={`Random seed ${row.snapshot.workload.seed} — the same seed replays identically`}
+            >
+              {Math.round(row.snapshot.workload.rps)} requests/sec ·{" "}
+              {row.snapshot.workload.pattern}
+            </small>
+            <small>{describeRunOutcome(row.snapshot)}</small>
+            {comparison?.comparable === false && (
+              <small className="sim-muted">
+                Different traffic load, so not compared with the previous run.
+              </small>
+            )}
+            {comparison?.comparable &&
+              (comparison.deltas.length === 0 ? (
+                <small className="sim-muted">
+                  No meaningful change from the previous run.
+                </small>
+              ) : (
+                <ul
+                  className="sim-deltas"
+                  aria-label="Change from previous run"
+                >
+                  {comparison.deltas.map((delta) => (
+                    <li
+                      key={delta.label}
+                      className={`sim-delta sim-delta--${delta.tone}`}
+                    >
+                      {delta.label} {delta.from} → {delta.to}
+                    </li>
+                  ))}
+                </ul>
+              ))}
+          </div>
+          <div className="sim-actions">
+            <button
+              type="button"
+              className="sim-text-button"
+              disabled={busy || designChanged}
+              title={
+                designChanged
+                  ? "The design has changed since this run, so it can't be replayed"
+                  : "Replay this run"
+              }
+              onClick={() =>
+                void action(() =>
+                  simulationSession.replay(parseEventRun(row.snapshot)),
+                )
+              }
+            >
+              Replay
+            </button>
+            <button
+              type="button"
+              className="sim-text-button"
+              onClick={() => downloadRun(row.snapshot)}
+            >
+              Export
+            </button>
+            <button
+              type="button"
+              className="sim-text-button"
+              disabled={busy}
+              onClick={() => void action(() => removeRun(row, cloud))}
+            >
+              Delete
+            </button>
+          </div>
+        </li>
+      );
+    });
   }
 
   return (
@@ -313,60 +381,68 @@ export function SimulationDetails({
         </section>
       )}
       <section className="sim-section">
-        <h3>Saved runs</h3>
+        <h3>Run history</h3>
         <p>
-          Local history works without an account. Runs preserve the model, seed,
-          and your changes.
+          Runs are kept automatically when you pause or change your design, so
+          you can compare before and after. They stay on this device.
         </p>
-        <div className="sim-actions">
-          <button
-            className="sim-button"
-            type="button"
-            disabled={busy || !s.snapshot}
-            onClick={() =>
-              void action(async () => {
-                const row = await saveLocalRun(artifact());
-                setLocalRuns((rows) => [row, ...rows]);
-                setMessage("Run saved on this device.");
-              })
-            }
-          >
-            Save locally
-          </button>
-          <button
-            className="sim-button"
-            type="button"
-            disabled={!s.snapshot}
-            onClick={() => {
-              try {
-                downloadRun(artifact());
-              } catch (error) {
-                setMessage(String(error));
-              }
-            }}
-          >
-            Export
-          </button>
-          <button
-            className="sim-text-button"
-            type="button"
-            onClick={() => fileInput.current?.click()}
-          >
-            Import run
-          </button>
-          <input
-            ref={fileInput}
-            type="file"
-            accept="application/json,.json"
-            hidden
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = "";
-              if (file) void action(() => importFile(file));
-            }}
-          />
-        </div>
+        {localRuns.length === 0 && (
+          <p className="sim-muted">
+            No runs yet. Run the simulation for a few seconds, then pause it.
+          </p>
+        )}
         <ul className="sim-history">{historyList(localRuns, false)}</ul>
+        <details className="sim-more">
+          <summary>More</summary>
+          <div className="sim-actions">
+            <button
+              className="sim-text-button"
+              type="button"
+              disabled={busy || !s.snapshot}
+              onClick={() =>
+                void action(async () => {
+                  const row = await saveLocalRun(artifact());
+                  setLocalRuns((rows) => [row, ...rows]);
+                  setMessage("Run saved on this device.");
+                })
+              }
+            >
+              Save this run now
+            </button>
+            <button
+              className="sim-text-button"
+              type="button"
+              disabled={!s.snapshot}
+              onClick={() => {
+                try {
+                  downloadRun(artifact());
+                } catch (error) {
+                  setMessage(String(error));
+                }
+              }}
+            >
+              Export current run
+            </button>
+            <button
+              className="sim-text-button"
+              type="button"
+              onClick={() => fileInput.current?.click()}
+            >
+              Import run file
+            </button>
+            <input
+              ref={fileInput}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (file) void action(() => importFile(file));
+              }}
+            />
+          </div>
+        </details>
         {signedIn && (
           <details>
             <summary>Cloud history</summary>
