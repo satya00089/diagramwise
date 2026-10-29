@@ -1,5 +1,6 @@
 import React from "react";
 import { MdClose } from "react-icons/md";
+import SelectDropdown from "./shared/SelectDropdown";
 
 interface Collaborator {
   id: string;
@@ -66,19 +67,21 @@ const CollaboratorsList: React.FC<CollaboratorsListProps> = ({
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <select
+            <SelectDropdown
+              id={`collaborator-permission-${collaborator.id}`}
               value={collaborator.permission}
-              onChange={(e) =>
-                onUpdatePermission(
-                  collaborator.id,
-                  e.target.value as "read" | "edit",
-                )
-              }
-              className="text-xs px-2 py-1 border border-theme/20 rounded bg-theme text-theme"
-            >
-              <option value="read">Read</option>
-              <option value="edit">Edit</option>
-            </select>
+              options={[
+                { value: "read", label: "Read" },
+                { value: "edit", label: "Edit" },
+              ]}
+              aria-label={`Permission for ${collaborator.email}`}
+              size="small"
+              wrapperClassName="w-24 shrink-0"
+              onChange={(permission) => {
+                if (permission === "read" || permission === "edit")
+                  onUpdatePermission(collaborator.id, permission);
+              }}
+            />
             <button
               type="button"
               onClick={() => onRemove(collaborator.id)}

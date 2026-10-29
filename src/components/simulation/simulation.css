@@ -546,7 +546,7 @@
   margin-top: 10px;
   font-size: 12px;
 }
-.sim-field > select {
+.sim-field > .dashboard-select-wrapper {
   width: 100%;
 }
 .sim-field--inline {

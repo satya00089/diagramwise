@@ -137,6 +137,7 @@ import {
   AnimatedTextarea,
   AnimatedSelect,
 } from "../components/shared/AnimatedInputFields";
+import SelectDropdown from "../components/shared/SelectDropdown";
 
 // UI Components - Layout
 import Seo from "../components/SEO";
@@ -6585,21 +6586,26 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                       >
                         Permission Level
                       </label>
-                      <select
+                      <SelectDropdown
                         id="share-permission"
                         value={sharePermission}
-                        onChange={(e) =>
-                          setSharePermission(e.target.value as "read" | "edit")
-                        }
-                        className="w-full px-3 py-2 border border-theme/20 rounded-md focus:outline-none focus:ring-2 focus:ring-accent/50 bg-theme text-theme"
-                      >
-                        <option value="read">
-                          Read Only - Can view the diagram
-                        </option>
-                        <option value="edit">
-                          Read & Edit - Can view and modify the diagram
-                        </option>
-                      </select>
+                        options={[
+                          {
+                            value: "read",
+                            label: "Read Only - Can view the diagram",
+                          },
+                          {
+                            value: "edit",
+                            label:
+                              "Read & Edit - Can view and modify the diagram",
+                          },
+                        ]}
+                        aria-label="Permission Level"
+                        onChange={(permission) => {
+                          if (permission === "read" || permission === "edit")
+                            setSharePermission(permission);
+                        }}
+                      />
                     </div>
                     <button
                       type="button"
