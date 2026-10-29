@@ -583,7 +583,10 @@ const ProblemLanding: React.FC = () => {
         </main>
 
         <footer className="border-t border-theme/10 px-4 py-8 text-center text-sm text-muted">
-          Diagramwise — system design practice built around your reasoning.
+          Diagramwise — system design practice built around your reasoning.{" "}
+          <Link to="/about/" className="underline underline-offset-4">
+            About
+          </Link>
         </footer>
       </div>
 

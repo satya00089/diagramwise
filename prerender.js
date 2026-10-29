@@ -622,6 +622,7 @@ function renderStaticRoute(data) {
       </main>
       <footer class="static-route-footer">
         Diagramwise — system design practice and architecture review.
+        <a href="/about/">About</a>
       </footer>
     </div>`;
 }
