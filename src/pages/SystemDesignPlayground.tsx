@@ -40,7 +40,6 @@ import {
   MdHelpOutline,
   MdPublic,
   MdExtension,
-  MdPlayArrow,
 } from "react-icons/md";
 
 // Routing
@@ -157,6 +156,7 @@ import {
   SimulationCanvasControls,
   SimulationDetails,
 } from "../simulation/SimulationHost";
+import { NavIcon } from "../components/navIcons/NavIcon";
 import { useSimulationDocument } from "../simulation/canvas";
 import { simulationSession } from "../simulation/session";
 import { challengeUrl } from "../challenges/model";
@@ -5915,11 +5915,11 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                       simulationSession.start();
                       setActiveRightTab("simulation");
                     }}
-                    className="flex items-center gap-1.5 rounded-md border border-white/25 px-3 py-1.5 text-sm font-semibold text-white/90 transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                    className="nav-tab flex items-center gap-1.5 rounded-md border border-white/25 px-3 py-1.5 text-sm font-semibold text-white/90 transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
                     aria-label="Start simulation"
                     data-tooltip="Start a live architecture simulation"
                   >
-                    <MdPlayArrow className="h-4 w-4" aria-hidden="true" />
+                    <NavIcon name="simulate" />
                     <span>Simulate</span>
                   </button>
                 )}
