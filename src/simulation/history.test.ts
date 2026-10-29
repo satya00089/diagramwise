@@ -37,6 +37,24 @@ describe("parseEventRun", () => {
     expect(parseEventRun(artifact())).toEqual(artifact());
   });
 
+  it("accepts workload commands scoped to existing traffic clients", () => {
+    const value = artifact();
+    value.commands = [{
+      atMs: 100,
+      command: { type: "workload", rps: 50, clientIds: ["client"] },
+    }];
+    expect(parseEventRun(value).commands).toEqual(value.commands);
+  });
+
+  it("rejects workload commands scoped to unknown or duplicate traffic clients", () => {
+    const value = artifact();
+    value.commands = [{
+      atMs: 100,
+      command: { type: "workload", rps: 50, clientIds: ["missing", "missing"] },
+    }];
+    expect(() => parseEventRun(value)).toThrow("Invalid recorded workload");
+  });
+
   it("rejects an imported replay with an unknown model before a worker starts", () => {
     const value = artifact();
     (value.topology.nodes[1] as { kind: string }).kind = "made-up-model";

@@ -39,6 +39,14 @@ export interface CompiledSimulation {
   profiles: Record<string, CatalogProfile>;
   fingerprint: string;
   virtualSourceId?: string;
+  trafficSource: CompiledTrafficSource;
+}
+export interface CompiledTrafficSource {
+  mode: 'ingress' | 'clients' | 'scheduled' | 'none';
+  options: Array<{ id: string; label: string; kind: NodeKind }>;
+  selectedNodeId?: string;
+  inferredNodeId?: string;
+  requiresSelection: boolean;
 }
 
 const patterns: readonly TrafficPattern[] = ['steady', 'ramp', 'spike', 'diurnal'];
@@ -63,6 +71,24 @@ function canonical(value: unknown): string {
 }
 
 /** Change detection only; this is not a signature or a security boundary. */
+function trafficSourceOptions(nodes: SimNode[]): CompiledTrafficSource['options'] {
+  const labelCounts = new Map<string, number>();
+  for (const node of nodes) {
+    const key = node.label.toLocaleLowerCase();
+    labelCounts.set(key, (labelCounts.get(key) ?? 0) + 1);
+  }
+  const duplicateLabels = new Set(
+    [...labelCounts].filter(([, count]) => count > 1).map(([label]) => label),
+  );
+  return nodes.map(node => ({
+    id: node.id,
+    label: duplicateLabels.has(node.label.toLocaleLowerCase())
+      ? `${node.label} (${node.id})`
+      : node.label,
+    kind: node.kind,
+  }));
+}
+
 function fingerprint(value: unknown): string {
   const text = canonical(value);
   return [2166136261, 2246822519, 3266489917, 668265263].map(seed => {
@@ -206,12 +232,48 @@ export function compileGraph(document: SimulationDocument, options: CompileOptio
   let virtualSourceId: string | undefined;
   const sources = [...modeled.values()].filter(node => node.kind === 'client' || node.kind === 'cron');
   if (options.entryNodeId) explicitEntries.add(options.entryNodeId);
-  if (sources.length === 0) {
+  let trafficSource: CompiledTrafficSource = {
+    mode: 'none',
+    options: [],
+    requiresSelection: false,
+  };
+  const physicalClients = sources.filter(node => node.kind === 'client');
+  const scheduledSources = sources.filter(node => node.kind === 'cron');
+  if (physicalClients.length > 0) {
+    const selectedClients = physicalClients.filter(node => explicitEntries.has(node.id));
+    const requiresSelection = selectedClients.length > 1;
+    if (requiresSelection) {
+      diagnostics.push({ severity: 'error', code: 'ambiguous-entrypoint', action: 'choose-entrypoint', message: 'Choose one traffic client, or distribute the request rate across all clients.' });
+    }
+    trafficSource = {
+      mode: 'clients',
+      options: trafficSourceOptions(physicalClients),
+      ...(selectedClients.length === 1 ? { selectedNodeId: selectedClients[0].id } : {}),
+      requiresSelection,
+    };
+  } else if (scheduledSources.length > 0) {
+    trafficSource = {
+      mode: 'scheduled',
+      options: trafficSourceOptions(scheduledSources),
+      requiresSelection: false,
+    };
+  } else if (sources.length === 0 && modeled.size > 0) {
     const inbound = new Set(edges.filter(edge => !edge.control).map(edge => edge.to));
     const candidates = [...modeled.values()].filter(node => node.kind !== 'autoscaler' && !inbound.has(node.id));
-    const entries = explicitEntries.size > 0 ? [...explicitEntries].map(id => modeled.get(id)).filter((node): node is SimNode => !!node && node.kind !== 'autoscaler') : candidates;
-    if (entries.length === 1 && (explicitEntries.size === 0 || explicitEntries.size === 1)) {
-      const entry = entries[0];
+    const options = [...modeled.values()].filter(node => node.kind !== 'autoscaler');
+    const selectedEntries = [...explicitEntries].map(id => modeled.get(id)).filter((node): node is SimNode => !!node && node.kind !== 'autoscaler');
+    const entries = explicitEntries.size > 0 ? selectedEntries : candidates;
+    const entry = entries.length === 1 && (explicitEntries.size === 0 || explicitEntries.size === 1)
+      ? entries[0]
+      : undefined;
+    trafficSource = {
+      mode: 'ingress',
+      options: trafficSourceOptions(options),
+      ...(explicitEntries.size === 1 && selectedEntries[0] ? { selectedNodeId: selectedEntries[0].id } : {}),
+      ...(explicitEntries.size === 0 && entry ? { inferredNodeId: entry.id } : {}),
+      requiresSelection: !entry,
+    };
+    if (entry) {
       virtualSourceId = '__simulation_source__';
       while (nodeIds.has(virtualSourceId)) virtualSourceId += '_';
       const sourceEdgeId = `${virtualSourceId}:entry`;
@@ -228,7 +290,16 @@ export function compileGraph(document: SimulationDocument, options: CompileOptio
   if (clients.length === 0 && sources.some(node => node.kind === 'cron')) {
     diagnostics.push({ severity: 'error', code: 'scheduled-source-needs-client', action: 'choose-entrypoint', message: 'Scheduled jobs use their own interval. Add a client connected to the request path to use this simulator’s request-rate controls alongside scheduled jobs.' });
   }
-  for (const client of clients) Object.assign(client.config, { rps: rate / clients.length, traffic });
+  const activeClients = trafficSource.mode === 'clients' && trafficSource.selectedNodeId
+    ? clients.filter(client => client.id === trafficSource.selectedNodeId)
+    : clients;
+  const clientsReceivingTraffic = activeClients.length > 0 ? activeClients : clients;
+  for (const client of clients) {
+    Object.assign(client.config, {
+      rps: clientsReceivingTraffic.includes(client) ? rate / clientsReceivingTraffic.length : 0,
+      traffic,
+    });
+  }
   if (modeled.size === 0) diagnostics.push({ severity: 'error', code: 'empty-system', message: 'Add executable components, or try the repair example to start a simulation.' });
 
   // Reachability follows executable behavior, not just the direction of the
@@ -340,7 +411,7 @@ export function compileGraph(document: SimulationDocument, options: CompileOptio
     visited.add(id);
   }
   for (const id of modeled.keys()) visit(id);
-  for (const client of clients) if (!(outgoing.get(client.id)?.length)) diagnostics.push({ severity: 'error', code: 'disconnected-source', nodeId: client.id, action: 'fix-connection', message: 'Connect this traffic source to the system before starting.' });
+  for (const client of clientsReceivingTraffic) if (!(outgoing.get(client.id)?.length)) diagnostics.push({ severity: 'error', code: 'disconnected-source', nodeId: client.id, action: 'fix-connection', message: 'Connect this traffic source to the system before starting.' });
 
   const nodes = [...modeled.values()].sort((a, b) => a.id.localeCompare(b.id));
   const semantic = {
@@ -350,5 +421,12 @@ export function compileGraph(document: SimulationDocument, options: CompileOptio
     unsupported: [...nodeIds].filter(id => !modeled.has(id) && !structural.has(id)).sort(compareStrings),
     errors: diagnostics.filter(item => item.severity === 'error').map(({ code, nodeId, edgeId }) => ({ code, nodeId, edgeId })),
   };
-  return { topology: diagnostics.some(item => item.severity === 'error') ? null : { nodes, edges }, diagnostics, profiles, fingerprint: fingerprint(semantic), ...(virtualSourceId ? { virtualSourceId } : {}) };
+  return {
+    topology: diagnostics.some(item => item.severity === 'error') ? null : { nodes, edges },
+    diagnostics,
+    profiles,
+    fingerprint: fingerprint(semantic),
+    trafficSource,
+    ...(virtualSourceId ? { virtualSourceId } : {}),
+  };
 }

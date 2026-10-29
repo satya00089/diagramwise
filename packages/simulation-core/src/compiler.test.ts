@@ -26,7 +26,104 @@ describe('compileGraph', () => {
     });
     expect(result.topology?.nodes.map(node => node.id)).toContain('__simulation_source__');
     expect(result.virtualSourceId).toBe('__simulation_source__');
+    expect(result.trafficSource).toMatchObject({
+      mode: 'ingress',
+      inferredNodeId: 'api',
+      requiresSelection: false,
+      options: expect.arrayContaining([
+        expect.objectContaining({ id: 'api', label: 'API' }),
+        expect.objectContaining({ id: 'database', label: 'Database' }),
+      ]),
+    });
     expect(result.diagnostics.some(item => item.severity === 'error')).toBe(false);
+  });
+
+  it('exposes ingress choices when automatic entrypoint inference is ambiguous', () => {
+    const result = compileGraph({
+      nodes: [
+        { id: 'api', data: { simulation: { kind: 'service' }, label: 'API' } },
+        { id: 'worker', data: { simulation: { kind: 'worker' }, label: 'Worker' } },
+      ],
+      edges: [],
+    });
+    expect(result.topology).toBeNull();
+    expect(result.trafficSource).toMatchObject({
+      mode: 'ingress',
+      requiresSelection: true,
+      options: expect.arrayContaining([
+        expect.objectContaining({ id: 'api' }),
+        expect.objectContaining({ id: 'worker' }),
+      ]),
+    });
+  });
+
+  it('uses the selected component as the virtual traffic entrypoint', () => {
+    const result = compileGraph({
+      nodes: [
+        { id: 'api', data: { simulation: { kind: 'service' }, label: 'API' } },
+        { id: 'database', data: { simulation: { kind: 'db', entrypoint: true }, label: 'Database' } },
+      ],
+      edges: [{ id: 'api-db', source: 'api', target: 'database' }],
+    });
+    expect(result.trafficSource).toMatchObject({
+      mode: 'ingress',
+      selectedNodeId: 'database',
+      requiresSelection: false,
+    });
+    expect(result.topology?.edges).toContainEqual(
+      expect.objectContaining({ from: '__simulation_source__', to: 'database' }),
+    );
+  });
+
+  it('distributes traffic across physical clients unless one is selected', () => {
+    const document = {
+      nodes: [
+        { id: 'client-a', data: { simulation: { kind: 'client' }, label: 'Browser A' } },
+        { id: 'client-b', data: { simulation: { kind: 'client' }, label: 'Browser B' } },
+        { id: 'api', data: { simulation: { kind: 'service' }, label: 'API' } },
+      ],
+      edges: [
+        { id: 'a-api', source: 'client-a', target: 'api' },
+        { id: 'b-api', source: 'client-b', target: 'api' },
+      ],
+    };
+    const distributed = compileGraph(document, { requestRate: 100 });
+    expect(distributed.trafficSource).toMatchObject({
+      mode: 'clients',
+      requiresSelection: false,
+      options: expect.arrayContaining([
+        expect.objectContaining({ id: 'client-a' }),
+        expect.objectContaining({ id: 'client-b' }),
+      ]),
+    });
+    expect(distributed.topology?.nodes.find(node => node.id === 'client-a')?.config.rps).toBe(50);
+    expect(distributed.topology?.nodes.find(node => node.id === 'client-b')?.config.rps).toBe(50);
+
+    const selected = compileGraph({
+      ...document,
+      nodes: document.nodes.map(node => node.id === 'client-b'
+        ? { ...node, data: { ...node.data, simulation: { ...node.data.simulation, entrypoint: true } } }
+        : node),
+    }, { requestRate: 100 });
+    expect(selected.trafficSource).toMatchObject({
+      mode: 'clients',
+      selectedNodeId: 'client-b',
+      requiresSelection: false,
+    });
+    expect(selected.topology?.nodes.find(node => node.id === 'client-a')?.config.rps).toBe(0);
+    expect(selected.topology?.nodes.find(node => node.id === 'client-b')?.config.rps).toBe(100);
+
+    const selectedWithDisconnectedClient = compileGraph({
+      ...document,
+      nodes: document.nodes.map(node => node.id === 'client-b'
+        ? { ...node, data: { ...node.data, simulation: { ...node.data.simulation, entrypoint: true } } }
+        : node),
+      edges: [{ id: 'b-api', source: 'client-b', target: 'api' }],
+    }, { requestRate: 100 });
+    expect(selectedWithDisconnectedClient.topology).not.toBeNull();
+    expect(selectedWithDisconnectedClient.diagnostics).not.toContainEqual(
+      expect.objectContaining({ code: 'disconnected-source', nodeId: 'client-a' }),
+    );
   });
 
   it('explains a reachable work queue without a pull consumer and its idle destinations', () => {

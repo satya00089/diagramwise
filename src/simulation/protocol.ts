@@ -1,7 +1,7 @@
 import type { SimSnapshot, Topology, TrafficPattern, FailureKind, FailureOpts } from "@diagramwise/simulation-core";
 
 export type RunCommand =
-  | { type: "workload"; rps: number; pattern?: TrafficPattern }
+  | { type: "workload"; rps: number; pattern?: TrafficPattern; clientIds?: string[] }
   | { type: "replicas"; nodeId: string; instances: number }
   | { type: "fault"; nodeId: string; kind: FailureKind; opts?: FailureOpts }
   | { type: "clearFault"; nodeId: string };

@@ -11,7 +11,7 @@ import type { SystemDesignProblem } from "../types/systemDesign";
 
 const LegacySimulationPanel = lazy(() => import("../components/SimulationPanel"));
 
-export function SimulationCanvasControls({ onInspect, onDemo }: Readonly<{ onInspect: () => void; onDemo?: () => void }>) {
+export function SimulationCanvasControls({ onInspect, onDemo, onSourceChange }: Readonly<{ onInspect: () => void; onDemo?: () => void; onSourceChange: (nodeId: string | null) => void }>) {
   const s = useSimulationSession();
   if (!s.visible) return null;
   const hasBackgroundDelivery = Object.values(s.compilation?.profiles ?? {}).some(profile =>
@@ -20,10 +20,10 @@ export function SimulationCanvasControls({ onInspect, onDemo }: Readonly<{ onIns
     <SimulationToolbar status={s.status} rps={s.rps} pattern={s.pattern} speed={s.speed} snapshot={s.snapshot}
       timeMs={s.snapshot?.system.timeMs ?? 0} achievedSpeed={s.achievedSpeed} diagnostics={s.compilation?.diagnostics}
       hasBackgroundDelivery={hasBackgroundDelivery}
+      trafficSource={s.compilation?.trafficSource}
       onStart={() => simulationSession.start()} onPause={() => simulationSession.pause()} onReset={() => simulationSession.reset()}
       onRpsChange={rps => simulationSession.setWorkload(rps)} onPatternChange={pattern => simulationSession.setWorkload(s.rps, pattern)}
-      onSpeedChange={speed => simulationSession.setSpeed(speed)} onInspect={onInspect} onDemo={onDemo} />
-    {s.compilation?.virtualSourceId && <p className="sim-virtual-source">Traffic source: {s.rps} requests/sec → {s.compilation.topology?.nodes.find(n => n.id === s.compilation?.topology?.edges.find(e => e.from === s.compilation?.virtualSourceId)?.to)?.label ?? "entrypoint"}</p>}
+      onSpeedChange={speed => simulationSession.setSpeed(speed)} onTrafficSourceChange={onSourceChange} onInspect={onInspect} onDemo={onDemo} />
   </Panel>;
 }
 

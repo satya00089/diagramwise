@@ -95,7 +95,17 @@ export const simulationSession = {
   setWorkload(rps: number, pattern = useSimulationSession.getState().pattern) {
     if (!Number.isFinite(rps) || rps < 0 || rps > 100000) return;
     useSimulationSession.setState({ rps, pattern });
-    this.command({ type: "workload", rps, pattern });
+    const compilation = useSimulationSession.getState().compilation;
+    const selectedClientId =
+      compilation?.trafficSource.mode === "clients"
+        ? compilation.trafficSource.selectedNodeId
+        : undefined;
+    this.command({
+      type: "workload",
+      rps,
+      pattern,
+      ...(selectedClientId ? { clientIds: [selectedClientId] } : {}),
+    });
   },
   command(command: RunCommand) {
     const state = useSimulationSession.getState();

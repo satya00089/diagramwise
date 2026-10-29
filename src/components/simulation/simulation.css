@@ -38,6 +38,11 @@
 .sim-toolbar__readout { flex-wrap: wrap; gap: 7px 16px; margin-top: 9px; color: var(--text-muted, #929292); font-size: 11px; }
 .sim-toolbar__readout strong { color: var(--text, #ececec); font-weight: 600; }
 .sim-toolbar__state { display: inline-flex; align-items: center; gap: 6px; }
+.sim-toolbar__source { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+.sim-toolbar__source > svg { flex: none; color: var(--accent, #ec4899); }
+.sim-toolbar__source-label { color: var(--text-muted, #929292); white-space: nowrap; }
+.sim-toolbar__source-select { width: auto; max-width: 190px; min-height: 28px; padding: 3px 22px 3px 7px; font-size: 11px; cursor: pointer; }
+.sim-toolbar__source-value { max-width: 190px; overflow: hidden; color: var(--text, #ececec); text-overflow: ellipsis; white-space: nowrap; }
 .sim-status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .sim-toolbar__state--running { color: var(--sim-healthy); }
 .sim-toolbar__state--stale, .sim-toolbar__state--resource-limited { color: var(--sim-warning); }

@@ -7,7 +7,7 @@ export const ENGINE_VERSION = 'event-v2' as const;
 export const PROFILE_VERSION = 'profiles-v1' as const;
 
 export type SimulationCommand =
-  | { type: 'workload'; rps: number; pattern?: TrafficPattern }
+  | { type: 'workload'; rps: number; pattern?: TrafficPattern; clientIds?: string[] }
   | { type: 'replicas'; nodeId: string; instances: number }
   | { type: 'fault'; nodeId: string; kind: FailureKind | 'error'; opts?: FailureOpts }
   | { type: 'clearFault'; nodeId: string };
@@ -117,7 +117,19 @@ export function createSimulation(input: Topology, seed = 1): SimulationRuntime {
           }
           const clients = topology.nodes.filter(node => node.kind === 'client');
           if (clients.length === 0) throw new Error('A workload needs a traffic source.');
-          for (const node of clients) engine.updateNodeConfig(node.id, { rps: command.rps / clients.length, ...(command.pattern ? { traffic: command.pattern } : {}) });
+          const clientIds = command.clientIds ?? clients.map(node => node.id);
+          if (!Array.isArray(clientIds) || clientIds.length === 0 || clientIds.length > clients.length ||
+            new Set(clientIds).size !== clientIds.length ||
+            clientIds.some(id => typeof id !== 'string' || !clients.some(node => node.id === id))) {
+            throw new TypeError('Workload client identifiers must refer to unique traffic sources.');
+          }
+          const activeClientIds = new Set(clientIds);
+          for (const node of clients) {
+            engine.updateNodeConfig(node.id, {
+              rps: activeClientIds.has(node.id) ? command.rps / activeClientIds.size : 0,
+              ...(command.pattern ? { traffic: command.pattern } : {}),
+            });
+          }
           return;
         }
         case 'replicas':

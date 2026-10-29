@@ -2877,12 +2877,12 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       return { ...node, data: { ...node.data, simulation: { ...simulation, kind } } };
     }));
   }, [setNodes]);
-  const setSimulationEntrypoint = useCallback((nodeId: string) => {
+  const setSimulationEntrypoint = useCallback((nodeId: string | null) => {
     setNodes((current) => current.map((node) => {
       const existing = node.data?.simulation;
       const simulation = existing && typeof existing === "object" && !Array.isArray(existing)
         ? existing as Record<string, unknown> : {};
-      return { ...node, data: { ...node.data, simulation: { ...simulation, entrypoint: node.id === nodeId } } };
+      return { ...node, data: { ...node.data, simulation: { ...simulation, entrypoint: nodeId !== null && node.id === nodeId } } };
     }));
   }, [setNodes]);
   const openRepairDemo = useCallback(() => {
@@ -6101,6 +6101,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                 setActiveRightTab("simulation");
                 setSimulationPanelOpenRequest((request) => request + 1);
               }}
+              onSourceChange={setSimulationEntrypoint}
               onDemo={REPAIR_CHALLENGE_ENABLED ? openRepairDemo : undefined}
             />}
             {cursors.map((cursor) => {

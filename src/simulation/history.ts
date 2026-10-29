@@ -16,9 +16,11 @@ export function parseEventRun(value: unknown, options: { allowLegacyExport?: boo
   try { assertReplayTopology(artifact.topology); }
   catch (error) { throw new Error(error instanceof Error ? error.message : "This run has an invalid graph."); }
   const ids = new Set<string>();
+  const clientIds = new Set<string>();
   for (const node of artifact.topology.nodes) {
     if (!node || typeof node.id !== "string" || ids.has(node.id)) throw new Error("This run contains an invalid component.");
     ids.add(node.id);
+    if (node.kind === "client") clientIds.add(node.id);
   }
   const edgeIds = new Set<string>();
   for (const edge of artifact.topology.edges) {
@@ -32,7 +34,9 @@ export function parseEventRun(value: unknown, options: { allowLegacyExport?: boo
     if (!entry || !Number.isFinite(entry.atMs) || entry.atMs < previous || entry.atMs > 86_400_000 || !entry.command || !["workload", "replicas", "fault", "clearFault"].includes(entry.command.type)) throw new Error("This run contains an invalid command timeline.");
     previous = entry.atMs;
     const c = entry.command;
-    if (c.type === "workload" && (!Number.isFinite(c.rps) || c.rps < 0 || c.rps > 100000 || (c.pattern !== undefined && !["steady", "ramp", "spike", "diurnal"].includes(c.pattern)))) throw new Error("Invalid recorded workload.");
+    if (c.type === "workload" && (!Number.isFinite(c.rps) || c.rps < 0 || c.rps > 100000 || (c.pattern !== undefined && !["steady", "ramp", "spike", "diurnal"].includes(c.pattern)) ||
+      (c.clientIds !== undefined && (!Array.isArray(c.clientIds) || c.clientIds.length === 0 || c.clientIds.length > clientIds.size ||
+        new Set(c.clientIds).size !== c.clientIds.length || c.clientIds.some(id => typeof id !== "string" || !clientIds.has(id)))))) throw new Error("Invalid recorded workload.");
     if (c.type !== "workload" && !ids.has(c.nodeId)) throw new Error("A recorded change refers to a missing component.");
     if (c.type === "replicas" && (!Number.isInteger(c.instances) || c.instances < 1 || c.instances > 512)) throw new Error("Invalid replica count.");
     if (c.type === "fault") {
