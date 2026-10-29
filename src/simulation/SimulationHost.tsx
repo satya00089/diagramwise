@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Panel, useReactFlow } from "@xyflow/react";
 import type { Edge, Node } from "@xyflow/react";
 import type { NodeKind } from "@diagramwise/simulation-core";
@@ -19,11 +19,6 @@ import {
   saveLocalRun,
 } from "./history";
 import type { SavedEventRun } from "./history";
-import type { SystemDesignProblem } from "../types/systemDesign";
-
-const LegacySimulationPanel = lazy(
-  () => import("../components/SimulationPanel"),
-);
 
 export function SimulationCanvasControls({
   onInspect,
@@ -84,7 +79,6 @@ export function SimulationCanvasControls({
 type DetailsProps = Readonly<{
   nodes: Node[];
   edges: Edge[];
-  problem?: SystemDesignProblem | null;
   signedIn: boolean;
   selectedNodeId?: string | null;
   onModelChange: (nodeId: string, kind: NodeKind) => void;
@@ -95,7 +89,6 @@ type DetailsProps = Readonly<{
 export function SimulationDetails({
   nodes,
   edges,
-  problem,
   signedIn,
   selectedNodeId,
   onModelChange,
@@ -108,7 +101,6 @@ export function SimulationDetails({
   const [cloudRuns, setCloudRuns] = useState<SavedEventRun[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [showLegacy, setShowLegacy] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   // The regular inspector remains the source of truth when the user selects
   // another canvas component; simulation badges can still focus a component.
@@ -406,24 +398,6 @@ export function SimulationDetails({
           </p>
         )}
       </section>
-      {problem?.id !== "free" && (
-        <details onToggle={(event) => setShowLegacy(event.currentTarget.open)}>
-          <summary>Capacity estimate — legacy model</summary>
-          {showLegacy && (
-            <Suspense
-              fallback={
-                <p className="sim-muted">Loading legacy capacity history…</p>
-              }
-            >
-              <LegacySimulationPanel
-                nodes={nodes}
-                edges={edges}
-                problem={problem ?? null}
-              />
-            </Suspense>
-          )}
-        </details>
-      )}
     </SimulationInspector>
   );
 }

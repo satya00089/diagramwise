@@ -6197,7 +6197,6 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
               <SimulationDetails
                 nodes={nodes}
                 edges={edges}
-                problem={problem}
                 signedIn={isAuthenticated}
                 selectedNodeId={inspectedNodeId}
                 onModelChange={updateSimulationModel}
