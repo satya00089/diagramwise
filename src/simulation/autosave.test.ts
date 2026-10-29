@@ -10,10 +10,11 @@ vi.stubGlobal("dispatchEvent", bus.dispatchEvent.bind(bus));
 const saveLocalRun = vi.fn();
 const artifact = vi.fn();
 const isReplay = vi.fn();
+const currentRunId = vi.fn();
 
 vi.mock("./history", () => ({ saveLocalRun }));
 vi.mock("./session", () => ({
-  simulationSession: { artifact, isReplay },
+  simulationSession: { artifact, isReplay, currentRunId },
 }));
 
 const { useSimulationSession } = await import("./store");
@@ -42,6 +43,7 @@ beforeEach(() => {
   saveLocalRun.mockReset().mockResolvedValue({});
   artifact.mockReset();
   isReplay.mockReset().mockReturnValue(false);
+  currentRunId.mockReset().mockReturnValue("run-1");
   useSimulationSession.setState({ status: "idle" });
 });
 
@@ -66,12 +68,18 @@ describe("run auto-save", () => {
     expect(saveLocalRun).toHaveBeenCalledTimes(1);
   });
 
-  it("saves again once the run has progressed", () => {
+  it("updates the same run's row when it is paused again after progressing", () => {
+    currentRunId.mockReturnValue("run-d");
     artifact.mockReturnValue(run(10_000, `d${counter}`));
     move("running", "paused");
     artifact.mockReturnValue(run(20_000, `d${counter}`));
     move("running", "paused");
     expect(saveLocalRun).toHaveBeenCalledTimes(2);
+    // Same run id both times, so storage keeps one row, not two.
+    expect(saveLocalRun.mock.calls.map((call) => call[1])).toEqual([
+      "run-d",
+      "run-d",
+    ]);
   });
 
   it("keeps the 'before' when the design changes mid-run", () => {

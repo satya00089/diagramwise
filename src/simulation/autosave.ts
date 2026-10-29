@@ -18,7 +18,8 @@ function save() {
   const key = `${run.graphFingerprint}|${run.workload.seed}|${Math.round(run.result.timeMs)}`;
   if (key === lastSaved) return;
   lastSaved = key;
-  saveLocalRun(run)
+  // One row per run: pausing the same run again updates its row.
+  saveLocalRun(run, simulationSession.currentRunId())
     .then(() => globalThis.dispatchEvent(new Event(RUN_SAVED_EVENT)))
     .catch((error: unknown) =>
       globalThis.dispatchEvent(

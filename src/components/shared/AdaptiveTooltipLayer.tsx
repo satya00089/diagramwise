@@ -212,7 +212,17 @@ const AdaptiveTooltipLayer = () => {
       frame = requestAnimationFrame(() => showTooltip(current.element));
     };
 
-    const observer = new MutationObserver(() => markTooltipTargets());
+    const observer = new MutationObserver(() => {
+      markTooltipTargets();
+      // Follow the hovered element: a tooltip that changes or is removed while
+      // the pointer is still over it (a "Restart" button that becomes "Pause")
+      // must not keep showing its old text.
+      const current = tooltipRef.current;
+      if (!current) return;
+      const text = current.element.dataset.tooltip?.trim();
+      if (!current.element.isConnected || !text) hideTooltip();
+      else if (text !== current.text) showTooltip(current.element);
+    });
     markTooltipTargets();
     observer.observe(document.body, {
       childList: true,

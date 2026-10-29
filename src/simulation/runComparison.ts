@@ -13,7 +13,9 @@ export type RunDelta = {
 };
 
 export type RunComparison =
-  | { comparable: false }
+  // "load": the traffic differs. "same-design": nothing was changed, so any
+  // difference is run-to-run variation, not the effect of a design change.
+  | { comparable: false; reason: "load" | "same-design" }
   | { comparable: true; deltas: RunDelta[] };
 
 /** One-line outcome of a run, e.g. "9.8k/s served · 0.2% failed · p95 90 ms". */
@@ -39,7 +41,9 @@ function relativeChange(from: number, to: number): number {
 /**
  * What changed from `previous` to `current`. Only runs under the same traffic
  * load are compared; otherwise a difference would reflect the load, not the
- * design. Metrics that did not meaningfully change are left out.
+ * design. Runs of the same design are not compared either: their numbers
+ * differ by chance, which would read as an improvement or regression that
+ * never happened. Metrics that did not meaningfully change are left out.
  */
 export function compareRuns(
   current: EventRunArtifact,
@@ -47,13 +51,14 @@ export function compareRuns(
 ): RunComparison {
   const now = current.result;
   const before = previous.result;
+  if (!now || !before) return { comparable: false, reason: "load" };
   if (
-    !now ||
-    !before ||
     current.workload.rps !== previous.workload.rps ||
     current.workload.pattern !== previous.workload.pattern
   )
-    return { comparable: false };
+    return { comparable: false, reason: "load" };
+  if (current.graphFingerprint === previous.graphFingerprint)
+    return { comparable: false, reason: "same-design" };
 
   const deltas: RunDelta[] = [];
 

@@ -23,7 +23,6 @@ import type {
   InterviewSession,
 } from "../types/systemDesign";
 import type { FeedbackResponse, FeedbackSubmission } from "../types/feedback";
-import type { SimulationRunSnapshot } from "../types/simulation";
 import type {
   AdminAccessUser,
   AdminApiLatencyReport,
@@ -41,13 +40,6 @@ export const getApiBaseUrl = (apiUrl?: string, legacyApiUrl?: string): string =>
 
 export const getGoogleLoginRedirectUri = (apiBaseUrl: string): string =>
   `${apiBaseUrl.replace(/\/$/, "")}/api/v1/auth/google/redirect`;
-
-export type SimulationSavedRun = {
-  runId: string;
-  createdAt: string;
-  expiresAt: number;
-  snapshot: SimulationRunSnapshot;
-};
 
 const API_BASE_URL = getApiBaseUrl(
   import.meta.env.VITE_API_URL,
@@ -708,69 +700,6 @@ class ApiService {
     if (!response.ok) {
       throw new Error("Failed to remove collaborator");
     }
-  }
-
-  // Problem attempts tracking
-  async getSimulationStatus(
-    signal?: AbortSignal,
-  ): Promise<{ enabled: boolean }> {
-    const response = await apiFetch(
-      `${API_BASE_URL}/api/v1/simulation/status`,
-      { signal },
-    );
-    if (!response.ok)
-      throw await this.createApiError(
-        response,
-        "Capacity simulation status is unavailable.",
-      );
-    return response.json();
-  }
-
-  async getSimulationRuns(
-    problemId: string,
-    signal?: AbortSignal,
-  ): Promise<SimulationSavedRun[]> {
-    const query = new URLSearchParams({ problemId });
-    const response = await apiFetch(
-      `${API_BASE_URL}/api/v1/simulation/runs?${query}`,
-      { signal },
-    );
-    if (!response.ok)
-      throw await this.createApiError(
-        response,
-        "Saved simulation runs could not be loaded.",
-      );
-    return response.json();
-  }
-
-  async saveSimulationRun(
-    problemId: string,
-    requirementRevision: string | null,
-    snapshot: SimulationRunSnapshot,
-  ): Promise<SimulationSavedRun> {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/simulation/runs`, {
-      method: "POST",
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify({ problemId, requirementRevision, snapshot }),
-    });
-    if (!response.ok)
-      throw await this.createApiError(response, "This run could not be saved.");
-    return response.json();
-  }
-
-  async deleteSimulationRun(runId: string): Promise<void> {
-    const response = await apiFetch(
-      `${API_BASE_URL}/api/v1/simulation/runs/${encodeURIComponent(runId)}`,
-      {
-        method: "DELETE",
-        headers: this.getAuthHeaders(),
-      },
-    );
-    if (!response.ok)
-      throw await this.createApiError(
-        response,
-        "This saved run could not be deleted.",
-      );
   }
 
   // Problem attempts tracking

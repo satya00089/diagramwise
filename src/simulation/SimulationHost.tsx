@@ -9,13 +9,10 @@ import {
 import { simulationSession, useSimulationSession } from "./session";
 import type { EventRunArtifact } from "./protocol";
 import {
-  deleteCloudRun,
   deleteLocalRun,
   downloadRun,
-  listCloudRuns,
   listLocalRuns,
   parseEventRun,
-  saveCloudRun,
   saveLocalRun,
 } from "./history";
 import type { SavedEventRun } from "./history";
@@ -81,7 +78,6 @@ export function SimulationCanvasControls({
 type DetailsProps = Readonly<{
   nodes: Node[];
   edges: Edge[];
-  signedIn: boolean;
   selectedNodeId?: string | null;
   /** Clear the canvas-level selection when leaving a component's details. */
   onClearSelection?: () => void;
@@ -93,7 +89,6 @@ type DetailsProps = Readonly<{
 export function SimulationDetails({
   nodes,
   edges,
-  signedIn,
   selectedNodeId,
   onClearSelection,
   onModelChange,
@@ -103,7 +98,6 @@ export function SimulationDetails({
   const s = useSimulationSession();
   const { fitView } = useReactFlow();
   const [localRuns, setLocalRuns] = useState<SavedEventRun[]>([]);
-  const [cloudRuns, setCloudRuns] = useState<SavedEventRun[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -134,7 +128,6 @@ export function SimulationDetails({
         .catch(() => {
           if (active) setLocalRuns([]);
         });
-    setCloudRuns([]);
     setMessage(null);
     return () => {
       active = false;
@@ -201,12 +194,7 @@ export function SimulationDetails({
       "Run imported. Replay is available when its design matches this canvas.",
     );
   }
-  async function removeRun(row: SavedEventRun, cloud: boolean) {
-    if (cloud) {
-      await deleteCloudRun(row.runId);
-      setCloudRuns((rows) => rows.filter((item) => item.runId !== row.runId));
-      return;
-    }
+  async function removeRun(row: SavedEventRun) {
     await deleteLocalRun(row.runId);
     setLocalRuns((rows) => rows.filter((item) => item.runId !== row.runId));
   }
@@ -215,9 +203,9 @@ export function SimulationDetails({
     if (kind === "errors") return { rate: 0.25 };
     return undefined;
   }
-  function historyList(rows: SavedEventRun[], cloud: boolean) {
+  function historyList(rows: SavedEventRun[]) {
     // Comparison pairs each run with the next older one, so order by time
-    // here rather than trusting the source (local and cloud differ).
+    // here rather than relying on the order the rows were loaded in.
     const ordered = [...rows].sort((a, b) =>
       b.createdAt.localeCompare(a.createdAt),
     );
@@ -245,11 +233,13 @@ export function SimulationDetails({
             </small>
             <small>{describeRunOutcome(row.snapshot)}</small>
             {comparison?.comparable === false && (
-              <small className="sim-muted">
-                Different traffic load, so not compared with the previous run.
-              </small>
-            )}
-            {comparison?.comparable &&
+            <small className="sim-muted">
+              {comparison.reason === "same-design"
+                ? "Same design as the previous run, so there is nothing to compare."
+                : "Different traffic load, so not compared with the previous run."}
+            </small>
+          )}
+          {comparison?.comparable &&
               (comparison.deltas.length === 0 ? (
                 <small className="sim-muted">
                   No meaningful change from the previous run.
@@ -299,7 +289,7 @@ export function SimulationDetails({
               type="button"
               className="sim-text-button"
               disabled={busy}
-              onClick={() => void action(() => removeRun(row, cloud))}
+              onClick={() => void action(() => removeRun(row))}
             >
               Delete
             </button>
@@ -391,7 +381,7 @@ export function SimulationDetails({
             No runs yet. Run the simulation for a few seconds, then pause it.
           </p>
         )}
-        <ul className="sim-history">{historyList(localRuns, false)}</ul>
+        <ul className="sim-history">{historyList(localRuns)}</ul>
         <details className="sim-more">
           <summary>More</summary>
           <div className="sim-actions">
@@ -443,40 +433,6 @@ export function SimulationDetails({
             />
           </div>
         </details>
-        {signedIn && (
-          <details>
-            <summary>Cloud history</summary>
-            <div className="sim-actions">
-              <button
-                className="sim-button"
-                type="button"
-                disabled={busy || !s.snapshot}
-                onClick={() =>
-                  void action(async () => {
-                    const row = await saveCloudRun(artifact());
-                    setCloudRuns((rows) => [row, ...rows]);
-                    setMessage("Run saved to your account.");
-                  })
-                }
-              >
-                Save to account
-              </button>
-              <button
-                className="sim-text-button"
-                type="button"
-                disabled={busy}
-                onClick={() =>
-                  void action(async () => {
-                    if (s.scope) setCloudRuns(await listCloudRuns(s.scope));
-                  })
-                }
-              >
-                Load cloud history
-              </button>
-            </div>
-            <ul className="sim-history">{historyList(cloudRuns, true)}</ul>
-          </details>
-        )}
         {message && (
           <p className="sim-notice">
             <output>{message}</output>
