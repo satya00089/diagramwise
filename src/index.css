@@ -2131,6 +2131,24 @@ html .design-studio-brand {
   background: var(--bg-hover);
 }
 
+/* Primary header action: inverted from the theme, so it is light on dark and
+   dark on light. Specific enough to beat the generic header button rules. */
+.design-studio-page > header .header-primary-action {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.design-studio-page > header .header-primary-action:hover:not(:disabled) {
+  background: var(--text);
+  color: var(--bg);
+  opacity: 0.88;
+}
+
+.design-studio-page > header .header-primary-action:disabled {
+  background: var(--bg-hover);
+  color: var(--muted);
+}
+
 .design-studio-page > header .bg-emerald-500 {
   background: #3f704f;
   color: #fff;
