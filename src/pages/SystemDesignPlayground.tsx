@@ -2857,6 +2857,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
       ? "guide"
       : "details",
   );
+  const [simulationPanelOpenRequest, setSimulationPanelOpenRequest] =
+    useState(0);
   const simulationScope = {
     designId: currentDiagramId ?? attemptWorkspaceId ?? `local:${idFromUrl ?? "free"}`,
     canvasId: canvasWorkspaceState.activeCanvasId ?? "primary",
@@ -6095,7 +6097,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           >
             {/* Render collaborator cursors (always shown when connected) */}
             {!isSharedView && <SimulationCanvasControls
-              onInspect={() => setActiveRightTab("simulation")}
+              onInspect={() => {
+                setActiveRightTab("simulation");
+                setSimulationPanelOpenRequest((request) => request + 1);
+              }}
               onDemo={REPAIR_CHALLENGE_ENABLED ? openRepairDemo : undefined}
             />}
             {cursors.map((cursor) => {
@@ -6121,6 +6126,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             problem={problem}
             activeTab={activeRightTab}
             setActiveTab={setActiveRightTab}
+            openRequest={simulationPanelOpenRequest}
             simulationContent={
               <SimulationDetails
                 nodes={nodes}

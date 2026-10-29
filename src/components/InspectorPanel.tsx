@@ -179,6 +179,7 @@ type InspectorPanelProps = {
   setActiveTab: (
     t: "details" | "inspector" | "assessment" | "guide" | "simulation",
   ) => void;
+  openRequest?: number;
   simulationContent?: React.ReactNode;
   /** Problem ID used to fetch the guided walkthrough */
   problemId?: string | null;
@@ -229,6 +230,7 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
   problem,
   activeTab,
   setActiveTab,
+  openRequest = 0,
   simulationContent,
   problemId,
   onApplyStep,
@@ -317,6 +319,13 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
   React.useEffect(() => {
     if (activeTab === "simulation") setOpen(true);
   }, [activeTab]);
+
+  React.useEffect(() => {
+    if (openRequest > 0) {
+      setOpen(true);
+      onCompactOpenChange?.(true);
+    }
+  }, [openRequest, onCompactOpenChange]);
 
   if (!problem) return null;
 
