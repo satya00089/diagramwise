@@ -1,4 +1,8 @@
-import type { EventRunArtifact, SimulationScope } from "./protocol";
+import type {
+  EventRunArtifact,
+  RecordedCommand,
+  SimulationScope,
+} from "./protocol";
 import { assertReplayTopology } from "@diagramwise/simulation-core";
 
 export type SavedEventRun = {
@@ -22,6 +26,19 @@ export function parseEventRun(
   )
     throw new Error("Run files must be smaller than 240 KiB.");
   const artifact = JSON.parse(serialized) as EventRunArtifact;
+  validateContract(artifact, options);
+  validateDesign(artifact);
+  const { ids, clientIds, edgeIds } = validateTopology(artifact);
+  validateWorkload(artifact);
+  validateCommands(artifact, ids, clientIds, edgeIds);
+  validateResult(artifact);
+  return artifact;
+}
+
+function validateContract(
+  artifact: EventRunArtifact,
+  options: { allowLegacyExport?: boolean },
+) {
   const supportedEngine =
     artifact?.engineVersion === "event-v2" ||
     (options.allowLegacyExport && artifact?.engineVersion === "event-v1");
@@ -33,6 +50,9 @@ export function parseEventRun(
     throw new Error(
       "This file uses an unsupported simulation model. Exported runs from event-v1 can no longer be replayed with this engine.",
     );
+}
+
+function validateDesign(artifact: EventRunArtifact) {
   if (
     !artifact.scope ||
     typeof artifact.scope.designId !== "string" ||
@@ -47,6 +67,9 @@ export function parseEventRun(
       error instanceof Error ? error.message : "This run has an invalid graph.",
     );
   }
+}
+
+function validateTopology(artifact: EventRunArtifact) {
   const ids = new Set<string>();
   const clientIds = new Set<string>();
   for (const node of artifact.topology.nodes) {
@@ -69,6 +92,10 @@ export function parseEventRun(
       throw new Error("This run contains an invalid connection.");
     edgeIds.add(edge.id);
   }
+  return { ids, clientIds, edgeIds };
+}
+
+function validateWorkload(artifact: EventRunArtifact) {
   if (
     !artifact.workload ||
     !Number.isFinite(artifact.workload.rps) ||
@@ -80,6 +107,14 @@ export function parseEventRun(
     !["steady", "ramp", "spike", "diurnal"].includes(artifact.workload.pattern)
   )
     throw new Error("This run contains an invalid workload.");
+}
+
+function validateCommands(
+  artifact: EventRunArtifact,
+  ids: Set<string>,
+  clientIds: Set<string>,
+  edgeIds: Set<string>,
+) {
   if (!Array.isArray(artifact.commands) || artifact.commands.length > 1000)
     throw new Error("This run has too many recorded changes.");
   let previous = 0;
@@ -96,93 +131,114 @@ export function parseEventRun(
     )
       throw new Error("This run contains an invalid command timeline.");
     previous = entry.atMs;
-    const c = entry.command;
-    if (
-      c.type === "workload" &&
-      (!Number.isFinite(c.rps) ||
-        c.rps < 0 ||
-        c.rps > 100000 ||
-        (c.pattern !== undefined &&
-          !["steady", "ramp", "spike", "diurnal"].includes(c.pattern)) ||
-        (c.clientIds !== undefined &&
-          (!Array.isArray(c.clientIds) ||
-            c.clientIds.length === 0 ||
-            c.clientIds.length > clientIds.size ||
-            new Set(c.clientIds).size !== c.clientIds.length ||
-            c.clientIds.some(
-              (id) => typeof id !== "string" || !clientIds.has(id),
-            ))))
-    )
-      throw new Error("Invalid recorded workload.");
-    if (c.type !== "workload" && !ids.has(c.nodeId))
-      throw new Error("A recorded change refers to a missing component.");
-    if (
-      c.type === "replicas" &&
-      (!Number.isInteger(c.instances) || c.instances < 1 || c.instances > 512)
-    )
-      throw new Error("Invalid replica count.");
-    if (c.type === "fault") {
-      if (!["crash", "slow", "errors", "partition"].includes(c.kind))
-        throw new Error("Invalid fault type.");
-      if (c.opts !== undefined) {
-        if (
-          !c.opts ||
-          typeof c.opts !== "object" ||
-          Array.isArray(c.opts) ||
-          Object.keys(c.opts).some(
-            (key) => !["factor", "rate", "edgeIds"].includes(key),
-          )
-        )
-          throw new Error("Invalid fault settings.");
-        if (
-          c.opts.factor !== undefined &&
-          (!Number.isFinite(c.opts.factor) ||
-            c.opts.factor < 1 ||
-            c.opts.factor > 1000)
-        )
-          throw new Error("Invalid fault delay factor.");
-        if (
-          c.opts.rate !== undefined &&
-          (!Number.isFinite(c.opts.rate) || c.opts.rate < 0 || c.opts.rate > 1)
-        )
-          throw new Error("Invalid fault error rate.");
-        if (
-          c.opts.edgeIds !== undefined &&
-          (!Array.isArray(c.opts.edgeIds) ||
-            c.opts.edgeIds.some(
-              (id) => typeof id !== "string" || !edgeIds.has(id),
-            ))
-        )
-          throw new Error("Invalid fault connections.");
-      }
-    }
+    validateCommand(entry.command, ids, clientIds, edgeIds);
   }
-  if (artifact.result !== undefined) {
-    const result = artifact.result;
-    const numbers = [
-      result.timeMs,
-      result.offeredRps,
-      result.goodputRps,
-      result.errorRate,
-      result.p50,
-      result.p95,
-      result.p99,
-      result.totalRequests,
-      result.totalFailed,
-    ];
-    if (
-      numbers.some((value) => !Number.isFinite(value) || value < 0) ||
-      !Number.isInteger(result.totalRequests) ||
-      !Number.isInteger(result.totalFailed) ||
-      result.errorRate > 1 ||
-      result.p50 > result.p95 ||
-      result.p95 > result.p99 ||
-      result.totalFailed > result.totalRequests ||
-      !["complete", "incomplete"].includes(result.status)
-    )
-      throw new Error("This run has an invalid result summary.");
+}
+
+function validateCommand(
+  command: RecordedCommand["command"],
+  ids: Set<string>,
+  clientIds: Set<string>,
+  edgeIds: Set<string>,
+) {
+  if (command.type === "workload") {
+    validateWorkloadCommand(command, clientIds);
+    return;
   }
-  return artifact;
+  if (!ids.has(command.nodeId))
+    throw new Error("A recorded change refers to a missing component.");
+  if (
+    command.type === "replicas" &&
+    (!Number.isInteger(command.instances) ||
+      command.instances < 1 ||
+      command.instances > 512)
+  )
+    throw new Error("Invalid replica count.");
+  if (command.type === "fault") validateFaultCommand(command, edgeIds);
+}
+
+function validateWorkloadCommand(
+  command: Extract<RecordedCommand["command"], { type: "workload" }>,
+  clientIds: Set<string>,
+) {
+  if (
+    !Number.isFinite(command.rps) ||
+    command.rps < 0 ||
+    command.rps > 100000 ||
+    (command.pattern !== undefined &&
+      !["steady", "ramp", "spike", "diurnal"].includes(command.pattern)) ||
+    (command.clientIds !== undefined &&
+      (!Array.isArray(command.clientIds) ||
+        command.clientIds.length === 0 ||
+        command.clientIds.length > clientIds.size ||
+        new Set(command.clientIds).size !== command.clientIds.length ||
+        command.clientIds.some(
+          (id) => typeof id !== "string" || !clientIds.has(id),
+        )))
+  )
+    throw new Error("Invalid recorded workload.");
+}
+
+function validateFaultCommand(
+  command: Extract<RecordedCommand["command"], { type: "fault" }>,
+  edgeIds: Set<string>,
+) {
+  if (!["crash", "slow", "errors", "partition"].includes(command.kind))
+    throw new Error("Invalid fault type.");
+  const opts = command.opts;
+  if (opts === undefined) return;
+  if (
+    !opts ||
+    typeof opts !== "object" ||
+    Array.isArray(opts) ||
+    Object.keys(opts).some(
+      (key) => !["factor", "rate", "edgeIds"].includes(key),
+    )
+  )
+    throw new Error("Invalid fault settings.");
+  if (
+    opts.factor !== undefined &&
+    (!Number.isFinite(opts.factor) || opts.factor < 1 || opts.factor > 1000)
+  )
+    throw new Error("Invalid fault delay factor.");
+  if (
+    opts.rate !== undefined &&
+    (!Number.isFinite(opts.rate) || opts.rate < 0 || opts.rate > 1)
+  )
+    throw new Error("Invalid fault error rate.");
+  if (
+    opts.edgeIds !== undefined &&
+    (!Array.isArray(opts.edgeIds) ||
+      opts.edgeIds.some((id) => typeof id !== "string" || !edgeIds.has(id)))
+  )
+    throw new Error("Invalid fault connections.");
+}
+
+function validateResult(artifact: EventRunArtifact) {
+  if (artifact.result === undefined) return;
+  const result = artifact.result;
+  const numbers = [
+    result.timeMs,
+    result.offeredRps,
+    result.goodputRps,
+    result.errorRate,
+    result.p50,
+    result.p95,
+    result.p99,
+    result.totalRequests,
+    result.totalFailed,
+  ];
+  if (
+    numbers.some((value) => !Number.isFinite(value) || value < 0) ||
+    !Number.isInteger(result.totalRequests) ||
+    !Number.isInteger(result.totalFailed) ||
+    result.errorRate > 1 ||
+    result.p50 > result.p95 ||
+    result.p95 > result.p99 ||
+    result.totalFailed > result.totalRequests ||
+    !["complete", "incomplete"].includes(result.status)
+  )
+    throw new Error("This run has an invalid result summary.");
 }
 
 function openDatabase(): Promise<IDBDatabase> {
@@ -228,13 +284,13 @@ export async function listLocalRuns(
   const rows = (await transaction("readonly", (store) =>
     store.getAll(),
   )) as SavedEventRun[];
-  return rows
-    .filter(
+  return [
+    ...rows.filter(
       (row) =>
         row.snapshot.scope.designId === scope.designId &&
         row.snapshot.scope.canvasId === scope.canvasId,
-    )
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    ),
+  ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 export async function saveLocalRun(

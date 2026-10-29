@@ -502,7 +502,7 @@ const getEscapeCenters = (
     }
     if (min < max) offsets.push(min - 0.01, max + 0.01);
   }
-  return offsets
+  return [...offsets]
     .sort((a, b) => Math.abs(a) - Math.abs(b))
     .map((offset) => ({
       x: center.x + normal.x * offset,

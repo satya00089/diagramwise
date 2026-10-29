@@ -19,20 +19,67 @@ import {
 } from "./nodeBadgeAppearance";
 import "./simulation.css";
 
-export type SimulationNodeBadgeProps = {
+export type SimulationNodeBadgeProps = Readonly<{
   stats?: NodeStats;
   kind?: NodeKind;
-  diagnostic?: {
+  diagnostic?: Readonly<{
     code: string;
     message: string;
     severity?: "error" | "warning" | "info";
-  };
+  }>;
   running: boolean;
   faulted?: boolean;
   label?: string;
   onInspect?: () => void;
   appearance?: NodeBadgeAppearance;
-};
+}>;
+
+function getSignalIcon(tone: string) {
+  if (tone === "danger") return MdErrorOutline;
+  if (tone === "warning") return MdWarningAmber;
+  if (tone === "healthy") return MdCheckCircleOutline;
+  return MdPauseCircleOutline;
+}
+
+function getThroughputLabel(kind: NodeKind | undefined): string {
+  if (kind === "queue") return "acked/s";
+  if (kind === "streambroker") return "published/s";
+  return "done/s";
+}
+
+function getBacklogLabel(kind: NodeKind | undefined): string {
+  if (kind === "streambroker") return "lag";
+  if (kind === "queue") return "buffered";
+  return "queued";
+}
+
+function getThroughputDescription(kind: NodeKind | undefined): string {
+  if (kind === "queue")
+    return "Caller acknowledgements per second; downstream work is tracked separately";
+  if (kind === "streambroker")
+    return "Messages published per second; consumer delivery is tracked by lag";
+  return "Completed requests per second";
+}
+
+function getPressureDescription(
+  backlogKind: boolean,
+  queued: number,
+  backlogLabel: string,
+  utilization: number,
+): string {
+  if (backlogKind) return `${formatSimulationNumber(queued)} ${backlogLabel}`;
+  return `${formatSimulationPercent(utilization)} busy`;
+}
+
+function getMeterPercent(
+  backlogKind: boolean,
+  queued: number,
+  queueLimit: number,
+  utilization: number,
+): number {
+  const pressure = backlogKind ? queued / Math.max(1, queueLimit) : utilization;
+  return Math.min(100, Math.max(0, pressure * 100));
+}
 
 export const SimulationNodeBadge = memo(function SimulationNodeBadge({
   stats,
@@ -63,27 +110,14 @@ export const SimulationNodeBadge = memo(function SimulationNodeBadge({
     return () => observer.disconnect();
   }, [customBackground, customText]);
   const signal = nodeSimulationSignal(stats, kind, faulted, diagnostic);
-  const Icon =
-    signal.tone === "danger"
-      ? MdErrorOutline
-      : signal.tone === "warning"
-        ? MdWarningAmber
-        : signal.tone === "healthy"
-          ? MdCheckCircleOutline
-          : MdPauseCircleOutline;
+  const Icon = getSignalIcon(signal.tone);
   const backlogKind =
     kind === "queue" ||
     kind === "streambroker" ||
     kind === "retryqueue" ||
     kind === "writebehind";
-  const throughputLabel =
-    kind === "queue"
-      ? "acked/s"
-      : kind === "streambroker"
-        ? "published/s"
-        : "done/s";
-  const backlogLabel =
-    kind === "streambroker" ? "lag" : kind === "queue" ? "buffered" : "queued";
+  const throughputLabel = getThroughputLabel(kind);
+  const backlogLabel = getBacklogLabel(kind);
   const { style, customForeground } = getNodeBadgeAppearance(
     appearance ?? {},
     customBackground && !customText ? calculatedForeground : undefined,
@@ -108,23 +142,18 @@ export const SimulationNodeBadge = memo(function SimulationNodeBadge({
               {formatSimulationNumber(stats.arrivalRate)} in/s
             </span>
             <MdArrowForward aria-hidden="true" />
-            <span
-              title={
-                kind === "queue"
-                  ? "Caller acknowledgements per second; downstream work is tracked separately"
-                  : kind === "streambroker"
-                    ? "Messages published per second; consumer delivery is tracked by lag"
-                    : "Completed requests per second"
-              }
-            >
+            <span title={getThroughputDescription(kind)}>
               {formatSimulationNumber(stats.throughput)} {throughputLabel}
             </span>
           </div>
           <div className="sim-node-badge__pressure">
             <span>
-              {backlogKind
-                ? `${formatSimulationNumber(stats.queued)} ${backlogLabel}`
-                : `${formatSimulationPercent(stats.utilization)} busy`}
+              {getPressureDescription(
+                backlogKind,
+                stats.queued,
+                backlogLabel,
+                stats.utilization,
+              )}
             </span>
             {stats.instances !== undefined && (
               <span>
@@ -141,7 +170,12 @@ export const SimulationNodeBadge = memo(function SimulationNodeBadge({
           <div className="sim-node-badge__meter" aria-hidden="true">
             <span
               style={{
-                width: `${Math.min(100, Math.max(0, (backlogKind ? stats.queued / Math.max(1, stats.queueLimit) : stats.utilization) * 100))}%`,
+                width: `${getMeterPercent(
+                  backlogKind,
+                  stats.queued,
+                  stats.queueLimit,
+                  stats.utilization,
+                )}%`,
               }}
             />
           </div>

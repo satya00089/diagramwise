@@ -158,7 +158,7 @@ export function runCapacitySimulation(
   for (const operation of ["redirect", "create-link"] as const) {
     const rate = operationRates[operation];
     const route = routesByOperation.get(operation);
-    if (!route?.node_ids.length) {
+    if (!route || route.node_ids.length === 0) {
       throw new Error(
         `The prepared design has no supported ${operation} route.`,
       );
@@ -286,6 +286,6 @@ export function runCapacitySimulation(
       limitingMetric.utilization > 1 ? limitingMetric.nodeId : null,
     bottleneckDemandPerSecond: limitingMetric.demandPerSecond,
     bottleneckCapacityPerSecond: limitingMetric.capacityPerSecond,
-    nodeMetrics: metrics.sort((a, b) => b.utilization - a.utilization),
+    nodeMetrics: [...metrics].sort((a, b) => b.utilization - a.utilization),
   };
 }

@@ -30,14 +30,7 @@ export function topologyToCanvas(topology: Topology): {
       position: { x: n.x, y: n.y },
       data: {
         label: n.label,
-        componentId:
-          n.kind === "client"
-            ? "client"
-            : n.kind === "db"
-              ? "database"
-              : n.kind === "service"
-                ? "microservice"
-                : n.kind,
+        componentId: componentIdForKind(n.kind),
         simulation: { kind: n.kind, config: n.config },
       },
     })),
@@ -55,4 +48,17 @@ export function topologyToCanvas(topology: Topology): {
       },
     })),
   };
+}
+
+function componentIdForKind(kind: string): string {
+  switch (kind) {
+    case "client":
+      return "client";
+    case "db":
+      return "database";
+    case "service":
+      return "microservice";
+    default:
+      return kind;
+  }
 }

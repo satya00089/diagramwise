@@ -28,7 +28,7 @@ import {
 } from "./presentation";
 import "./simulation.css";
 
-export type SimulationInspectorProps = {
+export type SimulationInspectorProps = Readonly<{
   status: SimulationStatus;
   snapshot: SimSnapshot | null;
   diagnostics?: readonly SimulationDiagnostic[];
@@ -44,7 +44,7 @@ export type SimulationInspectorProps = {
   onFocusDiagnostic?: (diagnostic: SimulationDiagnostic) => void;
   onSelectNode?: (nodeId: string) => void;
   children?: ReactNode;
-};
+}>;
 
 const replicaKinds = new Set<NodeKind>([
   "service",
@@ -61,14 +61,55 @@ const faultActions: { kind: FailureKind; label: string }[] = [
   { kind: "partition", label: "Cut outgoing links" },
 ];
 
+function getThroughputMetricLabel(kind: NodeKind | undefined): string {
+  if (kind === "queue") return "Acknowledged";
+  if (kind === "streambroker") return "Published";
+  return "Completed";
+}
+
+function getQueueMetricLabel(kind: NodeKind | undefined): string {
+  if (kind === "queue") return "Buffered";
+  if (kind === "streambroker") return "Consumer lag";
+  return "Waiting";
+}
+
+function getQueueExplanation(kind: NodeKind | undefined): string | undefined {
+  if (kind === "queue")
+    return "Acknowledgements measure the caller response. Buffered work still needs a background worker to complete persistence or indexing.";
+  if (kind === "streambroker")
+    return "Published counts producer acknowledgements. Consumer lag tracks downstream delivery separately; a publish does not confirm persistence or indexing.";
+  return undefined;
+}
+
+function getDiagnosticIcon(severity: SimulationDiagnostic["severity"]) {
+  if (severity === "error") return MdErrorOutline;
+  if (severity === "info") return MdCheckCircleOutline;
+  return MdWarningAmber;
+}
+
+function getSignalIcon(tone: string) {
+  if (tone === "danger") return MdErrorOutline;
+  if (tone === "warning") return MdWarningAmber;
+  return MdCheckCircleOutline;
+}
+
+function DiagnosticIcon({
+  severity,
+}: {
+  readonly severity: SimulationDiagnostic["severity"];
+}) {
+  const Icon = getDiagnosticIcon(severity);
+  return <Icon aria-hidden="true" size={17} />;
+}
+
 function Metric({
   label,
   value,
   danger = false,
 }: {
-  label: string;
-  value: string;
-  danger?: boolean;
+  readonly label: string;
+  readonly value: string;
+  readonly danger?: boolean;
 }) {
   return (
     <div className="sim-metric">
@@ -118,12 +159,7 @@ export function SimulationInspector({
     Boolean(activeFault),
     selectedDiagnostic,
   );
-  const SignalIcon =
-    signal.tone === "danger"
-      ? MdErrorOutline
-      : signal.tone === "warning"
-        ? MdWarningAmber
-        : MdCheckCircleOutline;
+  const SignalIcon = getSignalIcon(signal.tone);
   const sessionEditable = status === "running" || status === "paused";
   const models = new Map(modeledNodes.map((node) => [node.id, node]));
   const attention = Object.entries(currentSnapshot?.nodes ?? {})
@@ -197,13 +233,7 @@ export function SimulationInspector({
                 value={`${formatSimulationNumber(selectedStats.arrivalRate)}/s`}
               />
               <Metric
-                label={
-                  selectedNode.kind === "queue"
-                    ? "Acknowledged"
-                    : selectedNode.kind === "streambroker"
-                      ? "Published"
-                      : "Completed"
-                }
+                label={getThroughputMetricLabel(selectedNode.kind)}
                 value={`${formatSimulationNumber(selectedStats.throughput)}/s`}
               />
               <Metric
@@ -211,13 +241,7 @@ export function SimulationInspector({
                 value={formatSimulationNumber(selectedStats.inFlight)}
               />
               <Metric
-                label={
-                  selectedNode.kind === "queue"
-                    ? "Buffered"
-                    : selectedNode.kind === "streambroker"
-                      ? "Consumer lag"
-                      : "Waiting"
-                }
+                label={getQueueMetricLabel(selectedNode.kind)}
                 value={formatSimulationNumber(selectedStats.queued)}
               />
               <Metric
@@ -243,15 +267,11 @@ export function SimulationInspector({
               />
             </dl>
           )}
-          {selectedStats &&
-            (selectedNode.kind === "queue" ||
-              selectedNode.kind === "streambroker") && (
-              <p className="sim-muted">
-                {selectedNode.kind === "queue"
-                  ? "Acknowledgements measure the caller response. Buffered work still needs a background worker to complete persistence or indexing."
-                  : "Published counts producer acknowledgements. Consumer lag tracks downstream delivery separately; a publish does not confirm persistence or indexing."}
-              </p>
-            )}
+          {selectedStats && getQueueExplanation(selectedNode.kind) && (
+            <p className="sim-muted">
+              {getQueueExplanation(selectedNode.kind)}
+            </p>
+          )}
           <section
             className="sim-inspector__section"
             aria-labelledby={`${id}-model`}
@@ -506,13 +526,7 @@ export function SimulationInspector({
                 className={`sim-diagnostic sim-diagnostic--${item.severity}`}
                 key={`${item.code}-${item.nodeId ?? item.edgeId ?? index}`}
               >
-                {item.severity === "error" ? (
-                  <MdErrorOutline aria-hidden="true" size={17} />
-                ) : item.severity === "info" ? (
-                  <MdCheckCircleOutline aria-hidden="true" size={17} />
-                ) : (
-                  <MdWarningAmber aria-hidden="true" size={17} />
-                )}
+                <DiagnosticIcon severity={item.severity} />
                 <div>
                   <p>{item.message}</p>
                   {onFocusDiagnostic && (item.nodeId || item.edgeId) && (

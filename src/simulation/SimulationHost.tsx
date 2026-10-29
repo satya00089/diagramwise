@@ -81,7 +81,7 @@ export function SimulationCanvasControls({
   );
 }
 
-type DetailsProps = {
+type DetailsProps = Readonly<{
   nodes: Node[];
   edges: Edge[];
   problem?: SystemDesignProblem | null;
@@ -90,7 +90,7 @@ type DetailsProps = {
   onModelChange: (nodeId: string, kind: NodeKind) => void;
   onEntrypoint: (nodeId: string) => void;
   onDemo?: () => void;
-};
+}>;
 
 export function SimulationDetails({
   nodes,
@@ -101,7 +101,7 @@ export function SimulationDetails({
   onModelChange,
   onEntrypoint,
   onDemo,
-}: Readonly<DetailsProps>) {
+}: DetailsProps) {
   const s = useSimulationSession();
   const { fitView } = useReactFlow();
   const [localRuns, setLocalRuns] = useState<SavedEventRun[]>([]);
@@ -144,7 +144,7 @@ export function SimulationDetails({
     };
   }, [scopeKey]);
 
-  async function action(work: () => Promise<void>) {
+  async function action(work: () => void | Promise<void>) {
     setBusy(true);
     setMessage(null);
     try {
@@ -180,6 +180,20 @@ export function SimulationDetails({
       "Run imported. Replay is available when its design matches this canvas.",
     );
   }
+  async function removeRun(row: SavedEventRun, cloud: boolean) {
+    if (cloud) {
+      await deleteCloudRun(row.runId);
+      setCloudRuns((rows) => rows.filter((item) => item.runId !== row.runId));
+      return;
+    }
+    await deleteLocalRun(row.runId);
+    setLocalRuns((rows) => rows.filter((item) => item.runId !== row.runId));
+  }
+  function faultOptions(kind: string) {
+    if (kind === "slow") return { factor: 5 };
+    if (kind === "errors") return { rate: 0.25 };
+    return undefined;
+  }
   function historyList(rows: SavedEventRun[], cloud: boolean) {
     return rows.map((row) => (
       <li key={row.runId} className="sim-history-row">
@@ -200,9 +214,9 @@ export function SimulationDetails({
             }
             title="Replay requires the same canvas design"
             onClick={() =>
-              void action(async () => {
-                simulationSession.replay(parseEventRun(row.snapshot));
-              })
+              void action(() =>
+                simulationSession.replay(parseEventRun(row.snapshot)),
+              )
             }
           >
             Replay
@@ -218,21 +232,7 @@ export function SimulationDetails({
             type="button"
             className="sim-text-button"
             disabled={busy}
-            onClick={() =>
-              void action(async () => {
-                if (cloud) {
-                  await deleteCloudRun(row.runId);
-                  setCloudRuns((rows) =>
-                    rows.filter((r) => r.runId !== row.runId),
-                  );
-                } else {
-                  await deleteLocalRun(row.runId);
-                  setLocalRuns((rows) =>
-                    rows.filter((r) => r.runId !== row.runId),
-                  );
-                }
-              })
-            }
+            onClick={() => void action(() => removeRun(row, cloud))}
           >
             Delete
           </button>
@@ -270,12 +270,7 @@ export function SimulationDetails({
           type: "fault",
           nodeId: id,
           kind,
-          opts:
-            kind === "slow"
-              ? { factor: 5 }
-              : kind === "errors"
-                ? { rate: 0.25 }
-                : undefined,
+          opts: faultOptions(kind),
         })
       }
       onClearFault={(id) =>
@@ -406,8 +401,8 @@ export function SimulationDetails({
           </details>
         )}
         {message && (
-          <p role="status" className="sim-notice">
-            {message}
+          <p className="sim-notice">
+            <output>{message}</output>
           </p>
         )}
       </section>

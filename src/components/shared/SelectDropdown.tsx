@@ -2,16 +2,34 @@ import React, { useEffect, useRef, useState } from "react";
 import { HiChevronDown } from "react-icons/hi2";
 
 export interface SelectDropdownProps {
-  id: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-  "aria-label": string;
-  disabled?: boolean;
-  className?: string;
-  menuPlacement?: "top" | "bottom";
-  onFocus?: React.FocusEventHandler<HTMLButtonElement>;
-  onBlur?: React.FocusEventHandler<HTMLButtonElement>;
+  readonly id: string;
+  readonly value: string;
+  readonly options: readonly string[];
+  readonly onChange: (value: string) => void;
+  readonly "aria-label": string;
+  readonly disabled?: boolean;
+  readonly className?: string;
+  readonly menuPlacement?: "top" | "bottom";
+  readonly onFocus?: React.FocusEventHandler<HTMLButtonElement>;
+  readonly onBlur?: React.FocusEventHandler<HTMLButtonElement>;
+}
+
+function getArrowOpenIndex(
+  key: string,
+  selectedIndex: number,
+  optionCount: number,
+): number {
+  if (selectedIndex >= 0) return selectedIndex;
+  return key === "ArrowDown" ? 0 : optionCount - 1;
+}
+
+function getNextHighlightedIndex(
+  current: number,
+  key: string,
+  optionCount: number,
+): number {
+  const direction = key === "ArrowDown" ? 1 : -1;
+  return (current + direction + optionCount) % optionCount;
 }
 
 const SelectDropdown: React.FC<SelectDropdownProps> = ({
@@ -89,19 +107,11 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
               setOpen(true);
               const selected = options.indexOf(value);
               setHighlightedIndex(
-                selected >= 0
-                  ? selected
-                  : event.key === "ArrowDown"
-                    ? 0
-                    : options.length - 1,
+                getArrowOpenIndex(event.key, selected, options.length),
               );
             } else {
-              setHighlightedIndex(
-                (current) =>
-                  (current +
-                    (event.key === "ArrowDown" ? 1 : -1) +
-                    options.length) %
-                  options.length,
+              setHighlightedIndex((current) =>
+                getNextHighlightedIndex(current, event.key, options.length),
               );
             }
           } else if (event.key === "Home") {

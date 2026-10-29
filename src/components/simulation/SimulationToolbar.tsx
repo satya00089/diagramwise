@@ -39,6 +39,99 @@ const SOURCE_NODE_PREFIX = "node:";
 
 type TrafficSourceChoice = { value: string; label: string };
 
+function sourceCanBeSelected(
+  trafficSource: CompiledTrafficSource | undefined,
+): boolean {
+  if (!trafficSource) return false;
+  if (trafficSource.mode !== "ingress" && trafficSource.mode !== "clients")
+    return false;
+  return trafficSource.options.length > 1 || trafficSource.requiresSelection;
+}
+
+function getSourceSelectionValue(
+  trafficSource: CompiledTrafficSource | undefined,
+): string {
+  if (!trafficSource) return "";
+  if (trafficSource.mode === "ingress") {
+    if (trafficSource.requiresSelection) return "";
+    if (trafficSource.selectedNodeId)
+      return `${SOURCE_NODE_PREFIX}${trafficSource.selectedNodeId}`;
+    return AUTO_SOURCE_VALUE;
+  }
+  if (trafficSource.mode === "clients") {
+    if (trafficSource.requiresSelection) return "";
+    if (trafficSource.selectedNodeId)
+      return `${SOURCE_NODE_PREFIX}${trafficSource.selectedNodeId}`;
+    return ALL_CLIENTS_VALUE;
+  }
+  return "";
+}
+
+function getSourceChoices(
+  trafficSource: CompiledTrafficSource | undefined,
+): TrafficSourceChoice[] {
+  if (!trafficSource) return [];
+  const choices: TrafficSourceChoice[] = [];
+  if (trafficSource.mode === "ingress") {
+    const inferredLabel = trafficSource.options.find(
+      (option) => option.id === trafficSource.inferredNodeId,
+    )?.label;
+    choices.push({
+      value: AUTO_SOURCE_VALUE,
+      label: inferredLabel ? `Automatic · ${inferredLabel}` : "Automatic",
+    });
+  }
+  if (trafficSource.mode === "clients")
+    choices.push({
+      value: ALL_CLIENTS_VALUE,
+      label: "All clients (even split)",
+    });
+  if (trafficSource.mode === "ingress" || trafficSource.mode === "clients") {
+    choices.push(
+      ...trafficSource.options.map((option) => ({
+        value: `${SOURCE_NODE_PREFIX}${option.id}`,
+        label: option.label,
+      })),
+    );
+  }
+  return makeUniqueSourceChoices(choices);
+}
+
+function getSourceLabel(
+  trafficSource: CompiledTrafficSource | undefined,
+): string | undefined {
+  if (!trafficSource) return undefined;
+  const selectedNodeId =
+    trafficSource.selectedNodeId ??
+    (trafficSource.mode === "ingress" ? trafficSource.inferredNodeId : null);
+  if (selectedNodeId) {
+    return trafficSource.options.find((option) => option.id === selectedNodeId)
+      ?.label;
+  }
+  if (trafficSource.mode === "clients" && trafficSource.options.length > 1)
+    return "All clients";
+  return trafficSource.options[0]?.label;
+}
+
+function getSourceReadout(
+  trafficSource: CompiledTrafficSource,
+  sourceLabel: string | undefined,
+): string {
+  if (trafficSource.mode === "scheduled") {
+    return `Scheduled · ${trafficSource.options
+      .map((option) => option.label)
+      .join(", ")}`;
+  }
+  return sourceLabel ?? "Choose a source";
+}
+
+function getChoiceNodeId(value: string): string | null | undefined {
+  if (value === AUTO_SOURCE_VALUE || value === ALL_CLIENTS_VALUE) return null;
+  if (value.startsWith(SOURCE_NODE_PREFIX))
+    return value.slice(SOURCE_NODE_PREFIX.length);
+  return undefined;
+}
+
 function makeUniqueSourceChoices(
   choices: readonly TrafficSourceChoice[],
 ): TrafficSourceChoice[] {
@@ -147,63 +240,13 @@ export function SimulationToolbar({
   const rateProgress = `${sliderPosition / 10}%`;
   const [rateDraft, setRateDraft] = useState(String(rps));
   useEffect(() => setRateDraft(String(rps)), [rps]);
-  const sourceCanBeSelected =
-    trafficSource?.mode === "ingress" || trafficSource?.mode === "clients"
-      ? trafficSource.options.length > 1 || trafficSource.requiresSelection
-      : false;
-  const sourceSelectionValue =
-    trafficSource?.mode === "ingress"
-      ? trafficSource.requiresSelection
-        ? ""
-        : trafficSource.selectedNodeId
-          ? `${SOURCE_NODE_PREFIX}${trafficSource.selectedNodeId}`
-          : AUTO_SOURCE_VALUE
-      : trafficSource?.mode === "clients"
-        ? trafficSource.requiresSelection
-          ? ""
-          : trafficSource.selectedNodeId
-            ? `${SOURCE_NODE_PREFIX}${trafficSource.selectedNodeId}`
-            : ALL_CLIENTS_VALUE
-        : "";
-  const sourceChoices = makeUniqueSourceChoices([
-    ...(trafficSource?.mode === "ingress"
-      ? [
-          {
-            value: AUTO_SOURCE_VALUE,
-            label: trafficSource.inferredNodeId
-              ? `Automatic · ${
-                  trafficSource.options.find(
-                    (option) => option.id === trafficSource.inferredNodeId,
-                  )?.label ?? "inferred"
-                }`
-              : "Automatic",
-          },
-        ]
-      : []),
-    ...(trafficSource?.mode === "clients"
-      ? [{ value: ALL_CLIENTS_VALUE, label: "All clients (even split)" }]
-      : []),
-    ...(trafficSource?.mode === "ingress" || trafficSource?.mode === "clients"
-      ? trafficSource.options.map((option) => ({
-          value: `${SOURCE_NODE_PREFIX}${option.id}`,
-          label: option.label,
-        }))
-      : []),
-  ]);
+  const canSelectSource = sourceCanBeSelected(trafficSource);
+  const sourceSelectionValue = getSourceSelectionValue(trafficSource);
+  const sourceChoices = getSourceChoices(trafficSource);
   const selectedSourceChoice = sourceChoices.find(
     (choice) => choice.value === sourceSelectionValue,
   );
-  const sourceLabel = trafficSource?.selectedNodeId
-    ? trafficSource.options.find(
-        (option) => option.id === trafficSource.selectedNodeId,
-      )?.label
-    : trafficSource?.mode === "ingress" && trafficSource.inferredNodeId
-      ? trafficSource.options.find(
-          (option) => option.id === trafficSource.inferredNodeId,
-        )?.label
-      : trafficSource?.mode === "clients" && trafficSource.options.length > 1
-        ? "All clients"
-        : trafficSource?.options[0]?.label;
+  const sourceLabel = getSourceLabel(trafficSource);
 
   const commitRateDraft = () => {
     const parsed = Number(rateDraft);
@@ -350,10 +393,8 @@ export function SimulationToolbar({
         )}
       </div>
       <div className="sim-toolbar__readout">
-        <span
+        <output
           className={`sim-toolbar__state sim-toolbar__state--${status}`}
-          role="status"
-          tabIndex={0}
           aria-label={SIMULATION_STATUS_LABELS[status]}
           data-tooltip={SIMULATION_STATUS_LABELS[status]}
           data-tooltip-placement="bottom"
@@ -362,12 +403,12 @@ export function SimulationToolbar({
           <span className="sim-toolbar__state-label">
             {SIMULATION_STATUS_LABELS[status]}
           </span>
-        </span>
+        </output>
         {trafficSource && trafficSource.mode !== "none" && (
           <div className="sim-toolbar__source">
             <MdAccountTree aria-hidden="true" size={15} />
             <span className="sim-toolbar__source-label">Traffic source</span>
-            {sourceCanBeSelected && onTrafficSourceChange ? (
+            {canSelectSource && onTrafficSourceChange ? (
               <div
                 className="sim-toolbar__source-dropdown"
                 data-tooltip="Choose where simulated requests enter the diagram"
@@ -384,26 +425,14 @@ export function SimulationToolbar({
                       (option) => option.label === label,
                     );
                     if (!choice) return;
-                    if (
-                      choice.value === AUTO_SOURCE_VALUE ||
-                      choice.value === ALL_CLIENTS_VALUE
-                    ) {
-                      onTrafficSourceChange(null);
-                    } else if (choice.value.startsWith(SOURCE_NODE_PREFIX)) {
-                      onTrafficSourceChange(
-                        choice.value.slice(SOURCE_NODE_PREFIX.length),
-                      );
-                    }
+                    const nodeId = getChoiceNodeId(choice.value);
+                    if (nodeId !== undefined) onTrafficSourceChange(nodeId);
                   }}
                 />
               </div>
             ) : (
               <span className="sim-toolbar__source-value">
-                {trafficSource.mode === "scheduled"
-                  ? `Scheduled · ${trafficSource.options
-                      .map((option) => option.label)
-                      .join(", ")}`
-                  : (sourceLabel ?? "Choose a source")}
+                {getSourceReadout(trafficSource, sourceLabel)}
               </span>
             )}
           </div>

@@ -9,10 +9,10 @@ import type { NodeBadgeAppearance } from "../components/simulation/nodeBadgeAppe
 export function SimulationNodeRuntimeBadge({
   nodeId,
   appearance,
-}: {
+}: Readonly<{
   nodeId: string;
   appearance?: NodeBadgeAppearance;
-}) {
+}>) {
   const stats = useSimulationSession((s) => s.snapshot?.nodes[nodeId]);
   const status = useSimulationSession((s) => s.status);
   const kind = useSimulationSession(
@@ -59,14 +59,14 @@ export function SimulationEdgeRuntimeOverlay({
   path,
   x,
   y,
-}: {
+}: Readonly<{
   id: string;
   source: string;
   target: string;
   path: string;
   x: number;
   y: number;
-}) {
+}>) {
   const rate = useSimulationSession((s) => s.snapshot?.edgeFlow[id]);
   const state = useSimulationSession((s) => s.snapshot?.edgeState[id]);
   const sourceStats = useSimulationSession((s) => s.snapshot?.nodes[source]);
@@ -86,11 +86,78 @@ export function SimulationEdgeRuntimeOverlay({
   const status = useSimulationSession((s) => s.status);
   if (rate === undefined || status === "stale" || status === "invalid")
     return null;
+  const presentation = getEdgePresentation({
+    id,
+    source,
+    sourceKind,
+    sourceStats,
+    sourceEdgeIndex,
+    targetStats: stats,
+    diagnostics,
+    state,
+    rate,
+  });
+  return (
+    <SimulationEdgeOverlay
+      id={id}
+      path={path}
+      rate={rate}
+      state={state}
+      running={status === "running"}
+      tone={presentation.tone}
+      failureLabel={presentation.failureLabel}
+      labelX={x}
+      labelY={y}
+      showLabel
+    />
+  );
+}
+
+const BUFFER_KINDS = new Set([
+  "queue",
+  "streambroker",
+  "retryqueue",
+  "writebehind",
+]);
+
+function getEdgePresentation({
+  id,
+  source,
+  sourceKind,
+  sourceStats,
+  sourceEdgeIndex,
+  targetStats,
+  diagnostics,
+  state,
+  rate,
+}: {
+  id: string;
+  source: string;
+  sourceKind?: string;
+  sourceStats?: {
+    queued?: number;
+    consumerLagByGroup?: number[];
+  };
+  sourceEdgeIndex: number;
+  targetStats?: {
+    errorRate?: number;
+    timeoutRate?: number;
+    queued?: number;
+    utilization?: number;
+  };
+  diagnostics: Array<{
+    code: string;
+    nodeId?: string;
+    edgeId?: string;
+    severity?: string;
+  }>;
+  state?: string;
+  rate: number;
+}): { tone: SimulationTone; failureLabel?: string } {
   const failed =
     state === "cut" ||
-    (stats?.errorRate ?? 0) > 0 ||
-    (stats?.timeoutRate ?? 0) > 0;
-  const bufferKinds = ["queue", "streambroker", "retryqueue", "writebehind"];
+    (targetStats?.errorRate ?? 0) > 0 ||
+    (targetStats?.timeoutRate ?? 0) > 0;
   const backlog =
     sourceKind === "streambroker"
       ? (sourceStats?.consumerLagByGroup?.[sourceEdgeIndex] ?? 0)
@@ -107,47 +174,26 @@ export function SimulationEdgeRuntimeOverlay({
       item.edgeId === id &&
       item.severity === "warning",
   );
-  const backlogPressure = bufferKinds.includes(sourceKind ?? "") && backlog > 0;
+  const backlogPressure = BUFFER_KINDS.has(sourceKind ?? "") && backlog > 0;
   const pressure =
-    ((stats?.queued ?? 0) > 0 && (stats?.utilization ?? 0) >= 0.8) ||
+    ((targetStats?.queued ?? 0) > 0 &&
+      (targetStats?.utilization ?? 0) >= 0.8) ||
     backlogPressure ||
     queueHasNoConsumer ||
     affectedByQueue;
-  const tone: SimulationTone = failed
-    ? "danger"
-    : pressure
-      ? "warning"
-      : rate > 0
-        ? "healthy"
-        : "neutral";
-  const pressureLabel =
-    queueHasNoConsumer || affectedByQueue
-      ? "No active consumer"
-      : backlogPressure
-        ? sourceKind === "streambroker"
-          ? "Consumer lag"
-          : "Buffered backlog"
-        : "Waiting downstream";
-  return (
-    <SimulationEdgeOverlay
-      id={id}
-      path={path}
-      rate={rate}
-      state={state}
-      running={status === "running"}
-      tone={tone}
-      failureLabel={
-        state === "cut"
-          ? "Connection cut"
-          : failed
-            ? "Downstream failures"
-            : pressure
-              ? pressureLabel
-              : undefined
-      }
-      labelX={x}
-      labelY={y}
-      showLabel
-    />
-  );
+  let tone: SimulationTone = "neutral";
+  if (failed) tone = "danger";
+  else if (pressure) tone = "warning";
+  else if (rate > 0) tone = "healthy";
+
+  let failureLabel: string | undefined;
+  if (state === "cut") failureLabel = "Connection cut";
+  else if (failed) failureLabel = "Downstream failures";
+  else if (queueHasNoConsumer || affectedByQueue)
+    failureLabel = "No active consumer";
+  else if (backlogPressure)
+    failureLabel =
+      sourceKind === "streambroker" ? "Consumer lag" : "Buffered backlog";
+  else if (pressure) failureLabel = "Waiting downstream";
+  return { tone, failureLabel };
 }

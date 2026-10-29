@@ -761,7 +761,7 @@ export class Engine implements BehaviourCtx {
 
   /** Compatibility method; runners should use advanceTo and inspect progress. */
   advance(deltaMs: number): void {
-    if (!(deltaMs > 0)) return;
+    if (deltaMs <= 0 || Number.isNaN(deltaMs)) return;
     this.advanceTo(
       this.now + Math.min(deltaMs, MAX_DELTA_MS),
       MAX_EVENTS_PER_ADVANCE,
@@ -1282,29 +1282,28 @@ export class Engine implements BehaviourCtx {
         }
         break;
       case EV_SERVICE_DONE:
-        if (ev.req && ev.req.token === ev.token)
-          this.onServiceDone(state, ev.req);
+        if (ev.req?.token === ev.token) this.onServiceDone(state, ev.req);
         break;
       case EV_TIMEOUT:
-        if (ev.req && ev.req.token === ev.token) this.onTimeout(ev.req);
+        if (ev.req?.token === ev.token) this.onTimeout(ev.req);
         break;
       case EV_WORKER_POLL:
         state.pollScheduled = false;
         this.pumpWorker(state);
         break;
       case EV_RETRY:
-        if (ev.req && ev.req.token === ev.token) this.onRetry(state, ev.req);
+        if (ev.req?.token === ev.token) this.onRetry(state, ev.req);
         break;
       case EV_LINK_ARRIVE:
         // The request finished crossing an edge with a latencyMs and is only
         // now offered to the target. A caller that already gave up during the
         // crossing leaves a resolved request, which is dropped here.
-        if (ev.req && ev.req.token === ev.token && !ev.req.resolved) {
+        if (ev.req?.token === ev.token && !ev.req.resolved) {
           this.admit(state, ev.req);
         }
         break;
       case EV_BEHAVIOUR_WAKE:
-        if (ev.req && ev.req.token === ev.token && !ev.req.resolved) {
+        if (ev.req?.token === ev.token && !ev.req.resolved) {
           state.behaviour.onWake?.(this, state, ev.req);
         }
         break;
@@ -1321,7 +1320,7 @@ export class Engine implements BehaviourCtx {
     // The pattern's rate, not the baseline: a spike's quiet phase must
     // actually schedule arrivals further apart.
     const rps = this.effectiveRps(state);
-    if (!(rps > 0)) {
+    if (rps <= 0 || Number.isNaN(rps)) {
       // Poll again shortly so raising the slider, or a pattern coming back up
       // off its trough, resumes traffic.
       this.push(
@@ -1690,7 +1689,8 @@ export class Engine implements BehaviourCtx {
    * -- which keeps a faulted run's random stream aligned with a healthy one.
    */
   private serviceTimeFor(state: NodeState): number {
-    if (!(state.config.serviceMs > 0)) return 0;
+    if (state.config.serviceMs <= 0 || Number.isNaN(state.config.serviceMs))
+      return 0;
     const ms = this.rng.serviceTime(
       state.config.serviceMs,
       state.config.serviceCv,
@@ -2021,7 +2021,7 @@ export class Engine implements BehaviourCtx {
    */
   private armTimeout(caller: NodeState, call: Req): void {
     const t = caller.config.timeoutMs;
-    if (!(t > 0)) return;
+    if (t <= 0 || Number.isNaN(t)) return;
     this.push(this.now + t, EV_TIMEOUT, caller.id, call, call.token);
   }
 
@@ -2087,73 +2087,79 @@ export class Engine implements BehaviourCtx {
     this.recordHop(req);
 
     const parent = req.parent;
-
     if (parent === null) {
-      if (req.detached || req.abandoned) {
-        // Either a queue message that finished its worker path, or work the
-        // caller already timed out on. Nobody is waiting for this result.
-        // Free the sampler if this was the traced one, or nothing would ever
-        // be traced again.
-        if (this.tracing === req) this.tracing = null;
-        this.recycle(req);
-        return;
-      }
-      // Root request measured at the client.
-      const total = this.now - req.rootStartMs;
-      if (req.trace) {
-        // Deepest first would be arbitrary; ordering by depth then by the
-        // moment each hop finished gives the reader the path in the order
-        // the request actually walked it.
-        const hops = req.trace.slice().sort((a, b) => a.depth - b.depth);
-        this.lastTrace = {
-          startMs: req.rootStartMs,
-          totalMs: total,
-          ok,
-          reason: ok ? null : reason,
-          hops,
-        };
-        this.tracing = null;
-      }
-      const client = this.nodes.get(req.nodeId);
-      if (req.observation)
-        this.observer?.onRootCompleted?.({
-          requestId: req.observation.requestId,
-          sourceId: req.nodeId,
-          startedAtMs: req.rootStartMs,
-          completedAtMs: this.now,
-          ok,
-          reason: ok ? null : reason,
-          completedNodeIds: [...req.observation.completed],
-        });
-      if (ok) {
-        this.totalCompletedRoots++;
-        this.sysGood.add(this.now, 1);
-        this.sysLatency.add(this.now, total);
-        if (client) {
-          client.completions.add(this.now, 1);
-          client.totalCompleted++;
-          client.latency.add(this.now, total);
-        }
-      } else {
-        this.sysFailed.add(this.now, 1);
-        this.totalFailed++;
-        this.failures[reason]++;
-        if (client) {
-          client.totalFailed++;
-          // No timeout arm. `onTimeout` already attributed it to whichever
-          // node gave up, which is this client when it called its dependency
-          // directly and some node below it otherwise. Counting it again here
-          // is what made a client's timeout rate outrun the load it offered.
-          if (reason === "shed") client.sheds.add(this.now, 1);
-          else if (reason !== "timeout") client.errors.add(this.now, 1);
-        }
-      }
-      this.recycle(req);
+      this.resolveRoot(req, ok, reason);
       return;
     }
 
     this.childResolvedFrom(req, parent, ok, reason, latencyMs);
     this.recycle(req);
+  }
+
+  private resolveRoot(req: Req, ok: boolean, reason: FailureReason): void {
+    if (req.detached || req.abandoned) {
+      if (this.tracing === req) this.tracing = null;
+      this.recycle(req);
+      return;
+    }
+    const total = this.now - req.rootStartMs;
+    this.recordRootTrace(req, ok, reason, total);
+    const client = this.nodes.get(req.nodeId);
+    if (req.observation)
+      this.observer?.onRootCompleted?.({
+        requestId: req.observation.requestId,
+        sourceId: req.nodeId,
+        startedAtMs: req.rootStartMs,
+        completedAtMs: this.now,
+        ok,
+        reason: ok ? null : reason,
+        completedNodeIds: [...req.observation.completed],
+      });
+    this.recordRootOutcome(client, ok, reason, total);
+    this.recycle(req);
+  }
+
+  private recordRootTrace(
+    req: Req,
+    ok: boolean,
+    reason: FailureReason,
+    total: number,
+  ): void {
+    if (!req.trace) return;
+    const hops = req.trace.slice().sort((a, b) => a.depth - b.depth);
+    this.lastTrace = {
+      startMs: req.rootStartMs,
+      totalMs: total,
+      ok,
+      reason: ok ? null : reason,
+      hops,
+    };
+    this.tracing = null;
+  }
+
+  private recordRootOutcome(
+    client: NodeState | undefined,
+    ok: boolean,
+    reason: FailureReason,
+    total: number,
+  ): void {
+    if (ok) {
+      this.totalCompletedRoots++;
+      this.sysGood.add(this.now, 1);
+      this.sysLatency.add(this.now, total);
+      if (!client) return;
+      client.completions.add(this.now, 1);
+      client.totalCompleted++;
+      client.latency.add(this.now, total);
+      return;
+    }
+    this.sysFailed.add(this.now, 1);
+    this.totalFailed++;
+    this.failures[reason]++;
+    if (!client) return;
+    client.totalFailed++;
+    if (reason === "shed") client.sheds.add(this.now, 1);
+    else if (reason !== "timeout") client.errors.add(this.now, 1);
   }
 
   /** A backoff delay elapsed: re-issue the failed downstream call. */
@@ -2311,10 +2317,11 @@ export class Engine implements BehaviourCtx {
   effectiveRps(state: NodeStateLike): number {
     const base = state.config.rps;
     const pattern = state.config.traffic;
-    if (!pattern || pattern === "steady" || !(base > 0)) return base;
+    if (!pattern || pattern === "steady" || base <= 0 || Number.isNaN(base))
+      return base;
 
     const periodS = state.config.trafficPeriodS ?? DEFAULT_TRAFFIC_PERIOD_S;
-    if (!(periodS > 0)) return base;
+    if (periodS <= 0 || Number.isNaN(periodS)) return base;
 
     const t = (this.now / 1000) % periodS;
     const phase = t / periodS;
@@ -2544,7 +2551,7 @@ export class Engine implements BehaviourCtx {
   }
 
   addServiceDelay(reqLike: ReqLike, extraMs: number): void {
-    if (!(extraMs > 0)) return;
+    if (extraMs <= 0 || Number.isNaN(extraMs)) return;
     (reqLike as Req).extraServiceMs += extraMs;
   }
 
@@ -2957,7 +2964,9 @@ function describeFault(nodeId: string, f: Fault): ActiveFailure {
 }
 
 function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
+  if (v < 0) return 0;
+  if (v > 1) return 1;
+  return v;
 }
 
 function cloneTopology(t: Topology): Topology {

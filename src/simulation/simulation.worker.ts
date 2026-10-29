@@ -21,6 +21,15 @@ let measuredTime = 0;
 let achievedSpeed = 1;
 let resourceLimited = false;
 
+function currentStatus(): Extract<
+  WorkerResponse,
+  { type: "snapshot" }
+>["status"] {
+  if (resourceLimited) return "resource-limited";
+  if (running) return "running";
+  return "paused";
+}
+
 function publish() {
   if (!runtime) return;
   const response: WorkerResponse = {
@@ -30,11 +39,7 @@ function publish() {
     snapshot: runtime.snapshot(),
     commands,
     achievedSpeed,
-    status: resourceLimited
-      ? "resource-limited"
-      : running
-        ? "running"
-        : "paused",
+    status: currentStatus(),
   };
   self.postMessage(response);
   lastPublish = performance.now();

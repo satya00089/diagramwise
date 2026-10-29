@@ -10,7 +10,7 @@ type Rgba = { red: number; green: number; blue: number; alpha: number };
 let colorContext: CanvasRenderingContext2D | null | undefined;
 
 function parseColor(color: string): Rgba | undefined {
-  const hex = /^#([\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i.exec(color);
+  const hex = /^#((?:[\da-f]{3,4}){1,2})$/i.exec(color);
   if (hex) {
     const digits =
       hex[1].length <= 4

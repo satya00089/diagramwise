@@ -210,13 +210,12 @@ function ensureBroker(state: NodeStateLike, ext: BrokerExt): BrokerExt {
   }
 
   let sig = "";
-  for (let i = 0; i < state.out.length; i++) sig += state.out[i].id + "\0";
+  for (const edge of state.out) sig += edge.id + "\0";
   if (sig !== ext.groupSig) {
     const prev = new Map<string, BrokerGroup>();
     for (const g of ext.groups) prev.set(g.edgeId, g);
     const groups: BrokerGroup[] = [];
-    for (let i = 0; i < state.out.length; i++) {
-      const edge = state.out[i];
+    for (const edge of state.out) {
       const kept = prev.get(edge.id);
       if (kept && kept.next.length === partitions) {
         kept.targetId = edge.to;
@@ -460,8 +459,8 @@ const pubsub: ComponentBehaviour = {
   onAdmit: () => "passthru",
 
   onServiceComplete(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) {
-    for (let i = 0; i < state.out.length; i++) {
-      if (ctx.emitDetached(state, state.out[i], req.key)) {
+    for (const edge of state.out) {
+      if (ctx.emitDetached(state, edge, req.key)) {
         ctx.countCustom(state, "delivered", 1);
       }
     }
@@ -1116,8 +1115,7 @@ const cron: ComponentBehaviour = {
     if (ctx.now < st.nextFireMs) return;
 
     const batch = cronBatch(state);
-    for (let i = 0; i < state.out.length; i++) {
-      const edge = state.out[i];
+    for (const edge of state.out) {
       for (let n = 0; n < batch; n++) {
         if (!ctx.emitDetached(state, edge, st.keySeq)) break;
         st.keySeq = (st.keySeq + 1) % 64;

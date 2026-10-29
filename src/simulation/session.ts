@@ -37,6 +37,14 @@ function fail(message: string) {
   terminate();
   useSimulationSession.setState({ status: "error", error: message });
 }
+function statusAfterSnapshot(
+  incoming: Extract<WorkerResponse, { type: "snapshot" }>["status"],
+  current: ReturnType<typeof useSimulationSession.getState>["status"],
+) {
+  if (incoming === "resource-limited") return incoming;
+  if (current === "stale" || current === "paused") return current;
+  return incoming;
+}
 function begin(topology: Topology, replay?: RecordedCommand[]) {
   terminate();
   const state = useSimulationSession.getState();
@@ -72,14 +80,7 @@ function begin(topology: Topology, replay?: RecordedCommand[]) {
         snapshot: message.snapshot,
         commands: message.commands,
         achievedSpeed: message.achievedSpeed,
-        status:
-          message.status === "resource-limited"
-            ? message.status
-            : current.status === "stale"
-              ? "stale"
-              : current.status === "paused"
-                ? "paused"
-                : message.status,
+        status: statusAfterSnapshot(message.status, current.status),
       });
       if (message.status === "running") armWatchdog();
     };
@@ -119,12 +120,13 @@ export const simulationSession = {
         state.compilation.fingerprint !== compilation.fingerprint,
     );
     if (changed && state.snapshot) send({ type: "pause", runId });
-    useSimulationSession.setState({
+    const updatedState: Partial<typeof state> = {
       document,
       compilation,
       scope,
-      ...(changed && state.snapshot ? { status: "stale" as const } : {}),
-    });
+    };
+    if (changed && state.snapshot) updatedState.status = "stale";
+    useSimulationSession.setState(updatedState);
   },
   start() {
     const state = useSimulationSession.getState();
@@ -194,12 +196,15 @@ export const simulationSession = {
       compilation?.trafficSource.mode === "clients"
         ? compilation.trafficSource.selectedNodeId
         : undefined;
-    this.command({
+    const command: Extract<RunCommand, { type: "workload" }> = {
       type: "workload",
       rps,
       pattern,
-      ...(selectedClientId ? { clientIds: [selectedClientId] } : {}),
-    });
+    };
+    if (selectedClientId) {
+      command.clientIds = [selectedClientId];
+    }
+    this.command(command);
   },
   command(command: RunCommand) {
     const state = useSimulationSession.getState();

@@ -5,7 +5,7 @@ import type { SimulationTone } from "./types";
 import { formatSimulationNumber } from "./presentation";
 import "./simulation.css";
 
-export type SimulationEdgeOverlayProps = {
+export type SimulationEdgeOverlayProps = Readonly<{
   id: string;
   path: string;
   rate: number;
@@ -16,7 +16,42 @@ export type SimulationEdgeOverlayProps = {
   labelX?: number;
   labelY?: number;
   showLabel?: boolean;
-};
+}>;
+
+function getEdgeDescription(
+  state: EdgeState,
+  failureLabel: string | undefined,
+  rate: number,
+): string {
+  if (state === "cut") return "Connection cut";
+  if (state === "blocked") return "Traffic blocked";
+  if (state === "standby") return "Standby connection";
+  if (failureLabel !== undefined) return failureLabel;
+  return rate > 0
+    ? `${formatSimulationNumber(rate)} requests per second`
+    : "No traffic";
+}
+
+function getEdgeLabel(
+  state: EdgeState,
+  failureLabel: string | undefined,
+  rate: number,
+): string {
+  if (state === "cut") return "× Cut";
+  if (state === "blocked") return "! Blocked";
+  if (failureLabel) return `! ${failureLabel}`;
+  return `${formatSimulationNumber(rate)}/s`;
+}
+
+function getEffectiveTone(
+  state: EdgeState,
+  tone: SimulationTone | undefined,
+  rate: number,
+): SimulationTone {
+  if (state === "cut" || state === "blocked") return "danger";
+  if (tone) return tone;
+  return rate > 0 ? "healthy" : "neutral";
+}
 
 export const SimulationEdgeOverlay = memo(function SimulationEdgeOverlay({
   id,
@@ -30,35 +65,15 @@ export const SimulationEdgeOverlay = memo(function SimulationEdgeOverlay({
   labelY,
   showLabel = true,
 }: SimulationEdgeOverlayProps) {
-  const effectiveTone =
-    state === "cut" || state === "blocked"
-      ? "danger"
-      : (tone ?? (rate > 0 ? "healthy" : "neutral"));
+  const effectiveTone = getEffectiveTone(state, tone, rate);
   const moving =
     running &&
     rate > 0 &&
     state !== "cut" &&
     state !== "blocked" &&
     state !== "standby";
-  const description =
-    state === "cut"
-      ? "Connection cut"
-      : state === "blocked"
-        ? "Traffic blocked"
-        : state === "standby"
-          ? "Standby connection"
-          : (failureLabel ??
-            (rate > 0
-              ? `${formatSimulationNumber(rate)} requests per second`
-              : "No traffic"));
-  const label =
-    state === "cut"
-      ? "× Cut"
-      : state === "blocked"
-        ? "! Blocked"
-        : failureLabel
-          ? `! ${failureLabel}`
-          : `${formatSimulationNumber(rate)}/s`;
+  const description = getEdgeDescription(state, failureLabel, rate);
+  const label = getEdgeLabel(state, failureLabel, rate);
   const width = Math.max(48, Math.min(260, label.length * 6.5 + 16));
   const style = {
     "--sim-flow-duration": `${Math.max(0.35, 1.8 - Math.log10(Math.max(1, rate)) * 0.3)}s`,

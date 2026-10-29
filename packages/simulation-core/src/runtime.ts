@@ -122,6 +122,138 @@ const ZERO_INTEGER_FIELDS = new Set([
   "acquireQueueMax",
 ]);
 
+const TRAFFIC_PATTERNS = new Set(["steady", "ramp", "spike", "diurnal"]);
+
+function assertReplayNodeIdentity(
+  node: Topology["nodes"][number],
+  nodeIds: Set<string>,
+): void {
+  if (
+    !node ||
+    typeof node.id !== "string" ||
+    node.id.length < 1 ||
+    node.id.length > 200 ||
+    nodeIds.has(node.id)
+  )
+    throw new TypeError(
+      "Replay component identifiers must be unique strings of at most 200 characters.",
+    );
+}
+
+function assertReplayNodeModel(node: Topology["nodes"][number]): void {
+  if (
+    !isNodeKind(node.kind) ||
+    typeof node.label !== "string" ||
+    node.label.length > 240 ||
+    !Number.isFinite(node.x) ||
+    !Number.isFinite(node.y) ||
+    Math.abs(node.x) > 1_000_000 ||
+    Math.abs(node.y) > 1_000_000
+  ) {
+    throw new TypeError(`Replay component “${node.id}” has an invalid model.`);
+  }
+}
+
+function assertReplayNodeConfig(node: Topology["nodes"][number]): void {
+  if (
+    !node.config ||
+    typeof node.config !== "object" ||
+    Array.isArray(node.config)
+  )
+    throw new TypeError(`Replay component “${node.id}” has invalid settings.`);
+
+  const config = node.config as unknown as Record<string, unknown>;
+  const allowed = new Set([
+    ...Object.keys(defaultConfig(node.kind)),
+    "traffic",
+    "trafficPeriodS",
+    "bulkheadMode",
+  ]);
+  for (const required of REQUIRED_CONFIG_FIELDS)
+    if (!(required in config))
+      throw new TypeError(
+        `Replay component “${node.id}” is missing ${required}.`,
+      );
+  for (const [key, value] of Object.entries(config)) {
+    if (!allowed.has(key))
+      throw new TypeError(
+        `Replay component “${node.id}” has an unknown setting.`,
+      );
+    if (key === "traffic") {
+      if (!TRAFFIC_PATTERNS.has(value as string))
+        throw new TypeError(
+          `Replay component “${node.id}” has an invalid traffic pattern.`,
+        );
+      continue;
+    }
+    if (key === "bulkheadMode") {
+      if (value !== "wait" && value !== "reject")
+        throw new TypeError(
+          `Replay component “${node.id}” has an invalid bulkhead mode.`,
+        );
+      continue;
+    }
+    if (!isValidReplayConfigValue(key, value)) {
+      throw new TypeError(
+        `Replay component “${node.id}” has an invalid ${key} setting.`,
+      );
+    }
+  }
+  if (
+    typeof config.minCapacity === "number" &&
+    typeof config.maxCapacity === "number" &&
+    config.minCapacity > config.maxCapacity
+  )
+    throw new TypeError(
+      `Replay component “${node.id}” has an invalid scaling range.`,
+    );
+}
+
+function isValidReplayConfigValue(key: string, value: unknown): boolean {
+  return !(
+    typeof value !== "number" ||
+    !Number.isFinite(value) ||
+    value < 0 ||
+    value > 1_000_000 ||
+    (FRACTION_FIELDS.has(key) && value > 1) ||
+    (POSITIVE_INTEGER_FIELDS.has(key) &&
+      (!Number.isInteger(value) || value < 1 || value > 512)) ||
+    (ZERO_INTEGER_FIELDS.has(key) && !Number.isInteger(value)) ||
+    (key === "retries" && value > 10) ||
+    (key === "queueLimit" && value > 50_000) ||
+    (key === "serviceCv" && value > 10) ||
+    (key === "trafficPeriodS" && value < 0.1)
+  );
+}
+
+function assertReplayEdge(
+  edge: Topology["edges"][number],
+  edgeIds: Set<string>,
+  nodeIds: Set<string>,
+): void {
+  if (
+    !edge ||
+    typeof edge.id !== "string" ||
+    edge.id.length < 1 ||
+    edge.id.length > 200 ||
+    edgeIds.has(edge.id) ||
+    !nodeIds.has(edge.from) ||
+    !nodeIds.has(edge.to) ||
+    !Number.isFinite(edge.weight) ||
+    edge.weight <= 0 ||
+    edge.weight > 1_000_000 ||
+    (edge.control !== undefined && typeof edge.control !== "boolean") ||
+    (edge.latencyMs !== undefined &&
+      (!Number.isFinite(edge.latencyMs) ||
+        edge.latencyMs < 0 ||
+        edge.latencyMs > 60_000))
+  ) {
+    throw new TypeError(
+      "Replay connections must have unique identifiers, valid endpoints, and positive weights.",
+    );
+  }
+}
+
 /**
  * Protect worker entry points and imported replay files from malformed data.
  * The compiler produces this shape; this is a second boundary for data that
@@ -146,118 +278,16 @@ export function assertReplayTopology(
   }
   const nodeIds = new Set<string>();
   for (const node of topology.nodes) {
-    if (
-      !node ||
-      typeof node.id !== "string" ||
-      node.id.length < 1 ||
-      node.id.length > 200 ||
-      nodeIds.has(node.id)
-    )
-      throw new TypeError(
-        "Replay component identifiers must be unique strings of at most 200 characters.",
-      );
-    if (
-      !isNodeKind(node.kind) ||
-      typeof node.label !== "string" ||
-      node.label.length > 240 ||
-      !Number.isFinite(node.x) ||
-      !Number.isFinite(node.y) ||
-      Math.abs(node.x) > 1_000_000 ||
-      Math.abs(node.y) > 1_000_000
-    ) {
-      throw new TypeError(
-        `Replay component “${node.id}” has an invalid model.`,
-      );
-    }
-    if (
-      !node.config ||
-      typeof node.config !== "object" ||
-      Array.isArray(node.config)
-    )
-      throw new TypeError(
-        `Replay component “${node.id}” has invalid settings.`,
-      );
-    const config = node.config as unknown as Record<string, unknown>;
-    const allowed = new Set([
-      ...Object.keys(defaultConfig(node.kind)),
-      "traffic",
-      "trafficPeriodS",
-      "bulkheadMode",
-    ]);
-    for (const required of REQUIRED_CONFIG_FIELDS)
-      if (!(required in config))
-        throw new TypeError(
-          `Replay component “${node.id}” is missing ${required}.`,
-        );
-    for (const [key, value] of Object.entries(config)) {
-      if (!allowed.has(key))
-        throw new TypeError(
-          `Replay component “${node.id}” has an unknown setting.`,
-        );
-      if (key === "traffic") {
-        if (!["steady", "ramp", "spike", "diurnal"].includes(value as string))
-          throw new TypeError(
-            `Replay component “${node.id}” has an invalid traffic pattern.`,
-          );
-      } else if (key === "bulkheadMode") {
-        if (value !== "wait" && value !== "reject")
-          throw new TypeError(
-            `Replay component “${node.id}” has an invalid bulkhead mode.`,
-          );
-      } else if (
-        typeof value !== "number" ||
-        !Number.isFinite(value) ||
-        value < 0 ||
-        value > 1_000_000 ||
-        (FRACTION_FIELDS.has(key) && value > 1) ||
-        (POSITIVE_INTEGER_FIELDS.has(key) &&
-          (!Number.isInteger(value) || value < 1 || value > 512)) ||
-        (ZERO_INTEGER_FIELDS.has(key) && !Number.isInteger(value)) ||
-        (key === "retries" && value > 10) ||
-        (key === "queueLimit" && value > 50_000) ||
-        (key === "serviceCv" && value > 10) ||
-        (key === "trafficPeriodS" && value < 0.1)
-      ) {
-        throw new TypeError(
-          `Replay component “${node.id}” has an invalid ${key} setting.`,
-        );
-      }
-    }
-    if (
-      typeof config.minCapacity === "number" &&
-      typeof config.maxCapacity === "number" &&
-      config.minCapacity > config.maxCapacity
-    )
-      throw new TypeError(
-        `Replay component “${node.id}” has an invalid scaling range.`,
-      );
+    assertReplayNodeIdentity(node, nodeIds);
+    assertReplayNodeModel(node);
+    assertReplayNodeConfig(node);
     nodeIds.add(node.id);
   }
   if (!topology.nodes.some((node) => node.kind === "client"))
     throw new TypeError("A replay needs a traffic source.");
   const edgeIds = new Set<string>();
   for (const edge of topology.edges) {
-    if (
-      !edge ||
-      typeof edge.id !== "string" ||
-      edge.id.length < 1 ||
-      edge.id.length > 200 ||
-      edgeIds.has(edge.id) ||
-      !nodeIds.has(edge.from) ||
-      !nodeIds.has(edge.to) ||
-      !Number.isFinite(edge.weight) ||
-      edge.weight <= 0 ||
-      edge.weight > 1_000_000 ||
-      (edge.control !== undefined && typeof edge.control !== "boolean") ||
-      (edge.latencyMs !== undefined &&
-        (!Number.isFinite(edge.latencyMs) ||
-          edge.latencyMs < 0 ||
-          edge.latencyMs > 60_000))
-    ) {
-      throw new TypeError(
-        "Replay connections must have unique identifiers, valid endpoints, and positive weights.",
-      );
-    }
+    assertReplayEdge(edge, edgeIds, nodeIds);
     edgeIds.add(edge.id);
   }
 }
@@ -290,43 +320,7 @@ export function createSimulation(input: Topology, seed = 1): SimulationRuntime {
       }
       switch (command.type) {
         case "workload": {
-          assertFinite(command.rps, "Requests per second", 0, 100_000);
-          if (
-            command.pattern !== undefined &&
-            !["steady", "ramp", "spike", "diurnal"].includes(command.pattern)
-          ) {
-            throw new RangeError("Unknown traffic pattern.");
-          }
-          const clients = topology.nodes.filter(
-            (node) => node.kind === "client",
-          );
-          if (clients.length === 0)
-            throw new Error("A workload needs a traffic source.");
-          const clientIds = command.clientIds ?? clients.map((node) => node.id);
-          if (
-            !Array.isArray(clientIds) ||
-            clientIds.length === 0 ||
-            clientIds.length > clients.length ||
-            new Set(clientIds).size !== clientIds.length ||
-            clientIds.some(
-              (id) =>
-                typeof id !== "string" ||
-                !clients.some((node) => node.id === id),
-            )
-          ) {
-            throw new TypeError(
-              "Workload client identifiers must refer to unique traffic sources.",
-            );
-          }
-          const activeClientIds = new Set(clientIds);
-          for (const node of clients) {
-            engine.updateNodeConfig(node.id, {
-              rps: activeClientIds.has(node.id)
-                ? command.rps / activeClientIds.size
-                : 0,
-              ...(command.pattern ? { traffic: command.pattern } : {}),
-            });
-          }
+          applyWorkloadCommand(engine, topology, command);
           return;
         }
         case "replicas":
@@ -348,4 +342,46 @@ export function createSimulation(input: Topology, seed = 1): SimulationRuntime {
       }
     },
   };
+}
+
+function applyWorkloadCommand(
+  engine: Engine,
+  topology: Topology,
+  command: Extract<SimulationCommand, { type: "workload" }>,
+): void {
+  assertFinite(command.rps, "Requests per second", 0, 100_000);
+  if (command.pattern !== undefined && !TRAFFIC_PATTERNS.has(command.pattern)) {
+    throw new RangeError("Unknown traffic pattern.");
+  }
+  const clients = topology.nodes.filter((node) => node.kind === "client");
+  if (clients.length === 0)
+    throw new Error("A workload needs a traffic source.");
+  const clientIds = command.clientIds ?? clients.map((node) => node.id);
+  if (!isValidClientSelection(clientIds, clients)) {
+    throw new TypeError(
+      "Workload client identifiers must refer to unique traffic sources.",
+    );
+  }
+  const activeClientIds = new Set(clientIds);
+  for (const node of clients) {
+    engine.updateNodeConfig(node.id, {
+      rps: activeClientIds.has(node.id)
+        ? command.rps / activeClientIds.size
+        : 0,
+      ...(command.pattern ? { traffic: command.pattern } : {}),
+    });
+  }
+}
+
+function isValidClientSelection(
+  clientIds: string[],
+  clients: Topology["nodes"],
+): boolean {
+  return (
+    Array.isArray(clientIds) &&
+    clientIds.length > 0 &&
+    clientIds.length <= clients.length &&
+    new Set(clientIds).size === clientIds.length &&
+    clientIds.every((id) => clients.some((node) => node.id === id))
+  );
 }

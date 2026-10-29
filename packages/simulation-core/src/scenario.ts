@@ -209,84 +209,13 @@ export function validateScenarioSubmission(
   for (const baseline of original.nodes) {
     const candidate = nodes.get(baseline.id);
     if (!candidate) continue;
-    if (
-      candidate.kind !== baseline.kind ||
-      !candidate.config ||
-      typeof candidate.config !== "object"
-    ) {
-      issues.push(`Keep the behavior model of ${baseline.id}.`);
-      continue;
-    }
-    const before = { ...defaultConfig(baseline.kind), ...baseline.config };
-    const after = { ...defaultConfig(baseline.kind), ...candidate.config };
-    const editable = new Set<string>(
-      scenario.constraints.allowedConfigFields[baseline.id] ?? [],
-    );
-    for (const key of new Set([
-      ...Object.keys(before),
-      ...Object.keys(after),
-    ])) {
-      const oldValue = before[key as keyof NodeConfig];
-      const newValue = after[key as keyof NodeConfig];
-      // The evaluator supplies the workload itself; sandbox slider values never score.
-      if (baseline.kind === "client" && WORKLOAD_FIELDS.has(key)) continue;
-      if (!editable.has(key) && !sameScalar(oldValue, newValue)) {
-        issues.push(
-          `${baseline.id}: ${key} is a fixed assumption in this challenge.`,
-        );
-      }
-      if (
-        typeof newValue === "number" &&
-        (!Number.isFinite(newValue) || newValue < 0)
-      ) {
-        issues.push(
-          `${baseline.id}: ${key} must be a finite nonnegative number.`,
-        );
-      }
-      if (editable.has(key)) {
-        if (
-          typeof newValue !== "number" ||
-          !Number.isFinite(newValue) ||
-          newValue < 0
-        ) {
-          issues.push(
-            `${baseline.id}: ${key} must be a finite nonnegative number.`,
-          );
-        } else if (INTEGER_FIELDS.has(key) && !Number.isSafeInteger(newValue)) {
-          issues.push(`${baseline.id}: ${key} must be a whole number.`);
-        }
-      }
-    }
-    if (!(after.capacity >= 1) || !((after.instances ?? 1) >= 1)) {
-      issues.push(
-        `${baseline.id}: capacity and instances must be at least one.`,
-      );
-    }
-    if (
-      after.capacity > 512 ||
-      (after.instances ?? 1) > 512 ||
-      after.queueLimit > 50_000 ||
-      after.retries > 10
-    ) {
-      issues.push(
-        `${baseline.id}: configuration exceeds this evaluator's supported bounds.`,
-      );
-    }
+    issues.push(...validateSubmittedNode(baseline, candidate, scenario));
   }
   for (const baseline of original.edges) {
     const candidate = edges.get(baseline.id);
     if (!candidate) continue;
-    if (
-      candidate.from !== baseline.from ||
-      candidate.to !== baseline.to ||
-      candidate.weight !== baseline.weight ||
-      Boolean(candidate.control) !== Boolean(baseline.control) ||
-      (candidate.latencyMs ?? 0) !== (baseline.latencyMs ?? 0) ||
-      (candidate.bandwidthRps ?? 0) !== (baseline.bandwidthRps ?? 0) ||
-      (candidate.lossRate ?? 0) !== (baseline.lossRate ?? 0)
-    ) {
+    if (hasChangedEdgeBehavior(baseline, candidate))
       issues.push(`Keep the required behavior of connection ${baseline.id}.`);
-    }
   }
   if (!topology.nodes.some((node) => node.kind === "client"))
     issues.push("The required traffic source is missing.");
@@ -297,6 +226,88 @@ export function validateScenarioSubmission(
     );
   }
   return [...new Set(issues)];
+}
+
+function validateSubmittedNode(
+  baseline: Topology["nodes"][number],
+  candidate: Topology["nodes"][number],
+  scenario: ScenarioDefinition,
+): string[] {
+  const issues: string[] = [];
+  if (
+    candidate.kind !== baseline.kind ||
+    !candidate.config ||
+    typeof candidate.config !== "object"
+  ) {
+    return [`Keep the behavior model of ${baseline.id}.`];
+  }
+  const before = { ...defaultConfig(baseline.kind), ...baseline.config };
+  const after = { ...defaultConfig(baseline.kind), ...candidate.config };
+  const editable = new Set<string>(
+    scenario.constraints.allowedConfigFields[baseline.id] ?? [],
+  );
+  for (const key of new Set([...Object.keys(before), ...Object.keys(after)])) {
+    const oldValue = before[key as keyof NodeConfig];
+    const newValue = after[key as keyof NodeConfig];
+    if (baseline.kind === "client" && WORKLOAD_FIELDS.has(key)) continue;
+    if (!editable.has(key) && !sameScalar(oldValue, newValue)) {
+      issues.push(
+        `${baseline.id}: ${key} is a fixed assumption in this challenge.`,
+      );
+    }
+    if (
+      typeof newValue === "number" &&
+      (!Number.isFinite(newValue) || newValue < 0)
+    ) {
+      issues.push(
+        `${baseline.id}: ${key} must be a finite nonnegative number.`,
+      );
+    }
+    if (editable.has(key))
+      validateEditableValue(key, newValue, baseline.id, issues);
+  }
+  if (after.capacity < 1 || (after.instances ?? 1) < 1) {
+    issues.push(`${baseline.id}: capacity and instances must be at least one.`);
+  }
+  if (
+    after.capacity > 512 ||
+    (after.instances ?? 1) > 512 ||
+    after.queueLimit > 50_000 ||
+    after.retries > 10
+  ) {
+    issues.push(
+      `${baseline.id}: configuration exceeds this evaluator's supported bounds.`,
+    );
+  }
+  return issues;
+}
+
+function validateEditableValue(
+  key: string,
+  value: unknown,
+  nodeId: string,
+  issues: string[],
+): void {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    issues.push(`${nodeId}: ${key} must be a finite nonnegative number.`);
+  } else if (INTEGER_FIELDS.has(key) && !Number.isSafeInteger(value)) {
+    issues.push(`${nodeId}: ${key} must be a whole number.`);
+  }
+}
+
+function hasChangedEdgeBehavior(
+  baseline: Topology["edges"][number],
+  candidate: Topology["edges"][number],
+): boolean {
+  return (
+    candidate.from !== baseline.from ||
+    candidate.to !== baseline.to ||
+    candidate.weight !== baseline.weight ||
+    Boolean(candidate.control) !== Boolean(baseline.control) ||
+    (candidate.latencyMs ?? 0) !== (baseline.latencyMs ?? 0) ||
+    (candidate.bandwidthRps ?? 0) !== (baseline.bandwidthRps ?? 0) ||
+    (candidate.lossRate ?? 0) !== (baseline.lossRate ?? 0)
+  );
 }
 
 function goalResults(
@@ -349,12 +360,7 @@ export function evaluateScenario(
     return {
       ...seed,
       goals,
-      status:
-        seed.status === "incomplete"
-          ? ("incomplete" as const)
-          : goals.every((goal) => goal.met)
-            ? ("pass" as const)
-            : ("fail" as const),
+      status: seedStatus(seed.status, goals),
     };
   });
   const completeSeeds =
@@ -362,36 +368,54 @@ export function evaluateScenario(
     scenario.seeds.every((seed) =>
       seedResults.some((item) => item.seed === seed),
     );
-  const positiveSamples =
-    seedResults.length > 0 && seedResults.every((seed) => seed.sampleCount > 0);
-  const goals = goalResults(
-    {
-      completionFraction: seedResults.length
-        ? Math.min(...seedResults.map((seed) => seed.completionFraction))
-        : 0,
-      p95: positiveSamples
-        ? Math.max(...seedResults.map((seed) => seed.p95 ?? 0))
-        : null,
-      p99: positiveSamples
-        ? Math.max(...seedResults.map((seed) => seed.p99 ?? 0))
-        : null,
-      sampleCount: seedResults.length
-        ? Math.min(...seedResults.map((seed) => seed.sampleCount))
-        : 0,
-    },
-    scenario,
-  );
+  const goals = goalResults(aggregateSeedResults(seedResults), scenario);
   return {
     ...result,
     seedResults,
     goals,
-    status:
-      !completeSeeds || seedResults.some((seed) => seed.status === "incomplete")
-        ? "incomplete"
-        : seedResults.every((seed) => seed.status === "pass")
-          ? "pass"
-          : "fail",
+    status: overallStatus(completeSeeds, seedResults),
   };
+}
+
+function seedStatus(
+  previous: ScenarioSeedResult["status"],
+  goals: ScenarioGoalResult[],
+): ScenarioSeedResult["status"] {
+  if (previous === "incomplete") return "incomplete";
+  return goals.every((goal) => goal.met) ? "pass" : "fail";
+}
+
+function aggregateSeedResults(
+  seeds: ScenarioSeedResult[],
+): Pick<
+  ScenarioSeedResult,
+  "completionFraction" | "p95" | "p99" | "sampleCount"
+> {
+  const positiveSamples =
+    seeds.length > 0 && seeds.every((seed) => seed.sampleCount > 0);
+  return {
+    completionFraction: seeds.length
+      ? Math.min(...seeds.map((seed) => seed.completionFraction))
+      : 0,
+    p95: positiveSamples
+      ? Math.max(...seeds.map((seed) => seed.p95 ?? 0))
+      : null,
+    p99: positiveSamples
+      ? Math.max(...seeds.map((seed) => seed.p99 ?? 0))
+      : null,
+    sampleCount: seeds.length
+      ? Math.min(...seeds.map((seed) => seed.sampleCount))
+      : 0,
+  };
+}
+
+function overallStatus(
+  complete: boolean,
+  seeds: ScenarioSeedResult[],
+): ScenarioStatus {
+  if (!complete || seeds.some((seed) => seed.status === "incomplete"))
+    return "incomplete";
+  return seeds.every((seed) => seed.status === "pass") ? "pass" : "fail";
 }
 
 /** Run in a worker or Node runner. No browser clock, API calls, or live-session state. */
@@ -432,104 +456,18 @@ export function runScenario(
   const cohortEnd = cohortStart + scenario.measurementMs;
   const finish = cohortEnd + scenario.completionDeadlineMs;
   for (const seed of scenario.seeds) {
-    const graph: Topology = {
-      nodes: topology.nodes.map((node) => ({
-        ...node,
-        config: { ...node.config },
-      })),
-      edges: topology.edges.map((edge) => ({ ...edge })),
-    };
-    const sources = graph.nodes.filter((node) => node.kind === "client");
-    for (const source of sources) {
-      source.config.rps = scenario.workload.rps / sources.length;
-      source.config.traffic = scenario.workload.pattern;
-      source.config.trafficPeriodS = 60;
-    }
-    const runtime = createSimulation(graph, seed);
-    let admitted = 0;
-    let resolved = 0;
-    let successful = 0;
-    let missingDependencies = 0;
-    let processedEvents = 0;
-    let timeMs = 0;
-    let stoppedArrivals = false;
-    let limited = false;
-    const latency = new LatencyHistogram();
-    runtime.engine.setObserver({
-      onRootOffered(event) {
-        if (event.startedAtMs >= cohortStart && event.startedAtMs < cohortEnd)
-          admitted += 1;
-      },
-      onRootCompleted(event) {
-        if (event.startedAtMs < cohortStart || event.startedAtMs >= cohortEnd)
-          return;
-        resolved += 1;
-        const completedRequired =
-          scenario.constraints.requiredCompletedNodeIds.every((id) =>
-            event.completedNodeIds.includes(id),
-          );
-        if (!completedRequired) missingDependencies += 1;
-        const duration = event.completedAtMs - event.startedAtMs;
-        if (
-          event.ok &&
-          completedRequired &&
-          duration <= scenario.completionDeadlineMs
-        ) {
-          successful += 1;
-          latency.record(duration);
-        }
-      },
-    });
-    while (timeMs < finish) {
-      if (processedEvents >= maxEvents) {
-        limited = true;
-        break;
-      }
-      const target = !stoppedArrivals ? cohortEnd : finish;
-      const progress = runtime.advanceTo(
-        target,
-        Math.min(eventBudget, maxEvents - processedEvents),
-      );
-      processedEvents += progress.processedEvents;
-      const previousTime = timeMs;
-      timeMs = progress.timeMs;
-      if (progress.status === "resource-limited") {
-        limited = true;
-        break;
-      }
-      if (!stoppedArrivals && timeMs >= cohortEnd) {
-        runtime.applyCommand({
-          type: "workload",
-          rps: 0,
-          pattern: scenario.workload.pattern,
-        });
-        stoppedArrivals = true;
-      }
-      if (timeMs === previousTime && progress.processedEvents === 0) {
-        limited = true;
-        break;
-      }
-    }
-    runtime.engine.setObserver(null);
-    const seedResult: ScenarioSeedResult = {
+    const seedResult = runScenarioSeed(
+      topology,
+      scenario,
       seed,
-      status: limited ? "incomplete" : "fail",
-      admitted,
-      successful,
-      failed: resolved - successful,
-      pending: Math.max(0, admitted - resolved),
-      missingDependencies,
-      completionFraction: admitted ? successful / admitted : 0,
-      p50: latency.count ? latency.quantile(0.5) : null,
-      p95: latency.count ? latency.quantile(0.95) : null,
-      p99: latency.count ? latency.quantile(0.99) : null,
-      sampleCount: latency.count,
-      simulatedMs: timeMs,
-      processedEvents,
-      goals: [],
-    };
+      eventBudget,
+      maxEvents,
+      cohortStart,
+      cohortEnd,
+      finish,
+    );
     result.seedResults.push(seedResult);
-    if (limited) {
+    if (seedResult.status === "incomplete") {
       result.issues.push(
         `Seed ${seed}: the evaluator reached its processing limit. This is an incomplete result, not a design failure.`,
       );
@@ -537,4 +475,141 @@ export function runScenario(
     }
   }
   return evaluateScenario(result, scenario);
+}
+
+function runScenarioSeed(
+  topology: Topology,
+  scenario: ScenarioDefinition,
+  seed: number,
+  eventBudget: number,
+  maxEvents: number,
+  cohortStart: number,
+  cohortEnd: number,
+  finish: number,
+): ScenarioSeedResult {
+  const graph: Topology = {
+    nodes: topology.nodes.map((node) => ({
+      ...node,
+      config: { ...node.config },
+    })),
+    edges: topology.edges.map((edge) => ({ ...edge })),
+  };
+  const sources = graph.nodes.filter((node) => node.kind === "client");
+  for (const source of sources) {
+    source.config.rps = scenario.workload.rps / sources.length;
+    source.config.traffic = scenario.workload.pattern;
+    source.config.trafficPeriodS = 60;
+  }
+  const runtime = createSimulation(graph, seed);
+  const counters = {
+    admitted: 0,
+    resolved: 0,
+    successful: 0,
+    missingDependencies: 0,
+    processedEvents: 0,
+    timeMs: 0,
+    stoppedArrivals: false,
+    limited: false,
+  };
+  const latency = new LatencyHistogram();
+  runtime.engine.setObserver({
+    onRootOffered(event) {
+      if (event.startedAtMs >= cohortStart && event.startedAtMs < cohortEnd)
+        counters.admitted += 1;
+    },
+    onRootCompleted(event) {
+      if (event.startedAtMs < cohortStart || event.startedAtMs >= cohortEnd)
+        return;
+      counters.resolved += 1;
+      const completedRequired =
+        scenario.constraints.requiredCompletedNodeIds.every((id) =>
+          event.completedNodeIds.includes(id),
+        );
+      if (!completedRequired) counters.missingDependencies += 1;
+      const duration = event.completedAtMs - event.startedAtMs;
+      if (
+        event.ok &&
+        completedRequired &&
+        duration <= scenario.completionDeadlineMs
+      ) {
+        counters.successful += 1;
+        latency.record(duration);
+      }
+    },
+  });
+  advanceScenarioSeed(
+    runtime,
+    scenario,
+    counters,
+    eventBudget,
+    maxEvents,
+    cohortEnd,
+    finish,
+  );
+  runtime.engine.setObserver(null);
+  return {
+    seed,
+    status: counters.limited ? "incomplete" : "fail",
+    admitted: counters.admitted,
+    successful: counters.successful,
+    failed: counters.resolved - counters.successful,
+    pending: Math.max(0, counters.admitted - counters.resolved),
+    missingDependencies: counters.missingDependencies,
+    completionFraction: counters.admitted
+      ? counters.successful / counters.admitted
+      : 0,
+    p50: latency.count ? latency.quantile(0.5) : null,
+    p95: latency.count ? latency.quantile(0.95) : null,
+    p99: latency.count ? latency.quantile(0.99) : null,
+    sampleCount: latency.count,
+    simulatedMs: counters.timeMs,
+    processedEvents: counters.processedEvents,
+    goals: [],
+  };
+}
+
+function advanceScenarioSeed(
+  runtime: ReturnType<typeof createSimulation>,
+  scenario: ScenarioDefinition,
+  counters: {
+    processedEvents: number;
+    timeMs: number;
+    stoppedArrivals: boolean;
+    limited: boolean;
+  },
+  eventBudget: number,
+  maxEvents: number,
+  cohortEnd: number,
+  finish: number,
+): void {
+  while (counters.timeMs < finish) {
+    if (counters.processedEvents >= maxEvents) {
+      counters.limited = true;
+      break;
+    }
+    const target = counters.stoppedArrivals ? finish : cohortEnd;
+    const progress = runtime.advanceTo(
+      target,
+      Math.min(eventBudget, maxEvents - counters.processedEvents),
+    );
+    counters.processedEvents += progress.processedEvents;
+    const previousTime = counters.timeMs;
+    counters.timeMs = progress.timeMs;
+    if (progress.status === "resource-limited") {
+      counters.limited = true;
+      break;
+    }
+    if (!counters.stoppedArrivals && counters.timeMs >= cohortEnd) {
+      runtime.applyCommand({
+        type: "workload",
+        rps: 0,
+        pattern: scenario.workload.pattern,
+      });
+      counters.stoppedArrivals = true;
+    }
+    if (counters.timeMs === previousTime && progress.processedEvents === 0) {
+      counters.limited = true;
+      break;
+    }
+  }
 }
