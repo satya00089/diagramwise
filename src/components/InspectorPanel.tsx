@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { NavIcon } from "./navIcons/NavIcon";
+import { SidebarTabs } from "./SidebarTabs";
 import GuidedHelpPanel from "./GuidedHelpPanel";
 import type { ApplyStepPayload } from "./GuidedHelpPanel";
 import AssessmentFindings from "./AssessmentFindings";
@@ -618,74 +618,35 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
               </button>
             )}
 
-            <div
-              className="flex flex-wrap items-center justify-start gap-2"
-              role="tablist"
-              aria-label="Sidebar tabs"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "details"}
-                className={`nav-tab flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "details" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
-                data-tour="problem-brief"
-                onClick={() => setActiveTab("details")}
-              >
-                <NavIcon name="details" />
-                <span className="text-sm font-medium">Details</span>
-              </button>
-
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "simulation"}
-                className={`nav-tab flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "simulation" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
-                onClick={() => setActiveTab("simulation")}
-              >
-                <NavIcon name="simulate" />
-                <span className="text-sm font-medium">Simulate</span>
-              </button>
-
-              {!isFreeDesignMode && (
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === "assessment"}
-                  className={`nav-tab flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "assessment" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
-                  onClick={() => setActiveTab("assessment")}
-                >
-                  <NavIcon name="assessment" />
-                  <span className="text-sm font-medium">
-                    {assessmentTabLabel}
-                  </span>
-                </button>
-              )}
-
-              {!isFreeDesignMode && (
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeTab === "guide"}
-                  className={`nav-tab flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "guide" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
-                  data-tour="guide"
-                  onClick={() => setActiveTab("guide")}
-                >
-                  <NavIcon name="guide" />
-                  <span className="text-sm font-medium">Guide</span>
-                </button>
-              )}
-
-              <button
-                type="button"
-                role="tab"
-                aria-selected={activeTab === "inspector"}
-                className={`nav-tab flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "inspector" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
-                onClick={() => setActiveTab("inspector")}
-              >
-                <NavIcon name="properties" />
-                <span className="text-sm font-medium">Properties</span>
-              </button>
-            </div>
+            <SidebarTabs
+              active={activeTab}
+              onSelect={setActiveTab}
+              tabs={[
+                {
+                  id: "details",
+                  label: "Details",
+                  icon: "details",
+                  tour: "problem-brief",
+                },
+                { id: "simulation", label: "Simulate", icon: "simulate" },
+                ...(isFreeDesignMode
+                  ? []
+                  : [
+                      {
+                        id: "assessment" as const,
+                        label: assessmentTabLabel,
+                        icon: "assessment" as const,
+                      },
+                      {
+                        id: "guide" as const,
+                        label: "Guide",
+                        icon: "guide" as const,
+                        tour: "guide",
+                      },
+                    ]),
+                { id: "inspector", label: "Properties", icon: "properties" },
+              ]}
+            />
 
             <div
               className="w-full h-px bg-[var(--muted)]/20 mb-4"

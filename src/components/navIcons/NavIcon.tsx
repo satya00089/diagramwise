@@ -83,8 +83,10 @@ const STORY = {
   },
 } satisfies Record<string, Story>;
 
+export type StoryIconName = keyof typeof STORY;
+
 export type NavIconProps = Readonly<
-  | { name: keyof typeof STORY; size?: number; icon?: never; motion?: never }
+  | { name: StoryIconName; size?: number; icon?: never; motion?: never }
   | { icon: IconType; motion?: Motion; size?: number; name?: never }
 >;
 
