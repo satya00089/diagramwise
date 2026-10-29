@@ -41,5 +41,5 @@ export function SimulationEdgeRuntimeOverlay({ id, source, target, path, x, y }:
   const pressureLabel = queueHasNoConsumer || affectedByQueue ? "No active consumer" : backlogPressure ? (sourceKind === "streambroker" ? "Consumer lag" : "Buffered backlog") : "Waiting downstream";
   return <SimulationEdgeOverlay id={id} path={path} rate={rate} state={state} running={status === "running"}
     tone={tone} failureLabel={state === "cut" ? "Connection cut" : failed ? "Downstream failures" : pressure ? pressureLabel : undefined}
-    labelX={x} labelY={y + 20} showLabel />;
+    labelX={x} labelY={y} showLabel />;
 }

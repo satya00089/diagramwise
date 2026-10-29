@@ -19,6 +19,7 @@ import {
   type EdgeLabelNode,
 } from "../utils/edgeLabelLayout";
 import { SimulationEdgeRuntimeOverlay } from "../simulation/RuntimeOverlays";
+import { edgeBadgePosition } from "../simulation/edgeBadgePosition";
 import { getFallbackHandlePositions, getMeasuredHandleAnchor } from "../utils/edgeHandlePositions";
 import { getEdgeLabelFont, getEdgeLabelFontRevision, measureEdgeLabelHeight, measureEdgeLabelText, subscribeToEdgeLabelFonts } from "../utils/edgeLabelTextWidth";
 
@@ -576,6 +577,9 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
     labelMaxWidth: edgeData?.labelMaxWidth,
     measureHeight: (text, width) => measureEdgeLabelHeight(text, width, labelFont),
   });
+  const simulationLabelPosition = labelVisible
+    ? edgeBadgePosition(labelLayout, flowNodes.map(node => nodeLookup.get(node.id) ?? node) as EdgeLabelNode[], occupiedLabels)
+    : { x: centerX, y: centerY + 20 };
 
   const onLabelDoubleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
@@ -732,8 +736,8 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
         source={source}
         target={target}
         path={edgePath}
-        x={centerX}
-        y={centerY}
+        x={simulationLabelPosition.x}
+        y={simulationLabelPosition.y}
       />
       {labelContent && (
         <EdgeLabelRenderer>
