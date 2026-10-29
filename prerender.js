@@ -693,8 +693,19 @@ function replaceMeta(html, attribute, name, content) {
   );
 }
 
+// Keep meta descriptions within the ~160 character snippet limit.
+function clampDescription(text = "", max = 160) {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max - 1);
+  const sentenceEnd = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("; "));
+  if (sentenceEnd > 80) return cut.slice(0, sentenceEnd + 1);
+  return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[\s,:;-]+$/, "")}…`;
+}
+
 function renderHtml(baseHtml, route, data) {
   const canonical = canonicalUrl(route);
+  const metaDescription = clampDescription(data.description);
   const robots = data.indexable
     ? "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
     : "noindex, follow";
@@ -705,16 +716,16 @@ function renderHtml(baseHtml, route, data) {
     `<title>${escapeHtml(data.title)}</title>`,
   );
   html = replaceMeta(html, "name", "title", data.title);
-  html = replaceMeta(html, "name", "description", data.description);
+  html = replaceMeta(html, "name", "description", metaDescription);
   html = replaceMeta(html, "name", "keywords", data.keywords);
   html = replaceMeta(html, "name", "robots", robots);
   html = replaceMeta(html, "property", "og:title", data.title);
-  html = replaceMeta(html, "property", "og:description", data.description);
+  html = replaceMeta(html, "property", "og:description", metaDescription);
   html = replaceMeta(html, "property", "og:image", data.image);
   html = replaceMeta(html, "property", "og:image:alt", data.imageAlt);
   html = replaceMeta(html, "property", "og:url", canonical);
   html = replaceMeta(html, "name", "twitter:title", data.title);
-  html = replaceMeta(html, "name", "twitter:description", data.description);
+  html = replaceMeta(html, "name", "twitter:description", metaDescription);
   html = replaceMeta(html, "name", "twitter:image", data.image);
   html = replaceMeta(html, "name", "twitter:image:alt", data.imageAlt);
   html = replaceMeta(html, "name", "twitter:url", canonical);
@@ -848,10 +859,14 @@ function problemSeoTitle(title) {
   const suffix = " | System Design Guide";
   const available = 60 - suffix.length;
   const candidate = title.trim().slice(0, available);
-  const shortened =
+  let shortened =
     candidate.length < title.trim().length
       ? candidate.slice(0, candidate.lastIndexOf(" "))
       : candidate;
+  // Never end on a dangling connector ("Design a Control Plane for a").
+  shortened = shortened
+    .replace(/(\s+(?:and|or|a|an|the|of|to|for|in|with|on|at|by|from|&))+$/i, "")
+    .replace(/[\s,:;-]+$/, "");
   return `${shortened}${suffix}`;
 }
 
@@ -1182,8 +1197,18 @@ fs.writeFileSync(
   "utf-8",
 );
 
+// Auth flows are app-only shells: keep them out of the index.
+const authShellRoute = {
+  ...adminShellRoute,
+  title: "Sign in | Diagramwise",
+  description: "Sign in to Diagramwise to save and review your designs.",
+};
 for (const route of ["/auth", "/auth/callback", "/verify-email"]) {
-  fs.copyFileSync(indexPath, outputPathFor(route));
+  fs.writeFileSync(
+    outputPathFor(route),
+    renderHtml(baseHtml, route, authShellRoute),
+    "utf-8",
+  );
 }
 
 writeSitemap();
