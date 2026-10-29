@@ -363,6 +363,13 @@
   font-weight: 500;
   cursor: pointer;
 }
+.sim-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
 .sim-button:hover:not(:disabled) {
   background: color-mix(
     in srgb,
