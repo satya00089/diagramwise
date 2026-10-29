@@ -429,7 +429,28 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.sim-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 0 8px -4px;
+  padding: 3px 8px 3px 4px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted, #929292);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.sim-back:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  color: var(--text, inherit);
+}
 .sim-button:focus-visible,
+.sim-back:focus-visible,
 .sim-text-button:focus-visible,
 .sim-input:focus-visible,
 .sim-toolbar__slider:focus-visible,
@@ -486,6 +507,60 @@
 .sim-muted {
   color: var(--text-muted, #929292);
   font-size: 12px;
+}
+.sim-history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.sim-history-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+}
+.sim-history-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sim-history-body small {
+  color: var(--text-muted, #929292);
+  font-size: 12px;
+}
+.sim-history-row .sim-actions {
+  margin-top: 4px;
+}
+.sim-deltas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.sim-delta {
+  font-size: 12px;
+  font-weight: 500;
+}
+.sim-delta--better {
+  color: var(--sim-healthy, #4ade80);
+}
+.sim-delta--worse {
+  color: var(--sim-danger, #f87171);
+}
+.sim-more {
+  margin-top: 10px;
+}
+.sim-more > summary {
+  color: var(--text-muted, #929292);
+  font-size: 13px;
+  cursor: pointer;
 }
 .sim-inspector .sim-field + .sim-muted {
   margin-top: 7px;

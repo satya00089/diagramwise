@@ -20,7 +20,8 @@ import {
   type EdgeLabelNode,
 } from "../utils/edgeLabelLayout";
 import { SimulationEdgeRuntimeOverlay } from "../simulation/RuntimeOverlays";
-import { edgeBadgePosition } from "../simulation/edgeBadgePosition";
+import { pointOnEdge } from "../simulation/pointOnEdge";
+import { placeBadgeNearLabel } from "../simulation/edgeBadgePlacement";
 import {
   getFallbackHandlePositions,
   getMeasuredHandleAnchor,
@@ -608,15 +609,23 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
     measureHeight: (text, width) =>
       measureEdgeLabelHeight(text, width, labelFont),
   });
-  const simulationLabelPosition = labelVisible
-    ? edgeBadgePosition(
-        labelLayout,
-        flowNodes.map(
-          (node) => nodeLookup.get(node.id) ?? node,
-        ) as EdgeLabelNode[],
-        occupiedLabels,
-      )
-    : { x: centerX, y: centerY + 20 };
+  // Rate badge: below the edge's own label, else beside it; with no label it
+  // sits on the edge path at the midpoint.
+  const pathMidpoint = useMemo(
+    () => pointOnEdge(edgePath, 0.5) ?? { x: centerX, y: centerY },
+    [edgePath, centerX, centerY],
+  );
+  const placeSimulationLabel = (width: number) =>
+    labelVisible
+      ? placeBadgeNearLabel(
+          labelLayout,
+          width,
+          flowNodes.map(
+            (node) => nodeLookup.get(node.id) ?? node,
+          ) as EdgeLabelNode[],
+          occupiedLabels,
+        )
+      : pathMidpoint;
 
   const onLabelDoubleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
@@ -772,8 +781,7 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
         source={source}
         target={target}
         path={edgePath}
-        x={simulationLabelPosition.x}
-        y={simulationLabelPosition.y}
+        placeLabel={placeSimulationLabel}
       />
       {labelContent && (
         <EdgeLabelRenderer>

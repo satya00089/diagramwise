@@ -45,8 +45,12 @@ function statusAfterSnapshot(
   if (current === "stale" || current === "paused") return current;
   return incoming;
 }
+// True while a saved run is being replayed. Replays must not be saved again.
+let replaying = false;
+
 function begin(topology: Topology, replay?: RecordedCommand[]) {
   terminate();
+  replaying = Boolean(replay);
   const state = useSimulationSession.getState();
   runId = crypto.randomUUID();
   lastSequence = 0;
@@ -210,6 +214,9 @@ export const simulationSession = {
     const state = useSimulationSession.getState();
     if (worker && (state.status === "running" || state.status === "paused"))
       send({ type: "command", runId, command });
+  },
+  isReplay(): boolean {
+    return replaying;
   },
   artifact(): EventRunArtifact | null {
     const s = useSimulationSession.getState();
