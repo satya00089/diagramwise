@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { NavIcon } from "./navIcons/NavIcon";
 import GuidedHelpPanel from "./GuidedHelpPanel";
 import type { ApplyStepPayload } from "./GuidedHelpPanel";
 import AssessmentFindings from "./AssessmentFindings";
@@ -20,7 +21,6 @@ import {
   MdCheckCircle,
   MdClose,
   MdContentCopy,
-  MdDescription,
   MdDownload,
   MdError,
   MdInfo,
@@ -28,8 +28,6 @@ import {
   MdLightbulbOutline,
   MdLink,
   MdLockOpen,
-  MdMenuBook,
-  MdPlayArrow,
   MdSettings,
   MdTrackChanges,
   MdWarning,
@@ -629,14 +627,11 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 type="button"
                 role="tab"
                 aria-selected={activeTab === "details"}
-                className={`flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "details" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
+                className={`nav-tab flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "details" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
                 data-tour="problem-brief"
                 onClick={() => setActiveTab("details")}
               >
-                <MdDescription
-                  className="h-4 w-4 shrink-0"
-                  aria-hidden="true"
-                />
+                <NavIcon name="details" />
                 <span className="text-sm font-medium">Details</span>
               </button>
 
@@ -644,10 +639,10 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 type="button"
                 role="tab"
                 aria-selected={activeTab === "simulation"}
-                className={`flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "simulation" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
+                className={`nav-tab flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "simulation" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
                 onClick={() => setActiveTab("simulation")}
               >
-                <MdPlayArrow className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <NavIcon name="simulate" />
                 <span className="text-sm font-medium">Simulate</span>
               </button>
 
@@ -656,13 +651,10 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   type="button"
                   role="tab"
                   aria-selected={activeTab === "assessment"}
-                  className={`flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "assessment" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
+                  className={`nav-tab flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "assessment" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
                   onClick={() => setActiveTab("assessment")}
                 >
-                  <MdAssessment
-                    className="h-4 w-4 shrink-0"
-                    aria-hidden="true"
-                  />
+                  <NavIcon name="assessment" />
                   <span className="text-sm font-medium">
                     {assessmentTabLabel}
                   </span>
@@ -674,11 +666,11 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                   type="button"
                   role="tab"
                   aria-selected={activeTab === "guide"}
-                  className={`flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "guide" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
+                  className={`nav-tab flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "guide" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
                   data-tour="guide"
                   onClick={() => setActiveTab("guide")}
                 >
-                  <MdMenuBook className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <NavIcon name="guide" />
                   <span className="text-sm font-medium">Guide</span>
                 </button>
               )}
@@ -687,10 +679,10 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
                 type="button"
                 role="tab"
                 aria-selected={activeTab === "inspector"}
-                className={`flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "inspector" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
+                className={`nav-tab flex items-center gap-2 rounded-t-md px-3 py-2 transition-colors ${activeTab === "inspector" ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
                 onClick={() => setActiveTab("inspector")}
               >
-                <MdSettings className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <NavIcon name="properties" />
                 <span className="text-sm font-medium">Properties</span>
               </button>
             </div>
