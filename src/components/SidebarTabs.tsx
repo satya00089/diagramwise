@@ -109,7 +109,7 @@ export function SidebarTabs<T extends string>({
               aria-label={tab.label}
               data-tooltip={showLabel ? undefined : tab.label}
               data-tour={tab.tour}
-              className={`nav-tab flex shrink-0 items-center rounded-t-md px-3 py-2 transition-colors ${isActive ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
+              className={`nav-trigger flex shrink-0 items-center rounded-t-md px-3 py-2 transition-colors ${isActive ? "bg-[var(--brand)]/10 text-[var(--brand)]" : "text-theme hover:bg-[var(--bg-hover)]"}`}
               onClick={() => onSelect(tab.id)}
             >
               <NavIcon name={tab.icon} />

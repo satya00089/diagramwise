@@ -37,9 +37,6 @@ import {
   MdAccessTime,
   MdClose,
   MdSave,
-  MdHelpOutline,
-  MdPublic,
-  MdExtension,
 } from "react-icons/md";
 
 // Routing
@@ -5805,12 +5802,12 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                   type="button"
                   onClick={() => setShowExtensionHub(true)}
                   disabled={extensionImportStatus !== null}
-                  className="p-2 text-white hover:bg-white/20 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                  className="nav-trigger p-2 text-white hover:bg-white/20 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                   data-tooltip="Extensions: import and export"
                   data-tour="export-btn"
                   aria-label="Open extensions"
                 >
-                  <MdExtension className="h-5 w-5" />
+                  <NavIcon name="extensions" size={20} />
                 </button>
 
                 {/* Share button - only show for Design Studio and authenticated users with owned diagrams */}
@@ -5872,11 +5869,11 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                     <button
                       type="button"
                       onClick={() => setShowShareToWorldModal(true)}
-                      className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${publicDesignButtonClass}`}
+                      className={`nav-trigger flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${publicDesignButtonClass}`}
                       aria-label={publicDesignAction}
                       data-tooltip={publicDesignAction}
                     >
-                      <MdPublic className="h-4 w-4" aria-hidden />
+                      <NavIcon name="publish" />
                       <span className="hidden lg:inline">
                         {publicDesignStatus}
                       </span>
@@ -5915,7 +5912,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                       simulationSession.start();
                       setActiveRightTab("simulation");
                     }}
-                    className="nav-tab flex items-center gap-1.5 rounded-md border border-white/25 px-3 py-1.5 text-sm font-semibold text-white/90 transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+                    className="nav-trigger flex items-center gap-1.5 rounded-md border border-white/25 px-3 py-1.5 text-sm font-semibold text-white/90 transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
                     aria-label="Start simulation"
                     data-tooltip="Start a live architecture simulation"
                   >
@@ -5928,10 +5925,10 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                   <button
                     type="button"
                     onClick={startTour}
-                    className="flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-white/80 hover:text-white hover:bg-white/20 rounded-md transition-colors cursor-pointer"
+                    className="nav-trigger flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-white/80 hover:text-white hover:bg-white/20 rounded-md transition-colors cursor-pointer"
                     data-tooltip="Take a tour"
                   >
-                    <MdHelpOutline className="h-4 w-4" />
+                    <NavIcon name="tour" />
                     <span className="hidden sm:inline text-xs">Tour</span>
                   </button>
                 )}

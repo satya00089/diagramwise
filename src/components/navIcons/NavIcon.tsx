@@ -4,7 +4,7 @@ import "./navIcons.css";
 
 /**
  * Tab icon with motion, driven by the parent's hover/focus/selected state.
- * The parent button needs the class `nav-tab`.
+ * The parent button needs the class `nav-trigger`.
  *
  *   <NavIcon icon={MdSettings} motion="spin" />   generic motion on a react-icon
  *   <NavIcon name="simulate" />                   hand-built story icon
@@ -21,7 +21,7 @@ type Story = Readonly<{ className?: string; shapes: ReactNode }>;
 const dx = (px: number) => ({ "--dx": `${px}px` }) as CSSProperties;
 
 const STORY = {
-  // Client -> two services; the connections run normal -> green -> red.
+  // Client -> two services; dots flow along the connections, nodes pulse.
   simulate: {
     className: "nx-slow",
     shapes: (
@@ -81,20 +81,95 @@ const STORY = {
       </>
     ),
   },
+  // State-driven: pass state="sun" | "moon". Sun shrinks away, moon draws in.
+  theme: {
+    shapes: (
+      <>
+        <circle className="nx-outline nx-sun" cx="12" cy="12" r="4" />
+        <path
+          className="nx-sun nx-rays"
+          d="M12 2.5 V5 M12 19 V21.5 M2.5 12 H5 M19 12 H21.5 M5.3 5.3 L7 7 M17 17 L18.7 18.7 M5.3 18.7 L7 17 M17 7 L18.7 5.3"
+        />
+        <path
+          className="nx-moon"
+          pathLength={1}
+          d="M20.5 13.2 A8.5 8.5 0 1 1 10.8 3.5 6.6 6.6 0 0 0 20.5 13.2 Z"
+        />
+      </>
+    ),
+  },
+  // Globe: the meridian turns like a spinning globe, a ring ripples outward.
+  publish: {
+    shapes: (
+      <>
+        <path d="M12 3 A9 9 0 1 1 12 21 A9 9 0 1 1 12 3 Z" />
+        <path d="M3 12 H21" />
+        <g className="nx-flip">
+          <path d="M12 3 C8.2 7.2 8.2 16.8 12 21 C15.8 16.8 15.8 7.2 12 3" />
+        </g>
+        <circle className="nx-outline nx-ring" cx="12" cy="12" r="9" />
+      </>
+    ),
+  },
+  // Two jigsaw pieces: the left one pulls back, pushes into the socket and
+  // clicks, with sparks at the join.
+  extensions: {
+    shapes: (
+      <>
+        <path
+          className="nx-plug"
+          d="M3 7 H11 V10.3 A2 2 0 1 1 11 13.7 V17 H3 Z"
+        />
+        <path d="M21 7 H13.2 V10.3 A2 2 0 1 1 13.2 13.7 V17 H21 Z" />
+        <path
+          className="nx-spark"
+          d="M12.1 3.6 V5.2 M9.8 4.4 L10.7 5.7 M14.4 4.4 L13.5 5.7"
+        />
+      </>
+    ),
+  },
+  // Question mark that writes itself, then the dot pops.
+  tour: {
+    shapes: (
+      <>
+        <path d="M12 3 A9 9 0 1 1 12 21 A9 9 0 1 1 12 3 Z" />
+        <path
+          className="nx-draw"
+          pathLength={1}
+          d="M9.4 9.6 A2.6 2.6 0 1 1 12 12.2 V13.6"
+        />
+        <circle className="nx-box nx-ping nx-d2" cx="12" cy="16.6" r="1.1" />
+      </>
+    ),
+  },
 } satisfies Record<string, Story>;
 
 export type StoryIconName = keyof typeof STORY;
 
 export type NavIconProps = Readonly<
-  | { name: StoryIconName; size?: number; icon?: never; motion?: never }
-  | { icon: IconType; motion?: Motion; size?: number; name?: never }
+  | {
+      name: StoryIconName;
+      size?: number;
+      /** Drives state-based icons such as theme ("sun" | "moon"). */
+      state?: string;
+      icon?: never;
+      motion?: never;
+    }
+  | { icon: IconType; motion?: Motion; size?: number; name?: never; state?: never }
 >;
 
-export function NavIcon({ name, icon: Icon, motion = "pop", size = 16 }: NavIconProps) {
+export function NavIcon({
+  name,
+  icon: Icon,
+  motion = "pop",
+  size = 16,
+  state,
+}: NavIconProps) {
   if (name) {
     const story: Story = STORY[name];
     return (
       <svg
+        data-state={state}
         className={`nx-glyph ${story.className ?? ""}`}
         width={size}
         height={size}

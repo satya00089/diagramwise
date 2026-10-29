@@ -1,6 +1,6 @@
 import React from "react";
-import { FiMoon, FiSun } from "react-icons/fi";
 import { useTheme } from "../hooks/useTheme";
+import { NavIcon } from "./navIcons/NavIcon";
 
 const ThemeSwitcher: React.FC = () => {
   const { theme, setTheme } = useTheme();
@@ -9,11 +9,16 @@ const ThemeSwitcher: React.FC = () => {
     <button
       type="button"
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      className="p-2 rounded-full bg-[var(--bg)] text-[var(--text)] cursor-pointer"
+      className="nav-trigger p-2 rounded-full bg-[var(--bg)] text-[var(--text)] cursor-pointer"
       aria-label={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
       data-tooltip={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
     >
-      {theme === "light" ? <FiMoon size={18} /> : <FiSun size={18} />}
+      {/* Shows the theme you would switch to, as before. */}
+      <NavIcon
+        name="theme"
+        size={18}
+        state={theme === "light" ? "moon" : "sun"}
+      />
     </button>
   );
 };
