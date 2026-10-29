@@ -6207,7 +6207,6 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
               <SimulationDetails
                 nodes={nodes}
                 edges={edges}
-                signedIn={isAuthenticated}
                 selectedNodeId={inspectedNodeId}
                 onClearSelection={() => setInspectedNodeId(null)}
                 onModelChange={updateSimulationModel}

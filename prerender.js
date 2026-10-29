@@ -3,6 +3,7 @@
  * The React application replaces this static snapshot after it loads.
  */
 
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -369,6 +370,145 @@ const routes = {
   },
 };
 
+// Answer-first copy and FAQs. `answer` is a 40-60 word direct answer shown
+// under the H1 (featured snippets, AI answers); `faqs` feed visible Q&A and
+// FAQPage structured data. Keep both factual and specific to the product.
+const routeAnswers = {
+  "/landing-3d": {
+    answerQuestion: "What is Diagramwise?",
+    answer:
+      "Diagramwise is a system design practice tool. You pick a realistic problem, build the architecture on a visual canvas, explain your assumptions and trade-offs, and receive structured feedback on scalability, reliability, and data design so you can improve the next iteration.",
+    faqs: [
+      {
+        q: "What is Diagramwise?",
+        a: "Diagramwise is a web-based system design practice environment. It combines an interactive architecture canvas with realistic problems, learning paths, and structured design review.",
+      },
+      {
+        q: "Who is Diagramwise for?",
+        a: "It is built for engineers preparing for system design interviews, developers learning distributed systems, and teams who want to document and review architecture decisions.",
+      },
+      {
+        q: "How does the architecture review work?",
+        a: "You build a diagram and write down your requirements, assumptions, and trade-offs. Diagramwise then reviews the design for scalability, reliability, data design, and trade-offs, and points out strengths, risks, and practical improvements.",
+      },
+      {
+        q: "Which cloud and diagram components are supported?",
+        a: "The canvas includes generic architecture components plus AWS, Azure, and GCP components, along with UML and entity-relationship diagram shapes.",
+      },
+      {
+        q: "Is Diagramwise free to use?",
+        a: "You can open the design studio and browse practice problems and learning paths without paying.",
+      },
+    ],
+  },
+  "/problems": {
+    answerQuestion: "What are Diagramwise practice problems?",
+    answer:
+      "Practice problems are realistic system design and AI/ML architecture challenges. Each one lists requirements and scale assumptions, then lets you build the architecture on an interactive canvas and get feedback on the decisions behind your design.",
+    faqs: [
+      {
+        q: "What kinds of system design problems are available?",
+        a: "Problems cover distributed systems, infrastructure such as caching, queues and search, product applications such as URL shorteners and ride sharing, and AI and ML systems including RAG, inference, and MLOps.",
+      },
+      {
+        q: "How should I choose a system design problem?",
+        a: "Pick one narrow prompt that isolates the skill you want to improve, such as caching or consistency, rather than jumping between unrelated problems.",
+      },
+      {
+        q: "What does each problem include?",
+        a: "Each problem has an interview prompt, functional and non-functional requirements, scale assumptions, key entities, a data flow, and deep dives on trade-offs.",
+      },
+    ],
+  },
+  "/system-design-interview": {
+    answerQuestion: "How do you prepare for a system design interview?",
+    answer:
+      "Prepare by practicing a repeatable method: clarify requirements, estimate traffic and storage, draw the simplest end-to-end flow, defend each trade-off, then test failure and scale. Practicing on concrete problems with a diagram builds the fluency interviewers look for.",
+    faqs: [
+      {
+        q: "What is a system design interview?",
+        a: "It is an interview where you design a large-scale system, such as a URL shortener or notification service, from an ambiguous prompt. Interviewers assess how you handle requirements, scale, trade-offs, and failure.",
+      },
+      {
+        q: "What steps should I follow in a system design interview?",
+        a: "Clarify the problem and non-goals, estimate scale, sketch the critical request path, deepen the riskiest components, and finish by walking through failure modes and consistency.",
+      },
+      {
+        q: "How long should I prepare for a system design interview?",
+        a: "It depends on your starting point, but steady practice on a handful of well-chosen problems, reviewed for weaknesses and repeated, beats reading many solutions passively.",
+      },
+      {
+        q: "Do I need to draw diagrams in the interview?",
+        a: "Yes. A clear diagram of components and data flow makes your reasoning easy to follow and gives the interviewer something concrete to probe.",
+      },
+    ],
+  },
+  "/system-design-practice": {
+    answerQuestion: "How do you practice system design online?",
+    answer:
+      "Choose one narrow prompt, time-box requirements and assumptions, build and annotate the architecture, review it for weaknesses, then repeat the dimension you missed. Diagramwise provides the canvas, realistic prompts, and structured review to run this practice loop.",
+    faqs: [
+      {
+        q: "How can I practice system design on my own?",
+        a: "Pick a problem, write requirements first, draw the architecture, explain why each component exists, and review the result before changing the diagram.",
+      },
+      {
+        q: "What is deliberate practice in system design?",
+        a: "It means isolating one skill, such as caching or database scaling, getting feedback on it, and repeating until the weakness disappears, instead of only solving new problems.",
+      },
+      {
+        q: "How do I know my design is good?",
+        a: "A good design meets the stated requirements, makes its trade-offs explicit, and survives walkthroughs of overload, partial failure, and recovery.",
+      },
+    ],
+  },
+  "/ai-system-design-interview": {
+    answerQuestion: "What is an AI system design interview?",
+    answer:
+      "An AI system design interview asks you to design a machine learning or LLM-powered product end to end. You separate offline data and training paths from online inference, budget latency, quality and cost, and plan evaluation, monitoring, and graceful degradation when a model fails.",
+    faqs: [
+      {
+        q: "How is AI system design different from classic system design?",
+        a: "You still design for scale and reliability, but you also reason about data quality, model evaluation, drift, inference latency and cost, and fallbacks when the model is wrong or unavailable.",
+      },
+      {
+        q: "What topics come up in AI and ML system design interviews?",
+        a: "Common topics are data pipelines, feature stores, retrieval and RAG, model serving, evaluation, monitoring, and cost control.",
+      },
+      {
+        q: "How should I structure an ML system design answer?",
+        a: "Define the product behavior and quality metric, show the offline and online paths, budget latency and cost, then cover evaluation, observability, and rollback.",
+      },
+    ],
+  },
+  "/kubernetes-architecture": {
+    answerQuestion: "What is Kubernetes architecture?",
+    answer:
+      "Kubernetes architecture splits a cluster into a control plane and worker nodes. The control plane, made of the API server, scheduler, controllers, and etcd, reconciles declared state, while nodes run Pods behind Services and Ingress with storage, configuration, and observability around them.",
+    faqs: [
+      {
+        q: "What are the main components of Kubernetes?",
+        a: "The control plane has the API server, scheduler, controller manager, and etcd. Each worker node runs a kubelet, a container runtime, and a network proxy, and hosts Pods.",
+      },
+      {
+        q: "What is the difference between a Deployment and a StatefulSet?",
+        a: "A Deployment manages interchangeable stateless Pods. A StatefulSet gives Pods stable identities and storage, which suits databases and other stateful workloads.",
+      },
+      {
+        q: "How does traffic reach a Pod in Kubernetes?",
+        a: "External traffic typically enters through an Ingress, is routed to a Service, and is load-balanced across the matching Pods, with network policies controlling what may connect.",
+      },
+      {
+        q: "How do I draw a Kubernetes architecture diagram?",
+        a: "Show the workload boundary, the traffic path from Ingress to Pods, the control plane, persistent storage, and the operational pieces such as scaling and observability.",
+      },
+    ],
+  },
+};
+for (const [route, extra] of Object.entries(routeAnswers)) {
+  Object.assign(routes[route], extra);
+}
+
 const legacyLandingRoute = routes["/"];
 routes["/"] = { ...routes["/landing-3d"], lastmod: "2026-09-10" };
 routes["/landing-3d"] = {
@@ -559,17 +699,42 @@ function renderStaticRoute(data) {
           <p>${escapeHtml(data.description)}</p>
           <div class="static-route-actions">${actions}</div>
         </section>
+        ${renderAnswer(data)}
         <section class="static-route-section" id="route-content">
           <h2>${escapeHtml(data.sectionTitle)}</h2>
           <ul class="static-route-list">${items}</ul>
         </section>
         ${renderGuideContent(data.guide)}
         ${renderRelatedProblems(data.relatedProblems)}
+        ${renderFaqs(data.faqs)}
       </main>
       <footer class="static-route-footer">
         Diagramwise — system design practice and architecture review.
       </footer>
     </div>`;
+}
+
+function renderAnswer(data) {
+  if (!data.answer) return "";
+
+  return `<section class="static-route-section static-route-answer" id="quick-answer">
+    <h2>${escapeHtml(data.answerQuestion)}</h2>
+    <p>${escapeHtml(data.answer)}</p>
+  </section>`;
+}
+
+function renderFaqs(faqs = []) {
+  if (!faqs.length) return "";
+
+  return `<section class="static-route-section static-route-faq" id="faq">
+    <h2>Frequently asked questions</h2>
+    ${faqs
+      .map(
+        (faq) =>
+          `<h3>${escapeHtml(faq.q)}</h3><p>${escapeHtml(faq.a)}</p>`,
+      )
+      .join("")}
+  </section>`;
 }
 
 function renderRelatedProblems(items = []) {
@@ -616,6 +781,8 @@ function breadcrumbsFor(route, title) {
   return crumbs;
 }
 
+const organizationRef = { "@id": `${siteUrl}/#organization` };
+
 function routeStructuredData(route, data) {
   const graph = [
     {
@@ -656,11 +823,7 @@ function routeStructuredData(route, data) {
       teaches: Array.isArray(data.problem?.tags) ? data.problem.tags : [],
       timeRequired: data.problem?.estimated_time,
       dateModified: data.lastmod,
-      provider: {
-        "@type": "Organization",
-        name: "Diagramwise",
-        url: `${siteUrl}/`,
-      },
+      provider: organizationRef,
     });
   } else if (data.kind === "article") {
     graph.push({
@@ -668,11 +831,32 @@ function routeStructuredData(route, data) {
       headline: data.heading,
       description: data.description,
       url: canonicalUrl(route),
-      publisher: {
-        "@type": "Organization",
-        name: "Diagramwise",
-        url: `${siteUrl}/`,
-      },
+      image: data.image,
+      inLanguage: "en",
+      datePublished: data.published || data.lastmod,
+      dateModified: data.lastmod,
+      mainEntityOfPage: canonicalUrl(route),
+      author: organizationRef,
+      publisher: organizationRef,
+    });
+  }
+
+  if (data.answer) {
+    graph[0].speakable = {
+      "@type": "SpeakableSpecification",
+      cssSelector: [".static-route-hero h1", ".static-route-answer p"],
+    };
+  }
+
+  if (data.faqs?.length) {
+    graph.push({
+      "@type": "FAQPage",
+      "@id": `${canonicalUrl(route)}#faq`,
+      mainEntity: data.faqs.map((faq) => ({
+        "@type": "Question",
+        name: faq.q,
+        acceptedAnswer: { "@type": "Answer", text: faq.a },
+      })),
     });
   }
 
@@ -693,8 +877,19 @@ function replaceMeta(html, attribute, name, content) {
   );
 }
 
+// Keep meta descriptions within the ~160 character snippet limit.
+function clampDescription(text = "", max = 160) {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max - 1);
+  const sentenceEnd = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("; "));
+  if (sentenceEnd > 80) return cut.slice(0, sentenceEnd + 1);
+  return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[\s,:;-]+$/, "")}…`;
+}
+
 function renderHtml(baseHtml, route, data) {
   const canonical = canonicalUrl(route);
+  const metaDescription = clampDescription(data.description);
   const robots = data.indexable
     ? "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
     : "noindex, follow";
@@ -705,16 +900,16 @@ function renderHtml(baseHtml, route, data) {
     `<title>${escapeHtml(data.title)}</title>`,
   );
   html = replaceMeta(html, "name", "title", data.title);
-  html = replaceMeta(html, "name", "description", data.description);
+  html = replaceMeta(html, "name", "description", metaDescription);
   html = replaceMeta(html, "name", "keywords", data.keywords);
   html = replaceMeta(html, "name", "robots", robots);
   html = replaceMeta(html, "property", "og:title", data.title);
-  html = replaceMeta(html, "property", "og:description", data.description);
+  html = replaceMeta(html, "property", "og:description", metaDescription);
   html = replaceMeta(html, "property", "og:image", data.image);
   html = replaceMeta(html, "property", "og:image:alt", data.imageAlt);
   html = replaceMeta(html, "property", "og:url", canonical);
   html = replaceMeta(html, "name", "twitter:title", data.title);
-  html = replaceMeta(html, "name", "twitter:description", data.description);
+  html = replaceMeta(html, "name", "twitter:description", metaDescription);
   html = replaceMeta(html, "name", "twitter:image", data.image);
   html = replaceMeta(html, "name", "twitter:image:alt", data.imageAlt);
   html = replaceMeta(html, "name", "twitter:url", canonical);
@@ -848,10 +1043,14 @@ function problemSeoTitle(title) {
   const suffix = " | System Design Guide";
   const available = 60 - suffix.length;
   const candidate = title.trim().slice(0, available);
-  const shortened =
+  let shortened =
     candidate.length < title.trim().length
       ? candidate.slice(0, candidate.lastIndexOf(" "))
       : candidate;
+  // Never end on a dangling connector ("Design a Control Plane for a").
+  shortened = shortened
+    .replace(/(\s+(?:and|or|a|an|the|of|to|for|in|with|on|at|by|from|&))+$/i, "")
+    .replace(/[\s,:;-]+$/, "");
   return `${shortened}${suffix}`;
 }
 
@@ -1160,6 +1359,41 @@ const liveProblems = await loadLiveProblems();
 const publicProblems = mergeProblemCatalogs(featuredProblems, liveProblems);
 addProblemRoutes(publicProblems, loadGuideCatalog());
 addRelatedProblemLinks(publicProblems);
+
+// Derive lastmod from the last commit that touched each route's source so the
+// sitemap reflects real changes. Falls back to the hard-coded date when git
+// history is unavailable (e.g. a shallow clone).
+const lastCommitDates = new Map();
+function lastCommitDate(file) {
+  if (!lastCommitDates.has(file)) {
+    let date = null;
+    try {
+      date =
+        execFileSync("git", ["log", "-1", "--format=%cs", "--", file], {
+          cwd: __dirname,
+          encoding: "utf-8",
+          stdio: ["ignore", "pipe", "ignore"],
+        }).trim() || null;
+    } catch {
+      // No git available: keep the static date.
+    }
+    lastCommitDates.set(file, date);
+  }
+  return lastCommitDates.get(file);
+}
+
+function sourceFileFor(route) {
+  if (route.startsWith("/problems/")) return "src/data/featuredProblems.json";
+  if (route.startsWith("/learning-paths/")) {
+    return "public/learning-paths/learning-paths.json";
+  }
+  return "prerender.js";
+}
+
+for (const [route, data] of Object.entries(routes)) {
+  data.lastmod = lastCommitDate(sourceFileFor(route)) || data.lastmod;
+}
+
 const baseHtml = fs.readFileSync(indexPath, "utf-8");
 
 for (const [route, data] of Object.entries(routes)) {
@@ -1182,8 +1416,18 @@ fs.writeFileSync(
   "utf-8",
 );
 
+// Auth flows are app-only shells: keep them out of the index.
+const authShellRoute = {
+  ...adminShellRoute,
+  title: "Sign in | Diagramwise",
+  description: "Sign in to Diagramwise to save and review your designs.",
+};
 for (const route of ["/auth", "/auth/callback", "/verify-email"]) {
-  fs.copyFileSync(indexPath, outputPathFor(route));
+  fs.writeFileSync(
+    outputPathFor(route),
+    renderHtml(baseHtml, route, authShellRoute),
+    "utf-8",
+  );
 }
 
 writeSitemap();

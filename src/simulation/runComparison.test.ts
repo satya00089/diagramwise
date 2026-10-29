@@ -2,11 +2,15 @@ import { describe, expect, it } from "vitest";
 import type { EventRunArtifact } from "./protocol";
 import { compareRuns, describeRunOutcome } from "./runComparison";
 
+let designCounter = 0;
 function run(
   result: Partial<NonNullable<EventRunArtifact["result"]>>,
   workload: Partial<EventRunArtifact["workload"]> = {},
 ): EventRunArtifact {
   return {
+    // Each call gets its own fingerprint unless a test pins one: by default
+    // two runs are different designs.
+    graphFingerprint: `design-${++designCounter}`,
     workload: { rps: 1000, pattern: "steady", seed: 1, ...workload },
     result: {
       timeMs: 30_000,
@@ -55,12 +59,25 @@ describe("compareRuns", () => {
   });
 
   it("does not compare runs under a different load", () => {
-    expect(
-      compareRuns(run({}, { rps: 5000 }), run({}, { rps: 1000 })),
-    ).toEqual({ comparable: false });
-    expect(
-      compareRuns(run({}, { pattern: "spike" }), run({})),
-    ).toEqual({ comparable: false });
+    expect(compareRuns(run({}, { rps: 5000 }), run({}, { rps: 1000 }))).toEqual(
+      { comparable: false, reason: "load" },
+    );
+    expect(compareRuns(run({}, { pattern: "spike" }), run({}))).toEqual({
+      comparable: false,
+      reason: "load",
+    });
+  });
+
+  it("does not compare two runs of the same design", () => {
+    const a = run({ goodputRps: 850 });
+    const b = {
+      ...run({ goodputRps: 1000 }),
+      graphFingerprint: a.graphFingerprint,
+    };
+    expect(compareRuns(b, a)).toEqual({
+      comparable: false,
+      reason: "same-design",
+    });
   });
 });
 

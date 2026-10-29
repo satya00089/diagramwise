@@ -218,6 +218,10 @@ export const simulationSession = {
   isReplay(): boolean {
     return replaying;
   },
+  /** Identifies the current run across pauses and resumes. */
+  currentRunId(): string {
+    return runId;
+  },
   artifact(): EventRunArtifact | null {
     const s = useSimulationSession.getState();
     if (!s.scope || !s.initialTopology || !s.initialWorkload || !s.snapshot)

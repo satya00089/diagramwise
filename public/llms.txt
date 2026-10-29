@@ -1,0 +1,16 @@
+# Diagramwise
+
+> Diagramwise is a system design practice tool. You build architectures on a visual canvas, explain your assumptions and trade-offs, and get structured feedback on scalability, reliability, and data design.
+
+## Key pages
+
+- [Practice problems](https://diagramwise.com/problems/): System design, infrastructure, AI/ML and MLOps architecture problems with requirements and scale assumptions.
+- [Learning paths](https://diagramwise.com/learning-paths/): Structured modules covering system design foundations such as caching, database scaling and replication.
+- [System design interview guide](https://diagramwise.com/system-design-interview/): A repeatable method for turning ambiguous prompts into requirements, estimates and architecture decisions.
+- [System design practice](https://diagramwise.com/system-design-practice/): How to practice system design effectively.
+- [AI system design interview](https://diagramwise.com/ai-system-design-interview/): AI and ML system design across data pipelines, retrieval, inference and evaluation.
+- [Kubernetes architecture](https://diagramwise.com/kubernetes-architecture/): Kubernetes architecture design practice.
+
+## Sitemap
+
+- [sitemap.xml](https://diagramwise.com/sitemap.xml): Full list of public pages.

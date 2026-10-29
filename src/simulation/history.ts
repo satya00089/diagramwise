@@ -293,13 +293,19 @@ export async function listLocalRuns(
   ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+/**
+ * Save a run. Pass `runId` to keep one row per run: saving again with the same
+ * id updates that row (a run that was paused, resumed and paused again) instead
+ * of adding a near-identical copy.
+ */
 export async function saveLocalRun(
   snapshot: EventRunArtifact,
+  runId?: string,
 ): Promise<SavedEventRun> {
   const validated = parseEventRun(snapshot);
   const db = await openDatabase();
   const row: SavedEventRun = {
-    runId: crypto.randomUUID(),
+    runId: runId || crypto.randomUUID(),
     createdAt: new Date().toISOString(),
     expiresAt: 0,
     snapshot: validated,
@@ -308,14 +314,24 @@ export async function saveLocalRun(
     await new Promise<void>((resolve, reject) => {
       const tx = db.transaction(STORE, "readwrite");
       const store = tx.objectStore(STORE);
-      const count = store.count();
       let full = false;
-      count.onsuccess = () => {
-        if (count.result >= 50) {
-          full = true;
-          tx.abort();
-        } else store.put(row);
+      const addIfRoom = () => {
+        const count = store.count();
+        count.onsuccess = () => {
+          if (count.result >= 50) {
+            full = true;
+            tx.abort();
+          } else store.put(row);
+        };
       };
+      // Updating an existing run never needs more room.
+      const existing = runId ? store.getKey(runId) : undefined;
+      if (existing) {
+        existing.onsuccess = () => {
+          if (existing.result === undefined) addIfRoom();
+          else store.put(row);
+        };
+      } else addIfRoom();
       tx.oncomplete = () => resolve();
       tx.onerror = tx.onabort = () =>
         reject(
@@ -333,54 +349,6 @@ export async function saveLocalRun(
 }
 export async function deleteLocalRun(id: string) {
   await transaction("readwrite", (store) => store.delete(id));
-}
-
-const API = (
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.VITE_ASSESSMENT_API_URL ||
-  ""
-).replace(/\/$/, "");
-async function cloudRequest(
-  path: string,
-  init: RequestInit = {},
-): Promise<unknown> {
-  if (!API)
-    throw new Error(
-      "Cloud history is not configured. Local history and simulation are available.",
-    );
-  const response = await fetch(`${API}/api/v2/simulation/runs${path}`, {
-    ...init,
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    signal: AbortSignal.timeout(10000),
-  });
-  if (!response.ok) {
-    const message = await response.json().catch(() => null);
-    throw new Error(
-      typeof message?.detail === "string"
-        ? message.detail
-        : "Cloud history is unavailable. Your local simulation is unaffected.",
-    );
-  }
-  return response.status === 204 ? undefined : response.json();
-}
-export async function saveCloudRun(
-  snapshot: EventRunArtifact,
-): Promise<SavedEventRun> {
-  return (await cloudRequest("", {
-    method: "POST",
-    body: JSON.stringify({ snapshot: parseEventRun(snapshot) }),
-  })) as SavedEventRun;
-}
-export async function listCloudRuns(
-  scope: SimulationScope,
-): Promise<SavedEventRun[]> {
-  return (await cloudRequest(
-    `?${new URLSearchParams({ designId: scope.designId, canvasId: scope.canvasId })}`,
-  )) as SavedEventRun[];
-}
-export async function deleteCloudRun(id: string) {
-  await cloudRequest(`/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 export function downloadRun(snapshot: EventRunArtifact) {
