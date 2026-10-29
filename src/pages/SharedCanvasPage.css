@@ -184,11 +184,24 @@
   pointer-events: none;
   content: "";
   background-image:
-    linear-gradient(color-mix(in srgb, var(--shared-canvas-grid) 48%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--shared-canvas-grid) 48%, transparent) 1px, transparent 1px);
+    linear-gradient(
+      color-mix(in srgb, var(--shared-canvas-grid) 48%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--shared-canvas-grid) 48%, transparent) 1px,
+      transparent 1px
+    );
   background-size: 36px 36px;
   opacity: 0.24;
-  mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 84%, transparent);
+  mask-image: linear-gradient(
+    to bottom,
+    transparent,
+    #000 16%,
+    #000 84%,
+    transparent
+  );
 }
 
 .shared-canvas-shell .react-flow {
@@ -361,7 +374,8 @@
 .shared-panel-body {
   background: var(--shared-surface);
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--shared-text) 28%, transparent) transparent;
+  scrollbar-color: color-mix(in srgb, var(--shared-text) 28%, transparent)
+    transparent;
   overscroll-behavior: contain;
 }
 

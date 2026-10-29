@@ -31,10 +31,10 @@
  *    comparing stored absolute expiry times against ctx.now, so an
  *    admission decision never depends on whether a tick happened to run.
  */
-import type { NodeStats, SimEdge } from './types';
-import type { BehaviourCtx, NodeStateLike, ReqLike } from './engine-types';
-import type { AdmitAction, ComponentBehaviour } from './behaviour';
-import { clamp01 } from './behaviour';
+import type { NodeStats, SimEdge } from "./types";
+import type { BehaviourCtx, NodeStateLike, ReqLike } from "./engine-types";
+import type { AdmitAction, ComponentBehaviour } from "./behaviour";
+import { clamp01 } from "./behaviour";
 
 /**
  * Partitions the broker will keep, capped at the inspector's own maximum.
@@ -190,31 +190,32 @@ function ensureBroker(state: NodeStateLike, ext: BrokerExt): BrokerExt {
     ext.partitions = partitions;
     ext.retention = retention;
     ext.rings = [];
-    for (let p = 0; p < partitions; p++) ext.rings.push(new Int32Array(retention));
+    for (let p = 0; p < partitions; p++)
+      ext.rings.push(new Int32Array(retention));
     ext.head = new Float64Array(partitions);
     ext.groups = [];
-    ext.groupSig = '\0stale'; // force group rebuild below
+    ext.groupSig = "\0stale"; // force group rebuild below
   }
   const retention = brokerRetention(state, partitions);
   if (retention !== ext.retention) {
     // Retention slider moved: resize the rings. Contents restart empty and
     // cursors snap to head, for the same repartition honesty as above.
     ext.retention = retention;
-    for (let p = 0; p < partitions; p++) ext.rings[p] = new Int32Array(retention);
+    for (let p = 0; p < partitions; p++)
+      ext.rings[p] = new Int32Array(retention);
     for (const g of ext.groups) {
       g.next.set(ext.head);
       g.inflight.fill(0);
     }
   }
 
-  let sig = '';
-  for (let i = 0; i < state.out.length; i++) sig += state.out[i].id + '\0';
+  let sig = "";
+  for (const edge of state.out) sig += edge.id + "\0";
   if (sig !== ext.groupSig) {
     const prev = new Map<string, BrokerGroup>();
     for (const g of ext.groups) prev.set(g.edgeId, g);
     const groups: BrokerGroup[] = [];
-    for (let i = 0; i < state.out.length; i++) {
-      const edge = state.out[i];
+    for (const edge of state.out) {
       const kept = prev.get(edge.id);
       if (kept && kept.next.length === partitions) {
         kept.targetId = edge.to;
@@ -267,7 +268,7 @@ function pumpGroup(
       if (g.next[p] < oldest) {
         const skipped = oldest - g.next[p];
         g.skipped += skipped;
-        ctx.countCustom(state, 'retentionDrop', skipped);
+        ctx.countCustom(state, "retentionDrop", skipped);
         g.next[p] = oldest;
       }
       if (g.next[p] >= ext.head[p]) continue;
@@ -293,7 +294,11 @@ function pumpGroup(
   g.pumping = false;
 }
 
-function pumpAllGroups(ctx: BehaviourCtx, state: NodeStateLike, ext: BrokerExt): void {
+function pumpAllGroups(
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  ext: BrokerExt,
+): void {
   for (let i = 0; i < ext.groups.length; i++) {
     const edge = state.out[i];
     if (!edge || edge.id !== ext.groups[i].edgeId) continue;
@@ -302,14 +307,14 @@ function pumpAllGroups(ctx: BehaviourCtx, state: NodeStateLike, ext: BrokerExt):
 }
 
 const streambroker: ComponentBehaviour = {
-  kind: 'streambroker',
+  kind: "streambroker",
   // A broker is a buffer with cursors, not a server: its ack slots mean
   // nothing, and its meaningful backlog is lag, published via decorateStats.
   servesRequests: false,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   // Deliveries join back through this node; crediting them would double-count
   // the broker's throughput, whose honest meaning is the PUBLISH rate booked
   // by the ack path.
@@ -319,7 +324,7 @@ const streambroker: ComponentBehaviour = {
   observesOutcome: true,
   // One unit per partition, like a shard: the per-partition backlog is where
   // a hot partition becomes visible.
-  instanceModel: 'custom',
+  instanceModel: "custom",
 
   initState(state: NodeStateLike): BrokerExt {
     const partitions = brokerPartitions(state);
@@ -332,25 +337,25 @@ const streambroker: ComponentBehaviour = {
       head: new Float64Array(partitions),
       retention,
       groups: [],
-      groupSig: '',
+      groupSig: "",
       report: [],
     };
   },
 
   // A publish is acked after the broker's own (tiny) serviceMs, no matter
   // what the consumers are doing. That decoupling IS the product.
-  onAdmit: () => 'passthru',
+  onAdmit: () => "passthru",
 
   onServiceComplete(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) {
     const ext = ensureBroker(state, brokerExt(state));
     const p = ((req.key % ext.partitions) + ext.partitions) % ext.partitions;
     ext.rings[p][ext.head[p] % ext.retention] = req.key;
     ext.head[p] += 1;
-    ctx.countCustom(state, 'published', 1);
+    ctx.countCustom(state, "published", 1);
     pumpAllGroups(ctx, state, ext);
     // The producer's call ends here; deliveries are detached and downstream
     // never sees the publish request itself.
-    return 'complete';
+    return "complete";
   },
 
   onDownstreamResult(
@@ -369,8 +374,8 @@ const streambroker: ComponentBehaviour = {
       if (g.targetId !== req.nodeId || g.inflight[p] === 0) continue;
       g.inflight[p] = 0;
       g.done += 1;
-      ctx.countCustom(state, 'delivered', 1);
-      if (!ok) ctx.countCustom(state, 'deliveryFailed', 1);
+      ctx.countCustom(state, "delivered", 1);
+      if (!ok) ctx.countCustom(state, "deliveryFailed", 1);
       const edge = state.out[i];
       if (edge && edge.id === g.edgeId) pumpGroup(ctx, state, ext, g, edge);
       return;
@@ -397,7 +402,11 @@ const streambroker: ComponentBehaviour = {
     ctx.reportInstances(state, out, 0);
   },
 
-  decorateStats(ctx: BehaviourCtx, state: NodeStateLike, stats: NodeStats): void {
+  decorateStats(
+    ctx: BehaviourCtx,
+    state: NodeStateLike,
+    stats: NodeStats,
+  ): void {
     const ext = ensureBroker(state, brokerExt(state));
     let maxLag = 0;
     let inflight = 0;
@@ -410,8 +419,8 @@ const streambroker: ComponentBehaviour = {
     }
     stats.consumerLag = maxLag;
     stats.consumerLagByGroup = byGroup;
-    stats.deliveryRate = ctx.counterRate(state, 'delivered');
-    stats.retentionDropRate = ctx.counterRate(state, 'retentionDrop');
+    stats.deliveryRate = ctx.counterRate(state, "delivered");
+    stats.retentionDropRate = ctx.counterRate(state, "retentionDrop");
     // The generic meters, told the truth for this kind: the backlog is the
     // worst group's lag (drawn against queueLimit, which is retention), and
     // what is "in flight" is deliveries out at consumers.
@@ -439,28 +448,32 @@ const streambroker: ComponentBehaviour = {
  * honest difference between a topic and a log.
  */
 const pubsub: ComponentBehaviour = {
-  kind: 'pubsub',
+  kind: "pubsub",
   servesRequests: false,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: false,
 
-  onAdmit: () => 'passthru',
+  onAdmit: () => "passthru",
 
   onServiceComplete(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) {
-    for (let i = 0; i < state.out.length; i++) {
-      if (ctx.emitDetached(state, state.out[i], req.key)) {
-        ctx.countCustom(state, 'delivered', 1);
+    for (const edge of state.out) {
+      if (ctx.emitDetached(state, edge, req.key)) {
+        ctx.countCustom(state, "delivered", 1);
       }
     }
-    return 'complete';
+    return "complete";
   },
 
-  decorateStats(ctx: BehaviourCtx, state: NodeStateLike, stats: NodeStats): void {
+  decorateStats(
+    ctx: BehaviourCtx,
+    state: NodeStateLike,
+    stats: NodeStats,
+  ): void {
     stats.fanout = state.out.length;
-    const delivered = ctx.counterRate(state, 'delivered');
+    const delivered = ctx.counterRate(state, "delivered");
     stats.deliveryRate = delivered;
     stats.publishAmplification = delivered;
   },
@@ -523,19 +536,19 @@ function wsOpenProjected(ext: WsExt, now: number): number {
 }
 
 const websocket: ComponentBehaviour = {
-  kind: 'websocket',
+  kind: "websocket",
   servesRequests: true,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
   // Slot bookkeeping is connection-based and lives in `ext`; the engine's
   // busy/waiting pair never sees it, so there is nothing for it to pump.
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
   // One unit per instance; the waterline is connection occupancy, fed to the
   // engine through reportOccupancy below.
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
 
   initState(): WsExt {
     return { expiry: [], head: 0 };
@@ -547,21 +560,21 @@ const websocket: ComponentBehaviour = {
 
     const cap = ctx.effectiveCapacity(state);
     if (wsOpen(ext) >= cap) {
-      ctx.countCustom(state, 'connRefused', 1);
-      ctx.reject(state, req, 'conn-refused');
-      return 'handled';
+      ctx.countCustom(state, "connRefused", 1);
+      ctx.reject(state, req, "conn-refused");
+      return "handled";
     }
 
     const holdMs = Math.max(0, state.config.connectionMs ?? 30000);
     ext.expiry.push(ctx.now + holdMs);
-    ctx.countCustom(state, 'connected', 1);
+    ctx.countCustom(state, "connected", 1);
 
     // The HANDSHAKE is served now (serviceMs), and the request continues
     // downstream (session setup, auth) like any other call; the connection
     // slot stays held long after the handshake resolved, which is the whole
     // resource model. Nothing to do on drain: release is time-based.
     ctx.serveWithin(state, req, wsNoopDrain);
-    return 'handled';
+    return "handled";
   },
 
   onTick(ctx: BehaviourCtx, state: NodeStateLike): void {
@@ -570,13 +583,17 @@ const websocket: ComponentBehaviour = {
     ctx.reportOccupancy(state, wsOpen(ext), ctx.effectiveCapacity(state));
   },
 
-  decorateStats(ctx: BehaviourCtx, state: NodeStateLike, stats: NodeStats): void {
+  decorateStats(
+    ctx: BehaviourCtx,
+    state: NodeStateLike,
+    stats: NodeStats,
+  ): void {
     const ext = wsExt(state);
     const open = wsOpenProjected(ext, ctx.now);
     stats.connectionsOpen = open;
     stats.maxConnections = ctx.effectiveCapacity(state);
-    stats.connectRate = ctx.counterRate(state, 'connected');
-    stats.connectionRejectRate = ctx.counterRate(state, 'connRefused');
+    stats.connectRate = ctx.counterRate(state, "connected");
+    stats.connectionRejectRate = ctx.counterRate(state, "connRefused");
     // The generic in-flight meter means "connections held" here; the
     // handshake count is a detail nobody sizes a gateway by.
     stats.inFlight = open;
@@ -623,7 +640,11 @@ function gwBurst(state: NodeStateLike): number {
 }
 
 /** Continuous refill against elapsed simulated time; same math as ratelimiter. */
-function gwRefill(ctx: BehaviourCtx, state: NodeStateLike, b: GatewayBucket): void {
+function gwRefill(
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  b: GatewayBucket,
+): void {
   const burst = gwBurst(state);
   if (burst !== b.lastBurst) {
     if (b.tokens > burst) b.tokens = burst;
@@ -656,15 +677,15 @@ function gwProjectedTokens(
 }
 
 const apigateway: ComponentBehaviour = {
-  kind: 'apigateway',
+  kind: "apigateway",
   servesRequests: true,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'own',
+  pump: "own",
   creditsJoinCompletion: true,
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
 
   initState: (state): GatewayBucket => ({
     tokens: gwBurst(state),
@@ -678,34 +699,38 @@ const apigateway: ComponentBehaviour = {
 
     if (gwRate(state) > 0) {
       if (b.tokens < 1) {
-        ctx.countCustom(state, 'throttled', 1);
-        ctx.reject(state, req, 'throttled');
-        return 'handled';
+        ctx.countCustom(state, "throttled", 1);
+        ctx.reject(state, req, "throttled");
+        return "handled";
       }
       b.tokens -= 1;
     }
 
     const authFail = clamp01(state.config.authFailRate ?? 0);
     if (authFail > 0 && ctx.roll() < authFail) {
-      ctx.countCustom(state, 'authRejected', 1);
-      ctx.reject(state, req, 'unauthorized');
-      return 'handled';
+      ctx.countCustom(state, "authRejected", 1);
+      ctx.reject(state, req, "unauthorized");
+      return "handled";
     }
 
-    ctx.countCustom(state, 'admitted', 1);
+    ctx.countCustom(state, "admitted", 1);
     // Real slots and a real queue: auth and routing cost serviceMs each.
-    return 'serve';
+    return "serve";
   },
 
   // The route table: exactly one backend per request, chosen by edge weight.
-  route: () => 'one',
+  route: () => "one",
   pickEdge: (ctx, _state, _req, out) => ctx.pickWeightedOrLeastLoaded(out),
 
-  decorateStats(ctx: BehaviourCtx, state: NodeStateLike, stats: NodeStats): void {
+  decorateStats(
+    ctx: BehaviourCtx,
+    state: NodeStateLike,
+    stats: NodeStats,
+  ): void {
     const b = state.ext as GatewayBucket | null;
-    stats.admittedRate = ctx.counterRate(state, 'admitted');
-    stats.throttledRate = ctx.counterRate(state, 'throttled');
-    stats.authRejectRate = ctx.counterRate(state, 'authRejected');
+    stats.admittedRate = ctx.counterRate(state, "admitted");
+    stats.throttledRate = ctx.counterRate(state, "throttled");
+    stats.authRejectRate = ctx.counterRate(state, "authRejected");
     stats.tokens = b ? gwProjectedTokens(ctx, state, b) : 0;
   },
 };
@@ -736,7 +761,7 @@ const apigateway: ComponentBehaviour = {
  * comparison is the lesson.
  */
 interface SidecarExt {
-  phase: 'closed' | 'open' | 'half-open';
+  phase: "closed" | "open" | "half-open";
   /** Simulated time the proxy last ejected its upstream. */
   openedAtMs: number;
   /** Consecutive downstream failures observed while closed. */
@@ -761,19 +786,19 @@ function sidecarOpenMs(state: NodeStateLike): number {
 }
 
 const sidecar: ComponentBehaviour = {
-  kind: 'sidecar',
+  kind: "sidecar",
   servesRequests: true,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'own',
+  pump: "own",
   creditsJoinCompletion: true,
   observesOutcome: true,
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
 
   initState: (): SidecarExt => ({
-    phase: 'closed',
+    phase: "closed",
     openedAtMs: 0,
     consecutive: 0,
     probing: false,
@@ -785,20 +810,23 @@ const sidecar: ComponentBehaviour = {
 
     // Lazy transition on simulated time, exactly like the breaker: the
     // ejection has served its openMs, so the next request may probe.
-    if (st.phase === 'open' && ctx.now - st.openedAtMs >= sidecarOpenMs(state)) {
-      st.phase = 'half-open';
+    if (
+      st.phase === "open" &&
+      ctx.now - st.openedAtMs >= sidecarOpenMs(state)
+    ) {
+      st.phase = "half-open";
       st.probing = false;
     }
 
-    if (st.phase === 'open' || (st.phase === 'half-open' && st.probing)) {
-      ctx.countCustom(state, 'rejected', 1);
-      ctx.reject(state, req, 'rejected');
-      return 'handled';
+    if (st.phase === "open" || (st.phase === "half-open" && st.probing)) {
+      ctx.countCustom(state, "rejected", 1);
+      ctx.reject(state, req, "rejected");
+      return "handled";
     }
 
-    if (st.phase === 'half-open') st.probing = true;
+    if (st.phase === "half-open") st.probing = true;
     // The latency tax: real slots, real serviceMs, on every request.
-    return 'serve';
+    return "serve";
   },
 
   onDownstreamResult(
@@ -808,21 +836,21 @@ const sidecar: ComponentBehaviour = {
     ok: boolean,
   ) {
     const st = sidecarExt(state);
-    if (!ok) ctx.countCustom(state, 'upstreamFail', 1);
+    if (!ok) ctx.countCustom(state, "upstreamFail", 1);
 
-    if (st.phase === 'half-open') {
+    if (st.phase === "half-open") {
       st.probing = false;
       if (ok) {
-        st.phase = 'closed';
+        st.phase = "closed";
         st.consecutive = 0;
       } else {
-        st.phase = 'open';
+        st.phase = "open";
         st.openedAtMs = ctx.now;
         st.trips += 1;
       }
       return;
     }
-    if (st.phase !== 'closed') return;
+    if (st.phase !== "closed") return;
 
     if (ok) {
       st.consecutive = 0;
@@ -830,7 +858,7 @@ const sidecar: ComponentBehaviour = {
     }
     st.consecutive += 1;
     if (st.consecutive >= sidecarOutlierAfter(state)) {
-      st.phase = 'open';
+      st.phase = "open";
       st.openedAtMs = ctx.now;
       st.consecutive = 0;
       st.trips += 1;
@@ -840,22 +868,27 @@ const sidecar: ComponentBehaviour = {
   edgeStateFor(ctx, state, _edge, _index) {
     const st = state.ext as SidecarExt | null;
     if (!st) return null;
-    const open = st.phase === 'open' && ctx.now - st.openedAtMs < sidecarOpenMs(state);
-    return open ? 'blocked' : null;
+    const open =
+      st.phase === "open" && ctx.now - st.openedAtMs < sidecarOpenMs(state);
+    return open ? "blocked" : null;
   },
 
-  decorateStats(ctx: BehaviourCtx, state: NodeStateLike, stats: NodeStats): void {
+  decorateStats(
+    ctx: BehaviourCtx,
+    state: NodeStateLike,
+    stats: NodeStats,
+  ): void {
     const st = state.ext as SidecarExt | null;
     if (!st) return;
     const phase =
-      st.phase === 'open' && ctx.now - st.openedAtMs >= sidecarOpenMs(state)
-        ? 'half-open'
+      st.phase === "open" && ctx.now - st.openedAtMs >= sidecarOpenMs(state)
+        ? "half-open"
         : st.phase;
     stats.breakerState = phase;
     stats.breakerTrips = st.trips;
     stats.consecutiveFails = st.consecutive;
-    stats.rejectedRate = ctx.counterRate(state, 'rejected');
-    stats.upstreamFailRate = ctx.counterRate(state, 'upstreamFail');
+    stats.rejectedRate = ctx.counterRate(state, "rejected");
+    stats.upstreamFailRate = ctx.counterRate(state, "upstreamFail");
   },
 };
 
@@ -914,16 +947,16 @@ function lambdaWarmProjected(ext: LambdaExt, now: number): number {
 }
 
 const lambda: ComponentBehaviour = {
-  kind: 'lambda',
+  kind: "lambda",
   servesRequests: true,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
   // One unit per live instance, busy or warm; the stack GROWS WITH LOAD,
   // which is the one picture that says "serverless" truthfully.
-  instanceModel: 'custom',
+  instanceModel: "custom",
 
   initState: (): LambdaExt => ({ warmExpiry: [], head: 0, busy: 0 }),
 
@@ -932,9 +965,9 @@ const lambda: ComponentBehaviour = {
     lambdaReap(ext, ctx.now);
 
     if (ext.busy >= lambdaLimit(state)) {
-      ctx.countCustom(state, 'throttled', 1);
-      ctx.reject(state, req, 'throttled');
-      return 'handled';
+      ctx.countCustom(state, "throttled", 1);
+      ctx.reject(state, req, "throttled");
+      return "handled";
     }
 
     const warm = ext.warmExpiry.length - ext.head;
@@ -942,15 +975,15 @@ const lambda: ComponentBehaviour = {
       // Reuse the most recently freed instance (LIFO), leaving the oldest to
       // expire; this is why keep-warm does not accumulate a large fleet.
       ext.warmExpiry.pop();
-      ctx.countCustom(state, 'warmStart', 1);
+      ctx.countCustom(state, "warmStart", 1);
     } else {
-      ctx.countCustom(state, 'coldStart', 1);
+      ctx.countCustom(state, "coldStart", 1);
       ctx.addServiceDelay(req, Math.max(0, state.config.coldStartMs ?? 350));
     }
 
     ext.busy += 1;
     ctx.serveWithin(state, req, onLambdaDrained);
-    return 'handled';
+    return "handled";
   },
 
   onTick(ctx: BehaviourCtx, state: NodeStateLike): void {
@@ -970,10 +1003,14 @@ const lambda: ComponentBehaviour = {
     ctx.reportInstances(state, out, 0);
   },
 
-  decorateStats(ctx: BehaviourCtx, state: NodeStateLike, stats: NodeStats): void {
+  decorateStats(
+    ctx: BehaviourCtx,
+    state: NodeStateLike,
+    stats: NodeStats,
+  ): void {
     const ext = lambdaExt(state);
-    const cold = ctx.counterRate(state, 'coldStart');
-    const warmStarts = ctx.counterRate(state, 'warmStart');
+    const cold = ctx.counterRate(state, "coldStart");
+    const warmStarts = ctx.counterRate(state, "warmStart");
     const started = cold + warmStarts;
     stats.coldStartRate = started > 0 ? cold / started : 0;
     stats.coldStartsPerSec = cold;
@@ -982,14 +1019,18 @@ const lambda: ComponentBehaviour = {
     stats.inFlight = ext.busy;
     // The 'throttled' counter was already being booked at admission; publish
     // it so the UI can show refusals instead of inferring them from errors.
-    stats.throttledRate = ctx.counterRate(state, 'throttled');
+    stats.throttledRate = ctx.counterRate(state, "throttled");
   },
 };
 
 /** Scratch for the lambda's instance vector; ctx.reportInstances copies it. */
 const lambdaReport: number[] = [];
 
-function onLambdaDrained(ctx: BehaviourCtx, state: NodeStateLike, _req: ReqLike): void {
+function onLambdaDrained(
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  _req: ReqLike,
+): void {
   const ext = lambdaExt(state);
   if (ext.busy > 0) ext.busy -= 1;
   // The freed instance stays warm for keepWarmMs from THIS moment.
@@ -1046,20 +1087,20 @@ function cronBatch(state: NodeStateLike): number {
 }
 
 const cron: ComponentBehaviour = {
-  kind: 'cron',
+  kind: "cron",
   servesRequests: false,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: false,
 
   initState: (): CronExt => ({ nextFireMs: -1, emitted: 0, keySeq: 0 }),
 
   // Traffic INTO a cron is a wiring mistake, same as into an autoscaler.
   onAdmit: (ctx, state, req) => {
-    ctx.reject(state, req, 'no-route');
-    return 'handled';
+    ctx.reject(state, req, "no-route");
+    return "handled";
   },
 
   onTick(ctx: BehaviourCtx, state: NodeStateLike): void {
@@ -1074,23 +1115,28 @@ const cron: ComponentBehaviour = {
     if (ctx.now < st.nextFireMs) return;
 
     const batch = cronBatch(state);
-    for (let i = 0; i < state.out.length; i++) {
-      const edge = state.out[i];
+    for (const edge of state.out) {
       for (let n = 0; n < batch; n++) {
         if (!ctx.emitDetached(state, edge, st.keySeq)) break;
         st.keySeq = (st.keySeq + 1) % 64;
         st.emitted += 1;
       }
     }
-    ctx.countCustom(state, 'fired', 1);
+    ctx.countCustom(state, "fired", 1);
     st.nextFireMs = ctx.now + interval;
   },
 
-  decorateStats(ctx: BehaviourCtx, state: NodeStateLike, stats: NodeStats): void {
+  decorateStats(
+    ctx: BehaviourCtx,
+    state: NodeStateLike,
+    stats: NodeStats,
+  ): void {
     const st = state.ext as CronExt | null;
     if (!st) return;
     stats.nextFireInMs =
-      st.nextFireMs < 0 ? cronInterval(state) : Math.max(0, st.nextFireMs - ctx.now);
+      st.nextFireMs < 0
+        ? cronInterval(state)
+        : Math.max(0, st.nextFireMs - ctx.now);
     stats.batchEmitted = st.emitted;
     // What the next firing will dump downstream, all edges together. A pure
     // read of config and wiring, so the readout can say "burst 150" before

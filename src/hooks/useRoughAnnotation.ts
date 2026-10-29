@@ -63,12 +63,9 @@ export const useRoughAnnotation = (
     };
 
     if (idleWindow.requestIdleCallback) {
-      idleId = idleWindow.requestIdleCallback(
-        () => void renderAnnotations(),
-        {
+      idleId = idleWindow.requestIdleCallback(() => void renderAnnotations(), {
         timeout: 4000,
-        },
-      );
+      });
     } else {
       frameId = window.requestAnimationFrame(() => void renderAnnotations());
     }

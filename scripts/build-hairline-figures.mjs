@@ -15,7 +15,7 @@ const toolkitNames = new Set([
 ]);
 // Keep the feature artwork centered in its 5:4 frame; tool cards use a shallow crop.
 const productionViewBoxes = {
-  "switchback": "0 25 400 320",
+  switchback: "0 25 400 320",
   "inspection-stack": "0 40 400 320",
   "component-rack": "0 65 400 230",
   "annotation-bridge": "0 65 400 230",

@@ -780,28 +780,28 @@ function fallbackProblemSlug(title = "") {
 }
 
 function loadGuideAliases(source, relativePath, imports, aliases, guides) {
-    const objectStart = source.indexOf(
-      relativePath.includes("materialized")
-        ? "materializedProblemGuides ="
-        : "PROBLEM_GUIDES:",
+  const objectStart = source.indexOf(
+    relativePath.includes("materialized")
+      ? "materializedProblemGuides ="
+      : "PROBLEM_GUIDES:",
+  );
+  const objectSource = objectStart >= 0 ? source.slice(objectStart) : source;
+  for (const match of objectSource.matchAll(/"([^"]+)"\s*:\s*(\w+)/g)) {
+    const importedName = aliases.get(match[2]) || match[2];
+    const fileName = imports.get(importedName);
+    if (!fileName) continue;
+    const guidePath = path.join(
+      __dirname,
+      "src",
+      "data",
+      "public",
+      "problemGuides",
+      fileName,
     );
-    const objectSource = objectStart >= 0 ? source.slice(objectStart) : source;
-    for (const match of objectSource.matchAll(/"([^"]+)"\s*:\s*(\w+)/g)) {
-      const importedName = aliases.get(match[2]) || match[2];
-      const fileName = imports.get(importedName);
-      if (!fileName) continue;
-      const guidePath = path.join(
-        __dirname,
-        "src",
-        "data",
-        "public",
-        "problemGuides",
-        fileName,
-      );
-      if (fs.existsSync(guidePath)) {
-        guides.set(match[1], JSON.parse(fs.readFileSync(guidePath, "utf-8")));
-      }
+    if (fs.existsSync(guidePath)) {
+      guides.set(match[1], JSON.parse(fs.readFileSync(guidePath, "utf-8")));
     }
+  }
 }
 
 function loadGuideCatalog() {

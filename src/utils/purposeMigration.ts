@@ -41,7 +41,10 @@ export const normalizeNodeDataPurpose = (
   if (!hasGenericPurpose) return data;
 
   const normalized = { ...data };
-  if (normalized.purpose === undefined && normalized.description !== undefined) {
+  if (
+    normalized.purpose === undefined &&
+    normalized.description !== undefined
+  ) {
     normalized.purpose = normalized.description;
   }
   delete normalized.description;
@@ -53,10 +56,12 @@ export const normalizeEdgeDataPurpose = (
   data: Record<string, unknown>,
 ): Record<string, unknown> => {
   const normalized = { ...data };
-  if (normalized.purpose === undefined && normalized.description !== undefined) {
+  if (
+    normalized.purpose === undefined &&
+    normalized.description !== undefined
+  ) {
     normalized.purpose = normalized.description;
   }
   delete normalized.description;
   return normalized;
 };
-

@@ -6,7 +6,9 @@ import { Controls } from "@xyflow/react";
  * those labels to the app tooltip system so canvas controls match the rest of
  * the product without losing their accessible names.
  */
-const StyledFlowControls: React.FC<React.ComponentProps<typeof Controls>> = (props) => {
+const StyledFlowControls: React.FC<React.ComponentProps<typeof Controls>> = (
+  props,
+) => {
   const controlsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

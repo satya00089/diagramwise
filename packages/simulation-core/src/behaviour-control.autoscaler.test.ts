@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { Engine } from './engine';
-import { makeNode } from './presets';
-import type { NodeStats, Topology } from './types';
+import { describe, expect, it } from "vitest";
+import { Engine } from "./engine";
+import { makeNode } from "./presets";
+import type { NodeStats, Topology } from "./types";
 
 /*
  * None of the autoscaler's knobs is among the nine config numbers
@@ -15,22 +15,22 @@ import type { NodeStats, Topology } from './types';
  */
 
 function topology(patch: Record<string, unknown>): Topology {
-  const client = { ...makeNode('client', 0, 0), id: 'client' };
+  const client = { ...makeNode("client", 0, 0), id: "client" };
   client.config = { ...client.config, rps: 400 };
-  const svc = { ...makeNode('service', 200, 0), id: 'svc' };
+  const svc = { ...makeNode("service", 200, 0), id: "svc" };
   svc.config = {
     ...svc.config,
     capacity: 2,
     serviceMs: 40,
     instances: 1,
   } as typeof svc.config;
-  const auto = { ...makeNode('autoscaler', 200, 160), id: 'auto' };
+  const auto = { ...makeNode("autoscaler", 200, 160), id: "auto" };
   auto.config = { ...auto.config, ...patch } as typeof auto.config;
   return {
     nodes: [client, svc, auto],
     edges: [
-      { id: 'e1', from: 'client', to: 'svc', weight: 1 },
-      { id: 'e2', from: 'auto', to: 'svc', weight: 1, control: true },
+      { id: "e1", from: "client", to: "svc", weight: 1 },
+      { id: "e2", from: "auto", to: "svc", weight: 1, control: true },
     ],
   };
 }
@@ -42,24 +42,24 @@ function run(patch: Record<string, unknown>) {
   for (let i = 0; i < 1800; i += 1) engine.advance(1000 / 60);
   const snapshot = engine.snapshot();
   return {
-    auto: snapshot.nodes['auto'] as NodeStats,
-    svc: snapshot.nodes['svc'] as NodeStats,
+    auto: snapshot.nodes["auto"] as NodeStats,
+    svc: snapshot.nodes["svc"] as NodeStats,
   };
 }
 
 const KNOBS = [
-  'targetUtil',
-  'minCapacity',
-  'maxCapacity',
-  'scaleStepPct',
-  'cooldownMs',
-  'warmupMs',
+  "targetUtil",
+  "minCapacity",
+  "maxCapacity",
+  "scaleStepPct",
+  "cooldownMs",
+  "warmupMs",
 ] as const;
 
-describe('an autoscaler given a knob that is not a number', () => {
+describe("an autoscaler given a knob that is not a number", () => {
   const baseline = run({});
 
-  it('scales the fleet in the baseline design', () => {
+  it("scales the fleet in the baseline design", () => {
     // Anchors the rest: this load genuinely needs more than one instance.
     expect(baseline.svc.instances).toBeGreaterThan(5);
     expect(baseline.svc.totalCompleted).toBeGreaterThan(5000);
@@ -79,7 +79,7 @@ describe('an autoscaler given a knob that is not a number', () => {
   // Where the module's documented fallback is also what the node carries,
   // a NaN is indistinguishable from the value it replaced -- which is the
   // sharpest available statement that the guard changed nothing real.
-  for (const key of ['targetUtil', 'minCapacity', 'scaleStepPct'] as const) {
+  for (const key of ["targetUtil", "minCapacity", "scaleStepPct"] as const) {
     it(`is identical to the baseline when ${key} is NaN`, () => {
       const { svc } = run({ [key]: Number.NaN });
       expect(svc.instances).toBe(baseline.svc.instances);
@@ -87,17 +87,17 @@ describe('an autoscaler given a knob that is not a number', () => {
     });
   }
 
-  it('publishes a setpoint that is a number', () => {
+  it("publishes a setpoint that is a number", () => {
     const { auto } = run({ targetUtil: Number.NaN });
     expect(Number.isNaN(auto.setpoint as number)).toBe(false);
   });
 
-  it('publishes a target instance count that is a number', () => {
+  it("publishes a target instance count that is a number", () => {
     const { auto } = run({ scaleStepPct: Number.NaN });
     expect(Number.isNaN(auto.targetInstances as number)).toBe(false);
   });
 
-  it('leaves a design the editor can produce exactly where it was', () => {
+  it("leaves a design the editor can produce exactly where it was", () => {
     // The knobs a reader sets are read the same way they always were, so a
     // design that names all six is untouched by the guard.
     const explicit = run({

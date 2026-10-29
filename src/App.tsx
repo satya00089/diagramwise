@@ -58,7 +58,10 @@ const SystemDesignPlayground = lazyWithRetry(
   () => import("./pages/SystemDesignPlayground"),
   "system-design-playground",
 );
-const ChallengePage = lazyWithRetry(() => import("./challenges/ChallengePage"), "repair-challenge");
+const ChallengePage = lazyWithRetry(
+  () => import("./challenges/ChallengePage"),
+  "repair-challenge",
+);
 const SharedCanvasPage = lazyWithRetry(
   () => import("./pages/SharedCanvasPage"),
   "shared-canvas-page",
@@ -76,7 +79,10 @@ const VerifyEmail = lazyWithRetry(
   () => import("./pages/VerifyEmail"),
   "verify-email",
 );
-const AuthEntry = lazyWithRetry(() => import("./pages/AuthEntry"), "auth-entry");
+const AuthEntry = lazyWithRetry(
+  () => import("./pages/AuthEntry"),
+  "auth-entry",
+);
 const AuthCallback = lazyWithRetry(
   () => import("./pages/AuthCallback"),
   "auth-callback",

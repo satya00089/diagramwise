@@ -214,8 +214,7 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { isAuthenticated, login, signup, googleLogin } =
-    useAuth();
+  const { isAuthenticated, login, signup, googleLogin } = useAuth();
   const { trackEvent, trackPageView } = useAnalytics({ isEnabled: true });
   const { markPageVisited } = useOnboarding();
   const { startTour } = useTour("home");

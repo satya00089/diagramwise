@@ -38,13 +38,13 @@ The more extensive design is in [simulation-diagnostics-plan-2026-10-25.md](docs
 
 Ran at 100 requested requests/sec, 44.1 simulated seconds, seeds 1, 42, and 1337. A separate seed-1 check used 100 ms advancement slices and a 4,000-event budget without hitting resource limits. These are engine and presentation-helper checks, **not browser runs**.
 
-| Experiment | Result |
-| --- | --- |
-| Unchanged served walkthrough | Broker backlog 3,044 / 3,147 / 3,178 across the three seeds; database, object storage, search, and response cache receive zero traffic. No compiler warnings/errors. |
-| Change only broker's explicit simulation kind to `streambroker` | All four destinations receive traffic. Lag remains 1,131–1,258 under default assumptions, associated with the slower object-storage consumer. This restores delivery but does not establish adequate capacity or correct operation semantics. |
-| Keep queue; add a `worker`; route broker → worker → destinations | All four destinations receive traffic; queue backlog is zero at observation. Worker arrivals are 62.2–76.7/sec, but the queue-to-worker edge reports **zero flow** in every seed. |
-| Disconnect database and explicitly select gateway as entrypoint | No compiler diagnostic identifies the unreachable database. |
-| Separate cache → database graph with 100% cache hits | Database is correctly idle. Zero traffic alone is not proof of a problem. |
+| Experiment                                                       | Result                                                                                                                                                                                                                                        |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unchanged served walkthrough                                     | Broker backlog 3,044 / 3,147 / 3,178 across the three seeds; database, object storage, search, and response cache receive zero traffic. No compiler warnings/errors.                                                                          |
+| Change only broker's explicit simulation kind to `streambroker`  | All four destinations receive traffic. Lag remains 1,131–1,258 under default assumptions, associated with the slower object-storage consumer. This restores delivery but does not establish adequate capacity or correct operation semantics. |
+| Keep queue; add a `worker`; route broker → worker → destinations | All four destinations receive traffic; queue backlog is zero at observation. Worker arrivals are 62.2–76.7/sec, but the queue-to-worker edge reports **zero flow** in every seed.                                                             |
+| Disconnect database and explicitly select gateway as entrypoint  | No compiler diagnostic identifies the unreachable database.                                                                                                                                                                                   |
+| Separate cache → database graph with 100% cache hits             | Database is correctly idle. Zero traffic alone is not proof of a problem.                                                                                                                                                                     |
 
 In the seed-1 original run, the presentation helper returns **“3,044 waiting”** for the broker and **“Idle”** for all four destinations. The rolling request failure rate is zero although the run has 46 failed requests in total. Rolling rates need not match a screenshot captured at a slightly different instant.
 
@@ -134,19 +134,19 @@ Use copies or resettable test designs. Keep the unchanged baseline.
 
 Paths below are relative to the frontend unless marked API. Search symbols rather than relying on old line numbers.
 
-| Area | Files / symbols |
-| --- | --- |
-| UI guided-step construction | `src/pages/SystemDesignPlayground.tsx`: `handleApplyStep` |
-| Guided graph application | `src/utils/guidedWalkthrough.ts`: `applyGuidedStep` |
-| Current fixture candidates | `src/test-fixtures/document-walkthrough.json`; `src/test-fixtures/walkthroughs/6901ef1b9420d83630aca871.json` |
-| Catalog mapping and compiler | `packages/simulation-core/src/catalog.ts`; `compiler.ts`: `compileGraph` |
-| Queue/worker behavior | `packages/simulation-core/src/behaviour.ts`; `engine.ts`: `ackAndBuffer`, `pumpWorker`, `takeFromSources` |
-| Stream broker and gateway | `packages/simulation-core/src/behaviour-messaging.ts` |
-| Defaults and runtime | `packages/simulation-core/src/presets.ts`; `runtime.ts`: `createSimulation` |
-| Worker and session | `src/simulation/simulation.worker.ts`; `SimulationHost.tsx`; `store.ts` |
-| Canvas and inspector | `src/simulation/RuntimeOverlays.tsx`; `src/components/simulation/presentation.ts`: `nodeSimulationSignal`; `SimulationInspector.tsx` |
-| Served walkthrough | API: `app/routers/walkthroughs.py`; `app/services/dynamodb_service.py`: `get_walkthrough_by_problem_id`; `app/models/walkthrough_models.py` |
-| Cloud replay contract | API: `app/routers/event_simulation.py`; trace its models/validation if simulation schema or versions change |
+| Area                         | Files / symbols                                                                                                                             |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| UI guided-step construction  | `src/pages/SystemDesignPlayground.tsx`: `handleApplyStep`                                                                                   |
+| Guided graph application     | `src/utils/guidedWalkthrough.ts`: `applyGuidedStep`                                                                                         |
+| Current fixture candidates   | `src/test-fixtures/document-walkthrough.json`; `src/test-fixtures/walkthroughs/6901ef1b9420d83630aca871.json`                               |
+| Catalog mapping and compiler | `packages/simulation-core/src/catalog.ts`; `compiler.ts`: `compileGraph`                                                                    |
+| Queue/worker behavior        | `packages/simulation-core/src/behaviour.ts`; `engine.ts`: `ackAndBuffer`, `pumpWorker`, `takeFromSources`                                   |
+| Stream broker and gateway    | `packages/simulation-core/src/behaviour-messaging.ts`                                                                                       |
+| Defaults and runtime         | `packages/simulation-core/src/presets.ts`; `runtime.ts`: `createSimulation`                                                                 |
+| Worker and session           | `src/simulation/simulation.worker.ts`; `SimulationHost.tsx`; `store.ts`                                                                     |
+| Canvas and inspector         | `src/simulation/RuntimeOverlays.tsx`; `src/components/simulation/presentation.ts`: `nodeSimulationSignal`; `SimulationInspector.tsx`        |
+| Served walkthrough           | API: `app/routers/walkthroughs.py`; `app/services/dynamodb_service.py`: `get_walkthrough_by_problem_id`; `app/models/walkthrough_models.py` |
+| Cloud replay contract        | API: `app/routers/event_simulation.py`; trace its models/validation if simulation schema or versions change                                 |
 
 ## Step 4 — Verification and completion criteria
 

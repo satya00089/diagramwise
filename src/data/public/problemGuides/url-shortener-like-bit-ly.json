@@ -170,7 +170,14 @@
         "id": "serving",
         "label": "Serving layer",
         "description": "Clients, edge routing, and synchronous services that create links or resolve redirects.",
-        "componentIds": ["client", "edge", "gateway", "link-service", "id-generator", "redirect-cache"]
+        "componentIds": [
+          "client",
+          "edge",
+          "gateway",
+          "link-service",
+          "id-generator",
+          "redirect-cache"
+        ]
       },
       {
         "id": "state",
@@ -196,19 +203,37 @@
         "id": "create-path",
         "label": "Link creation path",
         "description": "Client -> edge -> gateway -> link service -> ID generator and link store.",
-        "componentIds": ["client", "edge", "gateway", "link-service", "id-generator", "link-store"]
+        "componentIds": [
+          "client",
+          "edge",
+          "gateway",
+          "link-service",
+          "id-generator",
+          "link-store"
+        ]
       },
       {
         "id": "redirect-path",
         "label": "Redirect path",
         "description": "Edge -> gateway -> link service -> redirect cache, with a link-store fallback on a miss.",
-        "componentIds": ["edge", "gateway", "link-service", "redirect-cache", "link-store"]
+        "componentIds": [
+          "edge",
+          "gateway",
+          "link-service",
+          "redirect-cache",
+          "link-store"
+        ]
       },
       {
         "id": "analytics-path",
         "label": "Click analytics path",
         "description": "Link service -> click queue -> analytics worker -> analytics store without waiting for aggregation.",
-        "componentIds": ["link-service", "click-queue", "analytics-worker", "analytics-store"]
+        "componentIds": [
+          "link-service",
+          "click-queue",
+          "analytics-worker",
+          "analytics-store"
+        ]
       }
     ],
     "components": [

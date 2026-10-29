@@ -31,7 +31,9 @@ const getClearance = (
     .filter((distance) => (direction < 0 ? distance < 0 : distance > 0))
     .map((distance) => Math.abs(distance));
 
-  return distances.length > 0 ? Math.min(...distances) : Number.POSITIVE_INFINITY;
+  return distances.length > 0
+    ? Math.min(...distances)
+    : Number.POSITIVE_INFINITY;
 };
 
 const getDetourSide = (
@@ -64,64 +66,70 @@ const getDetourSide = (
   return positiveClearance >= negativeClearance ? 1 : -1;
 };
 
-const getVerticalHandlePair = (source: GuideArchitectureComponent, target: GuideArchitectureComponent, components: GuideArchitectureComponent[]): ArchitectureHandlePair => {
-const deltaY = target.position.y - source.position.y;
-    const hasIntermediateComponent = components.some(
-      (component) =>
-        component.id !== source.id &&
-        component.id !== target.id &&
-        Math.abs(component.position.x - source.position.x) <
-          POSITION_EPSILON &&
-        isBetween(component.position.y, source.position.y, target.position.y),
+const getVerticalHandlePair = (
+  source: GuideArchitectureComponent,
+  target: GuideArchitectureComponent,
+  components: GuideArchitectureComponent[],
+): ArchitectureHandlePair => {
+  const deltaY = target.position.y - source.position.y;
+  const hasIntermediateComponent = components.some(
+    (component) =>
+      component.id !== source.id &&
+      component.id !== target.id &&
+      Math.abs(component.position.x - source.position.x) < POSITION_EPSILON &&
+      isBetween(component.position.y, source.position.y, target.position.y),
+  );
+
+  if (hasIntermediateComponent) {
+    const side = getDetourSide(
+      components,
+      "x",
+      source.position.x,
+      "y",
+      source.position.y,
+      target.position.y,
     );
+    return side > 0
+      ? { sourceHandle: "right", targetHandle: "right" }
+      : { sourceHandle: "left", targetHandle: "left" };
+  }
 
-    if (hasIntermediateComponent) {
-      const side = getDetourSide(
-        components,
-        "x",
-        source.position.x,
-        "y",
-        source.position.y,
-        target.position.y,
-      );
-      return side > 0
-        ? { sourceHandle: "right", targetHandle: "right" }
-        : { sourceHandle: "left", targetHandle: "left" };
-    }
-
-    return deltaY > 0
-      ? { sourceHandle: "bottom", targetHandle: "top" }
-      : { sourceHandle: "top", targetHandle: "bottom" };
+  return deltaY > 0
+    ? { sourceHandle: "bottom", targetHandle: "top" }
+    : { sourceHandle: "top", targetHandle: "bottom" };
 };
 
-const getHorizontalHandlePair = (source: GuideArchitectureComponent, target: GuideArchitectureComponent, components: GuideArchitectureComponent[]): ArchitectureHandlePair => {
-const deltaX = target.position.x - source.position.x;
-    const hasIntermediateComponent = components.some(
-      (component) =>
-        component.id !== source.id &&
-        component.id !== target.id &&
-        Math.abs(component.position.y - source.position.y) <
-          POSITION_EPSILON &&
-        isBetween(component.position.x, source.position.x, target.position.x),
+const getHorizontalHandlePair = (
+  source: GuideArchitectureComponent,
+  target: GuideArchitectureComponent,
+  components: GuideArchitectureComponent[],
+): ArchitectureHandlePair => {
+  const deltaX = target.position.x - source.position.x;
+  const hasIntermediateComponent = components.some(
+    (component) =>
+      component.id !== source.id &&
+      component.id !== target.id &&
+      Math.abs(component.position.y - source.position.y) < POSITION_EPSILON &&
+      isBetween(component.position.x, source.position.x, target.position.x),
+  );
+
+  if (hasIntermediateComponent) {
+    const side = getDetourSide(
+      components,
+      "y",
+      source.position.y,
+      "x",
+      source.position.x,
+      target.position.x,
     );
+    return side > 0
+      ? { sourceHandle: "bottom", targetHandle: "bottom" }
+      : { sourceHandle: "top", targetHandle: "top" };
+  }
 
-    if (hasIntermediateComponent) {
-      const side = getDetourSide(
-        components,
-        "y",
-        source.position.y,
-        "x",
-        source.position.x,
-        target.position.x,
-      );
-      return side > 0
-        ? { sourceHandle: "bottom", targetHandle: "bottom" }
-        : { sourceHandle: "top", targetHandle: "top" };
-    }
-
-    return deltaX > 0
-      ? { sourceHandle: "right", targetHandle: "left" }
-      : { sourceHandle: "left", targetHandle: "right" };
+  return deltaX > 0
+    ? { sourceHandle: "right", targetHandle: "left" }
+    : { sourceHandle: "left", targetHandle: "right" };
 };
 
 /**
@@ -149,7 +157,8 @@ export const getDefaultArchitectureHandlePair = (
   const sameY = Math.abs(deltaY) < POSITION_EPSILON;
 
   if (sameX && !sameY) return getVerticalHandlePair(source, target, components);
-  if (sameY && !sameX) return getHorizontalHandlePair(source, target, components);
+  if (sameY && !sameX)
+    return getHorizontalHandlePair(source, target, components);
 
   if (deltaX > 0) {
     return { sourceHandle: "right", targetHandle: "left" };

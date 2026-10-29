@@ -194,26 +194,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     notifyAuthChanged();
   }, []);
 
-  const login = useCallback(async (credentials: LoginCredentials) => {
-    const response = await apiService.login(credentials);
-    completeSession(response);
-  }, [completeSession]);
+  const login = useCallback(
+    async (credentials: LoginCredentials) => {
+      const response = await apiService.login(credentials);
+      completeSession(response);
+    },
+    [completeSession],
+  );
 
-  const signup = useCallback(async (credentials: SignupCredentials) => {
-    await apiService.signup(credentials);
-    trackEvent("account_signup_submitted", { method: "password" }, true);
-  }, [trackEvent]);
+  const signup = useCallback(
+    async (credentials: SignupCredentials) => {
+      await apiService.signup(credentials);
+      trackEvent("account_signup_submitted", { method: "password" }, true);
+    },
+    [trackEvent],
+  );
 
-  const googleLogin = useCallback(async (credential: string) => {
-    const response = await apiService.googleLogin(credential);
-    completeSession(response);
-  }, [completeSession]);
+  const googleLogin = useCallback(
+    async (credential: string) => {
+      const response = await apiService.googleLogin(credential);
+      completeSession(response);
+    },
+    [completeSession],
+  );
 
   const logout = useCallback(async (): Promise<void> => {
     try {
       await apiService.logout();
     } catch (error) {
-      console.warn("Server-side session revocation could not be confirmed:", error);
+      console.warn(
+        "Server-side session revocation could not be confirmed:",
+        error,
+      );
       showWarning(
         "Signed out on this device. The server could not confirm session revocation, so this session may remain valid until it expires.",
         8000,

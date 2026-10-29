@@ -1,5 +1,5 @@
-import type { NodeConfig, NodeKind, SimEdge, SimNode, Topology } from './types';
-import type { Note, Section } from './annotations';
+import type { NodeConfig, NodeKind, SimEdge, SimNode, Topology } from "./types";
+import type { Note, Section } from "./annotations";
 
 export interface Preset {
   id: string;
@@ -53,9 +53,11 @@ export function defaultConfig(kind: NodeKind): NodeConfig {
 }
 
 /** Per-kind knobs. Fields a kind does not care about come from EXTRA_DEFAULTS. */
-function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULTS> {
+function baseConfig(
+  kind: NodeKind,
+): Omit<NodeConfig, keyof typeof EXTRA_DEFAULTS> {
   switch (kind) {
-    case 'client':
+    case "client":
       return {
         capacity: 1,
         serviceMs: 0,
@@ -67,7 +69,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         retries: 0,
         rps: 50,
       };
-    case 'lb':
+    case "lb":
       return {
         capacity: 256,
         serviceMs: 0.5,
@@ -79,7 +81,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         retries: 0,
         rps: 0,
       };
-    case 'service':
+    case "service":
       return {
         capacity: 8,
         serviceMs: 25,
@@ -91,7 +93,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         retries: 0,
         rps: 0,
       };
-    case 'cache':
+    case "cache":
       return {
         capacity: 32,
         serviceMs: 3,
@@ -103,7 +105,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         retries: 0,
         rps: 0,
       };
-    case 'db':
+    case "db":
       // Reads share the 6 slots; writes (10% at the default readFraction
       // 0.9) also pay 15ms of lock wait per concurrent writer. At the
       // default mix that is a barely-visible tax; raise the write share and
@@ -120,7 +122,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         rps: 0,
         lockMs: 15,
       };
-    case 'queue':
+    case "queue":
       return {
         capacity: 1,
         serviceMs: 1,
@@ -132,7 +134,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         retries: 0,
         rps: 0,
       };
-    case 'worker':
+    case "worker":
       return {
         capacity: 4,
         serviceMs: 25,
@@ -144,7 +146,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         retries: 0,
         rps: 0,
       };
-    case 'replica':
+    case "replica":
       // Reads fan across the replicas, so per-replica capacity is modest.
       return {
         capacity: 4,
@@ -157,7 +159,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         retries: 0,
         rps: 0,
       };
-    case 'shard':
+    case "shard":
       // Per-shard slots live in shardCapacity; `capacity` is unused here.
       return {
         capacity: 4,
@@ -170,7 +172,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         retries: 0,
         rps: 0,
       };
-    case 'cdn':
+    case "cdn":
       // An edge PoP: very fast, very high hit rate, lots of concurrency.
       // At hitRate 0.92 the origin behind it sees 8% of the offered load.
       return {
@@ -184,7 +186,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         retries: 0,
         rps: 0,
       };
-    case 'ratelimiter':
+    case "ratelimiter":
       // A doorman: refusing costs nothing, so no service time and no slots.
       // 100 rps sustained with one second of burst headroom.
       return {
@@ -200,7 +202,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         rateLimitRps: 100,
         burst: 100,
       };
-    case 'breaker':
+    case "breaker":
       // Trips once half the downstream calls in a 5s window fail, stays open
       // 3s, then lets 3 probes decide whether to close.
       return {
@@ -218,7 +220,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         openMs: 3000,
         halfOpenProbes: 3,
       };
-    case 'autoscaler':
+    case "autoscaler":
       // Adds and removes INSTANCES to hold its target at 70% utilisation,
       // stepping by half the current fleet.
       //
@@ -261,7 +263,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         scaleStepPct: 0.5,
         warmupMs: 4000,
       };
-    case 'region':
+    case "region":
       // Two regions, serving from the first. The 5s failover is long enough
       // to see as a real outage on the error graph and short enough that a
       // student does not think the simulation has hung.
@@ -279,7 +281,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         activeRegion: 0,
         failoverMs: 5000,
       };
-    case 'objectstore':
+    case "objectstore":
       // Blob storage: every request pays a high flat latency, but the pool
       // is wide. 64 slots / 90ms -> ~710 rps of ceiling at ~90ms each,
       // which is "effectively unlimited" next to any database in this app.
@@ -298,7 +300,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         rps: 0,
         prefixRps: 150,
       };
-    case 'searchindex':
+    case "searchindex":
       // Searches are cheap (8ms); a write pays +60ms of indexing on top and
       // becomes searchable only 1.5s after it commits. At the default 90/10
       // read mix the mean cost is ~14ms -> 12 slots gives ~850 rps.
@@ -315,7 +317,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         indexMs: 60,
         indexLagMs: 1500,
       };
-    case 'timeseriesdb':
+    case "timeseriesdb":
       // Appends cost 1.5ms; a range query pays +120ms. At 5% range queries
       // the mean is ~7.5ms -> 16 slots gives ~2100 rps of mixed traffic,
       // which is the "metrics firehose" headroom the kind exists to show.
@@ -332,7 +334,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         rangeQueryFraction: 0.05,
         rangeQueryMs: 120,
       };
-    case 'graphdb':
+    case "graphdb":
       // Depth 2 (friends-of-friends) costs 3x the base 6ms -> 18ms mean,
       // 8 slots -> ~440 rps. Each extra hop of depth divides that by 3.
       return {
@@ -347,7 +349,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         rps: 0,
         traversalDepth: 2,
       };
-    case 'coldstorage':
+    case "coldstorage":
       // Archival: SECONDS per restore JOB, a hard quota of 24 concurrent
       // jobs (24 / 2.8s is ~8.5 rps of ceiling), and NO queue: a restore
       // beyond the quota is refused on the spot, not queued. Fine for a
@@ -364,7 +366,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         retries: 0,
         rps: 0,
       };
-    case 'vectordb':
+    case "vectordb":
       // Mean query cost is serviceMs * log2(2 + indexSizeK) / (1 - recall):
       // 0.5ms * ~10 * 10 = ~50ms at one million vectors and 0.9 recall, so
       // 16 slots gives ~320 rps. Pushing recall to 0.99 costs 10x that.
@@ -381,7 +383,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         indexSizeK: 1000,
         recallTarget: 0.9,
       };
-    case 'streambroker':
+    case "streambroker":
       // A partitioned log: 1ms producer ack, 4 partitions, and queueLimit is
       // RETENTION in messages. Per consumer group the parallelism ceiling is
       // the partition count, so throughput per group = 4 x (1000/consumerMs).
@@ -397,7 +399,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         rps: 0,
         partitions: 4,
       };
-    case 'pubsub':
+    case "pubsub":
       // A topic: near-instant ack, then one delivery per subscriber edge.
       // No knobs of its own; the amplification comes from the wiring.
       return {
@@ -411,7 +413,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         retries: 0,
         rps: 0,
       };
-    case 'websocket':
+    case "websocket":
       // Capacity is CONNECTIONS HELD: 400 per instance, held ~30s each, so
       // by Little's law it saturates at about 13 new connections/sec per
       // instance. The 5ms serviceMs is only the handshake.
@@ -427,7 +429,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         rps: 0,
         connectionMs: 30000,
       };
-    case 'apigateway':
+    case "apigateway":
       // The front door: 2ms of auth/routing work per request, a 300 rps
       // token bucket with one second of burst headroom, and 1% bad auth.
       return {
@@ -444,7 +446,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         burst: 300,
         authFailRate: 0.01,
       };
-    case 'sidecar':
+    case "sidecar":
       // The proxy tax: 2ms on every request, in exchange for 2 retries, a
       // 500ms per-attempt deadline, and outlier ejection after 5 straight
       // downstream failures (3s ejection, matching the breaker's openMs).
@@ -461,7 +463,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         outlierAfter: 5,
         openMs: 3000,
       };
-    case 'lambda':
+    case "lambda":
       // Serverless: 25ms of work when warm, +350ms cold start, instances kept
       // warm 12s, at most 40 running at once (beyond that the platform
       // throttles; there is no queue). `capacity` is unused here.
@@ -479,7 +481,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         keepWarmMs: 12000,
         maxConcurrency: 40,
       };
-    case 'cron':
+    case "cron":
       // A batch job: every 20s it dumps 50 requests down each outgoing edge
       // at once. Not a request path; requests wired INTO it are refused.
       return {
@@ -495,7 +497,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         intervalMs: 20000,
         batchSize: 50,
       };
-    case 'bulkhead':
+    case "bulkhead":
       // A pool of 8 concurrent calls. Refusing is free, so no slots, no
       // queue, no service time: the pool count is the whole component.
       return {
@@ -509,11 +511,11 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         retries: 0,
         rps: 0,
         bulkheadMax: 8,
-        bulkheadMode: 'reject',
+        bulkheadMode: "reject",
         acquireQueueMax: 100,
         acquireTimeoutMs: 1000,
       };
-    case 'retryqueue':
+    case "retryqueue":
       // Delivery concurrency of 8 at ~3ms dispatch cost. Each failed
       // delivery gets 2 redeliveries with backoff before it dead-letters;
       // the 1s per-attempt deadline is what turns a hung consumer into a
@@ -529,7 +531,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         retries: 2,
         rps: 0,
       };
-    case 'transcoder':
+    case "transcoder":
       // Batch regime: 1.2 SECONDS per job, two jobs per box. One instance
       // is 2 * (1000/1200) = ~1.7 jobs/s; feed it from a queue and size the
       // farm against the arrival rate, because a structural deficit grows
@@ -548,7 +550,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         rps: 0,
         renditions: 3,
       };
-    case 'edgecompute':
+    case "edgecompute":
       // A PoP function: ~1ms, lots of concurrency, and it can fully answer
       // 30% of requests without the origin ever hearing about them -- as
       // long as the execution fits the 2ms CPU budget; the tail that runs
@@ -566,7 +568,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         edgeShare: 0.3,
         cpuMsCap: 2,
       };
-    case 'writebehind':
+    case "writebehind":
       // `capacity` is the dirty buffer (memory, not threads): up to 256
       // acknowledged writes held at once. At the 200ms flush residence
       // that supports ~1280 writes/s before the buffer itself fills.
@@ -583,7 +585,7 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
         rps: 0,
         flushDelayMs: 200,
       };
-    case 'loadshedder':
+    case "loadshedder":
       // Admits 300 rps sustained. 30% of the key space is best-effort
       // traffic, and 30% of the bucket is reserved for the rest, so under
       // saturation the best-effort tier is dropped first.
@@ -618,39 +620,39 @@ function baseConfig(kind: NodeKind): Omit<NodeConfig, keyof typeof EXTRA_DEFAULT
 }
 
 const DEFAULT_LABEL: Record<NodeKind, string> = {
-  client: 'Client',
-  lb: 'Load Balancer',
-  service: 'Service',
-  cache: 'Cache',
-  db: 'Database',
-  queue: 'Queue',
-  worker: 'Worker',
-  replica: 'Read Replicas',
-  shard: 'Sharded Store',
-  cdn: 'CDN',
-  ratelimiter: 'Rate Limiter',
-  breaker: 'Circuit Breaker',
-  autoscaler: 'Autoscaler',
-  region: 'Region',
-  objectstore: 'Object Storage',
-  searchindex: 'Search Index',
-  timeseriesdb: 'Time-Series DB',
-  graphdb: 'Graph Database',
-  coldstorage: 'Cold Storage',
-  vectordb: 'Vector Database',
-  streambroker: 'Stream Broker',
-  pubsub: 'Pub/Sub Topic',
-  websocket: 'WebSocket Gateway',
-  apigateway: 'API Gateway',
-  sidecar: 'Sidecar Proxy',
-  lambda: 'Lambda',
-  cron: 'Cron Job',
-  bulkhead: 'Bulkhead',
-  retryqueue: 'Retry Queue',
-  transcoder: 'Transcoder',
-  edgecompute: 'Edge Compute',
-  writebehind: 'Write-Behind Cache',
-  loadshedder: 'Load Shedder',
+  client: "Client",
+  lb: "Load Balancer",
+  service: "Service",
+  cache: "Cache",
+  db: "Database",
+  queue: "Queue",
+  worker: "Worker",
+  replica: "Read Replicas",
+  shard: "Sharded Store",
+  cdn: "CDN",
+  ratelimiter: "Rate Limiter",
+  breaker: "Circuit Breaker",
+  autoscaler: "Autoscaler",
+  region: "Region",
+  objectstore: "Object Storage",
+  searchindex: "Search Index",
+  timeseriesdb: "Time-Series DB",
+  graphdb: "Graph Database",
+  coldstorage: "Cold Storage",
+  vectordb: "Vector Database",
+  streambroker: "Stream Broker",
+  pubsub: "Pub/Sub Topic",
+  websocket: "WebSocket Gateway",
+  apigateway: "API Gateway",
+  sidecar: "Sidecar Proxy",
+  lambda: "Lambda",
+  cron: "Cron Job",
+  bulkhead: "Bulkhead",
+  retryqueue: "Retry Queue",
+  transcoder: "Transcoder",
+  edgecompute: "Edge Compute",
+  writebehind: "Write-Behind Cache",
+  loadshedder: "Load Shedder",
 };
 
 let nodeCounter = 0;
@@ -734,27 +736,27 @@ function control(from: string, to: string): SimEdge {
 
 const singleServer: Topology = {
   nodes: [
-    node('client', 'client', 'Client', 40, 200, { rps: 50, timeoutMs: 2000 }),
-    node('api', 'service', 'API Server', 340, 200, {
+    node("client", "client", "Client", 40, 200, { rps: 50, timeoutMs: 2000 }),
+    node("api", "service", "API Server", 340, 200, {
       capacity: 8,
       serviceMs: 25,
       serviceCv: 0.6,
       queueLimit: 64,
     }),
-    node('db', 'db', 'Database', 660, 200, {
+    node("db", "db", "Database", 660, 200, {
       capacity: 6,
       serviceMs: 30,
       serviceCv: 0.7,
       queueLimit: 48,
     }),
   ],
-  edges: [edge('client', 'api'), edge('api', 'db')],
+  edges: [edge("client", "api"), edge("api", "db")],
   annotations: [
     note(
-      'ss-note-db',
+      "ss-note-db",
       40,
       320,
-      'One server, one database. The database is the smaller of the two: 6 requests at a time at 30ms each, so it runs out near 200 a second. Drag the load past 4x and the wait builds there first, not at the API.',
+      "One server, one database. The database is the smaller of the two: 6 requests at a time at 30ms each, so it runs out near 200 a second. Drag the load past 4x and the wait builds there first, not at the API.",
       340,
     ),
   ],
@@ -769,27 +771,30 @@ const singleServer: Topology = {
 
 const loadBalanced: Topology = {
   nodes: [
-    node('client', 'client', 'Client', 40, 220, { rps: 140, timeoutMs: 2000 }),
-    node('lb', 'lb', 'Load Balancer', 260, 220, { capacity: 512, serviceMs: 0.5 }),
-    node('api1', 'service', 'API 1', 500, 80, {
+    node("client", "client", "Client", 40, 220, { rps: 140, timeoutMs: 2000 }),
+    node("lb", "lb", "Load Balancer", 260, 220, {
+      capacity: 512,
+      serviceMs: 0.5,
+    }),
+    node("api1", "service", "API 1", 500, 80, {
       capacity: 6,
       serviceMs: 25,
       serviceCv: 0.6,
       queueLimit: 48,
     }),
-    node('api2', 'service', 'API 2', 500, 220, {
+    node("api2", "service", "API 2", 500, 220, {
       capacity: 6,
       serviceMs: 25,
       serviceCv: 0.6,
       queueLimit: 48,
     }),
-    node('api3', 'service', 'API 3', 500, 360, {
+    node("api3", "service", "API 3", 500, 360, {
       capacity: 6,
       serviceMs: 25,
       serviceCv: 0.6,
       queueLimit: 48,
     }),
-    node('db', 'db', 'Database', 800, 220, {
+    node("db", "db", "Database", 800, 220, {
       capacity: 12,
       serviceMs: 25,
       serviceCv: 0.7,
@@ -797,20 +802,20 @@ const loadBalanced: Topology = {
     }),
   ],
   edges: [
-    edge('client', 'lb'),
-    edge('lb', 'api1'),
-    edge('lb', 'api2'),
-    edge('lb', 'api3'),
-    edge('api1', 'db'),
-    edge('api2', 'db'),
-    edge('api3', 'db'),
+    edge("client", "lb"),
+    edge("lb", "api1"),
+    edge("lb", "api2"),
+    edge("lb", "api3"),
+    edge("api1", "db"),
+    edge("api2", "db"),
+    edge("api3", "db"),
   ],
   annotations: [
     note(
-      'lb-note-db',
+      "lb-note-db",
       40,
       480,
-      'Three servers share one database. That triples the API capacity and does nothing for the database, which still tops out near 480 a second. Adding servers only helps when the servers were the problem.',
+      "Three servers share one database. That triples the API capacity and does nothing for the database, which still tops out near 480 a second. Adding servers only helps when the servers were the problem.",
       340,
     ),
   ],
@@ -826,34 +831,34 @@ const loadBalanced: Topology = {
 
 const cacheAside: Topology = {
   nodes: [
-    node('client', 'client', 'Client', 40, 200, { rps: 200, timeoutMs: 2000 }),
-    node('api', 'service', 'API Server', 280, 200, {
+    node("client", "client", "Client", 40, 200, { rps: 200, timeoutMs: 2000 }),
+    node("api", "service", "API Server", 280, 200, {
       capacity: 24,
       serviceMs: 8,
       serviceCv: 0.5,
       queueLimit: 128,
     }),
-    node('cache', 'cache', 'Cache', 550, 200, {
+    node("cache", "cache", "Cache", 550, 200, {
       capacity: 64,
       serviceMs: 2,
       serviceCv: 0.4,
       hitRate: 0.85,
       queueLimit: 512,
     }),
-    node('db', 'db', 'Database', 820, 200, {
+    node("db", "db", "Database", 820, 200, {
       capacity: 4,
       serviceMs: 30,
       serviceCv: 0.7,
       queueLimit: 32,
     }),
   ],
-  edges: [edge('client', 'api'), edge('api', 'cache'), edge('cache', 'db')],
+  edges: [edge("client", "api"), edge("api", "cache"), edge("cache", "db")],
   annotations: [
     note(
-      'ca-note-miss',
+      "ca-note-miss",
       40,
       320,
-      'The database only ever sees the misses. At an 85 percent hit rate it takes about 30 requests a second out of 200. Drag the hit rate down to 0.3 and it is instantly over its 133 a second ceiling, with no change in load at all.',
+      "The database only ever sees the misses. At an 85 percent hit rate it takes about 30 requests a second out of 200. Drag the hit rate down to 0.3 and it is instantly over its 133 a second ceiling, with no change in load at all.",
       340,
     ),
   ],
@@ -870,24 +875,24 @@ const cacheAside: Topology = {
 
 const asyncWorkers: Topology = {
   nodes: [
-    node('client', 'client', 'Client', 40, 200, { rps: 120, timeoutMs: 2000 }),
-    node('api', 'service', 'API Server', 260, 200, {
+    node("client", "client", "Client", 40, 200, { rps: 120, timeoutMs: 2000 }),
+    node("api", "service", "API Server", 260, 200, {
       capacity: 24,
       serviceMs: 8,
       serviceCv: 0.5,
       queueLimit: 128,
     }),
-    node('queue', 'queue', 'Message Queue', 500, 200, {
+    node("queue", "queue", "Message Queue", 500, 200, {
       serviceMs: 1,
       serviceCv: 0.2,
       queueLimit: 5000,
     }),
-    node('worker', 'worker', 'Workers', 730, 200, {
+    node("worker", "worker", "Workers", 730, 200, {
       capacity: 6,
       serviceMs: 30,
       serviceCv: 0.6,
     }),
-    node('db', 'db', 'Database', 860, 380, {
+    node("db", "db", "Database", 860, 380, {
       capacity: 8,
       serviceMs: 20,
       serviceCv: 0.7,
@@ -895,17 +900,17 @@ const asyncWorkers: Topology = {
     }),
   ],
   edges: [
-    edge('client', 'api'),
-    edge('api', 'queue'),
-    edge('queue', 'worker'),
-    edge('worker', 'db'),
+    edge("client", "api"),
+    edge("api", "queue"),
+    edge("queue", "worker"),
+    edge("worker", "db"),
   ],
   annotations: [
     note(
-      'aw-note-queue',
+      "aw-note-queue",
       40,
       520,
-      'The workers drain 200 a second. Push the load past that and the client still gets an instant yes, because the queue is absorbing the difference. Nothing looks wrong until the queue fills, so the graph to watch is the queue depth, not the error rate.',
+      "The workers drain 200 a second. Push the load past that and the client still gets an instant yes, because the queue is absorbing the difference. Nothing looks wrong until the queue fills, so the graph to watch is the queue depth, not the error rate.",
       340,
     ),
   ],
@@ -932,8 +937,8 @@ const asyncWorkers: Topology = {
 
 const retryStorm: Topology = {
   nodes: [
-    node('client', 'client', 'Client', 40, 200, { rps: 45, timeoutMs: 3000 }),
-    node('api', 'service', 'API Server', 340, 200, {
+    node("client", "client", "Client", 40, 200, { rps: 45, timeoutMs: 3000 }),
+    node("api", "service", "API Server", 340, 200, {
       capacity: 32,
       serviceMs: 5,
       serviceCv: 0.4,
@@ -941,20 +946,20 @@ const retryStorm: Topology = {
       timeoutMs: 250,
       retries: 2,
     }),
-    node('db', 'db', 'Database', 680, 200, {
+    node("db", "db", "Database", 680, 200, {
       capacity: 4,
       serviceMs: 40,
       serviceCv: 0.5,
       queueLimit: 64,
     }),
   ],
-  edges: [edge('client', 'api'), edge('api', 'db')],
+  edges: [edge("client", "api"), edge("api", "db")],
   annotations: [
     note(
-      'rt-note-storm',
+      "rt-note-storm",
       40,
       320,
-      'The database handles 100 a second. Once waiting passes the 250ms timeout on the API, every request starts retrying three times, so the load triples onto a database that was already full. It is steady at 80 a second. Push to 85 and it starts losing most of its traffic; by 90 almost none gets through.',
+      "The database handles 100 a second. Once waiting passes the 250ms timeout on the API, every request starts retrying three times, so the load triples onto a database that was already full. It is steady at 80 a second. Push to 85 and it starts losing most of its traffic; by 90 almost none gets through.",
       340,
     ),
   ],
@@ -1034,7 +1039,7 @@ function sectionOver(
   const y = LROW(r0, lane) - SEC_PAD_T;
   return {
     id,
-    kind: 'section',
+    kind: "section",
     label,
     x,
     y,
@@ -1058,10 +1063,10 @@ function note(
   y: number,
   text: string,
   width = 220,
-  size: Note['size'] = 'md',
-  font: Note['font'] = 'hand',
+  size: Note["size"] = "md",
+  font: Note["font"] = "hand",
 ): Note {
-  return { id, kind: 'note', text, x, y, width, size, font };
+  return { id, kind: "note", text, x, y, width, size, font };
 }
 
 /** Node box, mirrored from Canvas so the frame helpers can do arithmetic. */
@@ -1081,34 +1086,37 @@ const NODE_H = 88;
 
 const cdnOrigin: Topology = {
   nodes: [
-    node('client', 'client', 'Client', COL(0), ROW(1), { rps: 400, timeoutMs: 2000 }),
-    node('cdn', 'cdn', 'CDN Edge', COL(1), ROW(1), {
+    node("client", "client", "Client", COL(0), ROW(1), {
+      rps: 400,
+      timeoutMs: 2000,
+    }),
+    node("cdn", "cdn", "CDN Edge", COL(1), ROW(1), {
       capacity: 256,
       serviceMs: 2,
       serviceCv: 0.3,
       hitRate: 0.9,
       queueLimit: 2048,
     }),
-    node('origin', 'service', 'Origin Server', COL(2), ROW(1), {
+    node("origin", "service", "Origin Server", COL(2), ROW(1), {
       capacity: 3,
       serviceMs: 25,
       serviceCv: 0.6,
       queueLimit: 64,
     }),
-    node('db', 'db', 'Database', COL(3), ROW(1), {
+    node("db", "db", "Database", COL(3), ROW(1), {
       capacity: 8,
       serviceMs: 10,
       serviceCv: 0.6,
       queueLimit: 64,
     }),
   ],
-  edges: [edge('client', 'cdn'), edge('cdn', 'origin'), edge('origin', 'db')],
+  edges: [edge("client", "cdn"), edge("cdn", "origin"), edge("origin", "db")],
   annotations: [
     note(
-      'co-note-miss',
+      "co-note-miss",
       40,
       320,
-      'The origin only ever sees what the cache misses. It handles 120 a second, and the cache is currently hiding 90 percent of the traffic from it. Drag the hit rate down and the origin gets a load nobody ever sized it for.',
+      "The origin only ever sees what the cache misses. It handles 120 a second, and the cache is currently hiding 90 percent of the traffic from it. Drag the hit rate down and the origin gets a load nobody ever sized it for.",
       340,
     ),
   ],
@@ -1140,31 +1148,34 @@ const cdnOrigin: Topology = {
 
 const rateLimitedApi: Topology = {
   nodes: [
-    node('client', 'client', 'Client', COL(0), ROW(1), { rps: 150, timeoutMs: 2000 }),
-    node('limiter', 'ratelimiter', 'Rate Limiter', COL(1), ROW(1), {
+    node("client", "client", "Client", COL(0), ROW(1), {
+      rps: 150,
+      timeoutMs: 2000,
+    }),
+    node("limiter", "ratelimiter", "Rate Limiter", COL(1), ROW(1), {
       rateLimitRps: 200,
       burst: 200,
     }),
-    node('api', 'service', 'API Server', COL(2), ROW(1), {
+    node("api", "service", "API Server", COL(2), ROW(1), {
       capacity: 6,
       serviceMs: 25,
       serviceCv: 0.5,
       queueLimit: 48,
     }),
-    node('db', 'db', 'Database', COL(3), ROW(1), {
+    node("db", "db", "Database", COL(3), ROW(1), {
       capacity: 12,
       serviceMs: 12,
       serviceCv: 0.6,
       queueLimit: 96,
     }),
   ],
-  edges: [edge('client', 'limiter'), edge('limiter', 'api'), edge('api', 'db')],
+  edges: [edge("client", "limiter"), edge("limiter", "api"), edge("api", "db")],
   annotations: [
     note(
-      'rl-note-trade',
+      "rl-note-trade",
       40,
       320,
-      'The limiter does not add capacity. It refuses some requests quickly so the rest are answered quickly: at 600 offered it serves 200 at 36ms, where removing it serves 234 at 235ms. Saying no fast is what buys the predictable wait.',
+      "The limiter does not add capacity. It refuses some requests quickly so the rest are answered quickly: at 600 offered it serves 200 at 36ms, where removing it serves 234 at 235ms. Saying no fast is what buys the predictable wait.",
       340,
     ),
   ],
@@ -1184,34 +1195,41 @@ const rateLimitedApi: Topology = {
 
 const circuitBreaker: Topology = {
   nodes: [
-    node('client', 'client', 'Client', COL(0), ROW(1), { rps: 100, timeoutMs: 2000 }),
-    node('api', 'service', 'API Server', COL(1), ROW(1), {
+    node("client", "client", "Client", COL(0), ROW(1), {
+      rps: 100,
+      timeoutMs: 2000,
+    }),
+    node("api", "service", "API Server", COL(1), ROW(1), {
       capacity: 24,
       serviceMs: 6,
       serviceCv: 0.4,
       queueLimit: 128,
       timeoutMs: 600,
     }),
-    node('breaker', 'breaker', 'Circuit Breaker', COL(2), ROW(1), {
+    node("breaker", "breaker", "Circuit Breaker", COL(2), ROW(1), {
       errorThreshold: 0.5,
       windowMs: 4000,
       openMs: 3000,
       halfOpenProbes: 3,
     }),
-    node('payments', 'service', 'Payments API', COL(3), ROW(1), {
+    node("payments", "service", "Payments API", COL(3), ROW(1), {
       capacity: 4,
       serviceMs: 30,
       serviceCv: 0.6,
       queueLimit: 32,
     }),
   ],
-  edges: [edge('client', 'api'), edge('api', 'breaker'), edge('breaker', 'payments')],
+  edges: [
+    edge("client", "api"),
+    edge("api", "breaker"),
+    edge("breaker", "payments"),
+  ],
   annotations: [
     note(
-      'cb-note-trip',
+      "cb-note-trip",
       40,
       320,
-      'Right click the payments API and inject a crash. Once half the calls in a four second window fail, the breaker opens and the rest fail in microseconds instead of waiting out a timeout. After three seconds it closes and probes again.',
+      "Right click the payments API and inject a crash. Once half the calls in a four second window fail, the breaker opens and the rest fail in microseconds instead of waiting out a timeout. After three seconds it closes and probes again.",
       340,
     ),
   ],
@@ -1231,14 +1249,17 @@ const circuitBreaker: Topology = {
 
 const readReplicas: Topology = {
   nodes: [
-    node('client', 'client', 'Client', COL(0), ROW(1), { rps: 300, timeoutMs: 2000 }),
-    node('api', 'service', 'API Server', COL(1), ROW(1), {
+    node("client", "client", "Client", COL(0), ROW(1), {
+      rps: 300,
+      timeoutMs: 2000,
+    }),
+    node("api", "service", "API Server", COL(1), ROW(1), {
       capacity: 32,
       serviceMs: 5,
       serviceCv: 0.4,
       queueLimit: 256,
     }),
-    node('replicas', 'replica', 'Replica Set', COL(2), ROW(1), {
+    node("replicas", "replica", "Replica Set", COL(2), ROW(1), {
       capacity: 4,
       serviceMs: 20,
       serviceCv: 0.5,
@@ -1248,13 +1269,13 @@ const readReplicas: Topology = {
       readFraction: 0.85,
     }),
   ],
-  edges: [edge('client', 'api'), edge('api', 'replicas')],
+  edges: [edge("client", "api"), edge("api", "replicas")],
   annotations: [
     note(
-      'rr-note-writes',
+      "rr-note-writes",
       40,
       320,
-      'Copies give you read capacity and nothing else: 600 reads a second across three of them, but still only 200 writes against the one primary. Adding copies fixes one of those and does nothing at all for the other.',
+      "Copies give you read capacity and nothing else: 600 reads a second across three of them, but still only 200 writes against the one primary. Adding copies fixes one of those and does nothing at all for the other.",
       340,
     ),
   ],
@@ -1272,14 +1293,17 @@ const readReplicas: Topology = {
 
 const shardedDatabase: Topology = {
   nodes: [
-    node('client', 'client', 'Client', COL(0), ROW(1), { rps: 400, timeoutMs: 2000 }),
-    node('api', 'service', 'API Server', COL(1), ROW(1), {
+    node("client", "client", "Client", COL(0), ROW(1), {
+      rps: 400,
+      timeoutMs: 2000,
+    }),
+    node("api", "service", "API Server", COL(1), ROW(1), {
       capacity: 32,
       serviceMs: 5,
       serviceCv: 0.4,
       queueLimit: 256,
     }),
-    node('shards', 'shard', 'Sharded Store', COL(2), ROW(1), {
+    node("shards", "shard", "Sharded Store", COL(2), ROW(1), {
       serviceMs: 25,
       serviceCv: 0.6,
       queueLimit: 32,
@@ -1288,13 +1312,13 @@ const shardedDatabase: Topology = {
       hotKeyFraction: 0,
     }),
   ],
-  edges: [edge('client', 'api'), edge('api', 'shards')],
+  edges: [edge("client", "api"), edge("api", "shards")],
   annotations: [
     note(
-      'sd-note-hot',
+      "sd-note-hot",
       40,
       320,
-      'Four shards carry 160 a second each. Push the hot key share to 0.8 and one shard alone is offered 320 against its own 160, so it pins and sheds while the utilisation meter, an average across all four, still looks comfortable.',
+      "Four shards carry 160 a second each. Push the hot key share to 0.8 and one shard alone is offered 320 against its own 160, so it pins and sheds while the utilisation meter, an average across all four, still looks comfortable.",
       340,
     ),
   ],
@@ -1333,8 +1357,11 @@ const shardedDatabase: Topology = {
 
 const autoscalingService: Topology = {
   nodes: [
-    node('client', 'client', 'Client', COL(0), ROW(1), { rps: 250, timeoutMs: 3000 }),
-    node('api', 'service', 'API Server', COL(1), ROW(1), {
+    node("client", "client", "Client", COL(0), ROW(1), {
+      rps: 250,
+      timeoutMs: 3000,
+    }),
+    node("api", "service", "API Server", COL(1), ROW(1), {
       // Three slots on one machine; three machines running right now.
       capacity: 3,
       instances: 3,
@@ -1342,7 +1369,7 @@ const autoscalingService: Topology = {
       serviceCv: 0.5,
       queueLimit: 256,
     }),
-    node('db', 'db', 'Database', COL(2), ROW(1), {
+    node("db", "db", "Database", COL(2), ROW(1), {
       capacity: 24,
       serviceMs: 8,
       serviceCv: 0.6,
@@ -1353,7 +1380,7 @@ const autoscalingService: Topology = {
     // keeps control edges out of routing entirely, so this is a supervisory
     // relationship the topology states outright rather than something a
     // student has to infer from a wire that looks like every other wire.
-    node('scaler', 'autoscaler', 'Autoscaler', COL(1), ROW(2), {
+    node("scaler", "autoscaler", "Autoscaler", COL(1), ROW(2), {
       targetUtil: 0.7,
       // In INSTANCES: never fewer than 2 machines, never more than 5.
       minCapacity: 2,
@@ -1363,13 +1390,13 @@ const autoscalingService: Topology = {
       warmupMs: 4000,
     }),
   ],
-  edges: [edge('client', 'api'), edge('api', 'db'), control('scaler', 'api')],
+  edges: [edge("client", "api"), edge("api", "db"), control("scaler", "api")],
   annotations: [
     note(
-      'as-note-lag',
+      "as-note-lag",
       40,
       456,
-      'Raise the load and capacity does not follow. The controller waits out three seconds of cooldown, decides, and the new machines take four more to boot. Requests fail in that gap, and the gap is the point: an autoscaler lags, it does not shield.',
+      "Raise the load and capacity does not follow. The controller waits out three seconds of cooldown, decides, and the new machines take four more to boot. Requests fail in that gap, and the gap is the point: an autoscaler lags, it does not shield.",
       340,
     ),
   ],
@@ -1389,31 +1416,34 @@ const autoscalingService: Topology = {
 
 const multiRegion: Topology = {
   nodes: [
-    node('client', 'client', 'Client', COL(0), ROW(1), { rps: 250, timeoutMs: 2000 }),
-    node('router', 'region', 'Region Router', COL(1), ROW(1), {
+    node("client", "client", "Client", COL(0), ROW(1), {
+      rps: 250,
+      timeoutMs: 2000,
+    }),
+    node("router", "region", "Region Router", COL(1), ROW(1), {
       regions: 2,
       activeRegion: 0,
       failoverMs: 5000,
     }),
-    node('us-api', 'service', 'US API', COL(2), ROW(0), {
+    node("us-api", "service", "US API", COL(2), ROW(0), {
       capacity: 10,
       serviceMs: 25,
       serviceCv: 0.5,
       queueLimit: 64,
     }),
-    node('eu-api', 'service', 'EU API', COL(2), ROW(2), {
+    node("eu-api", "service", "EU API", COL(2), ROW(2), {
       capacity: 10,
       serviceMs: 25,
       serviceCv: 0.5,
       queueLimit: 64,
     }),
-    node('us-db', 'db', 'US Database', COL(3), ROW(0), {
+    node("us-db", "db", "US Database", COL(3), ROW(0), {
       capacity: 16,
       serviceMs: 12,
       serviceCv: 0.6,
       queueLimit: 96,
     }),
-    node('eu-db', 'db', 'EU Database', COL(3), ROW(2), {
+    node("eu-db", "db", "EU Database", COL(3), ROW(2), {
       capacity: 16,
       serviceMs: 12,
       serviceCv: 0.6,
@@ -1422,20 +1452,20 @@ const multiRegion: Topology = {
   ],
   // Edge ORDER is region index: the first edge out of the router is region 0.
   edges: [
-    edge('client', 'router'),
-    edge('router', 'us-api'),
-    edge('router', 'eu-api'),
-    edge('us-api', 'us-db'),
-    edge('eu-api', 'eu-db'),
+    edge("client", "router"),
+    edge("router", "us-api"),
+    edge("router", "eu-api"),
+    edge("us-api", "us-db"),
+    edge("eu-api", "eu-db"),
   ],
   annotations: [
-    sectionOver('mr-sec-us', 'United States, taking traffic', 0, 2, 3, 0, 0),
-    sectionOver('mr-sec-eu', 'Europe, idle until it is needed', 3, 2, 3, 2, 2),
+    sectionOver("mr-sec-us", "United States, taking traffic", 0, 2, 3, 0, 0),
+    sectionOver("mr-sec-eu", "Europe, idle until it is needed", 3, 2, 3, 2, 2),
     note(
-      'mr-note-fail',
+      "mr-note-fail",
       1064,
       40,
-      'Crash the US API. For five seconds every request fails while the router notices, then Europe picks it all up. Only one region takes traffic at a time, so this pair buys you survival, not extra capacity: at 4x the active region melts while the standby sits at zero.',
+      "Crash the US API. For five seconds every request fails while the router notices, then Europe picks it all up. Only one region takes traffic at a time, so this pair buys you survival, not extra capacity: at 4x the active region melts while the standby sits at zero.",
       300,
     ),
   ],
@@ -1470,38 +1500,41 @@ const multiRegion: Topology = {
 
 const fullStack: Topology = {
   nodes: [
-    node('client', 'client', 'Client', COL(0), ROW(1), { rps: 600, timeoutMs: 3000 }),
-    node('cdn', 'cdn', 'CDN Edge', COL(1), ROW(1), {
+    node("client", "client", "Client", COL(0), ROW(1), {
+      rps: 600,
+      timeoutMs: 3000,
+    }),
+    node("cdn", "cdn", "CDN Edge", COL(1), ROW(1), {
       capacity: 256,
       serviceMs: 2,
       serviceCv: 0.3,
       hitRate: 0.7,
       queueLimit: 2048,
     }),
-    node('lb', 'lb', 'Load Balancer', COL(2), ROW(1), {
+    node("lb", "lb", "Load Balancer", COL(2), ROW(1), {
       capacity: 512,
       serviceMs: 0.5,
     }),
-    node('api1', 'service', 'API 1', COL(3), ROW(0), {
+    node("api1", "service", "API 1", COL(3), ROW(0), {
       capacity: 12,
       serviceMs: 8,
       serviceCv: 0.5,
       queueLimit: 128,
     }),
-    node('api2', 'service', 'API 2', COL(3), ROW(2), {
+    node("api2", "service", "API 2", COL(3), ROW(2), {
       capacity: 12,
       serviceMs: 8,
       serviceCv: 0.5,
       queueLimit: 128,
     }),
-    node('cache', 'cache', 'Cache', COL(4), ROW(0), {
+    node("cache", "cache", "Cache", COL(4), ROW(0), {
       capacity: 64,
       serviceMs: 2,
       serviceCv: 0.4,
       hitRate: 0.6,
       queueLimit: 512,
     }),
-    node('shards', 'shard', 'Sharded Store', COL(5), ROW(0), {
+    node("shards", "shard", "Sharded Store", COL(5), ROW(0), {
       serviceMs: 25,
       serviceCv: 0.6,
       queueLimit: 32,
@@ -1509,50 +1542,50 @@ const fullStack: Topology = {
       shardCapacity: 2,
       hotKeyFraction: 0,
     }),
-    node('queue', 'queue', 'Job Queue', COL(4), ROW(2), {
+    node("queue", "queue", "Job Queue", COL(4), ROW(2), {
       serviceMs: 1,
       serviceCv: 0.2,
       queueLimit: 5000,
     }),
-    node('workers', 'worker', 'Workers', COL(5), ROW(2), {
+    node("workers", "worker", "Workers", COL(5), ROW(2), {
       capacity: 6,
       serviceMs: 25,
       serviceCv: 0.6,
     }),
   ],
   edges: [
-    edge('client', 'cdn'),
-    edge('cdn', 'lb'),
-    edge('lb', 'api1'),
-    edge('lb', 'api2'),
+    edge("client", "cdn"),
+    edge("cdn", "lb"),
+    edge("lb", "api1"),
+    edge("lb", "api2"),
     // Each api reads through the cache AND books async work. Both edges are
     // taken for every request: a 'service' fans out to all its downstreams.
-    edge('api1', 'cache'),
-    edge('api1', 'queue'),
-    edge('api2', 'cache'),
-    edge('api2', 'queue'),
-    edge('cache', 'shards'),
-    edge('queue', 'workers'),
+    edge("api1", "cache"),
+    edge("api1", "queue"),
+    edge("api2", "cache"),
+    edge("api2", "queue"),
+    edge("cache", "shards"),
+    edge("queue", "workers"),
   ],
   annotations: [
     // Only the two ends are framed. The point of this example is the
     // contrast between them, and boxing the middle would bury it.
-    sectionOver('fs-sec-sync', 'Answered while you wait', 0, 4, 5, 0, 0),
-    sectionOver('fs-sec-async', 'Answered later', 3, 4, 5, 2, 2),
+    sectionOver("fs-sec-sync", "Answered while you wait", 0, 4, 5, 0, 0),
+    sectionOver("fs-sec-async", "Answered later", 3, 4, 5, 2, 2),
     note(
-      'fs-note-cdn',
+      "fs-note-cdn",
       1584,
       40,
-      'Two thirds of the traffic never gets past the edge cache. Only the misses reach anything below, which is why everything behind it looks so lightly loaded at rest.',
+      "Two thirds of the traffic never gets past the edge cache. Only the misses reach anything below, which is why everything behind it looks so lightly loaded at rest.",
       236,
     ),
     // The lesson. Both halves run out of room at 4x; only one of them
     // tells you about it.
     note(
-      'fs-note-lesson',
+      "fs-note-lesson",
       16,
       336,
-      'Take the load to 4x and watch both halves. The sharded store saturates and the client sees errors straight away. The workers saturate too, but the queue swallows the excess, so the client is still told everything is fine while a backlog builds that takes hours to drain.',
+      "Take the load to 4x and watch both halves. The sharded store saturates and the client sees errors straight away. The workers saturate too, but the queue swallows the excess, so the client is still told everything is fine while a backlog builds that takes hours to drain.",
       300,
     ),
   ],
@@ -1589,98 +1622,120 @@ const fullStack: Topology = {
 
 const specialisedStores: Topology = {
   nodes: [
-    node('client', 'client', 'Client', COL(0), ROW(1), { rps: 240, timeoutMs: 3000 }),
-    node('batch', 'client', 'Batch Jobs', COL(0), LROW(3, 1), {
+    node("client", "client", "Client", COL(0), ROW(1), {
+      rps: 240,
+      timeoutMs: 3000,
+    }),
+    node("batch", "client", "Batch Jobs", COL(0), LROW(3, 1), {
       rps: 6,
       timeoutMs: 2000,
     }),
-    node('lb', 'lb', 'Load Balancer', COL(1), ROW(1), {
+    node("lb", "lb", "Load Balancer", COL(1), ROW(1), {
       capacity: 512,
       serviceMs: 0.5,
     }),
-    node('archive-q', 'queue', 'Archive Queue', COL(1), LROW(3, 1), {
+    node("archive-q", "queue", "Archive Queue", COL(1), LROW(3, 1), {
       serviceMs: 1,
       serviceCv: 0.2,
       queueLimit: 5000,
     }),
-    node('search-api', 'service', 'Search API', COL(2), ROW(0), {
+    node("search-api", "service", "Search API", COL(2), ROW(0), {
       capacity: 8,
       serviceMs: 6,
       serviceCv: 0.4,
       queueLimit: 128,
     }),
-    node('recs-api', 'service', 'Recs API', COL(2), ROW(1), {
+    node("recs-api", "service", "Recs API", COL(2), ROW(1), {
       capacity: 8,
       serviceMs: 6,
       serviceCv: 0.4,
       queueLimit: 128,
     }),
-    node('media-api', 'service', 'Media API', COL(2), ROW(2), {
+    node("media-api", "service", "Media API", COL(2), ROW(2), {
       capacity: 8,
       serviceMs: 6,
       serviceCv: 0.4,
       queueLimit: 128,
     }),
-    node('archiver', 'worker', 'Archiver', COL(2), LROW(3, 1), {
+    node("archiver", "worker", "Archiver", COL(2), LROW(3, 1), {
       capacity: 2,
       serviceMs: 40,
       serviceCv: 0.4,
     }),
-    node('search', 'searchindex', 'Search Index', COL(3), ROW(0)),
+    node("search", "searchindex", "Search Index", COL(3), ROW(0)),
     // 12 slots at ~50ms per query is a 240 rps ceiling: a third used at 1x,
     // and the first thing to saturate at 4x, which makes the vector index
     // the knee of the whole preset.
-    node('vectors', 'vectordb', 'Vector Index', COL(3), ROW(1), { capacity: 12 }),
-    node('blobs', 'objectstore', 'Object Storage', COL(3), ROW(2)),
-    node('glacier', 'coldstorage', 'Cold Storage', COL(3), LROW(3, 1)),
-    node('social', 'graphdb', 'Social Graph', COL(4), ROW(0)),
-    node('metrics', 'timeseriesdb', 'Metrics Store', COL(4), ROW(2)),
+    node("vectors", "vectordb", "Vector Index", COL(3), ROW(1), {
+      capacity: 12,
+    }),
+    node("blobs", "objectstore", "Object Storage", COL(3), ROW(2)),
+    node("glacier", "coldstorage", "Cold Storage", COL(3), LROW(3, 1)),
+    node("social", "graphdb", "Social Graph", COL(4), ROW(0)),
+    node("metrics", "timeseriesdb", "Metrics Store", COL(4), ROW(2)),
   ],
   edges: [
-    edge('client', 'lb'),
-    edge('lb', 'search-api'),
-    edge('lb', 'recs-api'),
-    edge('lb', 'media-api'),
+    edge("client", "lb"),
+    edge("lb", "search-api"),
+    edge("lb", "recs-api"),
+    edge("lb", "media-api"),
     // Each API talks to its own store AND emits a metric append; a service
     // fans out to all its downstreams, so the metrics edge is taken for
     // every request, which is exactly what instrumentation does.
-    edge('search-api', 'search'),
-    edge('search-api', 'metrics'),
-    edge('recs-api', 'vectors'),
-    edge('recs-api', 'social'),
-    edge('recs-api', 'metrics'),
-    edge('media-api', 'blobs'),
-    edge('media-api', 'metrics'),
+    edge("search-api", "search"),
+    edge("search-api", "metrics"),
+    edge("recs-api", "vectors"),
+    edge("recs-api", "social"),
+    edge("recs-api", "metrics"),
+    edge("media-api", "blobs"),
+    edge("media-api", "metrics"),
     // The archive path: acknowledged at the queue, drained at the
     // archiver's pace, paid for in seconds at the cold tier.
-    edge('batch', 'archive-q'),
-    edge('archive-q', 'archiver'),
-    edge('archiver', 'glacier'),
+    edge("batch", "archive-q"),
+    edge("archive-q", "archiver"),
+    edge("archiver", "glacier"),
   ],
   annotations: [
-    sectionOver('ss-sec-stores', 'A different store for each question', 0, 2, 4, 0, 2),
-    sectionOver('ss-sec-arch', 'Moving old data somewhere cheaper', 2, 0, 3, 3, 3, 1),
+    sectionOver(
+      "ss-sec-stores",
+      "A different store for each question",
+      0,
+      2,
+      4,
+      0,
+      2,
+    ),
+    sectionOver(
+      "ss-sec-arch",
+      "Moving old data somewhere cheaper",
+      2,
+      0,
+      3,
+      3,
+      3,
+      1,
+    ),
     note(
-      'ss-note-stores',
+      "ss-note-stores",
       1320,
       40,
-      'One general purpose database would do all of this badly. A text index, a vector index and a graph each answer a question the others are slow at, and the price is four stores to run instead of one.',
+      "One general purpose database would do all of this badly. A text index, a vector index and a graph each answer a question the others are slow at, and the price is four stores to run instead of one.",
       300,
     ),
     // The lesson: the same overload, told two different ways depending on
     // whether the caller is still waiting for an answer.
     note(
-      'ss-note-lesson',
+      "ss-note-lesson",
       1320,
       296,
-      'Take the load to 4x. The vector index saturates and the client sees the errors immediately. The archive path saturates too and says nothing: the batch client is still acked while cold storage sheds behind the queue.',
+      "Take the load to 4x. The vector index saturates and the client sees the errors immediately. The archive path saturates too and says nothing: the batch client is still acked while cold storage sheds behind the queue.",
       300,
     ),
     note(
-      'ss-note-cold',
+      "ss-note-cold",
       16,
       296,
-      'Cold storage is slow on purpose, seconds per restore, because almost nothing is ever read back. Paying for fast storage you never read is the mistake this avoids.',
+      "Cold storage is slow on purpose, seconds per restore, because almost nothing is ever read back. Paying for fast storage you never read is the mistake this avoids.",
       236,
     ),
   ],
@@ -1714,8 +1769,11 @@ const specialisedStores: Topology = {
 
 const eventDriven: Topology = {
   nodes: [
-    node('client', 'client', 'API Clients', 40, 140, { rps: 60, timeoutMs: 2500 }),
-    node('gw', 'apigateway', 'API Gateway', 250, 140, {
+    node("client", "client", "API Clients", 40, 140, {
+      rps: 60,
+      timeoutMs: 2500,
+    }),
+    node("gw", "apigateway", "API Gateway", 250, 140, {
       capacity: 64,
       serviceMs: 2,
       // 60 rps of interactive traffic fits comfortably; at 4x the door is
@@ -1724,55 +1782,58 @@ const eventDriven: Topology = {
       burst: 150,
       authFailRate: 0.01,
     }),
-    node('api', 'service', 'API Service', 470, 140, {
+    node("api", "service", "API Service", 470, 140, {
       capacity: 16,
       serviceMs: 10,
       serviceCv: 0.5,
       queueLimit: 128,
     }),
-    node('broker', 'streambroker', 'Event Stream', 700, 60, {
+    node("broker", "streambroker", "Event Stream", 700, 60, {
       serviceMs: 1,
       partitions: 4,
       queueLimit: 2000,
     }),
-    node('indexer', 'service', 'Search Indexer', 930, 20, {
+    node("indexer", "service", "Search Indexer", 930, 20, {
       capacity: 4,
       serviceMs: 55,
       serviceCv: 0.6,
       queueLimit: 32,
     }),
-    node('billing', 'service', 'Billing', 930, 130, {
+    node("billing", "service", "Billing", 930, 130, {
       capacity: 4,
       serviceMs: 12,
       serviceCv: 0.5,
       queueLimit: 32,
     }),
-    node('topic', 'pubsub', 'Fan-out Topic', 700, 230, { serviceMs: 0.5 }),
-    node('push', 'service', 'Push Notifs', 930, 240, {
+    node("topic", "pubsub", "Fan-out Topic", 700, 230, { serviceMs: 0.5 }),
+    node("push", "service", "Push Notifs", 930, 240, {
       capacity: 4,
       serviceMs: 8,
       serviceCv: 0.5,
       queueLimit: 32,
     }),
-    node('audit', 'service', 'Audit Log', 930, 350, {
+    node("audit", "service", "Audit Log", 930, 350, {
       capacity: 2,
       serviceMs: 40,
       serviceCv: 0.6,
       queueLimit: 24,
     }),
-    node('metrics', 'service', 'Metrics', 930, 460, {
+    node("metrics", "service", "Metrics", 930, 460, {
       capacity: 4,
       serviceMs: 5,
       serviceCv: 0.4,
       queueLimit: 32,
     }),
-    node('chat', 'client', 'Chat Clients', 40, 420, { rps: 30, timeoutMs: 2000 }),
-    node('ws', 'websocket', 'WS Gateway', 250, 420, {
+    node("chat", "client", "Chat Clients", 40, 420, {
+      rps: 30,
+      timeoutMs: 2000,
+    }),
+    node("ws", "websocket", "WS Gateway", 250, 420, {
       capacity: 400,
       serviceMs: 5,
       connectionMs: 8000,
     }),
-    node('mesh', 'sidecar', 'Chat Sidecar', 470, 420, {
+    node("mesh", "sidecar", "Chat Sidecar", 470, 420, {
       capacity: 32,
       serviceMs: 2,
       timeoutMs: 500,
@@ -1780,24 +1841,24 @@ const eventDriven: Topology = {
       outlierAfter: 5,
       openMs: 3000,
     }),
-    node('chatsvc', 'service', 'Chat Service', 690, 420, {
+    node("chatsvc", "service", "Chat Service", 690, 420, {
       capacity: 8,
       serviceMs: 12,
       serviceCv: 0.5,
       queueLimit: 64,
     }),
-    node('cron', 'cron', 'Nightly Report', 40, 560, {
+    node("cron", "cron", "Nightly Report", 40, 560, {
       intervalMs: 15000,
       batchSize: 40,
     }),
-    node('fn', 'lambda', 'Report Fn', 300, 560, {
+    node("fn", "lambda", "Report Fn", 300, 560, {
       serviceMs: 25,
       serviceCv: 0.5,
       coldStartMs: 350,
       keepWarmMs: 10000,
       maxConcurrency: 30,
     }),
-    node('db', 'db', 'Database', 560, 560, {
+    node("db", "db", "Database", 560, 560, {
       capacity: 8,
       serviceMs: 20,
       serviceCv: 0.6,
@@ -1805,24 +1866,24 @@ const eventDriven: Topology = {
     }),
   ],
   edges: [
-    edge('client', 'gw'),
+    edge("client", "gw"),
     // The gateway's route table: 3 parts interactive API, 1 part function.
-    edge('gw', 'api', 3),
-    edge('gw', 'fn', 1),
-    edge('api', 'broker'),
-    edge('api', 'topic'),
+    edge("gw", "api", 3),
+    edge("gw", "fn", 1),
+    edge("api", "broker"),
+    edge("api", "topic"),
     // Each broker edge is an independent consumer group.
-    edge('broker', 'indexer'),
-    edge('broker', 'billing'),
+    edge("broker", "indexer"),
+    edge("broker", "billing"),
     // Each topic edge is one more delivery per publish.
-    edge('topic', 'push'),
-    edge('topic', 'audit'),
-    edge('topic', 'metrics'),
-    edge('chat', 'ws'),
-    edge('ws', 'mesh'),
-    edge('mesh', 'chatsvc'),
-    edge('cron', 'fn'),
-    edge('fn', 'db'),
+    edge("topic", "push"),
+    edge("topic", "audit"),
+    edge("topic", "metrics"),
+    edge("chat", "ws"),
+    edge("ws", "mesh"),
+    edge("mesh", "chatsvc"),
+    edge("cron", "fn"),
+    edge("fn", "db"),
   ],
   // Notes only, no sections. These nodes are hand-placed rather than on the
   // COL/ROW grid, and the twelve pixels between Billing and the fan-out
@@ -1830,25 +1891,25 @@ const eventDriven: Topology = {
   // make room would cost more than the frames are worth here.
   annotations: [
     note(
-      'ed-note-sync',
+      "ed-note-sync",
       16,
       248,
-      'Everything on the left is a caller waiting for an answer. Everything on the right runs after that answer was already sent.',
+      "Everything on the left is a caller waiting for an answer. Everything on the right runs after that answer was already sent.",
       236,
     ),
     // The lesson. Five consumers, one of which quietly cannot keep up.
     note(
-      'ed-note-fanout',
+      "ed-note-fanout",
       1160,
       16,
-      'One event becomes five pieces of work here, each read by its own consumer. Turn the load up and watch the audit log: it takes 40ms a message and falls behind while the four beside it keep up, and nobody calling the API sees a thing.',
+      "One event becomes five pieces of work here, each read by its own consumer. Turn the load up and watch the audit log: it takes 40ms a message and falls behind while the four beside it keep up, and nobody calling the API sees a thing.",
       300,
     ),
     note(
-      'ed-note-cold',
+      "ed-note-cold",
       16,
       680,
-      'The report function starts cold. The first call after a quiet spell pays 350ms of startup, then stays warm for ten seconds. Watch the first burst after the timer fires.',
+      "The report function starts cold. The first call after a quiet spell pays 350ms of startup, then stays warm for ten seconds. Watch the first burst after the timer fires.",
       236,
     ),
   ],
@@ -1890,42 +1951,45 @@ const eventDriven: Topology = {
 
 const resilientDelivery: Topology = {
   nodes: [
-    node('client', 'client', 'Client', COL(0), ROW(1), { rps: 240, timeoutMs: 2500 }),
-    node('shedder', 'loadshedder', 'Load Shedder', COL(1), ROW(1), {
+    node("client", "client", "Client", COL(0), ROW(1), {
+      rps: 240,
+      timeoutMs: 2500,
+    }),
+    node("shedder", "loadshedder", "Load Shedder", COL(1), ROW(1), {
       rateLimitRps: 700,
       burst: 700,
       lowPriorityShare: 0.3,
       priorityReserve: 0.3,
     }),
-    node('api', 'service', 'API Server', COL(2), ROW(1), {
+    node("api", "service", "API Server", COL(2), ROW(1), {
       capacity: 16,
       serviceMs: 6,
       serviceCv: 0.4,
       queueLimit: 128,
     }),
-    node('bulkhead', 'bulkhead', 'Recs Bulkhead', COL(3), ROW(0), {
+    node("bulkhead", "bulkhead", "Recs Bulkhead", COL(3), ROW(0), {
       bulkheadMax: 12,
     }),
-    node('recs', 'service', 'Recommendations', COL(4), ROW(0), {
+    node("recs", "service", "Recommendations", COL(4), ROW(0), {
       capacity: 6,
       serviceMs: 15,
       serviceCv: 0.5,
       queueLimit: 32,
     }),
-    node('writebuf', 'writebehind', 'Write-Behind Cache', COL(3), ROW(1), {
+    node("writebuf", "writebehind", "Write-Behind Cache", COL(3), ROW(1), {
       capacity: 256,
       serviceMs: 1,
       serviceCv: 0.3,
       queueLimit: 512,
       flushDelayMs: 200,
     }),
-    node('db', 'db', 'Database', COL(4), ROW(1), {
+    node("db", "db", "Database", COL(4), ROW(1), {
       capacity: 12,
       serviceMs: 15,
       serviceCv: 0.6,
       queueLimit: 96,
     }),
-    node('retryq', 'retryqueue', 'Notify Queue', COL(3), ROW(2), {
+    node("retryq", "retryqueue", "Notify Queue", COL(3), ROW(2), {
       capacity: 8,
       serviceMs: 3,
       serviceCv: 0.3,
@@ -1933,23 +1997,23 @@ const resilientDelivery: Topology = {
       timeoutMs: 1000,
       retries: 2,
     }),
-    node('notify', 'service', 'Notification Service', COL(4), ROW(2), {
+    node("notify", "service", "Notification Service", COL(4), ROW(2), {
       capacity: 6,
       serviceMs: 12,
       serviceCv: 0.5,
       errorRate: 0.15,
       queueLimit: 48,
     }),
-    node('uploader', 'client', 'Upload Client', COL(0), LROW(3, 1), {
+    node("uploader", "client", "Upload Client", COL(0), LROW(3, 1), {
       rps: 3,
       timeoutMs: 4000,
     }),
-    node('encodeq', 'queue', 'Encode Queue', COL(1), LROW(3, 1), {
+    node("encodeq", "queue", "Encode Queue", COL(1), LROW(3, 1), {
       serviceMs: 1,
       serviceCv: 0.2,
       queueLimit: 5000,
     }),
-    node('transcoder', 'transcoder', 'Transcoder Farm', COL(2), LROW(3, 1), {
+    node("transcoder", "transcoder", "Transcoder Farm", COL(2), LROW(3, 1), {
       instances: 2,
       capacity: 2,
       serviceMs: 1200,
@@ -1957,52 +2021,60 @@ const resilientDelivery: Topology = {
     }),
   ],
   edges: [
-    edge('client', 'shedder'),
-    edge('shedder', 'api'),
+    edge("client", "shedder"),
+    edge("shedder", "api"),
     // The api fans out to all three: recommendations behind their own
     // bulkhead, writes into the write-behind buffer, and a notification
     // job into the retry queue. Both delivery nodes ack instantly, so
     // the client's fate rides on the recommendations path alone.
-    edge('api', 'bulkhead'),
-    edge('api', 'writebuf'),
-    edge('api', 'retryq'),
-    edge('bulkhead', 'recs'),
-    edge('writebuf', 'db'),
-    edge('retryq', 'notify'),
-    edge('uploader', 'encodeq'),
-    edge('encodeq', 'transcoder'),
+    edge("api", "bulkhead"),
+    edge("api", "writebuf"),
+    edge("api", "retryq"),
+    edge("bulkhead", "recs"),
+    edge("writebuf", "db"),
+    edge("retryq", "notify"),
+    edge("uploader", "encodeq"),
+    edge("encodeq", "transcoder"),
   ],
   annotations: [
-    sectionOver('rd-sec-live', 'Failing on purpose, not by surprise', 0, 1, 4, 0, 2),
-    sectionOver('rd-sec-batch', 'Work that can wait', 2, 0, 2, 3, 3, 1),
+    sectionOver(
+      "rd-sec-live",
+      "Failing on purpose, not by surprise",
+      0,
+      1,
+      4,
+      0,
+      2,
+    ),
+    sectionOver("rd-sec-batch", "Work that can wait", 2, 0, 2, 3, 3, 1),
     note(
-      'rd-note-shed',
+      "rd-note-shed",
       16,
       16,
-      'At 4x the shedder drops the traffic marked best effort and keeps serving the rest. Choosing what to drop beats letting a queue choose for you.',
+      "At 4x the shedder drops the traffic marked best effort and keeps serving the rest. Choosing what to drop beats letting a queue choose for you.",
       236,
     ),
     // The lesson. A bulkhead is the one protection whose effect you can
     // trigger by hand and see in a single round trip.
     note(
-      'rd-note-bulkhead',
+      "rd-note-bulkhead",
       1320,
       40,
       "Right click recommendations and inject slow. The bulkhead in front fills within one round trip, and after that the extra calls fail in microseconds instead of queueing. One slow feature stops being everyone else's problem.",
       300,
     ),
     note(
-      'rd-note-writebuf',
+      "rd-note-writebuf",
       1320,
       264,
-      'The write cache acks in about a millisecond and flushes 200ms later, so roughly 50 rows are always acknowledged but not yet stored. Crash it and exactly that many writes are gone.',
+      "The write cache acks in about a millisecond and flushes 200ms later, so roughly 50 rows are always acknowledged but not yet stored. Crash it and exactly that many writes are gone.",
       300,
     ),
     note(
-      'rd-note-batch',
+      "rd-note-batch",
       800,
       496,
-      'The transcoders drain about 3.3 jobs a second against 3 arriving, so they are already 90 percent busy at rest. Turn the load up and the backlog grows about 9 jobs every second and never drains on its own. Raise the number of instances to fix it.',
+      "The transcoders drain about 3.3 jobs a second against 3 arriving, so they are already 90 percent busy at rest. Turn the load up and the backlog grows about 9 jobs every second and never drains on its own. Raise the number of instances to fix it.",
       300,
     ),
   ],
@@ -2071,18 +2143,18 @@ const resilientDelivery: Topology = {
 const discord: Topology = {
   nodes: [
     // Connection lane: capacity here is held connections, not rps.
-    node('conn', 'client', 'New Connections', COL(0), ROW(0), {
+    node("conn", "client", "New Connections", COL(0), ROW(0), {
       rps: 30,
       timeoutMs: 3000,
     }),
-    node('gateway', 'websocket', 'Gateway (WS)', COL(1), ROW(0), {
+    node("gateway", "websocket", "Gateway (WS)", COL(1), ROW(0), {
       capacity: 400,
       instances: 4,
       serviceMs: 5,
       serviceCv: 0.4,
       connectionMs: 40000,
     }),
-    node('sessions', 'service', 'Session Servers', COL(2), ROW(0), {
+    node("sessions", "service", "Session Servers", COL(2), ROW(0), {
       capacity: 8,
       serviceMs: 10,
       serviceCv: 0.5,
@@ -2090,41 +2162,43 @@ const discord: Topology = {
     }),
 
     // Message lane.
-    node('senders', 'client', 'Message Senders', COL(0), ROW(2), {
+    node("senders", "client", "Message Senders", COL(0), ROW(2), {
       rps: 80,
       timeoutMs: 2500,
     }),
-    node('limiter', 'ratelimiter', 'API Rate Limit', COL(1), ROW(2), {
+    node("limiter", "ratelimiter", "API Rate Limit", COL(1), ROW(2), {
       rateLimitRps: 200,
       burst: 200,
     }),
-    node('msg-api', 'service', 'Message API', COL(2), ROW(2), {
+    node("msg-api", "service", "Message API", COL(2), ROW(2), {
       capacity: 16,
       serviceMs: 6,
       serviceCv: 0.5,
       queueLimit: 128,
     }),
-    node('fanout', 'pubsub', 'Guild Fan-out', COL(3), ROW(1), { serviceMs: 0.5 }),
-    node('push-a', 'service', 'Gateway Push A', COL(4), ROW(0), {
+    node("fanout", "pubsub", "Guild Fan-out", COL(3), ROW(1), {
+      serviceMs: 0.5,
+    }),
+    node("push-a", "service", "Gateway Push A", COL(4), ROW(0), {
       capacity: 2,
       serviceMs: 15,
       serviceCv: 0.5,
       queueLimit: 32,
     }),
-    node('push-b', 'service', 'Gateway Push B', COL(4), ROW(1), {
+    node("push-b", "service", "Gateway Push B", COL(4), ROW(1), {
       capacity: 2,
       serviceMs: 15,
       serviceCv: 0.5,
       queueLimit: 32,
     }),
-    node('push-c', 'service', 'Gateway Push C', COL(4), ROW(2), {
+    node("push-c", "service", "Gateway Push C", COL(4), ROW(2), {
       capacity: 2,
       serviceMs: 15,
       serviceCv: 0.5,
       queueLimit: 32,
     }),
     // Messages are partitioned by channel; a shard here IS a channel range.
-    node('scylla', 'shard', 'Message Store', COL(3), ROW(2), {
+    node("scylla", "shard", "Message Store", COL(3), ROW(2), {
       serviceMs: 40,
       serviceCv: 0.6,
       queueLimit: 32,
@@ -2132,50 +2206,50 @@ const discord: Topology = {
       shardCapacity: 2,
       hotKeyFraction: 0,
     }),
-    node('search-q', 'queue', 'Index Queue', COL(3), LROW(3, 1), {
+    node("search-q", "queue", "Index Queue", COL(3), LROW(3, 1), {
       serviceMs: 1,
       serviceCv: 0.2,
       queueLimit: 5000,
     }),
-    node('indexer', 'worker', 'Search Indexer', COL(4), LROW(3, 1), {
+    node("indexer", "worker", "Search Indexer", COL(4), LROW(3, 1), {
       capacity: 4,
       serviceMs: 12,
       serviceCv: 0.5,
     }),
-    node('search', 'searchindex', 'Message Search', COL(5), LROW(3, 1), {
+    node("search", "searchindex", "Message Search", COL(5), LROW(3, 1), {
       readFraction: 0.15,
     }),
 
     // Media lane: attachments behind a CDN.
-    node('media', 'client', 'Media Fetch', COL(0), LROW(4, 1), {
+    node("media", "client", "Media Fetch", COL(0), LROW(4, 1), {
       rps: 120,
       timeoutMs: 2000,
     }),
-    node('cdn', 'cdn', 'Media CDN', COL(1), LROW(4, 1), {
+    node("cdn", "cdn", "Media CDN", COL(1), LROW(4, 1), {
       capacity: 256,
       serviceMs: 2,
       serviceCv: 0.3,
       hitRate: 0.9,
       queueLimit: 2048,
     }),
-    node('blobs', 'objectstore', 'Attachments', COL(2), LROW(4, 1)),
+    node("blobs", "objectstore", "Attachments", COL(2), LROW(4, 1)),
 
     // Voice lane: a separate fleet entirely.
-    node('voice', 'client', 'Voice Joins', COL(0), LROW(5, 2), {
+    node("voice", "client", "Voice Joins", COL(0), LROW(5, 2), {
       rps: 20,
       timeoutMs: 3000,
     }),
-    node('rtc', 'lb', 'RTC Discovery', COL(1), LROW(5, 2), {
+    node("rtc", "lb", "RTC Discovery", COL(1), LROW(5, 2), {
       capacity: 256,
       serviceMs: 0.5,
     }),
-    node('sfu-a', 'service', 'Voice Server A', COL(2), LROW(5, 2), {
+    node("sfu-a", "service", "Voice Server A", COL(2), LROW(5, 2), {
       capacity: 8,
       serviceMs: 20,
       serviceCv: 0.5,
       queueLimit: 64,
     }),
-    node('sfu-b', 'service', 'Voice Server B', COL(2), LROW(6, 2), {
+    node("sfu-b", "service", "Voice Server B", COL(2), LROW(6, 2), {
       capacity: 8,
       serviceMs: 20,
       serviceCv: 0.5,
@@ -2183,64 +2257,73 @@ const discord: Topology = {
     }),
   ],
   edges: [
-    edge('conn', 'gateway'),
-    edge('gateway', 'sessions'),
-    edge('senders', 'limiter'),
-    edge('limiter', 'msg-api'),
+    edge("conn", "gateway"),
+    edge("gateway", "sessions"),
+    edge("senders", "limiter"),
+    edge("limiter", "msg-api"),
     // A message write fans to all three: the store decides the sender's
     // fate; the fan-out and the index pipeline ack instantly and fail,
     // when they fail, where the sender cannot see it.
-    edge('msg-api', 'scylla'),
-    edge('msg-api', 'fanout'),
-    edge('msg-api', 'search-q'),
-    edge('fanout', 'push-a'),
-    edge('fanout', 'push-b'),
-    edge('fanout', 'push-c'),
-    edge('search-q', 'indexer'),
-    edge('indexer', 'search'),
-    edge('media', 'cdn'),
-    edge('cdn', 'blobs'),
-    edge('voice', 'rtc'),
-    edge('rtc', 'sfu-a'),
-    edge('rtc', 'sfu-b'),
+    edge("msg-api", "scylla"),
+    edge("msg-api", "fanout"),
+    edge("msg-api", "search-q"),
+    edge("fanout", "push-a"),
+    edge("fanout", "push-b"),
+    edge("fanout", "push-c"),
+    edge("search-q", "indexer"),
+    edge("indexer", "search"),
+    edge("media", "cdn"),
+    edge("cdn", "blobs"),
+    edge("voice", "rtc"),
+    edge("rtc", "sfu-a"),
+    edge("rtc", "sfu-b"),
   ],
   annotations: [
     // Four independent paths that share a company. Only the message path
     // and the push tier are coupled, and the coupling is the lesson.
-    sectionOver('dc-sec-conn', 'Holding the sockets open', 0, 0, 2, 0, 0),
-    sectionOver('dc-sec-msg', 'Writing a message', 1, 0, 2, 2, 2),
-    sectionOver('dc-sec-push', 'Pushing it out', 2, 4, 4, 0, 2),
-    sectionOver('dc-sec-search', 'Indexed later, off to the side', 3, 3, 5, 3, 3, 1),
-    sectionOver('dc-sec-media', 'Attachments', 4, 0, 2, 4, 4, 1),
-    sectionOver('dc-sec-voice', 'Voice, on its own hardware', 5, 0, 2, 5, 6, 2),
+    sectionOver("dc-sec-conn", "Holding the sockets open", 0, 0, 2, 0, 0),
+    sectionOver("dc-sec-msg", "Writing a message", 1, 0, 2, 2, 2),
+    sectionOver("dc-sec-push", "Pushing it out", 2, 4, 4, 0, 2),
+    sectionOver(
+      "dc-sec-search",
+      "Indexed later, off to the side",
+      3,
+      3,
+      5,
+      3,
+      3,
+      1,
+    ),
+    sectionOver("dc-sec-media", "Attachments", 4, 0, 2, 4, 4, 1),
+    sectionOver("dc-sec-voice", "Voice, on its own hardware", 5, 0, 2, 5, 6, 2),
     note(
-      'dc-note-conn',
+      "dc-note-conn",
       1320,
       48,
-      'The gateway counts open connections, not requests. 30 new a second, each held for 40 seconds, is 1200 sockets against a ceiling of 1600. Double the load and it starts refusing connections outright.',
+      "The gateway counts open connections, not requests. 30 new a second, each held for 40 seconds, is 1200 sockets against a ceiling of 1600. Double the load and it starts refusing connections outright.",
       300,
     ),
     // The lesson. Placed clear of every frame so it reads as commentary on
     // the whole message path rather than as a label on one box.
     note(
-      'dc-note-fanout',
+      "dc-note-fanout",
       1608,
       272,
-      'Drag the message rate up and watch the push servers. One message becomes one delivery per pod, and each pod can only do about 130 a second. Past that, members stop seeing messages while the senders see no errors at all. That silence is what makes fan-out hard.',
+      "Drag the message rate up and watch the push servers. One message becomes one delivery per pod, and each pod can only do about 130 a second. Past that, members stop seeing messages while the senders see no errors at all. That silence is what makes fan-out hard.",
       320,
     ),
     note(
-      'dc-note-hot',
+      "dc-note-hot",
       792,
       760,
-      'Messages are split across six channel shards. Give the message store a hot key and one busy channel takes far more than its share, so that shard melts while the average still looks healthy.',
+      "Messages are split across six channel shards. Give the message store a hot key and one busy channel takes far more than its share, so that shard melts while the average still looks healthy.",
       300,
     ),
     note(
-      'dc-note-voice',
+      "dc-note-voice",
       792,
       976,
-      'Voice runs on its own servers and never touches the text path, so chat can be on fire while calls stay up.',
+      "Voice runs on its own servers and never touches the text path, so chat can be on fire while calls stay up.",
       300,
     ),
   ],
@@ -2302,43 +2385,43 @@ const discord: Topology = {
 const uber: Topology = {
   nodes: [
     // Rider read side.
-    node('riders', 'client', 'Rider Apps', COL(0), ROW(1), {
+    node("riders", "client", "Rider Apps", COL(0), ROW(1), {
       rps: 30,
       timeoutMs: 3000,
     }),
-    node('gw', 'apigateway', 'Edge Gateway', COL(1), ROW(1), {
+    node("gw", "apigateway", "Edge Gateway", COL(1), ROW(1), {
       capacity: 32,
       serviceMs: 2,
       rateLimitRps: 200,
       burst: 200,
       authFailRate: 0.005,
     }),
-    node('match', 'service', 'Dispatch', COL(2), ROW(0), {
+    node("match", "service", "Dispatch", COL(2), ROW(0), {
       capacity: 8,
       serviceMs: 10,
       serviceCv: 0.5,
       queueLimit: 64,
     }),
-    node('eta', 'service', 'Maps ETA', COL(3), ROW(0), {
+    node("eta", "service", "Maps ETA", COL(3), ROW(0), {
       capacity: 8,
       serviceMs: 15,
       serviceCv: 0.5,
       queueLimit: 64,
     }),
-    node('push', 'service', 'Offer Push', COL(4), ROW(0), {
+    node("push", "service", "Offer Push", COL(4), ROW(0), {
       capacity: 4,
       serviceMs: 8,
       serviceCv: 0.5,
       queueLimit: 32,
     }),
-    node('pricing', 'service', 'Dynamic Pricing', COL(3), ROW(1), {
+    node("pricing", "service", "Dynamic Pricing", COL(3), ROW(1), {
       capacity: 8,
       serviceMs: 6,
       serviceCv: 0.4,
       queueLimit: 64,
     }),
     // The sink store the surge pipeline writes and pricing reads.
-    node('surge-kv', 'db', 'Surge KV Store', COL(4), ROW(1), {
+    node("surge-kv", "db", "Surge KV Store", COL(4), ROW(1), {
       capacity: 16,
       serviceMs: 4,
       serviceCv: 0.5,
@@ -2346,13 +2429,13 @@ const uber: Topology = {
     }),
 
     // Trip state and payments.
-    node('trips', 'service', 'Trip Service', COL(2), LROW(2, 1), {
+    node("trips", "service", "Trip Service", COL(2), LROW(2, 1), {
       capacity: 8,
       serviceMs: 12,
       serviceCv: 0.5,
       queueLimit: 64,
     }),
-    node('trip-db', 'replica', 'Trip Store', COL(3), LROW(2, 1), {
+    node("trip-db", "replica", "Trip Store", COL(3), LROW(2, 1), {
       capacity: 4,
       serviceMs: 10,
       serviceCv: 0.5,
@@ -2361,13 +2444,13 @@ const uber: Topology = {
       replicationLagMs: 50,
       readFraction: 0.7,
     }),
-    node('pay-brk', 'breaker', 'Payment Breaker', COL(3), LROW(3, 1), {
+    node("pay-brk", "breaker", "Payment Breaker", COL(3), LROW(3, 1), {
       errorThreshold: 0.5,
       windowMs: 4000,
       openMs: 3000,
       halfOpenProbes: 3,
     }),
-    node('payments', 'service', 'Payments', COL(4), LROW(3, 1), {
+    node("payments", "service", "Payments", COL(4), LROW(3, 1), {
       capacity: 4,
       serviceMs: 200,
       serviceCv: 0.5,
@@ -2376,30 +2459,30 @@ const uber: Topology = {
     }),
 
     // Driver write side: the firehose.
-    node('drivers', 'client', 'Driver Pings', COL(0), LROW(4, 2), {
+    node("drivers", "client", "Driver Pings", COL(0), LROW(4, 2), {
       rps: 400,
       timeoutMs: 2000,
     }),
-    node('ingest', 'service', 'Location Ingest', COL(1), LROW(4, 2), {
+    node("ingest", "service", "Location Ingest", COL(1), LROW(4, 2), {
       capacity: 24,
       serviceMs: 3,
       serviceCv: 0.4,
       queueLimit: 256,
     }),
-    node('kafka', 'streambroker', 'Kafka Event Bus', COL(2), LROW(4, 2), {
+    node("kafka", "streambroker", "Kafka Event Bus", COL(2), LROW(4, 2), {
       serviceMs: 0.5,
       serviceCv: 0.2,
       partitions: 12,
       queueLimit: 4000,
     }),
-    node('geo-upd', 'service', 'Geo Updater', COL(3), LROW(4, 2), {
+    node("geo-upd", "service", "Geo Updater", COL(3), LROW(4, 2), {
       capacity: 8,
       serviceMs: 6,
       serviceCv: 0.5,
       queueLimit: 64,
     }),
     // Sharded by region cell: one shard is one slice of the city.
-    node('geo', 'shard', 'Geo Index (H3)', COL(4), LROW(4, 2), {
+    node("geo", "shard", "Geo Index (H3)", COL(4), LROW(4, 2), {
       serviceMs: 10,
       serviceCv: 0.5,
       queueLimit: 32,
@@ -2407,48 +2490,48 @@ const uber: Topology = {
       shardCapacity: 2,
       hotKeyFraction: 0,
     }),
-    node('surge-w', 'service', 'Surge Pipeline', COL(3), LROW(5, 2), {
+    node("surge-w", "service", "Surge Pipeline", COL(3), LROW(5, 2), {
       capacity: 8,
       serviceMs: 6,
       serviceCv: 0.5,
       queueLimit: 64,
     }),
-    node('m3', 'timeseriesdb', 'M3 Metrics', COL(3), LROW(6, 2), {
+    node("m3", "timeseriesdb", "M3 Metrics", COL(3), LROW(6, 2), {
       rangeQueryFraction: 0.02,
       rangeQueryMs: 120,
     }),
   ],
   edges: [
-    edge('riders', 'gw'),
+    edge("riders", "gw"),
     // The gateway's route table: 3 parts dispatch, 1 part trip state.
-    edge('gw', 'match', 3),
-    edge('gw', 'trips', 1),
+    edge("gw", "match", 3),
+    edge("gw", "trips", 1),
     // Matching fans to everything it needs to answer one request.
-    edge('match', 'geo'),
-    edge('match', 'eta'),
-    edge('match', 'pricing'),
-    edge('match', 'push'),
-    edge('pricing', 'surge-kv'),
-    edge('trips', 'trip-db'),
-    edge('trips', 'pay-brk'),
+    edge("match", "geo"),
+    edge("match", "eta"),
+    edge("match", "pricing"),
+    edge("match", "push"),
+    edge("pricing", "surge-kv"),
+    edge("trips", "trip-db"),
+    edge("trips", "pay-brk"),
     // Trip events join the same stream the location pings ride.
-    edge('trips', 'kafka'),
-    edge('pay-brk', 'payments'),
-    edge('drivers', 'ingest'),
-    edge('ingest', 'kafka'),
+    edge("trips", "kafka"),
+    edge("pay-brk", "payments"),
+    edge("drivers", "ingest"),
+    edge("ingest", "kafka"),
     // Each broker edge is an independent consumer group with its own lag.
-    edge('kafka', 'geo-upd'),
-    edge('kafka', 'surge-w'),
-    edge('kafka', 'm3'),
-    edge('geo-upd', 'geo'),
-    edge('surge-w', 'surge-kv'),
+    edge("kafka", "geo-upd"),
+    edge("kafka", "surge-w"),
+    edge("kafka", "m3"),
+    edge("geo-upd", "geo"),
+    edge("surge-w", "surge-kv"),
   ],
   annotations: [
-    sectionOver('ub-sec-match', 'Finding a driver', 0, 2, 4, 0, 1),
-    sectionOver('ub-sec-trip', 'The trip, and getting paid', 1, 2, 4, 2, 3, 1),
+    sectionOver("ub-sec-match", "Finding a driver", 0, 2, 4, 0, 1),
+    sectionOver("ub-sec-trip", "The trip, and getting paid", 1, 2, 4, 2, 3, 1),
     sectionOver(
-      'ub-sec-fire',
-      'Where the drivers are, updated constantly',
+      "ub-sec-fire",
+      "Where the drivers are, updated constantly",
       2,
       0,
       4,
@@ -2457,33 +2540,33 @@ const uber: Topology = {
       2,
     ),
     note(
-      'ub-note-fan',
+      "ub-note-fan",
       1320,
       40,
-      'One rider request touches four services before an offer comes back. The slowest of them sets the wait, so a match happens at the speed of the weakest link here.',
+      "One rider request touches four services before an offer comes back. The slowest of them sets the wait, so a match happens at the speed of the weakest link here.",
       300,
     ),
     // The lesson. Payments is the only node in the diagram whose ceiling is
     // low enough to hit at 4x, and the breaker's reaction is the point.
     note(
-      'ub-note-pay',
+      "ub-note-pay",
       1320,
       368,
-      'Drag the load to 4x and watch payments. Each charge takes 200ms and only four run at once, so it tops out near 20 a second. The breaker in front notices and starts failing fast, which beats every trip request piling up behind a slow card network.',
+      "Drag the load to 4x and watch payments. Each charge takes 200ms and only four run at once, so it tops out near 20 a second. The breaker in front notices and starts failing fast, which beats every trip request piling up behind a slow card network.",
       300,
     ),
     note(
-      'ub-note-geo',
+      "ub-note-geo",
       1320,
       696,
-      'The location index is split by map cell. Give it a hot key and the whole city crowds into one cell, so that one shard saturates while the rest sit idle.',
+      "The location index is split by map cell. Give it a hot key and the whole city crowds into one cell, so that one shard saturates while the rest sit idle.",
       300,
     ),
     note(
-      'ub-note-lag',
+      "ub-note-lag",
       16,
       336,
-      '400 driver pings a second go onto one stream, and three readers consume it on their own clocks. If the map updater falls behind, dispatch quietly matches on stale positions and nothing on the rider path shows an error.',
+      "400 driver pings a second go onto one stream, and three readers consume it on their own clocks. If the map updater falls behind, dispatch quietly matches on stale positions and nothing on the rider path shows an error.",
       236,
     ),
   ],
@@ -2547,36 +2630,36 @@ const netflix: Topology = {
   nodes: [
     // Streaming lane: the bytes. Most of the system's traffic, none of
     // its cloud. An OCA is an ISP-embedded cache; its misses fill from S3.
-    node('viewers', 'client', 'Stream Viewers', COL(0), ROW(0), {
+    node("viewers", "client", "Stream Viewers", COL(0), ROW(0), {
       rps: 1500,
       timeoutMs: 2500,
     }),
-    node('oca', 'cdn', 'Open Connect OCA', COL(1), ROW(0), {
+    node("oca", "cdn", "Open Connect OCA", COL(1), ROW(0), {
       capacity: 512,
       serviceMs: 2,
       serviceCv: 0.3,
       hitRate: 0.96,
       queueLimit: 4096,
     }),
-    node('s3', 'objectstore', 'S3 Origin (fill)', COL(3), ROW(0)),
+    node("s3", "objectstore", "S3 Origin (fill)", COL(3), ROW(0)),
     // Encoding lane: one master in, many encodes out, fed by a queue and
     // priced in seconds. Its output lands in the same S3 the OCAs fill from.
-    node('studio', 'client', 'Studio Ingest', COL(0), ROW(1), {
+    node("studio", "client", "Studio Ingest", COL(0), ROW(1), {
       rps: 2,
       timeoutMs: 3000,
     }),
-    node('cosmosq', 'queue', 'Cosmos Job Queue', COL(1), ROW(1), {
+    node("cosmosq", "queue", "Cosmos Job Queue", COL(1), ROW(1), {
       serviceMs: 1,
       serviceCv: 0.2,
       queueLimit: 5000,
     }),
-    node('ves', 'transcoder', 'VES Encode Farm', COL(2), ROW(1), {
+    node("ves", "transcoder", "VES Encode Farm", COL(2), ROW(1), {
       instances: 2,
       capacity: 2,
       serviceMs: 1500,
       serviceCv: 0.3,
     }),
-    node('atlas', 'timeseriesdb', 'Atlas Telemetry', COL(3), ROW(1), {
+    node("atlas", "timeseriesdb", "Atlas Telemetry", COL(3), ROW(1), {
       capacity: 16,
       serviceMs: 1.5,
       serviceCv: 0.4,
@@ -2586,11 +2669,11 @@ const netflix: Topology = {
     }),
     // Control plane: the API calls. Two orders of magnitude less traffic
     // than streaming, and where all the complexity lives.
-    node('capi', 'client', 'Device API Calls', COL(0), LROW(3, 1), {
+    node("capi", "client", "Device API Calls", COL(0), LROW(3, 1), {
       rps: 240,
       timeoutMs: 2500,
     }),
-    node('zuul', 'apigateway', 'Zuul 2 Gateway', COL(1), LROW(3, 1), {
+    node("zuul", "apigateway", "Zuul 2 Gateway", COL(1), LROW(3, 1), {
       capacity: 96,
       serviceMs: 2,
       serviceCv: 0.3,
@@ -2599,34 +2682,34 @@ const netflix: Topology = {
       burst: 600,
       authFailRate: 0.005,
     }),
-    node('playapi', 'service', 'PlayAPI', COL(2), LROW(2, 1), {
+    node("playapi", "service", "PlayAPI", COL(2), LROW(2, 1), {
       capacity: 16,
       serviceMs: 8,
       serviceCv: 0.5,
       queueLimit: 128,
       timeoutMs: 600,
     }),
-    node('hystrix', 'breaker', 'Hystrix Breaker', COL(3), LROW(2, 1), {
+    node("hystrix", "breaker", "Hystrix Breaker", COL(3), LROW(2, 1), {
       errorThreshold: 0.4,
       windowMs: 4000,
       openMs: 4000,
       halfOpenProbes: 3,
     }),
     // 5 slots / 18ms = 278 rps: the deliberate knee of the play path.
-    node('license', 'service', 'DRM License Svc', COL(4), LROW(2, 1), {
+    node("license", "service", "DRM License Svc", COL(4), LROW(2, 1), {
       capacity: 5,
       serviceMs: 18,
       serviceCv: 0.5,
       queueLimit: 24,
     }),
-    node('evcache', 'cache', 'EVCache (viewing)', COL(3), LROW(3, 1), {
+    node("evcache", "cache", "EVCache (viewing)", COL(3), LROW(3, 1), {
       capacity: 48,
       serviceMs: 1,
       serviceCv: 0.3,
       hitRate: 0.9,
       queueLimit: 512,
     }),
-    node('cassandra', 'shard', 'Cassandra Ring', COL(4), LROW(3, 1), {
+    node("cassandra", "shard", "Cassandra Ring", COL(4), LROW(3, 1), {
       serviceMs: 35,
       serviceCv: 0.6,
       queueLimit: 32,
@@ -2634,27 +2717,27 @@ const netflix: Topology = {
       shardCapacity: 2,
       hotKeyFraction: 0,
     }),
-    node('keystone', 'streambroker', 'Keystone Pipeline', COL(3), LROW(4, 1), {
+    node("keystone", "streambroker", "Keystone Pipeline", COL(3), LROW(4, 1), {
       serviceMs: 1,
       partitions: 6,
       queueLimit: 4000,
     }),
-    node('history', 'service', 'Viewing History', COL(4), LROW(4, 1), {
+    node("history", "service", "Viewing History", COL(4), LROW(4, 1), {
       capacity: 6,
       serviceMs: 20,
       serviceCv: 0.5,
       queueLimit: 48,
     }),
-    node('browse', 'service', 'Browse API', COL(2), LROW(5, 2), {
+    node("browse", "service", "Browse API", COL(2), LROW(5, 2), {
       capacity: 12,
       serviceMs: 10,
       serviceCv: 0.5,
       queueLimit: 96,
     }),
-    node('recsbh', 'bulkhead', 'Recs Bulkhead', COL(3), LROW(5, 2), {
+    node("recsbh", "bulkhead", "Recs Bulkhead", COL(3), LROW(5, 2), {
       bulkheadMax: 10,
     }),
-    node('recs', 'service', 'Personalisation', COL(4), LROW(5, 2), {
+    node("recs", "service", "Personalisation", COL(4), LROW(5, 2), {
       capacity: 8,
       serviceMs: 20,
       serviceCv: 0.5,
@@ -2662,7 +2745,7 @@ const netflix: Topology = {
     }),
     // Precomputed offline; the read path almost never misses. The
     // recompute pipeline itself is deliberately out of frame.
-    node('evrecs', 'cache', 'EVCache (recs)', COL(5), LROW(5, 2), {
+    node("evrecs", "cache", "EVCache (recs)", COL(5), LROW(5, 2), {
       capacity: 48,
       serviceMs: 1,
       serviceCv: 0.3,
@@ -2671,75 +2754,75 @@ const netflix: Topology = {
     }),
   ],
   edges: [
-    edge('viewers', 'oca'),
-    edge('oca', 's3'),
-    edge('studio', 'cosmosq'),
-    edge('cosmosq', 'ves'),
-    edge('ves', 's3'),
-    edge('capi', 'zuul'),
+    edge("viewers", "oca"),
+    edge("oca", "s3"),
+    edge("studio", "cosmosq"),
+    edge("cosmosq", "ves"),
+    edge("ves", "s3"),
+    edge("capi", "zuul"),
     // Zuul's route table: 3 parts playback control, 2 parts browsing.
-    edge('zuul', 'playapi', 3),
-    edge('zuul', 'browse', 2),
+    edge("zuul", "playapi", 3),
+    edge("zuul", "browse", 2),
     // PlayAPI fans out to everything a real playback start touches:
     // entitlement/licensing behind its breaker, viewing state through
     // EVCache, an event onto Keystone, a telemetry append into Atlas.
-    edge('playapi', 'hystrix'),
-    edge('hystrix', 'license'),
-    edge('playapi', 'evcache'),
-    edge('evcache', 'cassandra'),
-    edge('playapi', 'keystone'),
-    edge('playapi', 'atlas'),
+    edge("playapi", "hystrix"),
+    edge("hystrix", "license"),
+    edge("playapi", "evcache"),
+    edge("evcache", "cassandra"),
+    edge("playapi", "keystone"),
+    edge("playapi", "atlas"),
     // Keystone's one modelled consumer group: the history writer.
-    edge('keystone', 'history'),
-    edge('browse', 'recsbh'),
-    edge('recsbh', 'recs'),
-    edge('recs', 'evrecs'),
+    edge("keystone", "history"),
+    edge("browse", "recsbh"),
+    edge("recsbh", "recs"),
+    edge("recs", "evrecs"),
   ],
   annotations: [
     // Three regions, because the diagram is really three systems that happen
     // to share a company. The top one moves almost all the bytes and has
     // almost none of the logic, which is the first surprising thing about it.
-    sectionOver('nf-sec-bytes', 'Moving the video', 0, 0, 3, 0, 1),
-    sectionOver('nf-sec-edge', 'Where API calls arrive', 1, 0, 1, 3, 3, 1),
-    sectionOver('nf-sec-play', 'Starting a stream', 2, 2, 4, 2, 4, 1),
-    sectionOver('nf-sec-recs', 'Browsing, kept separate', 3, 2, 5, 5, 5, 2),
+    sectionOver("nf-sec-bytes", "Moving the video", 0, 0, 3, 0, 1),
+    sectionOver("nf-sec-edge", "Where API calls arrive", 1, 0, 1, 3, 3, 1),
+    sectionOver("nf-sec-play", "Starting a stream", 2, 2, 4, 2, 4, 1),
+    sectionOver("nf-sec-recs", "Browsing, kept separate", 3, 2, 5, 5, 5, 2),
     note(
-      'nf-note-bytes',
+      "nf-note-bytes",
       1080,
       64,
-      '1500 requests a second of video, and 240 of everything else. The video almost never reaches Netflix: the edge cache answers 96 percent of it from inside your ISP.',
+      "1500 requests a second of video, and 240 of everything else. The video almost never reaches Netflix: the edge cache answers 96 percent of it from inside your ISP.",
       380,
     ),
     note(
-      'nf-note-encode',
+      "nf-note-encode",
       1080,
       216,
-      'Encoding is slow and that is fine. Jobs wait in a queue and nobody is watching a spinner, so seconds here cost nothing.',
+      "Encoding is slow and that is fine. Jobs wait in a queue and nobody is watching a spinner, so seconds here cost nothing.",
       380,
     ),
     // The lesson, placed in the empty column beside the play path rather
     // than above the API tier, where a reader would attach it to the wrong
     // group of boxes.
     note(
-      'nf-note-license',
+      "nf-note-license",
       40,
       360,
-      'The bottleneck is the licence service, not the video. It has 5 slots at 18ms, so it runs out at about 280 requests a second. Raise the load and watch it fill before anything else does.',
+      "The bottleneck is the licence service, not the video. It has 5 slots at 18ms, so it runs out at about 280 requests a second. Raise the load and watch it fill before anything else does.",
       440,
-      'md',
+      "md",
     ),
     note(
-      'nf-note-breaker',
+      "nf-note-breaker",
       40,
       648,
-      'The breaker in front of it is what stops one slow service from holding every request open. Trip it and playback fails fast instead of hanging.',
+      "The breaker in front of it is what stops one slow service from holding every request open. Trip it and playback fails fast instead of hanging.",
       440,
     ),
     note(
-      'nf-note-recs',
+      "nf-note-recs",
       40,
       840,
-      'Recommendations sit behind a bulkhead, so if they get slow the play path is untouched. Browsing breaking is survivable; playback breaking is not.',
+      "Recommendations sit behind a bulkhead, so if they get slow the play path is untouched. Browsing breaking is survivable; playback breaking is not.",
       440,
     ),
   ],
@@ -2804,11 +2887,11 @@ const netflix: Topology = {
 const spotify: Topology = {
   nodes: [
     // Audio lane: bytes from blob storage through an edge cache.
-    node('listeners', 'client', 'Listeners (audio)', COL(0), ROW(0), {
+    node("listeners", "client", "Listeners (audio)", COL(0), ROW(0), {
       rps: 1100,
       timeoutMs: 2500,
     }),
-    node('audiocdn', 'cdn', 'Audio CDN', COL(1), ROW(0), {
+    node("audiocdn", "cdn", "Audio CDN", COL(1), ROW(0), {
       capacity: 384,
       serviceMs: 3,
       serviceCv: 0.3,
@@ -2817,15 +2900,15 @@ const spotify: Topology = {
     }),
     // A shortish queue on purpose: when misses outrun the 710 rps
     // ceiling the store should refuse loudly, not buffer for seconds.
-    node('gcs', 'objectstore', 'GCS Audio Storage', COL(2), ROW(0), {
+    node("gcs", "objectstore", "GCS Audio Storage", COL(2), ROW(0), {
       queueLimit: 256,
     }),
     // Metadata/control lane: the app's API calls.
-    node('app', 'client', 'App Clients', COL(0), LROW(2, 1), {
+    node("app", "client", "App Clients", COL(0), LROW(2, 1), {
       rps: 220,
       timeoutMs: 2500,
     }),
-    node('gw', 'apigateway', 'API Gateway', COL(1), LROW(2, 1), {
+    node("gw", "apigateway", "API Gateway", COL(1), LROW(2, 1), {
       capacity: 96,
       serviceMs: 2,
       serviceCv: 0.3,
@@ -2834,32 +2917,32 @@ const spotify: Topology = {
       burst: 350,
       authFailRate: 0.01,
     }),
-    node('meta', 'service', 'Metadata Service', COL(2), LROW(1, 1), {
+    node("meta", "service", "Metadata Service", COL(2), LROW(1, 1), {
       capacity: 12,
       serviceMs: 8,
       serviceCv: 0.5,
       queueLimit: 96,
     }),
-    node('metacache', 'cache', 'Metadata Cache', COL(3), LROW(1, 1), {
+    node("metacache", "cache", "Metadata Cache", COL(3), LROW(1, 1), {
       capacity: 48,
       serviceMs: 1,
       serviceCv: 0.3,
       hitRate: 0.9,
       queueLimit: 512,
     }),
-    node('cassmeta', 'db', 'Track Metadata DB', COL(4), LROW(1, 1), {
+    node("cassmeta", "db", "Track Metadata DB", COL(4), LROW(1, 1), {
       capacity: 6,
       serviceMs: 25,
       serviceCv: 0.6,
       queueLimit: 48,
     }),
-    node('search', 'service', 'Search API', COL(2), LROW(2, 1), {
+    node("search", "service", "Search API", COL(2), LROW(2, 1), {
       capacity: 8,
       serviceMs: 6,
       serviceCv: 0.4,
       queueLimit: 64,
     }),
-    node('es', 'searchindex', 'Search Index (ES)', COL(3), LROW(2, 1), {
+    node("es", "searchindex", "Search Index (ES)", COL(3), LROW(2, 1), {
       capacity: 12,
       serviceMs: 8,
       serviceCv: 0.5,
@@ -2868,7 +2951,7 @@ const spotify: Topology = {
       indexLagMs: 2000,
       readFraction: 0.95,
     }),
-    node('playlist', 'service', 'Playlist Service', COL(2), LROW(3, 1), {
+    node("playlist", "service", "Playlist Service", COL(2), LROW(3, 1), {
       capacity: 10,
       serviceMs: 7,
       serviceCv: 0.5,
@@ -2876,7 +2959,7 @@ const spotify: Topology = {
     }),
     // Write-heavy: 45% writes serialise through a 3-slot / 30ms primary
     // (100 writes/s) while reads spread across 3 replicas (300 reads/s).
-    node('pldb', 'replica', 'Playlist Store', COL(3), LROW(3, 1), {
+    node("pldb", "replica", "Playlist Store", COL(3), LROW(3, 1), {
       capacity: 3,
       serviceMs: 30,
       serviceCv: 0.6,
@@ -2885,13 +2968,13 @@ const spotify: Topology = {
       replicationLagMs: 150,
       readFraction: 0.55,
     }),
-    node('recs', 'service', 'Home & Discover Feed', COL(2), LROW(4, 1), {
+    node("recs", "service", "Home & Discover Feed", COL(2), LROW(4, 1), {
       capacity: 10,
       serviceMs: 8,
       serviceCv: 0.5,
       queueLimit: 96,
     }),
-    node('vecs', 'vectordb', 'Taste Vectors', COL(3), LROW(4, 1), {
+    node("vecs", "vectordb", "Taste Vectors", COL(3), LROW(4, 1), {
       capacity: 16,
       serviceMs: 0.5,
       serviceCv: 0.4,
@@ -2903,11 +2986,11 @@ const spotify: Topology = {
     // request path, except that its output lands in the store the online
     // path reads. The cron burst every 20s is the weekly job on a clock a
     // student can actually watch.
-    node('wkcron', 'cron', 'Discover Weekly Batch', COL(0), LROW(5, 2), {
+    node("wkcron", "cron", "Discover Weekly Batch", COL(0), LROW(5, 2), {
       intervalMs: 20000,
       batchSize: 300,
     }),
-    node('featq', 'queue', 'Feature Job Queue', COL(1), LROW(5, 2), {
+    node("featq", "queue", "Feature Job Queue", COL(1), LROW(5, 2), {
       serviceMs: 1,
       serviceCv: 0.2,
       queueLimit: 5000,
@@ -2915,7 +2998,7 @@ const spotify: Topology = {
     // 8 slots / 22ms = ~360 writes/s of drain: deliberately faster than
     // the vector store can absorb on top of its online reads, so each
     // burst briefly queues the store and the online path feels it.
-    node('featwork', 'worker', 'Feature Pipeline', COL(2), LROW(5, 2), {
+    node("featwork", "worker", "Feature Pipeline", COL(2), LROW(5, 2), {
       instances: 2,
       capacity: 4,
       serviceMs: 22,
@@ -2923,22 +3006,22 @@ const spotify: Topology = {
     }),
     // Event lane: the firehose. Producers are acked in ~1ms; each
     // outgoing edge of the broker is an independent consumer group.
-    node('events', 'client', 'Event Firehose', COL(0), LROW(6, 3), {
+    node("events", "client", "Event Firehose", COL(0), LROW(6, 3), {
       rps: 600,
       timeoutMs: 1500,
     }),
-    node('kafka', 'streambroker', 'Event Delivery', COL(1), LROW(6, 3), {
+    node("kafka", "streambroker", "Event Delivery", COL(1), LROW(6, 3), {
       serviceMs: 1,
       partitions: 8,
       queueLimit: 6000,
     }),
-    node('royalty', 'service', 'Royalty & Reporting', COL(2), LROW(6, 3), {
+    node("royalty", "service", "Royalty & Reporting", COL(2), LROW(6, 3), {
       capacity: 12,
       serviceMs: 6,
       serviceCv: 0.4,
       queueLimit: 128,
     }),
-    node('analytics', 'timeseriesdb', 'Analytics Store', COL(2), LROW(7, 3), {
+    node("analytics", "timeseriesdb", "Analytics Store", COL(2), LROW(7, 3), {
       capacity: 16,
       serviceMs: 1.5,
       serviceCv: 0.4,
@@ -2953,34 +3036,43 @@ const spotify: Topology = {
     }),
   ],
   edges: [
-    edge('listeners', 'audiocdn'),
-    edge('audiocdn', 'gcs'),
-    edge('app', 'gw'),
+    edge("listeners", "audiocdn"),
+    edge("audiocdn", "gcs"),
+    edge("app", "gw"),
     // The gateway's route table: metadata 35%, search 20%, playlists
     // 25%, home/recs 20%.
-    edge('gw', 'meta', 7),
-    edge('gw', 'search', 4),
-    edge('gw', 'playlist', 5),
-    edge('gw', 'recs', 4),
-    edge('meta', 'metacache'),
-    edge('metacache', 'cassmeta'),
-    edge('search', 'es'),
-    edge('playlist', 'pldb'),
-    edge('recs', 'vecs'),
-    edge('wkcron', 'featq'),
-    edge('featq', 'featwork'),
-    edge('featwork', 'vecs'),
-    edge('events', 'kafka'),
+    edge("gw", "meta", 7),
+    edge("gw", "search", 4),
+    edge("gw", "playlist", 5),
+    edge("gw", "recs", 4),
+    edge("meta", "metacache"),
+    edge("metacache", "cassmeta"),
+    edge("search", "es"),
+    edge("playlist", "pldb"),
+    edge("recs", "vecs"),
+    edge("wkcron", "featq"),
+    edge("featq", "featwork"),
+    edge("featwork", "vecs"),
+    edge("events", "kafka"),
     // Two independent consumer groups: royalties, and raw analytics.
-    edge('kafka', 'royalty'),
-    edge('kafka', 'analytics'),
+    edge("kafka", "royalty"),
+    edge("kafka", "analytics"),
   ],
   annotations: [
-    sectionOver('sp-sec-audio', 'Playing the music', 0, 0, 2, 0, 0),
-    sectionOver('sp-sec-app', 'Everything else the app asks for', 1, 2, 4, 1, 4, 1),
+    sectionOver("sp-sec-audio", "Playing the music", 0, 0, 2, 0, 0),
     sectionOver(
-      'sp-sec-batch',
-      'Recomputing recommendations offline',
+      "sp-sec-app",
+      "Everything else the app asks for",
+      1,
+      2,
+      4,
+      1,
+      4,
+      1,
+    ),
+    sectionOver(
+      "sp-sec-batch",
+      "Recomputing recommendations offline",
       2,
       0,
       2,
@@ -2988,35 +3080,44 @@ const spotify: Topology = {
       5,
       2,
     ),
-    sectionOver('sp-sec-ev', 'What was played, counted twice', 3, 0, 2, 6, 7, 3),
+    sectionOver(
+      "sp-sec-ev",
+      "What was played, counted twice",
+      3,
+      0,
+      2,
+      6,
+      7,
+      3,
+    ),
     note(
-      'sp-note-audio',
+      "sp-note-audio",
       1320,
       40,
-      'Audio and everything else are separate systems. 1100 song fetches a second go to a cache near the listener, but a music catalogue has a long tail, so nearly one in five still reaches storage.',
+      "Audio and everything else are separate systems. 1100 song fetches a second go to a cache near the listener, but a music catalogue has a long tail, so nearly one in five still reaches storage.",
       300,
     ),
     note(
-      'sp-note-playlist',
+      "sp-note-playlist",
       1320,
       240,
-      'Adding a song is a write, and writes only go to the one main copy of the playlist store. It manages about 100 a second while its two read copies sit idle. Reads also run up to 150ms behind, so a song you just added can be missing when the playlist loads back.',
+      "Adding a song is a write, and writes only go to the one main copy of the playlist store. It manages about 100 a second while its two read copies sit idle. Reads also run up to 150ms behind, so a song you just added can be missing when the playlist loads back.",
       300,
     ),
     // The lesson. Batch and serving sharing one store is the thing this
     // example exists to show, and it is visible at 1x on a 20 second clock.
     note(
-      'sp-note-batch',
+      "sp-note-batch",
       1320,
       528,
-      'Watch the taste vectors. Every 20 seconds the recommendation batch writes into the same index the home feed reads from, and the slow tail on the feed rises and falls on that clock. Turn the load up and the two fight over one store.',
+      "Watch the taste vectors. Every 20 seconds the recommendation batch writes into the same index the home feed reads from, and the slow tail on the feed rises and falls on that clock. Turn the load up and the two fight over one store.",
       300,
     ),
     note(
-      'sp-note-events',
+      "sp-note-events",
       800,
       1024,
-      'Two readers share one event stream. Turn the load up and the royalty job cannot keep up while the analytics store beside it does fine. Royalty falls behind silently, and eventually the oldest events expire before it reaches them.',
+      "Two readers share one event stream. Turn the load up and the royalty job cannot keep up while the analytics store beside it does fine. Royalty falls behind silently, and eventually the oldest events expire before it reaches them.",
       300,
     ),
   ],
@@ -3070,11 +3171,11 @@ const twitter: Topology = {
   nodes: [
     // Read row: the cheap half. The whole point of fanout-on-write is
     // that this row is one cache hit deep for 92% of requests.
-    node('readers', 'client', 'Timeline Readers', COL(0), ROW(1), {
+    node("readers", "client", "Timeline Readers", COL(0), ROW(1), {
       rps: 300,
       timeoutMs: 2000,
     }),
-    node('gw', 'apigateway', 'API Gateway', COL(1), ROW(1), {
+    node("gw", "apigateway", "API Gateway", COL(1), ROW(1), {
       capacity: 64,
       serviceMs: 1.5,
       serviceCv: 0.3,
@@ -3082,13 +3183,13 @@ const twitter: Topology = {
       burst: 2500,
       authFailRate: 0,
     }),
-    node('tlsvc', 'service', 'Timeline Service', COL(2), ROW(1), {
+    node("tlsvc", "service", "Timeline Service", COL(2), ROW(1), {
       capacity: 16,
       serviceMs: 5,
       serviceCv: 0.5,
       queueLimit: 128,
     }),
-    node('tlcache', 'cache', 'Timeline Cache (Redis)', COL(3), ROW(1), {
+    node("tlcache", "cache", "Timeline Cache (Redis)", COL(3), ROW(1), {
       capacity: 32,
       serviceMs: 2,
       serviceCv: 0.4,
@@ -3098,14 +3199,14 @@ const twitter: Topology = {
     // A miss rebuilds the timeline the slow way: fetch the follow graph
     // and the tweets, join both. This is also the shape of the hybrid
     // celebrity merge, so it stands in for that too.
-    node('tweetstore', 'shard', 'Tweet Store (sharded)', COL(4), ROW(1), {
+    node("tweetstore", "shard", "Tweet Store (sharded)", COL(4), ROW(1), {
       shardCount: 4,
       shardCapacity: 4,
       serviceMs: 12,
       serviceCv: 0.6,
       queueLimit: 64,
     }),
-    node('socialgraph', 'graphdb', 'Social Graph', COL(5), ROW(2), {
+    node("socialgraph", "graphdb", "Social Graph", COL(5), ROW(2), {
       capacity: 8,
       serviceMs: 6,
       serviceCv: 0.5,
@@ -3114,13 +3215,13 @@ const twitter: Topology = {
     }),
     // Search: the blender fans queries to the index the firehose feeds.
     // readFraction 0.6 approximates the query:ingest mix it sees.
-    node('searchsvc', 'service', 'Search Blender', COL(2), ROW(0), {
+    node("searchsvc", "service", "Search Blender", COL(2), ROW(0), {
       capacity: 8,
       serviceMs: 10,
       serviceCv: 0.5,
       queueLimit: 64,
     }),
-    node('searchindex', 'searchindex', 'Earlybird Index', COL(4), ROW(0), {
+    node("searchindex", "searchindex", "Earlybird Index", COL(4), ROW(0), {
       capacity: 8,
       serviceMs: 8,
       indexMs: 60,
@@ -3131,21 +3232,21 @@ const twitter: Topology = {
     // Write row: the expensive half. A per-account limiter (write rate
     // limits are real and visible on the platform), the write API
     // persisting to the shard ring, and the firehose broker.
-    node('tweeters', 'client', 'Tweet Writers', COL(0), LROW(3, 1), {
+    node("tweeters", "client", "Tweet Writers", COL(0), LROW(3, 1), {
       rps: 30,
       timeoutMs: 2500,
     }),
-    node('wlimit', 'ratelimiter', 'Write Rate Limit', COL(1), LROW(3, 1), {
+    node("wlimit", "ratelimiter", "Write Rate Limit", COL(1), LROW(3, 1), {
       rateLimitRps: 90,
       burst: 120,
     }),
-    node('writeapi', 'service', 'Tweet Write API', COL(2), LROW(3, 1), {
+    node("writeapi", "service", "Tweet Write API", COL(2), LROW(3, 1), {
       capacity: 8,
       serviceMs: 8,
       serviceCv: 0.5,
       queueLimit: 64,
     }),
-    node('firehose', 'streambroker', 'Tweet Firehose', COL(3), LROW(3, 1), {
+    node("firehose", "streambroker", "Tweet Firehose", COL(3), LROW(3, 1), {
       serviceMs: 1,
       partitions: 8,
       queueLimit: 4000,
@@ -3154,14 +3255,14 @@ const twitter: Topology = {
     // plus one timeline insert per follower, priced as one job. The
     // broker's 8 partitions cap the group at 8 deliveries in flight,
     // which is the ceiling that matters, not this node's slot count.
-    node('fanout', 'service', 'Fanout Workers', COL(4), LROW(3, 1), {
+    node("fanout", "service", "Fanout Workers", COL(4), LROW(3, 1), {
       instances: 4,
       capacity: 4,
       serviceMs: 120,
       serviceCv: 0.4,
       queueLimit: 64,
     }),
-    node('tlstore', 'service', 'Timeline Store (Redis)', COL(5), LROW(3, 1), {
+    node("tlstore", "service", "Timeline Store (Redis)", COL(5), LROW(3, 1), {
       capacity: 64,
       serviceMs: 2,
       serviceCv: 0.3,
@@ -3170,11 +3271,11 @@ const twitter: Topology = {
     // One celebrity tweet is not one message: it is a burst of fanout
     // jobs. 200 every 20s here; the real number would be millions,
     // which is exactly why the real system stopped fanning them out.
-    node('celebrity', 'cron', 'Celebrity Tweet', COL(2), LROW(4, 1), {
+    node("celebrity", "cron", "Celebrity Tweet", COL(2), LROW(4, 1), {
       intervalMs: 20000,
       batchSize: 200,
     }),
-    node('pushsvc', 'service', 'Push Notifications', COL(4), LROW(4, 1), {
+    node("pushsvc", "service", "Push Notifications", COL(4), LROW(4, 1), {
       capacity: 6,
       serviceMs: 10,
       serviceCv: 0.5,
@@ -3182,53 +3283,62 @@ const twitter: Topology = {
     }),
   ],
   edges: [
-    edge('readers', 'gw'),
+    edge("readers", "gw"),
     // The gateway's route table: 5 parts timeline, 1 part search.
-    edge('gw', 'tlsvc', 5),
-    edge('gw', 'searchsvc', 1),
-    edge('tlsvc', 'tlcache'),
-    edge('tlcache', 'tweetstore'),
-    edge('tlcache', 'socialgraph'),
-    edge('searchsvc', 'searchindex'),
-    edge('tweeters', 'wlimit'),
-    edge('wlimit', 'writeapi'),
-    edge('writeapi', 'tweetstore'),
-    edge('writeapi', 'firehose'),
-    edge('celebrity', 'firehose'),
+    edge("gw", "tlsvc", 5),
+    edge("gw", "searchsvc", 1),
+    edge("tlsvc", "tlcache"),
+    edge("tlcache", "tweetstore"),
+    edge("tlcache", "socialgraph"),
+    edge("searchsvc", "searchindex"),
+    edge("tweeters", "wlimit"),
+    edge("wlimit", "writeapi"),
+    edge("writeapi", "tweetstore"),
+    edge("writeapi", "firehose"),
+    edge("celebrity", "firehose"),
     // Each broker edge is an independent consumer group: fanout is the
     // expensive one, search ingest and push notifications keep up.
-    edge('firehose', 'fanout'),
-    edge('firehose', 'searchindex'),
-    edge('firehose', 'pushsvc'),
-    edge('fanout', 'socialgraph'),
-    edge('fanout', 'tlstore'),
+    edge("firehose", "fanout"),
+    edge("firehose", "searchindex"),
+    edge("firehose", "pushsvc"),
+    edge("fanout", "socialgraph"),
+    edge("fanout", "tlstore"),
   ],
   annotations: [
     // The whole design is one trade: make reading cheap by making writing
     // expensive. Two frames, one for each half of that bargain.
-    sectionOver('tw-sec-read', 'Reading a timeline', 0, 2, 5, 0, 2),
-    sectionOver('tw-sec-write', 'Writing one, which costs far more', 1, 2, 5, 3, 4, 1),
+    sectionOver("tw-sec-read", "Reading a timeline", 0, 2, 5, 0, 2),
+    sectionOver(
+      "tw-sec-write",
+      "Writing one, which costs far more",
+      1,
+      2,
+      5,
+      3,
+      4,
+      1,
+    ),
     note(
-      'tw-note-read',
+      "tw-note-read",
       1584,
       40,
-      'Reading a timeline is cheap because the answer was written in advance. 300 reads a second are almost all served straight from cache; only a miss goes back to look up who you follow and rebuild it.',
+      "Reading a timeline is cheap because the answer was written in advance. 300 reads a second are almost all served straight from cache; only a miss goes back to look up who you follow and rebuild it.",
       300,
     ),
     // The lesson. The point is that the read side stays green throughout,
     // so the only place the failure is visible is the lag on this group.
     note(
-      'tw-note-fanout',
+      "tw-note-fanout",
       1584,
       496,
-      'Turn the load up to 2x and watch the fan-out workers. One tweet means one insert into every follower timeline, about 120ms each, and only eight run at once. They fall behind and never catch up, so timelines go stale while every read still comes back fast and green.',
+      "Turn the load up to 2x and watch the fan-out workers. One tweet means one insert into every follower timeline, about 120ms each, and only eight run at once. They fall behind and never catch up, so timelines go stale while every read still comes back fast and green.",
       300,
     ),
     note(
-      'tw-note-celeb',
+      "tw-note-celeb",
       16,
       632,
-      'Every 20 seconds a famous account tweets, and that one tweet becomes 200 fan-out jobs at once. This is why very large accounts get handled differently from everyone else.',
+      "Every 20 seconds a famous account tweets, and that one tweet becomes 200 fan-out jobs at once. This is why very large accounts get handled differently from everyone else.",
       236,
     ),
   ],
@@ -3283,13 +3393,13 @@ const twitter: Topology = {
 
 const stripe: Topology = {
   nodes: [
-    node('merchants', 'client', 'Merchant API Calls', COL(0), ROW(1), {
+    node("merchants", "client", "Merchant API Calls", COL(0), ROW(1), {
       rps: 100,
       timeoutMs: 4000,
     }),
     // The front door from the rate-limiter post: a token bucket that
     // sheds excess API traffic before it can queue behind the money.
-    node('gw', 'apigateway', 'API Gateway', COL(1), ROW(1), {
+    node("gw", "apigateway", "API Gateway", COL(1), ROW(1), {
       capacity: 64,
       serviceMs: 2,
       serviceCv: 0.3,
@@ -3299,14 +3409,14 @@ const stripe: Topology = {
     }),
     // Idempotency-Key dedupe: a hit is a retried duplicate answered
     // from the stored response. The 8% hit rate is the duplicate share.
-    node('idem', 'cache', 'Idempotency Keys', COL(2), ROW(1), {
+    node("idem", "cache", "Idempotency Keys", COL(2), ROW(1), {
       capacity: 32,
       serviceMs: 2,
       serviceCv: 0.3,
       hitRate: 0.08,
       queueLimit: 128,
     }),
-    node('paysvc', 'service', 'Payment Service', COL(3), ROW(1), {
+    node("paysvc", "service", "Payment Service", COL(3), ROW(1), {
       capacity: 16,
       serviceMs: 10,
       serviceCv: 0.5,
@@ -3314,14 +3424,14 @@ const stripe: Topology = {
     }),
     // Radar runs IN the charge path: scoring is worth 30ms of latency
     // on every charge because the alternative is charging fraudsters.
-    node('fraud', 'service', 'Radar Fraud Check', COL(4), ROW(0), {
+    node("fraud", "service", "Radar Fraud Check", COL(4), ROW(0), {
       capacity: 12,
       serviceMs: 30,
       serviceCv: 0.5,
       timeoutMs: 1500,
       queueLimit: 64,
     }),
-    node('breaker', 'breaker', 'Network Breaker', COL(5), ROW(0), {
+    node("breaker", "breaker", "Network Breaker", COL(5), ROW(0), {
       errorThreshold: 0.5,
       windowMs: 5000,
       openMs: 4000,
@@ -3329,27 +3439,27 @@ const stripe: Topology = {
     }),
     // The slow external truth: a card authorisation is a quarter of a
     // second somewhere you do not control and cannot blindly retry.
-    node('cardnet', 'service', 'Card Networks (external)', COL(6), ROW(0), {
+    node("cardnet", "service", "Card Networks (external)", COL(6), ROW(0), {
       capacity: 72,
       serviceMs: 250,
       serviceCv: 0.35,
       errorRate: 0.01,
       queueLimit: 128,
     }),
-    node('ledger', 'db', 'Ledger (double-entry)', COL(4), ROW(1), {
+    node("ledger", "db", "Ledger (double-entry)", COL(4), ROW(1), {
       capacity: 8,
       serviceMs: 15,
       serviceCv: 0.5,
       queueLimit: 96,
     }),
-    node('events', 'streambroker', 'Payment Events', COL(4), ROW(3), {
+    node("events", "streambroker", "Payment Events", COL(4), ROW(3), {
       serviceMs: 1,
       partitions: 4,
       queueLimit: 4000,
     }),
     // Webhooks, per the docs: redeliver with backoff, then give up
     // onto a shelf you can inspect, because merchant endpoints fail.
-    node('webhookq', 'retryqueue', 'Webhook Delivery', COL(5), ROW(3), {
+    node("webhookq", "retryqueue", "Webhook Delivery", COL(5), ROW(3), {
       capacity: 8,
       serviceMs: 3,
       serviceCv: 0.3,
@@ -3357,25 +3467,25 @@ const stripe: Topology = {
       retries: 2,
       queueLimit: 2000,
     }),
-    node('merchantep', 'service', 'Merchant Endpoints', COL(6), ROW(3), {
+    node("merchantep", "service", "Merchant Endpoints", COL(6), ROW(3), {
       capacity: 8,
       serviceMs: 40,
       serviceCv: 0.6,
       errorRate: 0.12,
       queueLimit: 64,
     }),
-    node('tsdb', 'timeseriesdb', 'Billing Metrics', COL(5), LROW(4, 1), {
+    node("tsdb", "timeseriesdb", "Billing Metrics", COL(5), LROW(4, 1), {
       capacity: 16,
       rangeQueryFraction: 0.02,
       rangeQueryMs: 120,
     }),
     // Payouts arrive on a clock, not on demand, and share the ledger
     // primary with live charges: watch its queue breathe every 25s.
-    node('payoutcron', 'cron', 'Payout Batch', COL(2), ROW(3), {
+    node("payoutcron", "cron", "Payout Batch", COL(2), ROW(3), {
       intervalMs: 25000,
       batchSize: 150,
     }),
-    node('payoutsvc', 'service', 'Payout Jobs', COL(3), ROW(3), {
+    node("payoutsvc", "service", "Payout Jobs", COL(3), ROW(3), {
       capacity: 8,
       serviceMs: 20,
       serviceCv: 0.5,
@@ -3383,21 +3493,21 @@ const stripe: Topology = {
     }),
     // Reporting reads never touch the primary: replicas plus their own
     // limiter mean dashboard load is structurally unable to slow money.
-    node('dashboards', 'client', 'Dashboard Readers', COL(0), LROW(4, 1), {
+    node("dashboards", "client", "Dashboard Readers", COL(0), LROW(4, 1), {
       rps: 120,
       timeoutMs: 2000,
     }),
-    node('dlimit', 'ratelimiter', 'Reporting Limiter', COL(1), LROW(4, 1), {
+    node("dlimit", "ratelimiter", "Reporting Limiter", COL(1), LROW(4, 1), {
       rateLimitRps: 150,
       burst: 200,
     }),
-    node('reportsvc', 'service', 'Reporting API', COL(2), LROW(4, 1), {
+    node("reportsvc", "service", "Reporting API", COL(2), LROW(4, 1), {
       capacity: 12,
       serviceMs: 8,
       serviceCv: 0.5,
       queueLimit: 96,
     }),
-    node('replica', 'replica', 'Ledger Replicas', COL(3), LROW(4, 1), {
+    node("replica", "replica", "Ledger Replicas", COL(3), LROW(4, 1), {
       capacity: 4,
       serviceMs: 20,
       serviceCv: 0.6,
@@ -3408,50 +3518,67 @@ const stripe: Topology = {
     }),
   ],
   edges: [
-    edge('merchants', 'gw'),
-    edge('gw', 'idem'),
-    edge('idem', 'paysvc'),
+    edge("merchants", "gw"),
+    edge("gw", "idem"),
+    edge("idem", "paysvc"),
     // A charge is a JOIN of three branches: the authorisation chain,
     // the ledger write, and the event publish. All must land.
-    edge('paysvc', 'fraud'),
-    edge('paysvc', 'ledger'),
-    edge('paysvc', 'events'),
-    edge('fraud', 'breaker'),
-    edge('breaker', 'cardnet'),
-    edge('events', 'webhookq'),
-    edge('events', 'tsdb'),
-    edge('webhookq', 'merchantep'),
-    edge('payoutcron', 'payoutsvc'),
-    edge('payoutsvc', 'ledger'),
-    edge('dashboards', 'dlimit'),
-    edge('dlimit', 'reportsvc'),
-    edge('reportsvc', 'replica'),
+    edge("paysvc", "fraud"),
+    edge("paysvc", "ledger"),
+    edge("paysvc", "events"),
+    edge("fraud", "breaker"),
+    edge("breaker", "cardnet"),
+    edge("events", "webhookq"),
+    edge("events", "tsdb"),
+    edge("webhookq", "merchantep"),
+    edge("payoutcron", "payoutsvc"),
+    edge("payoutsvc", "ledger"),
+    edge("dashboards", "dlimit"),
+    edge("dlimit", "reportsvc"),
+    edge("reportsvc", "replica"),
   ],
   annotations: [
-    sectionOver('sr-sec-charge', 'Taking one payment', 0, 2, 6, 0, 1),
-    sectionOver('sr-sec-after', 'What happens after the money moves', 1, 2, 6, 3, 3),
-    sectionOver('sr-sec-report', 'Reading the money back out', 2, 2, 5, 4, 4, 1),
+    sectionOver("sr-sec-charge", "Taking one payment", 0, 2, 6, 0, 1),
+    sectionOver(
+      "sr-sec-after",
+      "What happens after the money moves",
+      1,
+      2,
+      6,
+      3,
+      3,
+    ),
+    sectionOver(
+      "sr-sec-report",
+      "Reading the money back out",
+      2,
+      2,
+      5,
+      4,
+      4,
+      1,
+    ),
     note(
-      'sr-note-idem',
+      "sr-note-idem",
       16,
       320,
-      'A payment is the one thing you must never do twice. Each charge carries a key, and a retry of a charge already made gets the stored answer back instead of a second charge.',
+      "A payment is the one thing you must never do twice. Each charge carries a key, and a retry of a charge already made gets the stored answer back instead of a second charge.",
       236,
     ),
     // The lesson. Every protection in this example is about refusing
     // cleanly, and the breaker is where a student can watch that happen.
     note(
-      'sr-note-breaker',
+      "sr-note-breaker",
       1840,
       40,
-      'Right click the card networks and inject errors. The breaker beside them opens, and charges start failing immediately instead of hanging. A payment that fails cleanly can be retried; one left in the air while a slow network times out is the one nobody can account for.',
+      "Right click the card networks and inject errors. The breaker beside them opens, and charges start failing immediately instead of hanging. A payment that fails cleanly can be retried; one left in the air while a slow network times out is the one nobody can account for.",
       300,
     ),
     note(
-      'sr-note-report',
+      "sr-note-report",
       16,
       776,
-      'Dashboards read copies of the ledger, behind their own limit. Someone loading a big report can never make a payment wait, because the two never share a queue.',
+      "Dashboards read copies of the ledger, behind their own limit. Someone loading a big report can never make a payment wait, because the two never share a queue.",
       236,
     ),
   ],
@@ -3504,14 +3631,14 @@ const stripe: Topology = {
 
 const whatsapp: Topology = {
   nodes: [
-    node('phones', 'client', 'Message Senders', COL(0), LROW(1, 1), {
+    node("phones", "client", "Message Senders", COL(0), LROW(1, 1), {
       rps: 400,
       timeoutMs: 2000,
     }),
     // The chat core: one Erlang hop. With E2E encryption the server
     // just moves ciphertext, so per-message cost is close to nothing,
     // and the node runs practically idle at any load this app offers.
-    node('router', 'service', 'Erlang Router', COL(1), LROW(1, 1), {
+    node("router", "service", "Erlang Router", COL(1), LROW(1, 1), {
       capacity: 48,
       serviceMs: 1.5,
       serviceCv: 0.3,
@@ -3519,11 +3646,11 @@ const whatsapp: Topology = {
     }),
     // Weighted split standing in for a presence lookup: 7 of 10
     // recipients are online right now, 3 are not.
-    node('lookup', 'lb', 'Recipient Lookup (70% online)', COL(2), LROW(1, 1), {
+    node("lookup", "lb", "Recipient Lookup (70% online)", COL(2), LROW(1, 1), {
       capacity: 256,
       serviceMs: 0.5,
     }),
-    node('push', 'service', 'Push to Connected', COL(3), LROW(1, 1), {
+    node("push", "service", "Push to Connected", COL(3), LROW(1, 1), {
       capacity: 32,
       serviceMs: 2,
       serviceCv: 0.4,
@@ -3531,34 +3658,34 @@ const whatsapp: Topology = {
     }),
     // Store-and-forward: the offline message is ACKED to the sender
     // and parked. Losing this node loses exactly the parked messages.
-    node('offlineq', 'queue', 'Offline Store (Mnesia)', COL(3), LROW(2, 1), {
+    node("offlineq", "queue", "Offline Store (Mnesia)", COL(3), LROW(2, 1), {
       serviceMs: 1,
       serviceCv: 0.2,
       queueLimit: 20000,
     }),
-    node('drain', 'worker', 'Deliver on Reconnect', COL(4), LROW(2, 1), {
+    node("drain", "worker", "Deliver on Reconnect", COL(4), LROW(2, 1), {
       capacity: 4,
       serviceMs: 20,
       serviceCv: 0.5,
     }),
-    node('midnight', 'cron', 'Midnight Spike', COL(0), LROW(2, 1), {
+    node("midnight", "cron", "Midnight Spike", COL(0), LROW(2, 1), {
       intervalMs: 30000,
       batchSize: 600,
     }),
     // The connection tier: what a gateway box actually rations. The
     // real boxes held ~2M tcp connections each; 1800 here, run at 75%
     // on purpose, because connection count WAS the capacity plan.
-    node('churn', 'client', 'Phones Connecting', COL(0), ROW(0), {
+    node("churn", "client", "Phones Connecting", COL(0), ROW(0), {
       rps: 45,
       timeoutMs: 2000,
     }),
-    node('wsgw', 'websocket', 'Chat Gateway (Erlang)', COL(1), ROW(0), {
+    node("wsgw", "websocket", "Chat Gateway (Erlang)", COL(1), ROW(0), {
       capacity: 1800,
       serviceMs: 4,
       serviceCv: 0.4,
       connectionMs: 30000,
     }),
-    node('session', 'db', 'Session Store (Mnesia)', COL(2), ROW(0), {
+    node("session", "db", "Session Store (Mnesia)", COL(2), ROW(0), {
       capacity: 16,
       serviceMs: 3,
       serviceCv: 0.4,
@@ -3566,27 +3693,27 @@ const whatsapp: Topology = {
     }),
     // Media: its own HTTP lane, exactly as published. Bytes never
     // touch the chat core.
-    node('mediaup', 'client', 'Media Uploads', COL(0), LROW(3, 2), {
+    node("mediaup", "client", "Media Uploads", COL(0), LROW(3, 2), {
       rps: 25,
       timeoutMs: 4000,
     }),
-    node('mediasvc', 'service', 'Media HTTP Service', COL(1), LROW(3, 2), {
+    node("mediasvc", "service", "Media HTTP Service", COL(1), LROW(3, 2), {
       capacity: 12,
       serviceMs: 25,
       serviceCv: 0.5,
       queueLimit: 96,
     }),
-    node('blob', 'objectstore', 'Media Blob Store', COL(2), LROW(3, 2), {
+    node("blob", "objectstore", "Media Blob Store", COL(2), LROW(3, 2), {
       capacity: 64,
       serviceMs: 90,
       serviceCv: 0.4,
       queueLimit: 512,
     }),
-    node('mediadl', 'client', 'Media Downloads', COL(0), LROW(4, 2), {
+    node("mediadl", "client", "Media Downloads", COL(0), LROW(4, 2), {
       rps: 80,
       timeoutMs: 2500,
     }),
-    node('mediacdn', 'cdn', 'Media Cache', COL(1), LROW(4, 2), {
+    node("mediacdn", "cdn", "Media Cache", COL(1), LROW(4, 2), {
       capacity: 128,
       serviceMs: 2,
       serviceCv: 0.3,
@@ -3595,27 +3722,36 @@ const whatsapp: Topology = {
     }),
   ],
   edges: [
-    edge('phones', 'router'),
-    edge('midnight', 'router'),
-    edge('router', 'lookup'),
+    edge("phones", "router"),
+    edge("midnight", "router"),
+    edge("router", "lookup"),
     // The split that makes store-and-forward visible: online messages
     // push through, offline ones park. Weights are the 70/30 mix.
-    edge('lookup', 'push', 7),
-    edge('lookup', 'offlineq', 3),
-    edge('offlineq', 'drain'),
-    edge('churn', 'wsgw'),
-    edge('wsgw', 'session'),
-    edge('mediaup', 'mediasvc'),
-    edge('mediasvc', 'blob'),
-    edge('mediadl', 'mediacdn'),
-    edge('mediacdn', 'blob'),
+    edge("lookup", "push", 7),
+    edge("lookup", "offlineq", 3),
+    edge("offlineq", "drain"),
+    edge("churn", "wsgw"),
+    edge("wsgw", "session"),
+    edge("mediaup", "mediasvc"),
+    edge("mediasvc", "blob"),
+    edge("mediadl", "mediacdn"),
+    edge("mediacdn", "blob"),
   ],
   annotations: [
-    sectionOver('wa-sec-conn', 'Keeping phones connected', 0, 0, 2, 0, 0),
-    sectionOver('wa-sec-route', 'Sending a message, or parking it', 1, 1, 4, 1, 2, 1),
+    sectionOver("wa-sec-conn", "Keeping phones connected", 0, 0, 2, 0, 0),
     sectionOver(
-      'wa-sec-media',
-      'Photos and video, on their own path',
+      "wa-sec-route",
+      "Sending a message, or parking it",
+      1,
+      1,
+      4,
+      1,
+      2,
+      1,
+    ),
+    sectionOver(
+      "wa-sec-media",
+      "Photos and video, on their own path",
       2,
       0,
       2,
@@ -3624,33 +3760,33 @@ const whatsapp: Topology = {
       2,
     ),
     note(
-      'wa-note-conn',
+      "wa-note-conn",
       800,
       16,
-      'What runs out here is open connections, not requests. 45 phones connect a second and each holds on for 30 seconds, filling 1350 of the 1800 slots. This box is run deliberately hot, because connections were the entire cost of the system.',
+      "What runs out here is open connections, not requests. 45 phones connect a second and each holds on for 30 seconds, filling 1350 of the 1800 slots. This box is run deliberately hot, because connections were the entire cost of the system.",
       300,
     ),
     note(
-      'wa-note-route',
+      "wa-note-route",
       1320,
       232,
-      'The router does almost nothing per message: it cannot even read them. At 400 a second it is about one percent busy. Simple and small beat big here, and that was the point.',
+      "The router does almost nothing per message: it cannot even read them. At 400 a second it is about one percent busy. Simple and small beat big here, and that was the point.",
       300,
     ),
     // The lesson. Senders essentially cannot fail, which is exactly what
     // makes the pile-up invisible unless you watch the right graph.
     note(
-      'wa-note-store',
+      "wa-note-store",
       1320,
       472,
-      'Turn the load up to 4x and watch the offline store, not the error rate. A message to a phone that is not online parks here until it reconnects, so senders keep succeeding while undelivered messages pile up by the hundreds a second.',
+      "Turn the load up to 4x and watch the offline store, not the error rate. A message to a phone that is not online parks here until it reconnects, so senders keep succeeding while undelivered messages pile up by the hundreds a second.",
       300,
     ),
     note(
-      'wa-note-media',
+      "wa-note-media",
       800,
       568,
-      'Photos and video ride a separate path and never touch the chat core, so a media outage leaves messaging alone.',
+      "Photos and video ride a separate path and never touch the chat core, so a media outage leaves messaging alone.",
       236,
     ),
   ],
@@ -3658,185 +3794,185 @@ const whatsapp: Topology = {
 
 export const PRESETS: Preset[] = [
   {
-    id: 'single-server',
-    name: 'Single server',
-    tagline: 'Watch the database become the bottleneck',
+    id: "single-server",
+    name: "Single server",
+    tagline: "Watch the database become the bottleneck",
     description:
-      'One service in front of one database. Latency climbs sharply as the database fills up.',
+      "One service in front of one database. Latency climbs sharply as the database fills up.",
     topology: singleServer,
   },
   {
-    id: 'load-balanced',
-    name: 'Load balanced',
-    tagline: 'More servers, same database behind them',
+    id: "load-balanced",
+    name: "Load balanced",
+    tagline: "More servers, same database behind them",
     description:
-      'Three servers share the load, but they all still talk to the same database.',
+      "Three servers share the load, but they all still talk to the same database.",
     topology: loadBalanced,
   },
   {
-    id: 'cache-aside',
-    name: 'Cache aside',
-    tagline: 'What happens when the hit rate falls',
+    id: "cache-aside",
+    name: "Cache aside",
+    tagline: "What happens when the hit rate falls",
     description:
-      'The cache absorbs most reads. Lower the hit rate and the database takes the whole load.',
+      "The cache absorbs most reads. Lower the hit rate and the database takes the whole load.",
     topology: cacheAside,
   },
   {
-    id: 'async-workers',
-    name: 'Async workers',
-    tagline: 'A backlog that grows faster than it drains',
+    id: "async-workers",
+    name: "Async workers",
+    tagline: "A backlog that grows faster than it drains",
     description:
-      'Requests are acknowledged instantly and buffered. Watch the backlog grow when workers fall behind.',
+      "Requests are acknowledged instantly and buffered. Watch the backlog grow when workers fall behind.",
     topology: asyncWorkers,
   },
   {
-    id: 'retry-storm',
-    name: 'Retry storm',
-    tagline: 'Retries making an overload worse',
+    id: "retry-storm",
+    name: "Retry storm",
+    tagline: "Retries making an overload worse",
     description:
-      'A short timeout with retries in front of a small database. Retries multiply the load that caused them.',
+      "A short timeout with retries in front of a small database. Retries multiply the load that caused them.",
     topology: retryStorm,
   },
   {
-    id: 'cdn-origin',
-    name: 'CDN and origin',
-    tagline: 'How much traffic never reaches you',
+    id: "cdn-origin",
+    name: "CDN and origin",
+    tagline: "How much traffic never reaches you",
     description:
-      'The CDN answers most requests at the edge, so only a trickle reaches the origin. Drop the hit rate and watch the origin melt.',
+      "The CDN answers most requests at the edge, so only a trickle reaches the origin. Drop the hit rate and watch the origin melt.",
     topology: cdnOrigin,
   },
   {
-    id: 'rate-limited-api',
-    name: 'Rate limited API',
-    tagline: 'Turning excess away before it queues',
+    id: "rate-limited-api",
+    name: "Rate limited API",
+    tagline: "Turning excess away before it queues",
     description:
-      'A limiter refuses excess traffic at the door. It serves slightly less, but what it does serve stays fast instead of queueing.',
+      "A limiter refuses excess traffic at the door. It serves slightly less, but what it does serve stays fast instead of queueing.",
     topology: rateLimitedApi,
   },
   {
-    id: 'circuit-breaker',
-    name: 'Circuit breaker',
-    tagline: 'Giving a failing dependency room to recover',
+    id: "circuit-breaker",
+    name: "Circuit breaker",
+    tagline: "Giving a failing dependency room to recover",
     description:
-      'A breaker watches a failing dependency and stops calling it. Break the payments API and watch the circuit trip, then recover.',
+      "A breaker watches a failing dependency and stops calling it. Break the payments API and watch the circuit trip, then recover.",
     topology: circuitBreaker,
   },
   {
-    id: 'read-replicas',
-    name: 'Read replicas',
-    tagline: 'Reads that scale, and reads that go stale',
+    id: "read-replicas",
+    name: "Read replicas",
+    tagline: "Reads that scale, and reads that go stale",
     description:
-      'Replicas scale reads but not writes, and a read can arrive before the write it should have seen.',
+      "Replicas scale reads but not writes, and a read can arrive before the write it should have seen.",
     topology: readReplicas,
   },
   {
-    id: 'sharded-database',
-    name: 'Sharded database',
-    tagline: 'One hot key undoing all the partitions',
+    id: "sharded-database",
+    name: "Sharded database",
+    tagline: "One hot key undoing all the partitions",
     description:
-      'Four partitions share the load evenly until one key gets hot, and then a single shard melts while the average still looks healthy.',
+      "Four partitions share the load evenly until one key gets hot, and then a single shard melts while the average still looks healthy.",
     topology: shardedDatabase,
   },
   {
-    id: 'autoscaling-service',
-    name: 'Autoscaling service',
-    tagline: 'Capacity arriving after it was needed',
+    id: "autoscaling-service",
+    name: "Autoscaling service",
+    tagline: "Capacity arriving after it was needed",
     description:
-      'Capacity chases the load, but new servers take time to boot, so requests fail in the gap between the two.',
+      "Capacity chases the load, but new servers take time to boot, so requests fail in the gap between the two.",
     topology: autoscalingService,
   },
   {
-    id: 'multi-region',
-    name: 'Multi-region failover',
-    tagline: 'What a failover actually costs you',
+    id: "multi-region",
+    name: "Multi-region failover",
+    tagline: "What a failover actually costs you",
     description:
-      'Two regions, one serving. Crash the active one and every request fails until failover lands.',
+      "Two regions, one serving. Crash the active one and every request fails until failover lands.",
     topology: multiRegion,
   },
   {
-    id: 'full-stack',
-    name: 'Full stack',
-    tagline: 'Every piece at once, under real load',
+    id: "full-stack",
+    name: "Full stack",
+    tagline: "Every piece at once, under real load",
     description:
-      'Every tier at once: edge cache, load balancer, services, cache, shards, and a queue of async work behind it all.',
+      "Every tier at once: edge cache, load balancer, services, cache, shards, and a queue of async work behind it all.",
     topology: fullStack,
   },
   {
-    id: 'specialised-stores',
-    name: 'Specialised stores',
-    tagline: 'The right store for each job, side by side',
+    id: "specialised-stores",
+    name: "Specialised stores",
+    tagline: "The right store for each job, side by side",
     description:
-      'Search, vectors, graph, blobs, metrics and an archive tier, each store built for one job. Watch which one saturates first, and which fails without a sound.',
+      "Search, vectors, graph, blobs, metrics and an archive tier, each store built for one job. Watch which one saturates first, and which fails without a sound.",
     topology: specialisedStores,
   },
   {
-    id: 'event-driven',
-    name: 'Event-driven backend',
-    tagline: 'Lag, fan-out, cold starts and a cron burst',
+    id: "event-driven",
+    name: "Event-driven backend",
+    tagline: "Lag, fan-out, cold starts and a cron burst",
     description:
-      'A stream with two consumer groups, a fan-out topic, a websocket tier, a sidecar, a lambda and a cron burst. Watch consumer lag grow, cold starts spike on the quarter-minute, and connections, not requests, run out.',
+      "A stream with two consumer groups, a fan-out topic, a websocket tier, a sidecar, a lambda and a cron burst. Watch consumer lag grow, cold starts spike on the quarter-minute, and connections, not requests, run out.",
     topology: eventDriven,
   },
   {
-    id: 'resilient-delivery',
-    name: 'Resilient delivery',
-    tagline: 'Choosing what fails, and where failures go',
+    id: "resilient-delivery",
+    name: "Resilient delivery",
+    tagline: "Choosing what fails, and where failures go",
     description:
-      'Failing on purpose: a shedder drops the traffic that matters least, a bulkhead contains a slow dependency, retried deliveries land on a dead letter shelf, and a write-behind buffer trades durability for speed.',
+      "Failing on purpose: a shedder drops the traffic that matters least, a bulkhead contains a slow dependency, retried deliveries land on a dead letter shelf, and a write-behind buffer trades durability for speed.",
     topology: resilientDelivery,
   },
   {
-    id: 'discord',
-    name: 'Discord: real-time chat',
-    tagline: 'Millions of sockets, and fan-out per message',
+    id: "discord",
+    name: "Discord: real-time chat",
+    tagline: "Millions of sockets, and fan-out per message",
     description:
-      'A simplified reconstruction of Discord from their engineering blog; numbers are illustrative. The gateway runs out of connections, not requests; one message fans out to every gateway pod, and at 2x the push tier sheds deliveries the senders never see; make one channel hot and its store shard melts alone. Voice rides its own servers.',
+      "A simplified reconstruction of Discord from their engineering blog; numbers are illustrative. The gateway runs out of connections, not requests; one message fans out to every gateway pod, and at 2x the push tier sheds deliveries the senders never see; make one channel hot and its store shard melts alone. Voice rides its own servers.",
     topology: discord,
   },
   {
-    id: 'uber',
-    name: 'Uber: ride dispatch',
-    tagline: 'Matching riders to drivers, city by city',
+    id: "uber",
+    name: "Uber: ride dispatch",
+    tagline: "Matching riders to drivers, city by city",
     description:
-      'A simplified reconstruction of Uber from their published architecture; numbers are illustrative. Driver pings outnumber rider requests 13 to 1 and ride a Kafka-style stream; at 4x the geo consumer lags and dispatch matches on stale positions without a single rider-facing error. Crash the payment processor and the breaker contains it.',
+      "A simplified reconstruction of Uber from their published architecture; numbers are illustrative. Driver pings outnumber rider requests 13 to 1 and ride a Kafka-style stream; at 4x the geo consumer lags and dispatch matches on stale positions without a single rider-facing error. Crash the payment processor and the breaker contains it.",
     topology: uber,
   },
   {
-    id: 'netflix',
-    name: 'Netflix: streaming at scale',
-    tagline: 'Almost everything served from the edge',
+    id: "netflix",
+    name: "Netflix: streaming at scale",
+    tagline: "Almost everything served from the edge",
     description:
-      'A simplified reconstruction of Netflix from their tech blog; numbers are illustrative. Open Connect appliances inside ISPs serve ~96% of the bytes, so streaming barely touches the cloud; the control plane behind Zuul is where 4x hurts: licensing trips its Hystrix breaker, the recs bulkhead fills, Keystone quietly falls behind, and the encode farm backlog grows while viewers stream on.',
+      "A simplified reconstruction of Netflix from their tech blog; numbers are illustrative. Open Connect appliances inside ISPs serve ~96% of the bytes, so streaming barely touches the cloud; the control plane behind Zuul is where 4x hurts: licensing trips its Hystrix breaker, the recs bulkhead fills, Keystone quietly falls behind, and the encode farm backlog grows while viewers stream on.",
     topology: netflix,
   },
   {
-    id: 'spotify',
-    name: 'Spotify: music and discovery',
-    tagline: 'A steady catalogue beside a heavy recommender',
+    id: "spotify",
+    name: "Spotify: music and discovery",
+    tagline: "A steady catalogue beside a heavy recommender",
     description:
-      'A simplified reconstruction of Spotify from their engineering blog; numbers are illustrative. Audio flows from object storage through a CDN, apart from the metadata path. Playlist writes pin a replica primary while its read replicas idle, the event firehose outruns the royalty consumer at 4x, and every 20s the Discover Weekly batch writes the same vector index the home feed reads, so p99 breathes on the batch clock.',
+      "A simplified reconstruction of Spotify from their engineering blog; numbers are illustrative. Audio flows from object storage through a CDN, apart from the metadata path. Playlist writes pin a replica primary while its read replicas idle, the event firehose outruns the royalty consumer at 4x, and every 20s the Discover Weekly batch writes the same vector index the home feed reads, so p99 breathes on the batch clock.",
     topology: spotify,
   },
   {
-    id: 'twitter',
-    name: 'Twitter/X: timeline fan-out',
-    tagline: 'One tweet becoming a hundred thousand writes',
+    id: "twitter",
+    name: "Twitter/X: timeline fan-out",
+    tagline: "One tweet becoming a hundred thousand writes",
     description:
       'A simplified reconstruction of the Twitter timeline from Raffi Krikorian\'s "Timelines at Scale" talk; numbers are illustrative. Tweets fan out on write into precomputed timelines, so reads are one cache hit; every 20s a celebrity tweet dumps 200 fanout jobs on the firehose. Past 2x the fanout group never catches up again: reads stay green while timelines quietly go stale, and only the consumer lag tells the truth.',
     topology: twitter,
   },
   {
-    id: 'stripe',
-    name: 'Stripe: correctness over availability',
-    tagline: 'Refusing work rather than charging twice',
+    id: "stripe",
+    name: "Stripe: correctness over availability",
+    tagline: "Refusing work rather than charging twice",
     description:
-      'A simplified reconstruction of Stripe from their published posts on rate limiters, idempotency and the ledger; numbers are illustrative. Duplicate retries answer from the idempotency store, a breaker fails charges fast when the card networks brown out, webhooks redeliver onto a dead-letter shelf, and at 4x the gateway sheds excess charges at the door while dashboards throttle against their replicas. Crash the ledger: charges stop dead, dashboards keep reading, and that ordering is the design.',
+      "A simplified reconstruction of Stripe from their published posts on rate limiters, idempotency and the ledger; numbers are illustrative. Duplicate retries answer from the idempotency store, a breaker fails charges fast when the card networks brown out, webhooks redeliver onto a dead-letter shelf, and at 4x the gateway sheds excess charges at the door while dashboards throttle against their replicas. Crash the ledger: charges stop dead, dashboards keep reading, and that ordering is the design.",
     topology: stripe,
   },
   {
-    id: 'whatsapp',
-    name: 'WhatsApp: store and forward',
-    tagline: 'Messages that wait instead of failing',
+    id: "whatsapp",
+    name: "WhatsApp: store and forward",
+    tagline: "Messages that wait instead of failing",
     description:
       "A simplified reconstruction of WhatsApp from Rick Reed's Erlang scaling talks; numbers are illustrative. The chat core is deliberately tiny and nearly idle: one routing hop, then online recipients get pushed and offline ones park in the Mnesia store until they reconnect, so senders essentially cannot fail. At 4x undelivered messages pile up by the hundreds per second with zero errors, and the gateway runs out of held connections, not requests. Watch the queue depth, not the error rate.",
     topology: whatsapp,

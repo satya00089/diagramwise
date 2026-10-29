@@ -9,7 +9,11 @@ export type SimulationRole =
 
 export type SimulationOperation = "redirect" | "create-link";
 export type SimulationInputProvenance = "educational-default" | "user";
-export type SimulationCapacityRole = "ingress" | "compute" | "cache" | "database";
+export type SimulationCapacityRole =
+  | "ingress"
+  | "compute"
+  | "cache"
+  | "database";
 
 export type SimulationPreparation = {
   contract_version: "1";
@@ -39,7 +43,10 @@ export type SimulationPreparation = {
   blockers: string[];
 };
 
-export type SimulationProfileCapacities = Record<SimulationCapacityRole, number>;
+export type SimulationProfileCapacities = Record<
+  SimulationCapacityRole,
+  number
+>;
 export type SimulationProfileProvenance = Record<
   SimulationCapacityRole,
   SimulationInputProvenance

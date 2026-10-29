@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { Engine } from './engine';
-import { PRESETS } from './presets';
-import type { Topology } from './types';
+import { describe, expect, it } from "vitest";
+import { Engine } from "./engine";
+import { PRESETS } from "./presets";
+import type { Topology } from "./types";
 
 /**
  * The retry storm's collapse point, pinned.
@@ -19,11 +19,11 @@ import type { Topology } from './types';
  * is honest behaviour and the copy describes a range because of it.
  */
 
-const preset = PRESETS.find((p) => p.id === 'retry-storm')!;
+const preset = PRESETS.find((p) => p.id === "retry-storm")!;
 
 function failureRate(rps: number, seed: number, seconds = 120): number {
   const topology: Topology = structuredClone(preset.topology);
-  topology.nodes.find((n) => n.id === 'client')!.config.rps = rps;
+  topology.nodes.find((n) => n.id === "client")!.config.rps = rps;
   const engine = new Engine(topology, seed);
   for (let i = 0; i < 60 * seconds; i += 1) engine.advance(1000 / 60);
   const s = engine.snapshot().system;
@@ -32,32 +32,34 @@ function failureRate(rps: number, seed: number, seconds = 120): number {
 
 const SEEDS = [1, 42, 7, 2024];
 
-describe('retry storm collapse', () => {
-  it('is completely stable at 80 rps on every seed', () => {
+describe("retry storm collapse", () => {
+  it("is completely stable at 80 rps on every seed", () => {
     for (const seed of SEEDS) {
       expect(failureRate(80, seed), `seed ${seed}`).toBe(0);
     }
   });
 
-  it('has begun collapsing at 85 rps on every seed', () => {
+  it("has begun collapsing at 85 rps on every seed", () => {
     // The knee. Every seed loses a substantial share; none is still healthy.
     for (const seed of SEEDS) {
       expect(failureRate(85, seed), `seed ${seed}`).toBeGreaterThan(30);
     }
   });
 
-  it('is essentially dead by 90 rps', () => {
+  it("is essentially dead by 90 rps", () => {
     for (const seed of SEEDS) {
       expect(failureRate(90, seed), `seed ${seed}`).toBeGreaterThan(40);
     }
   });
 
-  it('states the collapse point in its own note', () => {
+  it("states the collapse point in its own note", () => {
     // The teaching copy has to agree with the engine, which is the whole
     // reason this file exists.
-    const note = preset.topology.annotations?.find((a) => a.id === 'rt-note-storm');
-    const text = note && 'text' in note ? (note.text as string) : '';
-    expect(text).toContain('80');
-    expect(text).not.toContain('2.4x');
+    const note = preset.topology.annotations?.find(
+      (a) => a.id === "rt-note-storm",
+    );
+    const text = note && "text" in note ? (note.text as string) : "";
+    expect(text).toContain("80");
+    expect(text).not.toContain("2.4x");
   });
 });

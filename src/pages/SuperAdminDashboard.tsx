@@ -216,8 +216,9 @@ const SuperAdminDashboard = () => {
   const [googleAnalytics, setGoogleAnalytics] =
     useState<AdminGoogleAnalyticsReport | null>(null);
   const [googleAnalyticsLoading, setGoogleAnalyticsLoading] = useState(true);
-  const [apiLatency, setApiLatency] =
-    useState<AdminApiLatencyReport | null>(null);
+  const [apiLatency, setApiLatency] = useState<AdminApiLatencyReport | null>(
+    null,
+  );
   const [apiLatencyLoading, setApiLatencyLoading] = useState(true);
   const [apiLatencyError, setApiLatencyError] = useState<string | null>(null);
   const [access, setAccess] = useState<AdminAccessUser[]>([]);
@@ -580,10 +581,7 @@ const SuperAdminDashboard = () => {
                         {formatNumber(apiLatency.sampleCount)} requests
                       </span>
                     )}
-                    <MdSpeed
-                      className="admin-panel__icon"
-                      aria-hidden="true"
-                    />
+                    <MdSpeed className="admin-panel__icon" aria-hidden="true" />
                   </div>
                 </div>
                 {apiLatencyLoading ? (
@@ -618,7 +616,10 @@ const SuperAdminDashboard = () => {
                           <span>Requests / p95 latency</span>
                         </div>
                         {apiLatency.routes.map((route) => (
-                          <div className="admin-latency-route" key={route.route}>
+                          <div
+                            className="admin-latency-route"
+                            key={route.route}
+                          >
                             <code>{route.route}</code>
                             <span>{formatNumber(route.sampleCount)} req</span>
                             <strong>{formatLatency(route.p95Ms)}</strong>

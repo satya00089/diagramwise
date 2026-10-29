@@ -37,14 +37,14 @@ The source version-1.0 AWS fixtures are unchanged. Current generated guide versi
 
 Provider: the existing Azure OpenAI `gpt-5.4-mini` deployment. Rubric: `2.0`. Inputs contain public reference data only, not private attempts. Expected scores/reference answers are not provided to the scorer.
 
-| Candidate | Five scores | Verdicts | Output repair |
-| --- | --- | --- | --- |
-| Document management | 97, 97, 97, 98, 97 | All Strong alignment | None |
-| Scheduler 2.1 | 97, 97, 97, 97, 97 | All Strong alignment | None |
-| Price alerts | 97, 97, 97, 97, 97 | All Strong alignment | None |
-| Compatibility assessment | 97, 97, 97, 97, 97 | All Strong alignment | None |
-| LLM gateway | 96, 97, 98, 97, 97 | All Strong alignment | None |
-| Document permission bypass | 94, 88, 93, 93, 91 | All Needs revision | Two runs used the bounded repair |
+| Candidate                  | Five scores        | Verdicts             | Output repair                    |
+| -------------------------- | ------------------ | -------------------- | -------------------------------- |
+| Document management        | 97, 97, 97, 98, 97 | All Strong alignment | None                             |
+| Scheduler 2.1              | 97, 97, 97, 97, 97 | All Strong alignment | None                             |
+| Price alerts               | 97, 97, 97, 97, 97 | All Strong alignment | None                             |
+| Compatibility assessment   | 97, 97, 97, 97, 97 | All Strong alignment | None                             |
+| LLM gateway                | 96, 97, 98, 97, 97 | All Strong alignment | None                             |
+| Document permission bypass | 94, 88, 93, 93, 91 | All Needs revision   | Two runs used the bounded repair |
 
 All 25 positive outputs reported supported coverage for the supplied core legacy anchors. Each negative output reported partial permission coverage and grounded permission defects. This small development set is **not** a claim of 95% real-world assessment accuracy.
 

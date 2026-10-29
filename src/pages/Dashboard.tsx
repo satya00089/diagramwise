@@ -206,7 +206,9 @@ const Dashboard: React.FC = () => {
 
     const scored = filteredProblems.map((problem, idx) => {
       let score = 0;
-      const tags = new Set((problem.tags || []).map((t: string) => String(t).toLowerCase()));
+      const tags = new Set(
+        (problem.tags || []).map((t: string) => String(t).toLowerCase()),
+      );
       const category = String(problem.category || "").toLowerCase();
       const domain = String(problem.domain || "").toLowerCase();
 
@@ -402,7 +404,9 @@ const Dashboard: React.FC = () => {
                 </button>
               )}
               <div className="dashboard-problem-count hidden lg:block">
-                {loading ? loadingLabel : `${availableProblemCount} problems available`}
+                {loading
+                  ? loadingLabel
+                  : `${availableProblemCount} problems available`}
               </div>
               <button
                 type="button"
@@ -638,16 +642,17 @@ const Dashboard: React.FC = () => {
                               problem.id ?? getProblemSlug(problem);
                             const walkthroughMenuOpen =
                               openWalkthroughMenuId === problemCardKey;
-                            const problemHelpMenuId =
-                              `problem-help-${problemCardKey}`;
+                            const problemHelpMenuId = `problem-help-${problemCardKey}`;
                             const primaryCtaTone = hasAttemptedProblem
                               ? "bg-blue-600 text-white hover:shadow-md"
                               : "bg-[var(--brand)] text-[var(--bg)] hover:shadow-md";
-                            const primaryCtaShape = problem.has_guided_walkthrough
-                              ? "rounded-l-xl rounded-r-none"
-                              : "rounded-xl";
+                            const primaryCtaShape =
+                              problem.has_guided_walkthrough
+                                ? "rounded-l-xl rounded-r-none"
+                                : "rounded-xl";
                             const delayClass =
-                              ["delay-0", "delay-100", "delay-200"][index] ?? "";
+                              ["delay-0", "delay-100", "delay-200"][index] ??
+                              "";
                             return (
                               <div
                                 key={problem.id}
@@ -831,7 +836,8 @@ const Dashboard: React.FC = () => {
                                                   Open guided walkthrough
                                                 </span>
                                                 <span className="text-xs text-muted">
-                                                  Step-by-step help if you get stuck
+                                                  Step-by-step help if you get
+                                                  stuck
                                                 </span>
                                               </span>
                                             </button>

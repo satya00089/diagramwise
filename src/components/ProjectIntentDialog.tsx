@@ -107,7 +107,8 @@ export const ProjectIntentDialog: React.FC<ProjectIntentDialogProps> = ({
                 htmlFor="project-title"
                 className="block text-sm font-medium text-theme mb-2"
               >
-                {titleLabel}{titleRequired ? " *" : ""}
+                {titleLabel}
+                {titleRequired ? " *" : ""}
               </label>
               <input
                 ref={titleInputRef}

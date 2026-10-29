@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
-import { Engine } from './engine';
-import { makeNode } from './presets';
-import { BULKHEAD_MODES, type BulkheadMode, type Topology } from './types';
+import { describe, expect, it } from "vitest";
+import { Engine } from "./engine";
+import { makeNode } from "./presets";
+import { BULKHEAD_MODES, type BulkheadMode, type Topology } from "./types";
 
 function snapshotAfter(topology: Topology, seconds: number) {
   const engine = new Engine(topology, 7);
@@ -9,7 +9,7 @@ function snapshotAfter(topology: Topology, seconds: number) {
   return engine.snapshot();
 }
 
-describe('the mode list', () => {
+describe("the mode list", () => {
   /*
    * The union and the array cannot be generated from one another, so a mode
    * added to the type without being added here compiles fine and is then
@@ -18,25 +18,25 @@ describe('the mode list', () => {
    * `bulkheadMode` reaching it before the array existed is what broke
    * every design carrying one.
    */
-  it('has an entry for every mode the type admits', () => {
+  it("has an entry for every mode the type admits", () => {
     const exhaustive: Record<BulkheadMode, true> = { reject: true, wait: true };
     expect([...BULKHEAD_MODES].sort()).toEqual(Object.keys(exhaustive).sort());
   });
 });
 
-describe('bulkhead acquire mode', () => {
-  it('waits for a slot, then times out the acquire without occupying that slot', () => {
-    const client = { ...makeNode('client', 0, 0), id: 'client' };
+describe("bulkhead acquire mode", () => {
+  it("waits for a slot, then times out the acquire without occupying that slot", () => {
+    const client = { ...makeNode("client", 0, 0), id: "client" };
     client.config = { ...client.config, rps: 40, timeoutMs: 2000 };
-    const pool = { ...makeNode('bulkhead', 100, 0), id: 'pool' };
+    const pool = { ...makeNode("bulkhead", 100, 0), id: "pool" };
     pool.config = {
       ...pool.config,
       bulkheadMax: 1,
-      bulkheadMode: 'wait',
+      bulkheadMode: "wait",
       acquireQueueMax: 3,
       acquireTimeoutMs: 100,
     };
-    const database = { ...makeNode('db', 200, 0), id: 'database' };
+    const database = { ...makeNode("db", 200, 0), id: "database" };
     database.config = {
       ...database.config,
       serviceMs: 500,
@@ -47,8 +47,8 @@ describe('bulkhead acquire mode', () => {
       {
         nodes: [client, pool, database],
         edges: [
-          { id: 'client-pool', from: 'client', to: 'pool', weight: 1 },
-          { id: 'pool-database', from: 'pool', to: 'database', weight: 1 },
+          { id: "client-pool", from: "client", to: "pool", weight: 1 },
+          { id: "pool-database", from: "pool", to: "database", weight: 1 },
         ],
       },
       2,
@@ -57,6 +57,6 @@ describe('bulkhead acquire mode', () => {
     expect(stats.bulkheadInFlight).toBe(1);
     expect(stats.bulkheadWaiting).toBeLessThanOrEqual(3);
     expect(stats.bulkheadAcquireTimeoutRate).toBeGreaterThan(0);
-    expect(snapshot.failuresByReason['acquire-timeout']).toBeGreaterThan(0);
+    expect(snapshot.failuresByReason["acquire-timeout"]).toBeGreaterThan(0);
   });
 });

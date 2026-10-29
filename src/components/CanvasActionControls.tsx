@@ -199,9 +199,7 @@ const CanvasActionControls: React.FC<CanvasActionControlsProps> = ({
         >
           <div
             id={menuId}
-            role={
-              name === "canvases" || name === "arrange" ? "dialog" : "menu"
-            }
+            role={name === "canvases" || name === "arrange" ? "dialog" : "menu"}
             aria-label={label}
             className={`flex ${widthClass} flex-col overflow-hidden rounded-md border border-theme bg-[var(--surface)] p-1 text-theme shadow-lg`}
           >

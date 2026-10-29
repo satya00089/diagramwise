@@ -29,9 +29,9 @@
  * request, unconditionally where a roll exists at all -- the same discipline
  * behaviour-data.ts follows, so replay never depends on a slider's value.
  */
-import type { NodeStats } from './types';
-import type { BehaviourCtx, NodeStateLike, ReqLike } from './engine-types';
-import type { AdmitAction, ComponentBehaviour } from './behaviour';
+import type { NodeStats } from "./types";
+import type { BehaviourCtx, NodeStateLike, ReqLike } from "./engine-types";
+import type { AdmitAction, ComponentBehaviour } from "./behaviour";
 
 /** Keyspace the engine draws request keys from; mirrored here for sizing. */
 const KEYSPACE = 64;
@@ -42,7 +42,7 @@ function clamp01(v: number): number {
 
 /** Read an optional config number, treating absent/NaN as `fallback`. */
 function num(v: number | undefined, fallback: number): number {
-  return typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+  return typeof v === "number" && Number.isFinite(v) ? v : fallback;
 }
 
 /* ================================================================== *
@@ -109,12 +109,12 @@ function objectRefill(
 }
 
 const objectstore: ComponentBehaviour = {
-  kind: 'objectstore',
+  kind: "objectstore",
   servesRequests: true,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'own',
+  pump: "own",
   creditsJoinCompletion: true,
 
   initState(state: NodeStateLike): ObjectStoreExt {
@@ -123,28 +123,33 @@ const objectstore: ComponentBehaviour = {
     // Buckets start full, like every other token bucket in the app: an idle
     // store absorbs one burst per prefix before the ceiling bites.
     tokens.fill(rate > 0 ? rate : 0);
-    return { tokens, lastRefillMs: new Float64Array(OBJECT_PREFIXES), lastRate: rate };
+    return {
+      tokens,
+      lastRefillMs: new Float64Array(OBJECT_PREFIXES),
+      lastRate: rate,
+    };
   },
 
   onAdmit(ctx, state, req): AdmitAction {
     const rate = objectPrefixRate(state);
     // No ceiling configured: a plain wide pool, exactly the old behaviour.
-    if (rate <= 0) return 'serve';
+    if (rate <= 0) return "serve";
 
     const ext = state.ext as ObjectStoreExt;
-    const prefix = ((req.key % OBJECT_PREFIXES) + OBJECT_PREFIXES) % OBJECT_PREFIXES;
+    const prefix =
+      ((req.key % OBJECT_PREFIXES) + OBJECT_PREFIXES) % OBJECT_PREFIXES;
     objectRefill(ext, prefix, rate, ctx.now);
     if (ext.tokens[prefix] < 1) {
-      ctx.countCustom(state, 'slowdown', 1);
-      ctx.reject(state, req, 'throttled');
-      return 'handled';
+      ctx.countCustom(state, "slowdown", 1);
+      ctx.reject(state, req, "throttled");
+      return "handled";
     }
     ext.tokens[prefix] -= 1;
-    return 'serve';
+    return "serve";
   },
 
   decorateStats(ctx, state, stats: NodeStats): void {
-    stats.slowdownRate = ctx.counterRate(state, 'slowdown');
+    stats.slowdownRate = ctx.counterRate(state, "slowdown");
   },
 };
 
@@ -172,13 +177,17 @@ interface ColdStorageExt {
   jobs: number;
 }
 
-const coldDrained = (_ctx: BehaviourCtx, state: NodeStateLike, _req: ReqLike): void => {
+const coldDrained = (
+  _ctx: BehaviourCtx,
+  state: NodeStateLike,
+  _req: ReqLike,
+): void => {
   const ext = state.ext as ColdStorageExt;
   if (ext.jobs > 0) ext.jobs--;
 };
 
 const coldstorage: ComponentBehaviour = {
-  kind: 'coldstorage',
+  kind: "coldstorage",
   servesRequests: true,
   generatesLoad: false,
   pullsFromQueues: false,
@@ -186,7 +195,7 @@ const coldstorage: ComponentBehaviour = {
   // No queue and no engine slots: jobs are tracked in ext, timed by
   // serveWithin, and the only admission outcomes are "job started" and
   // "refused". queueLimit is ignored, because a vault has no line to wait in.
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
 
   initState: (): ColdStorageExt => ({ jobs: 0 }),
@@ -194,13 +203,13 @@ const coldstorage: ComponentBehaviour = {
   onAdmit(ctx, state, req): AdmitAction {
     const ext = state.ext as ColdStorageExt;
     if (ext.jobs >= ctx.effectiveCapacity(state)) {
-      ctx.countCustom(state, 'restoreDenied', 1);
-      ctx.reject(state, req, 'throttled');
-      return 'handled';
+      ctx.countCustom(state, "restoreDenied", 1);
+      ctx.reject(state, req, "throttled");
+      return "handled";
     }
     ext.jobs++;
     ctx.serveWithin(state, req, coldDrained);
-    return 'handled';
+    return "handled";
   },
 
   onTick(ctx, state): void {
@@ -212,7 +221,7 @@ const coldstorage: ComponentBehaviour = {
     const ext = state.ext as ColdStorageExt | null;
     stats.inFlight = ext ? ext.jobs : 0;
     stats.queued = 0;
-    stats.throttledRate = ctx.counterRate(state, 'restoreDenied');
+    stats.throttledRate = ctx.counterRate(state, "restoreDenied");
   },
 };
 
@@ -249,8 +258,12 @@ type Drained = (ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) => void;
  * time has elapsed (where a write's commit takes effect).
  */
 function makeDrained(
-  onStart: ((ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) => void) | null,
-  onServed: ((ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) => void) | null,
+  onStart:
+    | ((ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) => void)
+    | null,
+  onServed:
+    | ((ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) => void)
+    | null,
 ): Drained {
   const drained: Drained = (ctx, state, req) => {
     const ext = poolExt(state);
@@ -258,8 +271,8 @@ function makeDrained(
     // Measured cost booking: `served` is queries, `servedMs` is the actual
     // milliseconds each one took (surcharges included), so a mean cost
     // readout is measurement rather than arithmetic on the config.
-    ctx.countCustom(state, 'served', 1);
-    ctx.countCustom(state, 'servedMs', req.ownMs);
+    ctx.countCustom(state, "served", 1);
+    ctx.countCustom(state, "servedMs", req.ownMs);
     if (onServed) onServed(ctx, state, req);
 
     // Pump: start whatever is waiting, up to capacity. Requests that
@@ -285,7 +298,9 @@ function startPoolService(
   ctx: BehaviourCtx,
   state: NodeStateLike,
   req: ReqLike,
-  onStart: ((ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) => void) | null,
+  onStart:
+    | ((ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) => void)
+    | null,
   drained: Drained,
 ): void {
   const ext = poolExt(state);
@@ -300,18 +315,21 @@ function poolAdmit(
   state: NodeStateLike,
   req: ReqLike,
   classify: (ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) => void,
-  onStart: ((ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) => void) | null,
+  onStart:
+    | ((ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) => void)
+    | null,
   drained: Drained,
 ): AdmitAction {
   const ext = poolExt(state);
   classify(ctx, state, req);
   if (ext.busy < ctx.effectiveCapacity(state)) {
     startPoolService(ctx, state, req, onStart, drained);
-    return 'handled';
+    return "handled";
   }
-  if (ext.queue.length - ext.head >= ctx.effectiveQueueLimit(state)) return 'shed';
+  if (ext.queue.length - ext.head >= ctx.effectiveQueueLimit(state))
+    return "shed";
   ext.queue.push(req);
-  return 'handled';
+  return "handled";
 }
 
 function initPool(): PoolExt {
@@ -331,9 +349,9 @@ function decoratePool(state: NodeStateLike, stats: NodeStats): void {
 
 /** Measured mean ms per served request over the window, or 0 when idle. */
 function meanServedMs(ctx: BehaviourCtx, state: NodeStateLike): number {
-  const served = ctx.counterRate(state, 'served');
+  const served = ctx.counterRate(state, "served");
   if (!(served > 0)) return 0;
-  const ms = ctx.counterRate(state, 'servedMs') / served;
+  const ms = ctx.counterRate(state, "servedMs") / served;
   return Number.isFinite(ms) && ms > 0 ? ms : 0;
 }
 
@@ -363,7 +381,11 @@ interface DbExt extends PoolExt {
   writers: number;
 }
 
-function dbClassify(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): void {
+function dbClassify(
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  req: ReqLike,
+): void {
   const isWrite = ctx.roll() >= clamp01(num(state.config.readFraction, 0.9));
   ctx.markWrite(req, isWrite);
 }
@@ -373,15 +395,19 @@ function dbClassify(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): void
  * this moment (not at admission -- a write that waited in the queue meets
  * the lock as it actually is when its turn comes).
  */
-const dbStart = (ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): void => {
-  ctx.countCustom(state, req.isWrite ? 'write' : 'read', 1);
+const dbStart = (
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  req: ReqLike,
+): void => {
+  ctx.countCustom(state, req.isWrite ? "write" : "read", 1);
   if (!req.isWrite) return;
   const ext = state.ext as DbExt;
   const lockMs = Math.max(0, num(state.config.lockMs, 0));
   const wait = lockMs * ext.writers;
   if (wait > 0) {
     ctx.addServiceDelay(req, wait);
-    ctx.countCustom(state, 'lockWaitMs', wait);
+    ctx.countCustom(state, "lockWaitMs", wait);
   }
   ext.writers++;
 };
@@ -393,14 +419,14 @@ const dbDrained = makeDrained(dbStart, (_ctx, state, req) => {
 });
 
 const db: ComponentBehaviour = {
-  kind: 'db',
+  kind: "db",
   servesRequests: true,
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
 
   initState: (): DbExt => ({ ...initPool(), writers: 0 }),
@@ -413,10 +439,10 @@ const db: ComponentBehaviour = {
 
   decorateStats(ctx, state, stats: NodeStats): void {
     decoratePool(state, stats);
-    const writes = ctx.counterRate(state, 'write');
-    stats.readRate = ctx.counterRate(state, 'read');
+    const writes = ctx.counterRate(state, "write");
+    stats.readRate = ctx.counterRate(state, "read");
     stats.writeRate = writes;
-    const waited = ctx.counterRate(state, 'lockWaitMs');
+    const waited = ctx.counterRate(state, "lockWaitMs");
     const mean = writes > 0 ? waited / writes : 0;
     stats.lockWaitMs = Number.isFinite(mean) && mean > 0 ? mean : 0;
   },
@@ -446,7 +472,7 @@ const searchDrained = makeDrained(
     if (req.isWrite) return;
     const ext = state.ext as SearchExt;
     const stale = ctx.now < ext.visibleAt[req.key % KEYSPACE];
-    ctx.countCustom(state, stale ? 'staleSearch' : 'freshSearch', 1);
+    ctx.countCustom(state, stale ? "staleSearch" : "freshSearch", 1);
   },
   // At service end: the write has committed, so the refresh clock starts
   // HERE. The admission-time claim below was only a lower bound.
@@ -462,14 +488,22 @@ const searchDrained = makeDrained(
 
 // The onStart hook runs inside searchDrained's pump as well; capture it once
 // so admission and pump judge staleness identically.
-const searchStart = (ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): void => {
+const searchStart = (
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  req: ReqLike,
+): void => {
   if (req.isWrite) return;
   const ext = state.ext as SearchExt;
   const stale = ctx.now < ext.visibleAt[req.key % KEYSPACE];
-  ctx.countCustom(state, stale ? 'staleSearch' : 'freshSearch', 1);
+  ctx.countCustom(state, stale ? "staleSearch" : "freshSearch", 1);
 };
 
-function searchClassify(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): void {
+function searchClassify(
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  req: ReqLike,
+): void {
   // One unconditional draw decides search vs write, the same convention the
   // replica set uses for read vs write.
   const isWrite = ctx.roll() >= clamp01(num(state.config.readFraction, 0.9));
@@ -477,7 +511,7 @@ function searchClassify(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): 
   if (isWrite) {
     // Writes pay the indexing surcharge on top of the drawn serviceMs.
     ctx.addServiceDelay(req, Math.max(0, num(state.config.indexMs, 0)));
-    ctx.countCustom(state, 'indexWrite', 1);
+    ctx.countCustom(state, "indexWrite", 1);
     // Claim a lower-bound searchability deadline immediately: a zero-ms
     // service completes synchronously inside serveWithin, so waiting for
     // the commit alone would let a same-instant search read a write that
@@ -492,14 +526,14 @@ function searchClassify(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): 
 }
 
 const searchindex: ComponentBehaviour = {
-  kind: 'searchindex',
+  kind: "searchindex",
   servesRequests: true,
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
 
   initState(): SearchExt {
@@ -509,19 +543,26 @@ const searchindex: ComponentBehaviour = {
   },
 
   onAdmit(ctx, state, req): AdmitAction {
-    return poolAdmit(ctx, state, req, searchClassify, searchStart, searchDrained);
+    return poolAdmit(
+      ctx,
+      state,
+      req,
+      searchClassify,
+      searchStart,
+      searchDrained,
+    );
   },
 
   onTick: reportPool,
 
   decorateStats(ctx, state, stats): void {
     decoratePool(state, stats);
-    const fresh = ctx.counterRate(state, 'freshSearch');
-    const stale = ctx.counterRate(state, 'staleSearch');
+    const fresh = ctx.counterRate(state, "freshSearch");
+    const stale = ctx.counterRate(state, "staleSearch");
     const total = fresh + stale;
     stats.searchRate = total;
     stats.staleSearchRate = total > 0 ? stale / total : 0;
-    stats.indexWriteRate = ctx.counterRate(state, 'indexWrite');
+    stats.indexWriteRate = ctx.counterRate(state, "indexWrite");
   },
 };
 
@@ -535,15 +576,23 @@ const searchindex: ComponentBehaviour = {
  * out of the main database stated as arithmetic.
  * ================================================================== */
 
-const tsdbStart = (ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): void => {
+const tsdbStart = (
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  req: ReqLike,
+): void => {
   // Appends were marked as writes in classify; count what is actually
   // being SERVED, so the readout matches throughput rather than arrivals.
-  ctx.countCustom(state, req.isWrite ? 'append' : 'rangeQuery', 1);
+  ctx.countCustom(state, req.isWrite ? "append" : "rangeQuery", 1);
 };
 
 const tsdbDrained = makeDrained(tsdbStart, null);
 
-function tsdbClassify(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): void {
+function tsdbClassify(
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  req: ReqLike,
+): void {
   // One unconditional draw: is this a range query? Taken whatever the
   // slider says, so replay does not depend on its value.
   const isRange = ctx.roll() < clamp01(num(state.config.rangeQueryFraction, 0));
@@ -554,14 +603,14 @@ function tsdbClassify(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): vo
 }
 
 const timeseriesdb: ComponentBehaviour = {
-  kind: 'timeseriesdb',
+  kind: "timeseriesdb",
   servesRequests: true,
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
 
   initState: initPool,
@@ -574,8 +623,8 @@ const timeseriesdb: ComponentBehaviour = {
 
   decorateStats(ctx, state, stats): void {
     decoratePool(state, stats);
-    stats.appendRate = ctx.counterRate(state, 'append');
-    stats.rangeQueryRate = ctx.counterRate(state, 'rangeQuery');
+    stats.appendRate = ctx.counterRate(state, "append");
+    stats.rangeQueryRate = ctx.counterRate(state, "rangeQuery");
   },
 };
 
@@ -593,7 +642,11 @@ const timeseriesdb: ComponentBehaviour = {
 /** Modelled mean out-degree per hop. Fixed, so depth is the single knob. */
 const GRAPH_FANOUT = 3;
 
-function graphClassify(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): void {
+function graphClassify(
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  req: ReqLike,
+): void {
   const depth = Math.max(1, Math.floor(num(state.config.traversalDepth, 1)));
   const base = Math.max(0, state.config.serviceMs);
   const mult = Math.pow(GRAPH_FANOUT, Math.min(depth, 8) - 1);
@@ -603,14 +656,14 @@ function graphClassify(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): v
 const graphDrained = makeDrained(null, null);
 
 const graphdb: ComponentBehaviour = {
-  kind: 'graphdb',
+  kind: "graphdb",
   servesRequests: true,
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
 
   initState: initPool,
@@ -641,7 +694,11 @@ const graphdb: ComponentBehaviour = {
  * clamped to 0.99, where the multiplier is already 100x.
  * ================================================================== */
 
-function vectorClassify(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): void {
+function vectorClassify(
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  req: ReqLike,
+): void {
   const sizeK = Math.max(0, num(state.config.indexSizeK, 0));
   const recall = Math.min(0.99, Math.max(0, num(state.config.recallTarget, 0)));
   const base = Math.max(0, state.config.serviceMs);
@@ -652,14 +709,14 @@ function vectorClassify(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): 
 const vectorDrained = makeDrained(null, null);
 
 const vectordb: ComponentBehaviour = {
-  kind: 'vectordb',
+  kind: "vectordb",
   servesRequests: true,
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
 
   initState: initPool,

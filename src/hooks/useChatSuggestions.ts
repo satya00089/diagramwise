@@ -39,7 +39,8 @@ export const useChatSuggestions = (
       // Transform nodes to component info with rich details
       const components = nodes.map((node) => {
         const nodeData = node.data || {};
-        const purpose = nodeData.purpose || nodeData.description || nodeData.subtitle || "";
+        const purpose =
+          nodeData.purpose || nodeData.description || nodeData.subtitle || "";
         const hasDescription = Boolean(
           purpose ||
             nodeData.subtitle ||

@@ -826,7 +826,10 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-hover, color-mix(in srgb, currentColor 12%, transparent));
+  background: var(
+    --bg-hover,
+    color-mix(in srgb, currentColor 12%, transparent)
+  );
   color: inherit;
   font-size: 11px;
 }
@@ -844,7 +847,9 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   transition: transform 160ms ease;
 }
 
-.account-menu__chevron--open { transform: rotate(180deg); }
+.account-menu__chevron--open {
+  transform: rotate(180deg);
+}
 
 .account-menu__panel {
   position: absolute;
@@ -874,8 +879,13 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   white-space: nowrap;
 }
 
-.account-menu__identity strong { font-size: 13px; }
-.account-menu__identity span { color: var(--muted); font-size: 12px; }
+.account-menu__identity strong {
+  font-size: 13px;
+}
+.account-menu__identity span {
+  color: var(--muted);
+  font-size: 12px;
+}
 
 .account-menu__item {
   display: flex;
@@ -898,8 +908,12 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   background: var(--bg-hover, color-mix(in srgb, currentColor 8%, transparent));
 }
 
-.account-menu__item--current { color: var(--product-accent, var(--accent)); }
-.account-menu__item--sign-out { border-top: 1px solid var(--border); }
+.account-menu__item--current {
+  color: var(--product-accent, var(--accent));
+}
+.account-menu__item--sign-out {
+  border-top: 1px solid var(--border);
+}
 .account-menu__item--sign-out:hover {
   background: color-mix(in srgb, #b42318 10%, var(--surface, var(--bg)));
   color: #b42318;
@@ -908,10 +922,18 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   background: color-mix(in srgb, #ff8a80 14%, var(--surface, var(--bg)));
   color: #ff8a80;
 }
-.account-menu--inverse { color: #fff; }
-.account-menu--inverse .account-menu__trigger:hover { background: rgb(255 255 255 / 14%); }
-.account-menu--inverse .account-menu__avatar--initials { background: rgb(255 255 255 / 18%); }
-.account-menu--landing { color: var(--systema-text, var(--text)); }
+.account-menu--inverse {
+  color: #fff;
+}
+.account-menu--inverse .account-menu__trigger:hover {
+  background: rgb(255 255 255 / 14%);
+}
+.account-menu--inverse .account-menu__avatar--initials {
+  background: rgb(255 255 255 / 18%);
+}
+.account-menu--landing {
+  color: var(--systema-text, var(--text));
+}
 .account-menu--landing .account-menu__panel {
   --text: var(--systema-text, #151513);
   --muted: var(--systema-muted, #686863);
@@ -921,7 +943,9 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
 }
 
 @media (max-width: 560px) {
-  .account-menu__name { display: none; }
+  .account-menu__name {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -932,7 +956,7 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
 
 /* Shared header authentication action across landing, catalog, learning, and
    Design Studio screens. */
-.product-sign-in {
+html .product-sign-in.product-sign-in {
   display: inline-flex;
   min-height: 36px;
   align-items: center;
@@ -940,8 +964,8 @@ a:focus-visible > .rolling-nav-label .rolling-nav-label__copy--incoming {
   padding: 8px 15px;
   border: 1px solid var(--text);
   border-radius: 999px;
-  background: var(--text) !important;
-  color: var(--bg) !important;
+  background: var(--text);
+  color: var(--bg);
   font-size: 12px;
   font-weight: 600;
   line-height: 1;
@@ -1965,10 +1989,10 @@ html.dark:has(.design-studio-page) {
   color: var(--text);
 }
 
-.design-studio-brand {
+html .design-studio-brand {
   font-family: "Instrument Serif", Georgia, serif;
   font-size: 25px;
-  font-weight: 400 !important;
+  font-weight: 400;
   letter-spacing: -0.045em;
 }
 
@@ -2095,21 +2119,21 @@ html.dark:has(.design-studio-page) {
   color: var(--text);
 }
 
-.design-studio-page .react-flow__controls {
-  border-color: var(--border) !important;
-  background: var(--surface) !important;
+html .design-studio-page .react-flow__controls {
+  border-color: var(--border);
+  background: var(--surface);
   box-shadow: 0 8px 20px rgb(0 0 0 / 7%);
 }
 
-.design-studio-page .react-flow__controls .react-flow__controls-button {
-  border-color: var(--border) !important;
-  background: var(--surface) !important;
-  color: var(--text) !important;
+html .design-studio-page .react-flow__controls .react-flow__controls-button {
+  border-color: var(--border);
+  background: var(--surface);
+  color: var(--text);
 }
 
-.design-studio-page .react-flow__minimap {
+html .design-studio-page .react-flow__minimap {
   border: 1px solid var(--border);
-  background: var(--surface) !important;
+  background: var(--surface);
 }
 
 /* The collapsed inspector sits against the viewport edge, so its tooltip
@@ -2222,16 +2246,16 @@ h6 {
 /* Freeform nodes draw their own shape-matched selection outline via SVG.
    Kill React Flow's default rectangular box-shadow / outline so it never
    shows a boxy ring around circles, diamonds, ellipses, etc. */
-.react-flow__node-freeform,
-.react-flow__node-freeform.selected,
-.react-flow__node-freeform.selectable:focus,
-.react-flow__node-freeform.selectable:focus-visible {
-  box-shadow: none !important;
-  outline: none !important;
+html .react-flow__node-freeform,
+html .react-flow__node-freeform.selected,
+html .react-flow__node-freeform.selectable:focus,
+html .react-flow__node-freeform.selectable:focus-visible {
+  box-shadow: none;
+  outline: none;
 }
-.react-flow__node-freeform > div {
-  box-shadow: none !important;
-  outline: none !important;
+html .react-flow__node-freeform > div {
+  box-shadow: none;
+  outline: none;
 }
 
 /* ── Freeform connection handles (draw.io style) ──────────────────────────────
@@ -2242,15 +2266,15 @@ h6 {
    inline styles — NOT via CSS :hover — because the handles sit outside the
    node's layout box.                                                         */
 
-.freeform-node .freeform-handle,
-.freeform-node .react-flow__handle.freeform-handle {
-  background: transparent !important;
-  border: none !important;
-  border-radius: 0 !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  padding: 0 !important;
-  cursor: crosshair !important;
+html .freeform-node .freeform-handle,
+html .freeform-node .react-flow__handle.freeform-handle {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  cursor: crosshair;
 }
 
 /* Scale up + glow when the user hovers the icon directly */
@@ -2262,100 +2286,110 @@ h6 {
 
 /* Light theme (default) */
 
-.react-flow__edge-path {
-  stroke: var(--muted) !important;
+html .react-flow__edge-path {
+  stroke: var(--muted);
 }
 
-.react-flow__controls {
-  background: var(--surface) !important;
-  border-color: var(--border) !important;
+html .react-flow__controls {
+  background: var(--surface);
+  border-color: var(--border);
 }
 
-.react-flow__controls .react-flow__controls-button {
-  background: var(--surface) !important;
-  border-color: var(--border) !important;
-  color: var(--text) !important;
+html .react-flow__controls .react-flow__controls-button {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
 }
 
-.react-flow__controls .react-flow__controls-button:hover {
-  background: var(--bg) !important;
+html .react-flow__controls .react-flow__controls-button:hover {
+  background: var(--bg);
 }
 
-.react-flow__minimap {
-  background: var(--surface) !important;
-  border-color: var(--border) !important;
+html .react-flow__minimap {
+  background: var(--surface);
+  border-color: var(--border);
 }
 
-.react-flow__background {
-  background: var(--bg) !important;
+html .react-flow__background {
+  background: var(--bg);
 }
 
 /* Dark theme overrides */
 
-.dark .react-flow__edge-path {
-  stroke: var(--muted) !important;
+html.dark .react-flow__edge-path {
+  stroke: var(--muted);
 }
 
-.dark .react-flow__controls {
-  background: var(--surface) !important;
-  border-color: var(--border) !important;
+html.dark .react-flow__controls {
+  background: var(--surface);
+  border-color: var(--border);
 }
 
-.dark .react-flow__controls .react-flow__controls-button {
-  background: var(--surface) !important;
-  border-color: var(--border) !important;
-  color: var(--text) !important;
+html.dark .react-flow__controls .react-flow__controls-button {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
 }
 
-.dark .react-flow__controls .react-flow__controls-button:hover {
-  background: var(--bg) !important;
+html.dark .react-flow__controls .react-flow__controls-button:hover {
+  background: var(--bg);
 }
 
-.dark .react-flow__minimap {
-  background: var(--surface) !important;
-  border-color: var(--border) !important;
+html.dark .react-flow__minimap {
+  background: var(--surface);
+  border-color: var(--border);
 }
 
-.dark .react-flow__background {
-  background: var(--bg) !important;
+html.dark .react-flow__background {
+  background: var(--bg);
 }
 
 /* Keep both control columns connected as one glass toolbar. */
-.diagram-canvas-toolbar {
+html .diagram-canvas-toolbar {
   gap: 0;
   border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--surface) 76%, transparent) !important;
+  background: color-mix(in srgb, var(--surface) 76%, transparent);
   box-shadow: 0 6px 16px rgb(0 0 0 / 12%);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
 }
 
-.diagram-canvas-toolbar .react-flow__controls {
+html .diagram-canvas-toolbar .react-flow__controls {
   overflow: visible;
-  border: 0 !important;
+  border: 0;
   border-radius: 0;
-  background: transparent !important;
+  background: transparent;
   box-shadow: none;
 }
 
-.diagram-canvas-toolbar .diagram-canvas-toolbar-actions {
-  border-left: 1px solid color-mix(in srgb, var(--border) 78%, transparent) !important;
+html .diagram-canvas-toolbar .diagram-canvas-toolbar-actions {
+  border-left: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
 }
 
-.diagram-canvas-toolbar .react-flow__controls .react-flow__controls-button {
+html
+  .diagram-canvas-toolbar
+  .react-flow__controls
+  .react-flow__controls-button {
   width: 30px;
   height: 30px;
-  background: transparent !important;
+  background: transparent;
 }
 
-.diagram-canvas-toolbar .react-flow__controls .react-flow__controls-button > svg {
-  width: 16px !important;
-  height: 16px !important;
+html
+  .diagram-canvas-toolbar
+  .react-flow__controls
+  .react-flow__controls-button
+  > svg {
+  width: 16px;
+  height: 16px;
 }
 
-.diagram-canvas-toolbar .react-flow__controls .react-flow__controls-button:hover {
-  background: color-mix(in srgb, var(--surface) 80%, var(--text) 20%) !important;
+html
+  .diagram-canvas-toolbar
+  .react-flow__controls
+  .react-flow__controls-button:hover {
+  background: color-mix(in srgb, var(--surface) 80%, var(--text) 20%);
 }
 
 /* Semantic utility classes that reference theme variables */
@@ -2415,8 +2449,8 @@ h6 {
 .prose h6 {
   color: var(--text);
 }
-.prose a {
-  color: var(--brand) !important;
+html .prose a {
+  color: var(--brand);
 }
 .prose table {
   border-color: var(--border);
@@ -2509,11 +2543,11 @@ h6 {
 }
 
 /* Ensure selects and their options follow the theme variables (light + dark). */
-select,
-select option {
-  background-color: var(--surface) !important;
-  color: var(--text) !important;
-  border-color: var(--border) !important;
+html select,
+html select option {
+  background-color: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
 }
 
 /* Form select: retain the native menu while making the closed control feel
@@ -2522,15 +2556,15 @@ select option {
   position: relative;
 }
 
-.select-field {
+html .select-field {
   appearance: none;
   width: 100%;
   min-height: 3.5rem;
   padding: 1rem 3rem 1rem 1.25rem;
   border: 1px solid var(--border);
   border-radius: 0.5rem;
-  background-color: var(--bg) !important;
-  color: var(--text) !important;
+  background-color: var(--bg);
+  color: var(--text);
   font: inherit;
   font-size: 1.125rem;
   font-weight: 500;
@@ -2548,13 +2582,9 @@ select option {
   padding: 0.875rem 2.75rem 0.875rem 1rem;
 }
 
-.select-field:hover {
+html .select-field:hover {
   border-color: color-mix(in srgb, var(--brand) 55%, var(--border));
-  background-color: color-mix(
-    in srgb,
-    var(--bg) 88%,
-    var(--brand) 12%
-  ) !important;
+  background-color: color-mix(in srgb, var(--bg) 88%, var(--brand) 12%);
 }
 
 .select-field:focus-visible {
@@ -2588,38 +2618,38 @@ select option {
 }
 
 /* Scope additional rules to component-palette and inspector areas to minimize global impact */
-.component-palette select,
-.inspector-panel select,
-.component-palette select option,
-.inspector-panel select option {
-  background-color: var(--surface) !important;
-  color: var(--text) !important;
+html .component-palette select,
+html .inspector-panel select,
+html .component-palette select option,
+html .inspector-panel select option {
+  background-color: var(--surface);
+  color: var(--text);
 }
 
 /* Option hover/selected styling to use brand color for visibility */
-.component-palette select option:hover,
-.component-palette select option:checked,
-.component-palette select option:focus,
-.inspector-panel select option:hover,
-.inspector-panel select option:checked,
-.inspector-panel select option:focus {
-  background-color: var(--brand) !important;
-  color: var(--surface) !important;
+html .component-palette select option:hover,
+html .component-palette select option:checked,
+html .component-palette select option:focus,
+html .inspector-panel select option:hover,
+html .inspector-panel select option:checked,
+html .inspector-panel select option:focus {
+  background-color: var(--brand);
+  color: var(--surface);
 }
 
 /* Slightly different brand tone in dark mode for contrast */
-.dark .component-palette select option:hover,
-.dark .component-palette select option:checked,
-.dark .component-palette select option:focus,
-.dark .inspector-panel select option:hover,
-.dark .inspector-panel select option:checked,
-.dark .inspector-panel select option:focus {
+html.dark .component-palette select option:hover,
+html.dark .component-palette select option:checked,
+html.dark .component-palette select option:focus,
+html.dark .inspector-panel select option:hover,
+html.dark .inspector-panel select option:checked,
+html.dark .inspector-panel select option:focus {
   background-color: color-mix(
     in srgb,
     var(--brand) 80%,
     rgba(255, 255, 255, 0.06)
-  ) !important;
-  color: var(--surface) !important;
+  );
+  color: var(--surface);
 }
 
 /* Themed scrollbar for select dropdowns */
@@ -2643,8 +2673,8 @@ select::-webkit-scrollbar-thumb {
 }
 
 /* TipTap Editor Styles */
-.ProseMirror {
-  outline: none !important;
+html .ProseMirror {
+  outline: none;
   padding: 0.5rem;
   color: var(--text);
   background-color: transparent;
@@ -2900,8 +2930,8 @@ select::-webkit-scrollbar-thumb {
   position: relative;
 }
 
-[data-tooltip]:not([data-tooltip=""])::before,
-[data-tooltip]:not([data-tooltip=""])::after {
+html [data-tooltip]:not([data-tooltip=""])::before,
+html [data-tooltip]:not([data-tooltip=""])::after {
   position: absolute;
   opacity: 0;
   visibility: hidden;
@@ -2910,14 +2940,14 @@ select::-webkit-scrollbar-thumb {
     opacity 0.2s ease-in-out,
     visibility 0.2s ease-in-out,
     transform 0.2s ease-in-out;
-  z-index: 99999 !important;
+  z-index: 99999;
 }
 
 /* Regular tooltips render through the body-level adaptive layer so they are
    not clipped by editor, canvas, modal, or panel overflow containers. */
-[data-tooltip-render="portal"]::before,
-[data-tooltip-render="portal"]::after {
-  display: none !important;
+html [data-tooltip-render="portal"]::before,
+html [data-tooltip-render="portal"]::after {
+  display: none;
 }
 
 [data-tooltip]:not([data-tooltip=""])::before {
@@ -2976,8 +3006,8 @@ select::-webkit-scrollbar-thumb {
   border-right-color: rgba(17, 24, 39, 0.98);
 }
 
-.adaptive-tooltip-layer {
-  z-index: 100000 !important;
+html .adaptive-tooltip-layer {
+  z-index: 100000;
   pointer-events: none;
 }
 
@@ -3027,10 +3057,10 @@ select::-webkit-scrollbar-thumb {
   border-bottom: 6px solid rgba(17, 24, 39, 0.98);
 }
 
-[data-tooltip]:not([data-tooltip=""]):hover::before,
-[data-tooltip]:not([data-tooltip=""]):hover::after {
-  opacity: 1 !important;
-  visibility: visible !important;
+html [data-tooltip]:not([data-tooltip=""]):hover::before,
+html [data-tooltip]:not([data-tooltip=""]):hover::after {
+  opacity: 1;
+  visibility: visible;
   transform: translateX(-50%) translateY(0);
 }
 
@@ -3114,16 +3144,16 @@ select::-webkit-scrollbar-thumb {
 }
 
 /* Disabled state - hide tooltip */
-[data-tooltip]:disabled::before,
-[data-tooltip]:disabled::after {
-  display: none !important;
+html [data-tooltip]:disabled::before,
+html [data-tooltip]:disabled::after {
+  display: none;
 }
 
 /* Ensure tooltips show on focus for accessibility */
-[data-tooltip]:not([data-tooltip=""]):focus-visible::before,
-[data-tooltip]:not([data-tooltip=""]):focus-visible::after {
-  opacity: 1 !important;
-  visibility: visible !important;
+html [data-tooltip]:not([data-tooltip=""]):focus-visible::before,
+html [data-tooltip]:not([data-tooltip=""]):focus-visible::after {
+  opacity: 1;
+  visibility: visible;
   transform: translateX(-50%) translateY(0);
 }
 

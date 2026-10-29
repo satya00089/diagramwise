@@ -1,5 +1,9 @@
 import { createSimulation } from "@diagramwise/simulation-core";
-import type { RecordedCommand, WorkerRequest, WorkerResponse } from "./protocol";
+import type {
+  RecordedCommand,
+  WorkerRequest,
+  WorkerResponse,
+} from "./protocol";
 
 let runtime: ReturnType<typeof createSimulation> | null = null;
 let runId = "";
@@ -17,11 +21,25 @@ let measuredTime = 0;
 let achievedSpeed = 1;
 let resourceLimited = false;
 
+function currentStatus(): Extract<
+  WorkerResponse,
+  { type: "snapshot" }
+>["status"] {
+  if (resourceLimited) return "resource-limited";
+  if (running) return "running";
+  return "paused";
+}
+
 function publish() {
   if (!runtime) return;
   const response: WorkerResponse = {
-    type: "snapshot", runId, sequence: ++sequence, snapshot: runtime.snapshot(),
-    commands, achievedSpeed, status: resourceLimited ? "resource-limited" : running ? "running" : "paused",
+    type: "snapshot",
+    runId,
+    sequence: ++sequence,
+    snapshot: runtime.snapshot(),
+    commands,
+    achievedSpeed,
+    status: currentStatus(),
   };
   self.postMessage(response);
   lastPublish = performance.now();
@@ -30,7 +48,12 @@ function publish() {
 function fail(error: unknown) {
   running = false;
   clearTimeout(timer);
-  self.postMessage({ type: "error", runId, message: error instanceof Error ? error.message : "Simulation worker failed." } satisfies WorkerResponse);
+  self.postMessage({
+    type: "error",
+    runId,
+    message:
+      error instanceof Error ? error.message : "Simulation worker failed.",
+  } satisfies WorkerResponse);
 }
 
 function tick() {
@@ -67,7 +90,9 @@ function tick() {
     }
     if (wall - lastPublish >= 100 || !running) publish();
     if (running) timer = setTimeout(tick, 8);
-  } catch (error) { fail(error); }
+  } catch (error) {
+    fail(error);
+  }
 }
 
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
@@ -92,7 +117,11 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
       return;
     }
     if (message.runId !== runId || !runtime) return;
-    if (message.type === "pause") { running = false; clearTimeout(timer); publish(); }
+    if (message.type === "pause") {
+      running = false;
+      clearTimeout(timer);
+      publish();
+    }
     if (message.type === "resume" && !resourceLimited) {
       running = true;
       lastWall = measuredWall = performance.now();
@@ -102,11 +131,16 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
     }
     if (message.type === "speed") speed = message.speed;
     if (message.type === "command") {
-      if (commands.length >= 1000) throw new Error("This run has reached its 1,000-change limit. Reset to continue experimenting.");
+      if (commands.length >= 1000)
+        throw new Error(
+          "This run has reached its 1,000-change limit. Reset to continue experimenting.",
+        );
       const atMs = runtime.snapshot().system.timeMs;
       runtime.applyCommand(message.command, atMs);
       commands.push({ atMs, command: message.command });
       publish();
     }
-  } catch (error) { fail(error); }
+  } catch (error) {
+    fail(error);
+  }
 };

@@ -227,11 +227,15 @@ const ShareToWorldModal: React.FC<ShareToWorldModalProps> = ({
           : await apiService.publishDiagram(entityId);
       setPublicUrl(result.publicUrl);
       setPhase("published");
-      trackEvent("public_share_completed", {
-        artifact_type: mode,
-        problem_id: problem?.id,
-        visibility: "public",
-      }, true);
+      trackEvent(
+        "public_share_completed",
+        {
+          artifact_type: mode,
+          problem_id: problem?.id,
+          visibility: "public",
+        },
+        true,
+      );
       onVisibilityChange?.(
         true,
         mode === "diagram" && "diagramId" in result

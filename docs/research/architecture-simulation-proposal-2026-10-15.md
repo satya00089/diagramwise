@@ -18,14 +18,14 @@ Treat this as a bounded product experiment, not a commitment to simulate the ent
 
 The original simulator is one option. These comparisons are product judgments based on the current learning loop, not established learner outcomes, measured costs, or delivery estimates. Combine useful capabilities into the existing canvas rather than introducing a separate product mode for every idea.
 
-| Option | Learner experience | Relative effort and limitation | Recommendation |
-| --- | --- | --- | --- |
-| **Guided what-if experiments** | Choose a specific change: more redirect traffic, a different read/write mix, or a cache/replica change; compare under fixed assumptions | Medium to high; numerical results still require validated behavior models and explicit routes | Leading product direction; keeps the user's architecture central and gives every result a question to answer |
-| **Request-path walkthrough** | Select “create link” or “redirect” and follow the relevant nodes, dependencies, and branches | Lower than numerical simulation, but AI-inferred execution meaning still requires review; cannot establish performance | Foundation and potentially useful first slice; addresses ambiguous connections before numerical results appear |
-| **Curated bottleneck-repair challenges** | Start with a reviewed, editable architecture and improve it for a stated workload/resource constraint | Medium; bounded graphs reduce interpretation uncertainty, but fixed recipes can undermine learning | Useful pilot and optional practice entry point; reuse the same models as user-design experiments |
-| **Capacity reasoning attached to nodes** | See how users become requests and how those requests create cache/database work | Lower than time-dependent simulation; counts and capacity estimates cannot produce reliable timeout rates | Supporting capability within the canvas; avoid a separate large worksheet |
-| **Open-ended live simulator** | Adjust arbitrary graphs and many parameters while observing dynamic behavior | Highest effort and broadest correctness burden | Later option, contingent on evidence from the bounded experience |
-| **AI-only what-if discussion** | Ask what might happen under a changed workload and receive an explanation | Easier to connect to the existing reviewer; retains AI latency/variability and provides no independently calculated performance evidence | Useful qualitative discussion; do not present generated numbers as simulated measurements |
+| Option                                   | Learner experience                                                                                                                      | Relative effort and limitation                                                                                                           | Recommendation                                                                                                 |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Guided what-if experiments**           | Choose a specific change: more redirect traffic, a different read/write mix, or a cache/replica change; compare under fixed assumptions | Medium to high; numerical results still require validated behavior models and explicit routes                                            | Leading product direction; keeps the user's architecture central and gives every result a question to answer   |
+| **Request-path walkthrough**             | Select “create link” or “redirect” and follow the relevant nodes, dependencies, and branches                                            | Lower than numerical simulation, but AI-inferred execution meaning still requires review; cannot establish performance                   | Foundation and potentially useful first slice; addresses ambiguous connections before numerical results appear |
+| **Curated bottleneck-repair challenges** | Start with a reviewed, editable architecture and improve it for a stated workload/resource constraint                                   | Medium; bounded graphs reduce interpretation uncertainty, but fixed recipes can undermine learning                                       | Useful pilot and optional practice entry point; reuse the same models as user-design experiments               |
+| **Capacity reasoning attached to nodes** | See how users become requests and how those requests create cache/database work                                                         | Lower than time-dependent simulation; counts and capacity estimates cannot produce reliable timeout rates                                | Supporting capability within the canvas; avoid a separate large worksheet                                      |
+| **Open-ended live simulator**            | Adjust arbitrary graphs and many parameters while observing dynamic behavior                                                            | Highest effort and broadest correctness burden                                                                                           | Later option, contingent on evidence from the bounded experience                                               |
+| **AI-only what-if discussion**           | Ask what might happen under a changed workload and receive an explanation                                                               | Easier to connect to the existing reviewer; retains AI latency/variability and provides no independently calculated performance evidence | Useful qualitative discussion; do not present generated numbers as simulated measurements                      |
 
 The strongest improvement is to make each experiment answer a learning question. A suitable loop is: optionally predict, run a supported experiment, inspect the cause, change one thing, replay, and explain. Keep predictions optional so this does not become another mandatory assessment interview.
 
@@ -46,15 +46,15 @@ No alternative is an approved implementation scope yet. The first product decisi
 
 ## Value and costs
 
-| Potential benefit | Corresponding risk | Product response |
-| --- | --- | --- |
-| Immediate feedback while designing | Moving particles can look meaningful without a sound model | Make each bottleneck inspectable through workload, route, demand, and capacity |
-| Learn why a cache or replica helps | Learners memorize “add Redis” regardless of workload | Include scenarios where neither helps and simple architectures succeed |
-| Stronger design → experiment → revise loop | Another mode adds friction before the learner understands the problem | Optional action in the same canvas; one compact initial scenario |
-| Reproducible evidence for AI discussion | An AI explanation may contradict or exaggerate the run | Deterministic engine owns numbers; explanations reference run evidence |
-| Repeatable before/after comparison | Users accidentally compare different traffic or defaults | Freeze workload, model version, seed, and assumptions across comparison |
-| More concrete capacity reasoning | Arbitrary defaults acquire false authority | Editable, versioned educational profiles with input provenance |
-| Potential engagement and retention benefit | Implementation and content upkeep may exceed actual learning value | Validate learning transfer and revision behavior before catalog expansion |
+| Potential benefit                          | Corresponding risk                                                    | Product response                                                               |
+| ------------------------------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Immediate feedback while designing         | Moving particles can look meaningful without a sound model            | Make each bottleneck inspectable through workload, route, demand, and capacity |
+| Learn why a cache or replica helps         | Learners memorize “add Redis” regardless of workload                  | Include scenarios where neither helps and simple architectures succeed         |
+| Stronger design → experiment → revise loop | Another mode adds friction before the learner understands the problem | Optional action in the same canvas; one compact initial scenario               |
+| Reproducible evidence for AI discussion    | An AI explanation may contradict or exaggerate the run                | Deterministic engine owns numbers; explanations reference run evidence         |
+| Repeatable before/after comparison         | Users accidentally compare different traffic or defaults              | Freeze workload, model version, seed, and assumptions across comparison        |
+| More concrete capacity reasoning           | Arbitrary defaults acquire false authority                            | Editable, versioned educational profiles with input provenance                 |
+| Potential engagement and retention benefit | Implementation and content upkeep may exceed actual learning value    | Validate learning transfer and revision behavior before catalog expansion      |
 
 These are product hypotheses, not measured conversion or retention claims. Simulation adds a continuing responsibility to maintain model semantics, fixtures, exercise profiles, and understandable explanations.
 
@@ -112,13 +112,13 @@ Missing numeric configuration may use scenario defaults. Missing route meaning c
 
 For a separate, illustrative 1,000-RPS run, assume 95% redirects, 5% creates, one database read per redirect, one write per create, and no other database work:
 
-| Model input/output | Without a cache | Cache on the redirect path, assumed 90% hit rate |
-| --- | ---: | ---: |
-| Redirect requests/s | 950 | 950 |
-| Create requests/s | 50 | 50 |
-| Database reads/s | 950 | 95 |
-| Database writes/s | 50 | 50 |
-| Total database operations/s | 1,000 | 145 |
+| Model input/output          | Without a cache | Cache on the redirect path, assumed 90% hit rate |
+| --------------------------- | --------------: | -----------------------------------------------: |
+| Redirect requests/s         |             950 |                                              950 |
+| Create requests/s           |              50 |                                               50 |
+| Database reads/s            |             950 |                                               95 |
+| Database writes/s           |              50 |                                               50 |
+| Total database operations/s |           1,000 |                                              145 |
 
 This is request accounting, not a performance benchmark. Reads and writes may have different costs; a real model must retain those classes instead of treating every operation as equally expensive. Cache fill work, cache capacity, invalidation, and additional queries require their own stated assumptions.
 
@@ -228,12 +228,12 @@ Diagramwise's opportunity is the connected learning experience: the learner's ex
 
 Implementation has been explicitly requested for the first bounded slice. Stage 1 is in progress; the remaining stages are gated on correctness and learning evidence. This work does not establish that the model is validated for production use.
 
-| Stage | Deliverable | Exit condition | Status |
-| --- | --- | --- | --- |
-| 1. Model spike | Versioned URL-shortener workload, typed route/profile contract, hand-calculated fixtures; compare a minimal engine with selective Breakscale reuse | Reviewers can explain every output from stated inputs; all supported paths have unambiguous meaning | In progress: contract and engine comparison are implemented; fixture verification and review are pending |
-| 2. Private functional pilot | Deterministic engine, same-canvas inspection, traffic control, defaults provenance, baseline comparison | Conservation, routing, overload, replay, and browser responsiveness checks pass | Partial: panel, worker, assumptions, and session baseline exist; event behavior and pilot checks remain |
-| 3. Learning pilot | Observed sessions with roughly 8–12 target learners and 2–3 experienced reviewers | Learners can explain the cause and transfer it to a new workload; major misconceptions are absent | Pending |
-| 4. Controlled expansion | One additional workload chosen to test a new concept | First pilot has clear learning value and manageable content/model maintenance | Pending |
+| Stage                       | Deliverable                                                                                                                                        | Exit condition                                                                                      | Status                                                                                                   |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| 1. Model spike              | Versioned URL-shortener workload, typed route/profile contract, hand-calculated fixtures; compare a minimal engine with selective Breakscale reuse | Reviewers can explain every output from stated inputs; all supported paths have unambiguous meaning | In progress: contract and engine comparison are implemented; fixture verification and review are pending |
+| 2. Private functional pilot | Deterministic engine, same-canvas inspection, traffic control, defaults provenance, baseline comparison                                            | Conservation, routing, overload, replay, and browser responsiveness checks pass                     | Partial: panel, worker, assumptions, and session baseline exist; event behavior and pilot checks remain  |
+| 3. Learning pilot           | Observed sessions with roughly 8–12 target learners and 2–3 experienced reviewers                                                                  | Learners can explain the cause and transfer it to a new workload; major misconceptions are absent   | Pending                                                                                                  |
+| 4. Controlled expansion     | One additional workload chosen to test a new concept                                                                                               | First pilot has clear learning value and manageable content/model maintenance                       | Pending                                                                                                  |
 
 The later event-based model and learner pilot remain substantial engineering and content work. For the current slice, the main remaining checks are verifying the hand-calculated cases, confirming API contract compatibility, and reviewing the end-to-end experience.
 

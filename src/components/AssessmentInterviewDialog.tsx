@@ -37,7 +37,10 @@ const AssessmentInterviewDialog: React.FC<AssessmentInterviewDialogProps> = ({
   return (
     <dialog
       ref={dialogRef}
-      onCancel={(event) => { event.preventDefault(); onCancel(); }}
+      onCancel={(event) => {
+        event.preventDefault();
+        onCancel();
+      }}
       className="m-0 h-full max-h-none w-full max-w-none border-0 text-theme fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4 backdrop-blur-[2px]"
       aria-modal="true"
       aria-labelledby="assessment-interview-title"

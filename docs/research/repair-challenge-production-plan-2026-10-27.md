@@ -28,18 +28,18 @@ This review traced the current implementation. The existing browser report in `d
 
 ## Findings that determine the design
 
-| Priority | Source finding | Product consequence and correction |
-| --- | --- | --- |
-| P0 | `SystemDesignPlayground.loadRepairDemo` calls `setCanvasState` while keeping the current design ID, exercise ID, canvas scope, and ordinary autosave path. | Challenge content can be saved into the user's current architecture/attempt. Undo is not durable protection. Use an isolated challenge document and storage namespace. Confirm the autosave behavior on a disposable signed-in design. |
-| P0 | `SimulationDetails.challengeActive` recognizes the sample from node IDs/kinds and required edge endpoints. | An unrelated graph can acquire challenge UI; deleting a required element can make the challenge disappear. Store explicit challenge identity independently of graph validity. |
-| P0 | Evaluation state is cleared on scope changes, but not on candidate fingerprint/configuration changes. Worker responses lack a submission revision/token. | A pass can remain visible after a later edit or arrive for an outdated candidate. Bind results to an immutable submission and invalidate them when repair settings change. |
-| P1 | Loading only copies `initialTopology` and resets the runtime. The session starts at 100 RPS and may retain previously selected load/pattern. The compiler overwrites client RPS from those controls. The evaluator fixes the scenario at 150 RPS. | The displayed experiment can disagree with the stated task. Explicitly initialize challenge workload and distinguish exploration from evaluation traffic. |
-| P1 | Inspector supports `onConfigChange`, but `SimulationDetails` does not supply it. Instance changes are runtime commands, accepted only while running/paused and replayed into the check submission from command history. | Capacity editing is absent from this integration and instance repairs can disappear on reset. Persist allowed edits into the candidate document; runtime reflects that document. |
-| P1 | Brief, rules, hints, check action, saved simulation runs, and optional legacy analysis share the generic inspector. | The learner has no persistent task hierarchy or clear progress. Give challenges a dedicated brief/results panel and focused component controls. |
-| P1 | Result UI prints `Solution <status>`, generic advice, and raw JSON evidence. Hints are exposed together in one disclosure. | The learner cannot easily tell which goal failed or what changed. Render goal comparisons, targeted evidence, progressive hints, and an explanatory debrief. |
-| P1 | Scenario definition/result validation says `event-v1`, while `runScenario` calls the current runtime whose engine version is `event-v2`. | Version metadata does not identify the executing engine truthfully. Centralize versions, revise authored content, and explicitly handle incompatible historical results. |
-| P2 | Entry link appears only when there is no snapshot and the run is not running; no dedicated resume/restart/leave lifecycle exists. | Discoverability depends on runtime state and a temporary demo replaces the user's workflow. Provide a persistent navigation entry and explicit challenge lifecycle. |
-| P2 | Evaluation has a 30-second timeout, no progress protocol, and advises reducing design size even though topology is fixed. Worker construction/posting is not guarded as a full lifecycle. | Slow or failed execution feels like a learner error. Provide bounded progress, cancel/retry, and an incomplete outcome with accurate recovery text. |
+| Priority | Source finding                                                                                                                                                                                                                                    | Product consequence and correction                                                                                                                                                                                                     |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0       | `SystemDesignPlayground.loadRepairDemo` calls `setCanvasState` while keeping the current design ID, exercise ID, canvas scope, and ordinary autosave path.                                                                                        | Challenge content can be saved into the user's current architecture/attempt. Undo is not durable protection. Use an isolated challenge document and storage namespace. Confirm the autosave behavior on a disposable signed-in design. |
+| P0       | `SimulationDetails.challengeActive` recognizes the sample from node IDs/kinds and required edge endpoints.                                                                                                                                        | An unrelated graph can acquire challenge UI; deleting a required element can make the challenge disappear. Store explicit challenge identity independently of graph validity.                                                          |
+| P0       | Evaluation state is cleared on scope changes, but not on candidate fingerprint/configuration changes. Worker responses lack a submission revision/token.                                                                                          | A pass can remain visible after a later edit or arrive for an outdated candidate. Bind results to an immutable submission and invalidate them when repair settings change.                                                             |
+| P1       | Loading only copies `initialTopology` and resets the runtime. The session starts at 100 RPS and may retain previously selected load/pattern. The compiler overwrites client RPS from those controls. The evaluator fixes the scenario at 150 RPS. | The displayed experiment can disagree with the stated task. Explicitly initialize challenge workload and distinguish exploration from evaluation traffic.                                                                              |
+| P1       | Inspector supports `onConfigChange`, but `SimulationDetails` does not supply it. Instance changes are runtime commands, accepted only while running/paused and replayed into the check submission from command history.                           | Capacity editing is absent from this integration and instance repairs can disappear on reset. Persist allowed edits into the candidate document; runtime reflects that document.                                                       |
+| P1       | Brief, rules, hints, check action, saved simulation runs, and optional legacy analysis share the generic inspector.                                                                                                                               | The learner has no persistent task hierarchy or clear progress. Give challenges a dedicated brief/results panel and focused component controls.                                                                                        |
+| P1       | Result UI prints `Solution <status>`, generic advice, and raw JSON evidence. Hints are exposed together in one disclosure.                                                                                                                        | The learner cannot easily tell which goal failed or what changed. Render goal comparisons, targeted evidence, progressive hints, and an explanatory debrief.                                                                           |
+| P1       | Scenario definition/result validation says `event-v1`, while `runScenario` calls the current runtime whose engine version is `event-v2`.                                                                                                          | Version metadata does not identify the executing engine truthfully. Centralize versions, revise authored content, and explicitly handle incompatible historical results.                                                               |
+| P2       | Entry link appears only when there is no snapshot and the run is not running; no dedicated resume/restart/leave lifecycle exists.                                                                                                                 | Discoverability depends on runtime state and a temporary demo replaces the user's workflow. Provide a persistent navigation entry and explicit challenge lifecycle.                                                                    |
+| P2       | Evaluation has a 30-second timeout, no progress protocol, and advises reducing design size even though topology is fixed. Worker construction/posting is not guarded as a full lifecycle.                                                         | Slow or failed execution feels like a learner error. Provide bounded progress, cancel/retry, and an incomplete outcome with accurate recovery text.                                                                                    |
 
 Retain the evaluator's useful foundations: fixed workloads, multiple deterministic seeds, warmup and measurement cohorts, required dependency completion, sample minimums, resource budgets, and separate invalid/incomplete outcomes. Do not replace those with a grade derived from live rolling counters.
 
@@ -107,13 +107,13 @@ Cross-device progress, daily schedules, leaderboards, and certificates are a lat
 
 ## Delivery sequence
 
-| Milestone | Deliverable | Exit criterion |
-| --- | --- | --- |
-| 0. Baseline and design | Computer Use walkthrough; source autosave probe on disposable designs; compact mockups of brief, selected-node controls, checking, result, and mobile states. | Actual problems and unknowns recorded; source design behavior and candidate/check mismatch reproduced or corrected in this plan. |
-| 1. Safe workspace | Dedicated route/session and challenge storage; source handoff/return; remove destructive demo insertion; restart dialog. | Enter, exit, refresh, navigate back, and storage failure cannot replace the source canvas or save into its identity. |
-| 2. Truthful candidate and evaluation | Persistent permitted settings, authored workload initialization, constraints, version alignment, worker identities/progress/cancel, stale-result handling. | Baseline and known repairs evaluate consistently; every visible result belongs to the exact current candidate. |
-| 3. Complete learning experience | Brief/goals, budget, canvas evidence, shared controls, progressive hints, results/debrief, resume/restart/export. | A new learner can observe, edit, check, understand, and exit without raw JSON or implementation knowledge. |
-| 4. Release qualification | Browser matrix, meaningful core/session regressions, accessibility/performance work, content certification, observability, review. | All release gates below pass; unresolved failures block enabling the feature. |
+| Milestone                            | Deliverable                                                                                                                                                   | Exit criterion                                                                                                                   |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 0. Baseline and design               | Computer Use walkthrough; source autosave probe on disposable designs; compact mockups of brief, selected-node controls, checking, result, and mobile states. | Actual problems and unknowns recorded; source design behavior and candidate/check mismatch reproduced or corrected in this plan. |
+| 1. Safe workspace                    | Dedicated route/session and challenge storage; source handoff/return; remove destructive demo insertion; restart dialog.                                      | Enter, exit, refresh, navigate back, and storage failure cannot replace the source canvas or save into its identity.             |
+| 2. Truthful candidate and evaluation | Persistent permitted settings, authored workload initialization, constraints, version alignment, worker identities/progress/cancel, stale-result handling.    | Baseline and known repairs evaluate consistently; every visible result belongs to the exact current candidate.                   |
+| 3. Complete learning experience      | Brief/goals, budget, canvas evidence, shared controls, progressive hints, results/debrief, resume/restart/export.                                             | A new learner can observe, edit, check, understand, and exit without raw JSON or implementation knowledge.                       |
+| 4. Release qualification             | Browser matrix, meaningful core/session regressions, accessibility/performance work, content certification, observability, review.                            | All release gates below pass; unresolved failures block enabling the feature.                                                    |
 
 Ship behind a feature flag initially. If the safe workspace is not ready, hide the existing replacement action rather than treating its confirmation dialog as sufficient data protection. The flag must disable entry without discarding saved attempts, and rollback must preserve compatible drafts.
 
@@ -121,17 +121,17 @@ Ship behind a feature flag initially. If the safe workspace is not ready, hide t
 
 The user wants production readiness; verify behavior through the real UI and use deterministic tests for the underlying invariants. Keep fixtures and scenario definitions immutable in tests: clone the candidate separately. The existing scenario tests mutate the supplied definition along with the candidate in some examples, so strengthen that distinction.
 
-| Area | Required evidence |
-| --- | --- |
-| Source safety | Disposable anonymous draft, signed-in free design, problem attempt, multiple canvases, collaborative/read-only source, pending/failed autosave. Enter/check/restart/exit/refresh challenge; compare source documents and outbound save targets before/after. No challenge writes target a source design/attempt/collaboration room. |
-| Candidate controls | Capacity/instances/queue edits persist across runtime reset and refresh; undo/redo work; budget updates immediately; invalid numeric drafts recover; prohibited edits are prevented or explained without losing the challenge context. |
-| Evaluation correctness | Immutable baseline fails; independent bounded repairs pass; forbidden changes, missing dependency, excess budget, low samples, unsupported version, and event exhaustion produce the correct distinct outcomes. All required seeds must meet goals. |
-| Stale and concurrent work | Edit during check, edit after pass, restart, navigate, change account, open another attempt/tab, cancel, and worker crash. Late callbacks cannot overwrite newer state; preview commands cannot leak between attempts. |
-| UX | Real Computer Use run from entry through failure, hint, repair, check, debrief, and return. Record screenshots and actual results for desktop and narrow layout; no state injection in place of the baseline journey. |
-| Accessibility | Keyboard-only completion, dialog focus/Escape/return, screen-reader labels/status, visible focus, 200% zoom, reduced motion, contrast and non-color indicators. Target WCAG 2.2 AA. |
-| Browser and failures | Current supported Chromium, Firefox, and WebKit where available; disabled storage, offline after load, API outage, unavailable worker, slow device, reload and browser back. Mark unavailable checks explicitly. |
-| Responsiveness | Establish a reproducible reference device/graph and record measurements. Targets: input response p95 under 100 ms, cancellation acknowledged within 500 ms, no repeated >50 ms main-thread tasks caused by evaluator work. Benchmark check duration; keep a bounded timeout and report incomplete without blaming the learner. |
-| Trust and operations | Local results labeled accurately; no public rank/reward without server verification. Telemetry contains scenario/version/status/duration/error code, not canvas payloads or personal data. Flag rollout can be disabled while preserving drafts. |
+| Area                      | Required evidence                                                                                                                                                                                                                                                                                                                   |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Source safety             | Disposable anonymous draft, signed-in free design, problem attempt, multiple canvases, collaborative/read-only source, pending/failed autosave. Enter/check/restart/exit/refresh challenge; compare source documents and outbound save targets before/after. No challenge writes target a source design/attempt/collaboration room. |
+| Candidate controls        | Capacity/instances/queue edits persist across runtime reset and refresh; undo/redo work; budget updates immediately; invalid numeric drafts recover; prohibited edits are prevented or explained without losing the challenge context.                                                                                              |
+| Evaluation correctness    | Immutable baseline fails; independent bounded repairs pass; forbidden changes, missing dependency, excess budget, low samples, unsupported version, and event exhaustion produce the correct distinct outcomes. All required seeds must meet goals.                                                                                 |
+| Stale and concurrent work | Edit during check, edit after pass, restart, navigate, change account, open another attempt/tab, cancel, and worker crash. Late callbacks cannot overwrite newer state; preview commands cannot leak between attempts.                                                                                                              |
+| UX                        | Real Computer Use run from entry through failure, hint, repair, check, debrief, and return. Record screenshots and actual results for desktop and narrow layout; no state injection in place of the baseline journey.                                                                                                               |
+| Accessibility             | Keyboard-only completion, dialog focus/Escape/return, screen-reader labels/status, visible focus, 200% zoom, reduced motion, contrast and non-color indicators. Target WCAG 2.2 AA.                                                                                                                                                 |
+| Browser and failures      | Current supported Chromium, Firefox, and WebKit where available; disabled storage, offline after load, API outage, unavailable worker, slow device, reload and browser back. Mark unavailable checks explicitly.                                                                                                                    |
+| Responsiveness            | Establish a reproducible reference device/graph and record measurements. Targets: input response p95 under 100 ms, cancellation acknowledged within 500 ms, no repeated >50 ms main-thread tasks caused by evaluator work. Benchmark check duration; keep a bounded timeout and report incomplete without blaming the learner.      |
+| Trust and operations      | Local results labeled accurately; no public rank/reward without server verification. Telemetry contains scenario/version/status/duration/error code, not canvas payloads or personal data. Flag rollout can be disabled while preserving drafts.                                                                                    |
 
 Release requires an independent code review, required repository checks, and browser evidence. Record exact commands, supported versions, screenshots, and remaining limitations in a new repair-challenge verification report. No production-readiness claim follows from a styled modal or a passing engine suite alone.
 
@@ -165,36 +165,36 @@ The following sections turn the milestones into buildable tasks. If browser evid
 
 ### 1. Product boundaries and decisions
 
-| Decision | First production release | Later extension |
-| --- | --- | --- |
-| Challenge catalogue | One fully authored and certified database-capacity challenge, resolved through a registry | Additional queue, caching, routing and resilience exercises with compatible validators |
-| Starting behavior | Open a preview; Start creates a separate attempt; Resume opens the existing attempt | Daily selection and discovery catalogue |
-| Simulation | Local deterministic preview with authored defaults; explicit Run action | Additional operation classes after engine support is validated |
-| Checking | Local deterministic check with clear local-result wording | Server verification for rewards, ranks, public progress or certificates |
-| Persistence | Separate local drafts/results; explicit export/import; anonymous access | Authenticated cross-device sync and conflict resolution |
-| Source architecture | Retain original identity and content; safe return to its canvas | Explicit “Save a copy as a design” through the existing create flow |
-| Collaboration | Source may be collaborative; challenge attempt is private/local | Deliberately designed shared challenge sessions |
-| Monetization/competition | No score, reward, timer pressure, or streak inferred from this exercise | Separate product specification and trustworthy server validation |
+| Decision                 | First production release                                                                  | Later extension                                                                        |
+| ------------------------ | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Challenge catalogue      | One fully authored and certified database-capacity challenge, resolved through a registry | Additional queue, caching, routing and resilience exercises with compatible validators |
+| Starting behavior        | Open a preview; Start creates a separate attempt; Resume opens the existing attempt       | Daily selection and discovery catalogue                                                |
+| Simulation               | Local deterministic preview with authored defaults; explicit Run action                   | Additional operation classes after engine support is validated                         |
+| Checking                 | Local deterministic check with clear local-result wording                                 | Server verification for rewards, ranks, public progress or certificates                |
+| Persistence              | Separate local drafts/results; explicit export/import; anonymous access                   | Authenticated cross-device sync and conflict resolution                                |
+| Source architecture      | Retain original identity and content; safe return to its canvas                           | Explicit “Save a copy as a design” through the existing create flow                    |
+| Collaboration            | Source may be collaborative; challenge attempt is private/local                           | Deliberately designed shared challenge sessions                                        |
+| Monetization/competition | No score, reward, timer pressure, or streak inferred from this exercise                   | Separate product specification and trustworthy server validation                       |
 
 Do not introduce estimated completion times or difficulty labels without a learning review. The first preview can simply say “Database capacity · guided repair”. No AI service is required to start, simulate, diagnose known conditions, provide authored hints, or evaluate this challenge.
 
 ### 2. Screen and state inventory
 
-| Screen/state | Required content | Main action | Recovery/secondary actions |
-| --- | --- | --- | --- |
-| Entry preview | Challenge name; two-line situation; what may be changed; targets; notice that a separate practice space opens | Start challenge / Resume challenge | Close; start a new attempt when a draft exists |
-| Loading | Name and calm loading indicator; avoid rendering a blank editable canvas | None until loaded | Retry when loading fails |
-| Ready | Brief, three-node canvas, targets, 18/24 used budget, saved state, 150 RPS | Run simulation | Inspect node; hints; Check repair is still available without requiring a preview run |
-| Exploring | Live request rate, simulation clock, affected nodes/paths, budget, selected controls | Pause / Check repair | Reset simulation; restore required traffic |
-| Invalid field draft | Inline explanation next to the field; preserve typed value | Correct value | Revert field; Check waits until field drafts are committed or corrected |
-| Constraint violation | Specific affected setting/path, reason, allowed action | Fix the issue | Revert last edit; keep current draft for inspection |
-| Checking | Stage and seed count; candidate identified; Cancel; progress announcement | Cancel check | Editing cancels check with a clear status message |
-| Goals unmet | Required vs observed values, goal statuses, actionable canvas links | Continue repairing | Next hint; inspect evidence; compare baseline |
-| Passed | All targets met across required runs; budget; change summary; explanation of the mechanism | Keep experimenting | Return to design; start over; export attempt |
-| Changed since check | Previous check identified as historical; current changes visible | Check repair again | View previous result |
-| Check incomplete | Explain simulator/worker limit separately from architectural failure | Retry check | Export diagnostics without private source data |
-| Save failure | “Changes not saved on this device” with reason where known | Retry save | Export; keep working in memory |
-| Missing/retired scenario | Explain whether the ID or stored revision is unavailable | Open supported challenge | Export historical attempt; return to source |
+| Screen/state             | Required content                                                                                              | Main action                        | Recovery/secondary actions                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------ |
+| Entry preview            | Challenge name; two-line situation; what may be changed; targets; notice that a separate practice space opens | Start challenge / Resume challenge | Close; start a new attempt when a draft exists                                       |
+| Loading                  | Name and calm loading indicator; avoid rendering a blank editable canvas                                      | None until loaded                  | Retry when loading fails                                                             |
+| Ready                    | Brief, three-node canvas, targets, 18/24 used budget, saved state, 150 RPS                                    | Run simulation                     | Inspect node; hints; Check repair is still available without requiring a preview run |
+| Exploring                | Live request rate, simulation clock, affected nodes/paths, budget, selected controls                          | Pause / Check repair               | Reset simulation; restore required traffic                                           |
+| Invalid field draft      | Inline explanation next to the field; preserve typed value                                                    | Correct value                      | Revert field; Check waits until field drafts are committed or corrected              |
+| Constraint violation     | Specific affected setting/path, reason, allowed action                                                        | Fix the issue                      | Revert last edit; keep current draft for inspection                                  |
+| Checking                 | Stage and seed count; candidate identified; Cancel; progress announcement                                     | Cancel check                       | Editing cancels check with a clear status message                                    |
+| Goals unmet              | Required vs observed values, goal statuses, actionable canvas links                                           | Continue repairing                 | Next hint; inspect evidence; compare baseline                                        |
+| Passed                   | All targets met across required runs; budget; change summary; explanation of the mechanism                    | Keep experimenting                 | Return to design; start over; export attempt                                         |
+| Changed since check      | Previous check identified as historical; current changes visible                                              | Check repair again                 | View previous result                                                                 |
+| Check incomplete         | Explain simulator/worker limit separately from architectural failure                                          | Retry check                        | Export diagnostics without private source data                                       |
+| Save failure             | “Changes not saved on this device” with reason where known                                                    | Retry save                         | Export; keep working in memory                                                       |
+| Missing/retired scenario | Explain whether the ID or stored revision is unavailable                                                      | Open supported challenge           | Export historical attempt; return to source                                          |
 
 Example preview copy: “An API is receiving 150 requests per second. Requests are queuing before their database reads finish. Adjust capacity within the budget and check whether the system meets its targets.” This names the observed symptom without telling the learner the exact solution.
 
@@ -204,17 +204,17 @@ For goals, use the evaluator's precise comparisons: **at least 99%** successful,
 
 Proposed components belong under `src/challenges/components/`:
 
-| Component | Responsibility | Must not own |
-| --- | --- | --- |
-| `ChallengeEntryDialog` | Preview/resume/new-attempt choices using shared modal primitives | Source autosave implementation or evaluator state |
-| `ChallengeWorkspace` | Arrange canvas, toolbar and panel; responsive transitions | Hidden independent copies of candidate data |
-| `ChallengeToolbar` | Run/pause, reset preview, Check, return, save status | Scoring or topology mutation |
-| `ChallengeGoals` | Required targets, budget, source of displayed observations | Mixing live preview measurements with evaluation results |
-| `ChallengeBrief` | Situation, rules, allowed changes and explicit assumptions | Hardcoded database scenario import |
+| Component               | Responsibility                                                    | Must not own                                                    |
+| ----------------------- | ----------------------------------------------------------------- | --------------------------------------------------------------- |
+| `ChallengeEntryDialog`  | Preview/resume/new-attempt choices using shared modal primitives  | Source autosave implementation or evaluator state               |
+| `ChallengeWorkspace`    | Arrange canvas, toolbar and panel; responsive transitions         | Hidden independent copies of candidate data                     |
+| `ChallengeToolbar`      | Run/pause, reset preview, Check, return, save status              | Scoring or topology mutation                                    |
+| `ChallengeGoals`        | Required targets, budget, source of displayed observations        | Mixing live preview measurements with evaluation results        |
+| `ChallengeBrief`        | Situation, rules, allowed changes and explicit assumptions        | Hardcoded database scenario import                              |
 | `ChallengeNodeControls` | Render allowed fields from the scenario schema, lock explanations | Writing runtime-only commands that bypass candidate persistence |
-| `ChallengeHints` | Progressive hint reveal, links to evidence | Auto-revealing the answer or secretly lowering scores |
-| `ChallengeResults` | Goal table, per-seed detail, change summary and debrief | Treating client results as server-certified achievements |
-| `ChallengeRecovery` | Save/version/worker problems and user actions | Silent resets or deletion of incompatible drafts |
+| `ChallengeHints`        | Progressive hint reveal, links to evidence                        | Auto-revealing the answer or secretly lowering scores           |
+| `ChallengeResults`      | Goal table, per-seed detail, change summary and debrief           | Treating client results as server-certified achievements        |
+| `ChallengeRecovery`     | Save/version/worker problems and user actions                     | Silent resets or deletion of incompatible drafts                |
 
 Desktop target layout: toolbar above the diagram; goals as a compact task strip; 320–380 px inspector panel where space permits. Use existing spacing/type tokens rather than new ad hoc values. Keep the canvas area usable at smaller desktop widths by collapsing the panel, not by shrinking node labels into unreadable text.
 
@@ -250,8 +250,8 @@ type ScenarioRef = {
 };
 
 type OwnerScope =
-  | { kind: 'anonymous'; installationId: string }
-  | { kind: 'account'; accountId: string };
+  | { kind: "anonymous"; installationId: string }
+  | { kind: "account"; accountId: string };
 
 type ChallengeAttempt = {
   schemaVersion: 1;
@@ -284,7 +284,7 @@ type EvaluationRecord = {
   identity: EvaluationIdentity;
   candidateSnapshot: ChallengeDocument;
   evaluatedAt: string;
-  verification: 'local';
+  verification: "local";
   result: ScenarioResult;
 };
 ```
@@ -307,17 +307,17 @@ Expand the registry entry with stable hint IDs, editable field descriptors, fiel
 
 For the first exercise:
 
-| Parameter | Authored contract | Learner control |
-| --- | --- | --- |
-| Required demand | 150 RPS, steady; evaluator supplies it | Preview demand can change, with “Exploration traffic” and Restore required traffic |
-| API | 16 slots/instance, one instance, 5 ms mean service | Capacity, instances, queue limit within validator bounds |
-| Database | 2 slots/instance, one instance, 40 ms mean service | Capacity, instances, queue limit within validator bounds |
-| Route | Clients → API → database; every successful request completes API and database work | Layout only; topology/behavior fixed in this exercise |
-| Latency/failure assumptions | Existing authored service variation, errors, retries and timeouts | Read-only explanations |
-| Resource budget | Sum of slots × instances for executable service/database components, maximum 24 | Live used/remaining indicator; over-budget draft can be inspected but cannot pass |
-| Check | Seeds 1, 42, 1337; warmup 10s; measurement 60s; drain/deadline 5s | Fixed for checking, independent of playback speed |
-| Completion | At least 99%; minimum 1,000 successful measured requests per required seed | Target shown explicitly |
-| Latency | p95 ≤ 200 ms and p99 ≤ 350 ms on successful measured requests | Target shown explicitly |
+| Parameter                   | Authored contract                                                                  | Learner control                                                                    |
+| --------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Required demand             | 150 RPS, steady; evaluator supplies it                                             | Preview demand can change, with “Exploration traffic” and Restore required traffic |
+| API                         | 16 slots/instance, one instance, 5 ms mean service                                 | Capacity, instances, queue limit within validator bounds                           |
+| Database                    | 2 slots/instance, one instance, 40 ms mean service                                 | Capacity, instances, queue limit within validator bounds                           |
+| Route                       | Clients → API → database; every successful request completes API and database work | Layout only; topology/behavior fixed in this exercise                              |
+| Latency/failure assumptions | Existing authored service variation, errors, retries and timeouts                  | Read-only explanations                                                             |
+| Resource budget             | Sum of slots × instances for executable service/database components, maximum 24    | Live used/remaining indicator; over-budget draft can be inspected but cannot pass  |
+| Check                       | Seeds 1, 42, 1337; warmup 10s; measurement 60s; drain/deadline 5s                  | Fixed for checking, independent of playback speed                                  |
+| Completion                  | At least 99%; minimum 1,000 successful measured requests per required seed         | Target shown explicitly                                                            |
+| Latency                     | p95 ≤ 200 ms and p99 ≤ 350 ms on successful measured requests                      | Target shown explicitly                                                            |
 
 For author review, the nominal database capacity starts around 2 / 0.04 = 50 requests/sec while demand is 150. Eight database slots give nominal service capacity around 200/sec and consume the full 24-unit total with the API. Four two-slot instances are another candidate. These calculations explain the intended lesson; only actual evaluator runs certify that a candidate passes. Keep exact solutions out of initial hints.
 
@@ -339,19 +339,19 @@ commitConfigEdit(nodeId, field, value)
 
 Choose explicit restart after semantic edits for this first release. Do not retain old node metrics next to new capacity values. Temporary preview load/fault experiments never mutate the checked candidate; checking excludes them and tells the learner the required conditions. Changing preview speed does not affect grading.
 
-| Event | Candidate | Preview | Evaluation/result |
-| --- | --- | --- | --- |
-| Run | Unchanged | Start/restart under current exploration workload | Unchanged |
-| Pause/resume | Unchanged | Pause/resume | Unchanged |
-| Reset simulation | Unchanged | Clear metrics/faults and stop; keep candidate | Valid result remains applicable |
-| Commit allowed repair | New semantic revision | Stop and mark readings stale | Cancel check; previous result becomes historical |
-| Move node/pan | Presentation only | Continue | Preserve result applicability |
-| Change exploration RPS | Unchanged | Apply preview load | No grade change; show checking still uses 150 RPS |
-| Check repair | Immutable snapshot of current committed candidate | Pause live run to reduce resource contention | Start evaluation with a new identity |
-| Cancel check | Unchanged | Remain paused; explicit Resume | No pass/fail; cancelled state and previous history preserved |
-| Start over | New candidate revision from frozen baseline | Stop/reset | Cancel and archive prior evidence; reset hints after confirmation |
-| Return to source | Save challenge revision | Dispose | Cancel active work and retain committed history |
-| Logout/account switch | Preserve outgoing owner's draft if possible | Dispose | Cancel and clear in-memory private state before loading another owner |
+| Event                  | Candidate                                         | Preview                                          | Evaluation/result                                                     |
+| ---------------------- | ------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------- |
+| Run                    | Unchanged                                         | Start/restart under current exploration workload | Unchanged                                                             |
+| Pause/resume           | Unchanged                                         | Pause/resume                                     | Unchanged                                                             |
+| Reset simulation       | Unchanged                                         | Clear metrics/faults and stop; keep candidate    | Valid result remains applicable                                       |
+| Commit allowed repair  | New semantic revision                             | Stop and mark readings stale                     | Cancel check; previous result becomes historical                      |
+| Move node/pan          | Presentation only                                 | Continue                                         | Preserve result applicability                                         |
+| Change exploration RPS | Unchanged                                         | Apply preview load                               | No grade change; show checking still uses 150 RPS                     |
+| Check repair           | Immutable snapshot of current committed candidate | Pause live run to reduce resource contention     | Start evaluation with a new identity                                  |
+| Cancel check           | Unchanged                                         | Remain paused; explicit Resume                   | No pass/fail; cancelled state and previous history preserved          |
+| Start over             | New candidate revision from frozen baseline       | Stop/reset                                       | Cancel and archive prior evidence; reset hints after confirmation     |
+| Return to source       | Save challenge revision                           | Dispose                                          | Cancel active work and retain committed history                       |
+| Logout/account switch  | Preserve outgoing owner's draft if possible       | Dispose                                          | Cancel and clear in-memory private state before loading another owner |
 
 Undo/redo uses the same semantic invalidation path as any repair edit. Even if an undo restores a previous fingerprint, require a new check initially; historical evidence can be viewed but must not silently become the current pass. Ensure unrelated graph ID collisions never enter challenge mode.
 
@@ -361,19 +361,35 @@ Replace the current untyped `{ topology }` / `{ result }` exchange with discrimi
 
 ```ts
 type EvaluationRequest =
-  | { type: 'evaluate'; identity: EvaluationIdentity; candidate: ChallengeDocument }
-  | { type: 'cancel'; evaluationId: string };
+  | {
+      type: "evaluate";
+      identity: EvaluationIdentity;
+      candidate: ChallengeDocument;
+    }
+  | { type: "cancel"; evaluationId: string };
 
 type EvaluationResponse =
-  | { type: 'started'; identity: EvaluationIdentity }
-  | { type: 'progress'; identity: EvaluationIdentity;
-      seedIndex: number; seedCount: number;
-      stage: 'warmup' | 'measurement' | 'drain'; simulatedMs: number }
-  | { type: 'completed'; identity: EvaluationIdentity; result: ScenarioResult }
-  | { type: 'cancelled'; identity: EvaluationIdentity }
-  | { type: 'error'; identity: EvaluationIdentity;
-      code: 'unsupported-version' | 'invalid-submission' | 'processing-limit' | 'worker-error';
-      message: string };
+  | { type: "started"; identity: EvaluationIdentity }
+  | {
+      type: "progress";
+      identity: EvaluationIdentity;
+      seedIndex: number;
+      seedCount: number;
+      stage: "warmup" | "measurement" | "drain";
+      simulatedMs: number;
+    }
+  | { type: "completed"; identity: EvaluationIdentity; result: ScenarioResult }
+  | { type: "cancelled"; identity: EvaluationIdentity }
+  | {
+      type: "error";
+      identity: EvaluationIdentity;
+      code:
+        | "unsupported-version"
+        | "invalid-submission"
+        | "processing-limit"
+        | "worker-error";
+      message: string;
+    };
 ```
 
 The worker resolves the scenario from its trusted registry and validates versions/digests before constructing the engine. Do not accept goals, seeds or constraints supplied as unchecked client-message overrides. Runtime-validate messages, not just TypeScript annotations.
@@ -401,44 +417,44 @@ The debrief describes allowed changes from baseline and the tradeoff: more simul
 
 ### 10. Concrete work packages and dependencies
 
-| ID | Depends on | Implementation task | Reviewable output and acceptance |
-| --- | --- | --- | --- |
-| RC-01 | None | Record baseline through Computer Use in a disposable canvas; inspect autosave requests and result staleness | Repair-specific evidence report; each finding confirmed, corrected or marked unverified |
-| RC-02 | RC-01 | Define scenario/attempt/worker schemas and shared version source | Contract module and migration policy; unsupported versions produce explicit recovery |
-| RC-03 | RC-01 | Add source save/checkpoint handoff API | Pending-save, failed-save, anonymous and collaborative handoff cases preserve original document identity/content |
-| RC-04 | RC-02 | Implement isolated challenge repository and revision checks | Atomic save/result records, bounded retention, import/export and two-tab conflict behavior |
-| RC-05 | RC-02, RC-03, RC-04 | Add challenge route, explicit session and narrow reusable canvas boundary | Entry/resume/return/refresh work; no source design save targets are used by the challenge |
-| RC-06 | RC-02, RC-05 | Wire allowed settings and candidate history | Repairs persist; budget/constraints consistent across input paths; reset preview retains repairs |
-| RC-07 | RC-02 | Refactor deterministic evaluation into shared stepper and worker client | Fixed results across slice sizes; progress/cancel; error/timer/version handling |
-| RC-08 | RC-06, RC-07 | Bind immutable submissions and enforce stale-result rules | Edits, navigation, new attempts and late messages cannot misattribute a pass |
-| RC-09 | RC-05, RC-06, RC-08 | Build brief, goals, hints, result table and debrief with shared controls | Complete learner journey at desktop/narrow widths with keyboard support |
-| RC-10 | RC-07, RC-09 | Certify content and complete browser/performance/failure checks | Independent evidence for initial failure, valid repairs, error states and source safety |
-| RC-11 | RC-10 | Add minimal telemetry, rollout flag and rollback behavior; independent review | Release checklist complete; feature can be disabled without deleting attempts |
+| ID    | Depends on          | Implementation task                                                                                         | Reviewable output and acceptance                                                                                 |
+| ----- | ------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| RC-01 | None                | Record baseline through Computer Use in a disposable canvas; inspect autosave requests and result staleness | Repair-specific evidence report; each finding confirmed, corrected or marked unverified                          |
+| RC-02 | RC-01               | Define scenario/attempt/worker schemas and shared version source                                            | Contract module and migration policy; unsupported versions produce explicit recovery                             |
+| RC-03 | RC-01               | Add source save/checkpoint handoff API                                                                      | Pending-save, failed-save, anonymous and collaborative handoff cases preserve original document identity/content |
+| RC-04 | RC-02               | Implement isolated challenge repository and revision checks                                                 | Atomic save/result records, bounded retention, import/export and two-tab conflict behavior                       |
+| RC-05 | RC-02, RC-03, RC-04 | Add challenge route, explicit session and narrow reusable canvas boundary                                   | Entry/resume/return/refresh work; no source design save targets are used by the challenge                        |
+| RC-06 | RC-02, RC-05        | Wire allowed settings and candidate history                                                                 | Repairs persist; budget/constraints consistent across input paths; reset preview retains repairs                 |
+| RC-07 | RC-02               | Refactor deterministic evaluation into shared stepper and worker client                                     | Fixed results across slice sizes; progress/cancel; error/timer/version handling                                  |
+| RC-08 | RC-06, RC-07        | Bind immutable submissions and enforce stale-result rules                                                   | Edits, navigation, new attempts and late messages cannot misattribute a pass                                     |
+| RC-09 | RC-05, RC-06, RC-08 | Build brief, goals, hints, result table and debrief with shared controls                                    | Complete learner journey at desktop/narrow widths with keyboard support                                          |
+| RC-10 | RC-07, RC-09        | Certify content and complete browser/performance/failure checks                                             | Independent evidence for initial failure, valid repairs, error states and source safety                          |
+| RC-11 | RC-10               | Add minimal telemetry, rollout flag and rollback behavior; independent review                               | Release checklist complete; feature can be disabled without deleting attempts                                    |
 
 Keep each work package reviewable; do not combine an editor-wide refactor with all challenge behavior in one change. Shared editor extraction should be limited to dependencies needed by the challenge. If that boundary cannot be isolated safely, pause the UI integration and resolve that design issue before adding a parallel copy of the entire playground.
 
 ### 11. Verification cases with explicit expectations
 
-| ID | Steps | Expected result |
-| --- | --- | --- |
-| V-01 | Edit a saved source design; immediately enter challenge before debounce; change challenge; return and reload | Original edits retained; challenge never appears in source saves |
-| V-02 | Repeat with a document-management attempt and a non-primary canvas | Correct attempt/canvas restored; no new assessment history or unrelated problem progress created |
-| V-03 | Simulate source-save and local-checkpoint failure before entry | Remain in source with Retry/Export/Stay options; no silent navigation |
-| V-04 | Direct-link to challenge anonymously; start, repair, refresh | Same local attempt restored with correct authored workload and candidate settings |
-| V-05 | Increase database capacity, reset simulation, check, reload | Capacity remains changed; result refers to that saved candidate |
-| V-06 | Pass a check; reduce capacity; then inspect result | Current status is Changed since last check; old pass only in history |
-| V-07 | Edit, restart or navigate while a check runs; deliver its old response | Response ignored; no stale pass, error banner or stuck Checking state |
-| V-08 | Create ordinary diagram with `client`, `api`, `database` IDs | It remains an ordinary design; no inferred challenge mode |
-| V-09 | Change service time/model or bypass database through any edit/import route | Candidate rejected or constrained with specific feedback; no success through missing required work |
-| V-10 | Run fixed baseline and two independently cloned allowed repairs across all seeds | Baseline fails; certified repairs pass; authored definition remains byte-for-byte unchanged |
-| V-11 | Change preview RPS/speed/faults, then Check | Evaluator uses required conditions; displayed result says so; no preview state leakage |
-| V-12 | Force event limit, timeout, malformed result or worker-construction failure | Incomplete/error with recovery; never Solution failed for infrastructure failure, never stuck busy |
-| V-13 | Open same attempt in two tabs and edit both | Detect revision conflict; preserve drafts and offer recovery; no last-write silent loss |
-| V-14 | Logout and log in as another account | Previous account's private draft/result is not shown or written under the new owner |
-| V-15 | Use keyboard and screen reader through entry, edit, hint, check and restart | Logical focus order, visible focus, announced stages, safe modal focus and restoration |
-| V-16 | Disable storage and disconnect network after app loads | Local practice continues in memory; visible unsaved status and export; no fake Saved state |
-| V-17 | Import old/oversized/malformed bundle | Size/schema/version errors are actionable; current attempt remains intact |
-| V-18 | Return to collaborative source after another member edits it | Reconnect ordinarily; no stale checkpoint replacement or challenge publication |
+| ID   | Steps                                                                                                        | Expected result                                                                                    |
+| ---- | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
+| V-01 | Edit a saved source design; immediately enter challenge before debounce; change challenge; return and reload | Original edits retained; challenge never appears in source saves                                   |
+| V-02 | Repeat with a document-management attempt and a non-primary canvas                                           | Correct attempt/canvas restored; no new assessment history or unrelated problem progress created   |
+| V-03 | Simulate source-save and local-checkpoint failure before entry                                               | Remain in source with Retry/Export/Stay options; no silent navigation                              |
+| V-04 | Direct-link to challenge anonymously; start, repair, refresh                                                 | Same local attempt restored with correct authored workload and candidate settings                  |
+| V-05 | Increase database capacity, reset simulation, check, reload                                                  | Capacity remains changed; result refers to that saved candidate                                    |
+| V-06 | Pass a check; reduce capacity; then inspect result                                                           | Current status is Changed since last check; old pass only in history                               |
+| V-07 | Edit, restart or navigate while a check runs; deliver its old response                                       | Response ignored; no stale pass, error banner or stuck Checking state                              |
+| V-08 | Create ordinary diagram with `client`, `api`, `database` IDs                                                 | It remains an ordinary design; no inferred challenge mode                                          |
+| V-09 | Change service time/model or bypass database through any edit/import route                                   | Candidate rejected or constrained with specific feedback; no success through missing required work |
+| V-10 | Run fixed baseline and two independently cloned allowed repairs across all seeds                             | Baseline fails; certified repairs pass; authored definition remains byte-for-byte unchanged        |
+| V-11 | Change preview RPS/speed/faults, then Check                                                                  | Evaluator uses required conditions; displayed result says so; no preview state leakage             |
+| V-12 | Force event limit, timeout, malformed result or worker-construction failure                                  | Incomplete/error with recovery; never Solution failed for infrastructure failure, never stuck busy |
+| V-13 | Open same attempt in two tabs and edit both                                                                  | Detect revision conflict; preserve drafts and offer recovery; no last-write silent loss            |
+| V-14 | Logout and log in as another account                                                                         | Previous account's private draft/result is not shown or written under the new owner                |
+| V-15 | Use keyboard and screen reader through entry, edit, hint, check and restart                                  | Logical focus order, visible focus, announced stages, safe modal focus and restoration             |
+| V-16 | Disable storage and disconnect network after app loads                                                       | Local practice continues in memory; visible unsaved status and export; no fake Saved state         |
+| V-17 | Import old/oversized/malformed bundle                                                                        | Size/schema/version errors are actionable; current attempt remains intact                          |
+| V-18 | Return to collaborative source after another member edits it                                                 | Reconnect ordinarily; no stale checkpoint replacement or challenge publication                     |
 
 Use targeted unit tests for immutable scenario rules, worker identity/state transitions, canonicalization and storage conflict handling; integration tests for editor/save boundaries; browser tests for the actual user journey. Re-run ordinary canvas save, undo/redo and simulator workflows after shared extraction. Do not replace the browser journey with injected state.
 

@@ -6,7 +6,7 @@
  * engine's real NodeState and Req satisfy these interfaces structurally, so no
  * casting or adapter layer is needed at the call sites.
  */
-import type { FailureReason, NodeConfig, NodeKind, SimEdge } from './types';
+import type { FailureReason, NodeConfig, NodeKind, SimEdge } from "./types";
 
 /** A queue and the drawn consumer links that pull from it. */
 export interface QueueSourceLike {
@@ -111,7 +111,11 @@ export interface BehaviourCtx {
    * write-behind flush interval). The behaviour must check its own depth
    * limit against queueDepth() before calling.
    */
-  ackAndRelay(state: NodeStateLike, req: ReqLike, extraDeliveryMs?: number): void;
+  ackAndRelay(
+    state: NodeStateLike,
+    req: ReqLike,
+    extraDeliveryMs?: number,
+  ): void;
 
   /** The shared edge-selection policy: weighted-random, or least-loaded on ties. */
   pickWeightedOrLeastLoaded(out: readonly SimEdge[]): SimEdge | null;
@@ -223,7 +227,10 @@ export interface BehaviourCtx {
    * copies it into NodeStats and computes max/min; it has no opinion about
    * what a "shard" is.
    */
-  reportShardUtilization(state: NodeStateLike, perShard: readonly number[]): void;
+  reportShardUtilization(
+    state: NodeStateLike,
+    perShard: readonly number[],
+  ): void;
 
   /**
    * Publish this node's instance vector: how many units it is made of right
@@ -259,7 +266,11 @@ export interface BehaviourCtx {
    * the engine smooths the ratio exactly as it does for an ordinary server, so
    * the number means the same thing on the meter and to a controller.
    */
-  reportOccupancy(state: NodeStateLike, busySlots: number, capacity: number): void;
+  reportOccupancy(
+    state: NodeStateLike,
+    busySlots: number,
+    capacity: number,
+  ): void;
 
   /** Mark a request as a write, so downstream kinds see the classification. */
   markWrite(req: ReqLike, isWrite: boolean): void;

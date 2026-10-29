@@ -222,16 +222,16 @@ No new table or GSI is needed for the additive requirement contract. Historical-
 
 ## 10. Reviewable implementation slices
 
-| Slice | Deliverable | Acceptance gate |
-| --- | --- | --- |
-| 1: Reproduce | Versioned document fixture and content/payload audit | Each deduction is classified as real gap, missing context, or unsupported claim |
-| 2: Contract | Additive specification, compatibility adapters, two pilot briefs | Old/new/custom/free-form problems load; all consumers show the same scope |
-| 3: Walkthrough | Correct document guide, persisted decisions/protocols, canonical apply-path fixture | Reloaded canvas and review payload retain the taught design evidence |
-| 4: Reviewer | Grounded context, versioned rubric, strict output validation, honest verdicts | Canonical and negative development fixtures pass without score overrides |
-| 5: Learner UI | Consistent requirements, focused review actions, honest fallback/history | Desktop and narrow-width flows work; no duplicate advice or incomparable deltas |
-| 6: Five guides | Audit and calibrate the remaining four walkthroughs | All five complete walkthroughs pass the repeated greater-than-95 gate |
-| 7: Entire catalog | Reviewed batches covering 145 live problems and reconciled static slugs | No lost requirements, unexplained scope changes, stale guides, or broken links |
-| 8: Release | Held-out evaluation, feature-flagged rollout, telemetry and rollback checks | Negative/alternative cases remain useful; deployed behavior matches validation |
+| Slice             | Deliverable                                                                         | Acceptance gate                                                                 |
+| ----------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| 1: Reproduce      | Versioned document fixture and content/payload audit                                | Each deduction is classified as real gap, missing context, or unsupported claim |
+| 2: Contract       | Additive specification, compatibility adapters, two pilot briefs                    | Old/new/custom/free-form problems load; all consumers show the same scope       |
+| 3: Walkthrough    | Correct document guide, persisted decisions/protocols, canonical apply-path fixture | Reloaded canvas and review payload retain the taught design evidence            |
+| 4: Reviewer       | Grounded context, versioned rubric, strict output validation, honest verdicts       | Canonical and negative development fixtures pass without score overrides        |
+| 5: Learner UI     | Consistent requirements, focused review actions, honest fallback/history            | Desktop and narrow-width flows work; no duplicate advice or incomparable deltas |
+| 6: Five guides    | Audit and calibrate the remaining four walkthroughs                                 | All five complete walkthroughs pass the repeated greater-than-95 gate           |
+| 7: Entire catalog | Reviewed batches covering 145 live problems and reconciled static slugs             | No lost requirements, unexplained scope changes, stale guides, or broken links  |
+| 8: Release        | Held-out evaluation, feature-flagged rollout, telemetry and rollback checks         | Negative/alternative cases remain useful; deployed behavior matches validation  |
 
 Content review and test-fixture preparation can run in parallel with compatibility work. Production migration depends on compatible deployed readers; publishing a walkthrough depends on its actual apply-path fixture passing.
 

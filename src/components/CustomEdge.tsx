@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect, useMemo, useSyncExternalStore } from "react";
-import type {
-  Edge,
-  EdgeProps,
-  Node,
-  ReactFlowState,
-} from "@xyflow/react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
+import type { Edge, EdgeProps, Node, ReactFlowState } from "@xyflow/react";
 import {
   EdgeLabelRenderer,
   getBezierPath,
@@ -20,8 +21,17 @@ import {
 } from "../utils/edgeLabelLayout";
 import { SimulationEdgeRuntimeOverlay } from "../simulation/RuntimeOverlays";
 import { edgeBadgePosition } from "../simulation/edgeBadgePosition";
-import { getFallbackHandlePositions, getMeasuredHandleAnchor } from "../utils/edgeHandlePositions";
-import { getEdgeLabelFont, getEdgeLabelFontRevision, measureEdgeLabelHeight, measureEdgeLabelText, subscribeToEdgeLabelFonts } from "../utils/edgeLabelTextWidth";
+import {
+  getFallbackHandlePositions,
+  getMeasuredHandleAnchor,
+} from "../utils/edgeHandlePositions";
+import {
+  getEdgeLabelFont,
+  getEdgeLabelFontRevision,
+  measureEdgeLabelHeight,
+  measureEdgeLabelText,
+  subscribeToEdgeLabelFonts,
+} from "../utils/edgeLabelTextWidth";
 
 export type EdgePathType = "bezier" | "straight" | "step" | "smoothstep";
 export type EdgeLabelPosition = "source" | "center" | "target";
@@ -54,7 +64,9 @@ type PositionedNode = Node & {
 const nodePosition = (node: Node) =>
   (node as PositionedNode).internals?.positionAbsolute ?? node.position;
 
-const handlePosition = (handleId: string | null | undefined): Position | null => {
+const handlePosition = (
+  handleId: string | null | undefined,
+): Position | null => {
   const normalized = handleId?.split(":").at(-1);
   if (!normalized) return null;
   if (normalized.startsWith("top")) return Position.Top;
@@ -213,8 +225,12 @@ const estimateEdgeLabelRect = ({
   const { data, label, hasLabel } = getEdgeLabelData(edge);
   if (!hasLabel || !label) return null;
 
-  const sourceNode = nodeLookup.get(edge.source) ?? nodes.find((node) => node.id === edge.source);
-  const targetNode = nodeLookup.get(edge.target) ?? nodes.find((node) => node.id === edge.target);
+  const sourceNode =
+    nodeLookup.get(edge.source) ??
+    nodes.find((node) => node.id === edge.source);
+  const targetNode =
+    nodeLookup.get(edge.target) ??
+    nodes.find((node) => node.id === edge.target);
   if (!sourceNode || !targetNode) return null;
 
   const fallback = getFallbackHandlePositions(sourceNode, targetNode);
@@ -268,7 +284,8 @@ const estimateEdgeLabelRect = ({
     nodes: nodes as EdgeLabelNode[],
     occupiedLabels,
     labelMaxWidth: data.labelMaxWidth,
-    measureHeight: (text, width) => measureEdgeLabelHeight(text, width, labelFont),
+    measureHeight: (text, width) =>
+      measureEdgeLabelHeight(text, width, labelFont),
   });
 };
 
@@ -527,9 +544,14 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
     0.95,
   );
   const labelDirection = { source: -1, target: 1, center: 0 };
-  const labelShift = (labelDirection[edgeData?.labelPosition ?? "center"] ?? 0) * labelOffset;
+  const labelShift =
+    (labelDirection[edgeData?.labelPosition ?? "center"] ?? 0) * labelOffset;
   const labelText = value || "Connection";
-  const fontRevision = useSyncExternalStore(subscribeToEdgeLabelFonts, getEdgeLabelFontRevision, () => 0);
+  const fontRevision = useSyncExternalStore(
+    subscribeToEdgeLabelFonts,
+    getEdgeLabelFontRevision,
+    () => 0,
+  );
   const labelFont = useMemo(() => {
     void fontRevision;
     return getEdgeLabelFont();
@@ -560,7 +582,15 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
       if (rect) labels.push(rect);
     }
     return labels;
-  }, [flowEdges, flowNodes, nodeLookup, id, labelVisible, labelFont, fontRevision]);
+  }, [
+    flowEdges,
+    flowNodes,
+    nodeLookup,
+    id,
+    labelVisible,
+    labelFont,
+    fontRevision,
+  ]);
   const labelLayout = getEdgeLabelLayout({
     label: labelText,
     edgePath,
@@ -575,10 +605,17 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
     nodes: flowNodes as EdgeLabelNode[],
     occupiedLabels,
     labelMaxWidth: edgeData?.labelMaxWidth,
-    measureHeight: (text, width) => measureEdgeLabelHeight(text, width, labelFont),
+    measureHeight: (text, width) =>
+      measureEdgeLabelHeight(text, width, labelFont),
   });
   const simulationLabelPosition = labelVisible
-    ? edgeBadgePosition(labelLayout, flowNodes.map(node => nodeLookup.get(node.id) ?? node) as EdgeLabelNode[], occupiedLabels)
+    ? edgeBadgePosition(
+        labelLayout,
+        flowNodes.map(
+          (node) => nodeLookup.get(node.id) ?? node,
+        ) as EdgeLabelNode[],
+        occupiedLabels,
+      )
     : { x: centerX, y: centerY + 20 };
 
   const onLabelDoubleClick = (e: React.MouseEvent) => {
@@ -729,7 +766,6 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
             pointerEvents="none"
           />
         )}
-
       </g>
       <SimulationEdgeRuntimeOverlay
         id={id}

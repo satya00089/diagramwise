@@ -221,19 +221,35 @@
         "id": "decision-path",
         "label": "Allow or reject path",
         "description": "Client -> gateway -> decision service -> policy cache and counter store -> response.",
-        "componentIds": ["client", "gateway", "decision-service", "policy-cache", "counter-store"]
+        "componentIds": [
+          "client",
+          "gateway",
+          "decision-service",
+          "policy-cache",
+          "counter-store"
+        ]
       },
       {
         "id": "policy-path",
         "label": "Policy propagation path",
         "description": "Policy store -> policy stream -> regional policy cache and decision services.",
-        "componentIds": ["policy-store", "policy-stream", "policy-cache", "decision-service"]
+        "componentIds": [
+          "policy-store",
+          "policy-stream",
+          "policy-cache",
+          "decision-service"
+        ]
       },
       {
         "id": "audit-path",
         "label": "Async audit path",
         "description": "Decision service -> audit queue -> audit workers -> monitoring for sampled decisions and drift.",
-        "componentIds": ["decision-service", "audit-queue", "audit-workers", "monitoring"]
+        "componentIds": [
+          "decision-service",
+          "audit-queue",
+          "audit-workers",
+          "monitoring"
+        ]
       }
     ],
     "components": [
@@ -244,7 +260,9 @@
         "label": "API callers",
         "description": "Services send requests through an SDK or gateway integration and consume quota headers.",
         "position": { "x": 0, "y": 260 },
-        "properties": { "traffic": "Tenant, user, credential, IP, and endpoint requests" }
+        "properties": {
+          "traffic": "Tenant, user, credential, IP, and endpoint requests"
+        }
       },
       {
         "id": "gateway",
@@ -253,7 +271,9 @@
         "label": "API gateway",
         "description": "Authenticates callers, normalizes identity, applies coarse admission limits, and forwards a bounded decision request.",
         "position": { "x": 480, "y": 260 },
-        "properties": { "protection": "Authentication, request cost, payload bounds, and emergency limits" }
+        "properties": {
+          "protection": "Authentication, request cost, payload bounds, and emergency limits"
+        }
       },
       {
         "id": "decision-service",
@@ -262,7 +282,9 @@
         "label": "Rate-limit decision service",
         "description": "Resolves policy dimensions, evaluates buckets, and returns an allow or reject decision with quota metadata.",
         "position": { "x": 960, "y": 260 },
-        "properties": { "criticalPath": "Local policy plus atomic counter operation with bounded retries" }
+        "properties": {
+          "criticalPath": "Local policy plus atomic counter operation with bounded retries"
+        }
       },
       {
         "id": "policy-cache",
@@ -271,7 +293,9 @@
         "label": "Regional policy cache",
         "description": "Serves the latest validated policy version locally with freshness and rollout metadata.",
         "position": { "x": 1440, "y": 80 },
-        "properties": { "consistency": "Versioned propagation with endpoint-specific stale policy" }
+        "properties": {
+          "consistency": "Versioned propagation with endpoint-specific stale policy"
+        }
       },
       {
         "id": "counter-store",
@@ -280,7 +304,9 @@
         "label": "Partitioned counter store",
         "description": "Performs atomic token, refill, or window updates for active quota keys with TTL expiration.",
         "position": { "x": 1440, "y": 260 },
-        "properties": { "accessPattern": "Counter key lookup and conditional update; shard hot keys separately" }
+        "properties": {
+          "accessPattern": "Counter key lookup and conditional update; shard hot keys separately"
+        }
       },
       {
         "id": "policy-store",
@@ -289,7 +315,9 @@
         "label": "Policy and audit store",
         "description": "Stores authorized policy versions, overrides, approvals, effective times, and rollout history.",
         "position": { "x": 960, "y": 560 },
-        "properties": { "correctness": "Optimistic versioning and append-only administrative audit" }
+        "properties": {
+          "correctness": "Optimistic versioning and append-only administrative audit"
+        }
       },
       {
         "id": "policy-stream",
@@ -298,7 +326,9 @@
         "label": "Policy update stream",
         "description": "Distributes validated policy versions and invalidations to regional caches.",
         "position": { "x": 1440, "y": 560 },
-        "properties": { "delivery": "At least once with policy version deduplication" }
+        "properties": {
+          "delivery": "At least once with policy version deduplication"
+        }
       },
       {
         "id": "audit-queue",
@@ -307,7 +337,9 @@
         "label": "Decision audit queue",
         "description": "Buffers sampled decisions, rejection signals, and counter anomalies for asynchronous processing.",
         "position": { "x": 1920, "y": 560 },
-        "properties": { "delivery": "Durable, sampled, and partitioned by tenant and policy" }
+        "properties": {
+          "delivery": "Durable, sampled, and partitioned by tenant and policy"
+        }
       },
       {
         "id": "audit-workers",
@@ -316,7 +348,9 @@
         "label": "Expiry and audit workers",
         "description": "Expire inactive state, aggregate decisions, detect drift and abuse, and build operational reports.",
         "position": { "x": 2400, "y": 560 },
-        "properties": { "safety": "Bounded retention, sampling, and replayable processing" }
+        "properties": {
+          "safety": "Bounded retention, sampling, and replayable processing"
+        }
       },
       {
         "id": "monitoring",
@@ -325,7 +359,9 @@
         "label": "Limiter reliability monitoring",
         "description": "Tracks decision latency, policy freshness, counter errors, hot keys, rejection rate, and fail-open events.",
         "position": { "x": 2400, "y": 260 },
-        "properties": { "signals": "Per-policy SLOs, drift, saturation, abuse, and regional health" }
+        "properties": {
+          "signals": "Per-policy SLOs, drift, saturation, abuse, and regional health"
+        }
       }
     ],
     "connections": [

@@ -1,8 +1,19 @@
 import { create } from "zustand";
-import type { CompiledSimulation, SimulationDocument } from "@diagramwise/simulation-core/compiler";
-import type { SimSnapshot, Topology, TrafficPattern } from "@diagramwise/simulation-core";
+import type {
+  CompiledSimulation,
+  SimulationDocument,
+} from "@diagramwise/simulation-core/compiler";
+import type {
+  SimSnapshot,
+  Topology,
+  TrafficPattern,
+} from "@diagramwise/simulation-core";
 import type { SimulationStatus } from "../components/simulation/types";
-import type { EventRunArtifact, RecordedCommand, SimulationScope } from "./protocol";
+import type {
+  EventRunArtifact,
+  RecordedCommand,
+  SimulationScope,
+} from "./protocol";
 
 export type SessionState = {
   scope: SimulationScope | null;
@@ -25,9 +36,25 @@ export type SessionState = {
 };
 
 export const initialSessionState: SessionState = {
-  scope: null, document: null, compilation: null, status: "idle", visible: false,
-  snapshot: null, rps: 100, pattern: "steady", speed: 1, seed: 1, achievedSpeed: 1,
-  commands: [], initialTopology: null, initialWorkload: null, runFingerprint: "", selectedNodeId: null, error: null,
+  scope: null,
+  document: null,
+  compilation: null,
+  status: "idle",
+  visible: false,
+  snapshot: null,
+  rps: 100,
+  pattern: "steady",
+  speed: 1,
+  seed: 1,
+  achievedSpeed: 1,
+  commands: [],
+  initialTopology: null,
+  initialWorkload: null,
+  runFingerprint: "",
+  selectedNodeId: null,
+  error: null,
 };
 
-export const useSimulationSession = create<SessionState>(() => initialSessionState);
+export const useSimulationSession = create<SessionState>(
+  () => initialSessionState,
+);

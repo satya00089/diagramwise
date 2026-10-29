@@ -5,11 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Diagramwise MCP Support</title>
     <style>
-      :root { color-scheme: light; font-family: Inter, system-ui, sans-serif; }
-      body { max-width: 760px; margin: 0 auto; padding: 48px 24px; color: #172033; line-height: 1.65; }
-      h1 { line-height: 1.15; } h2 { margin-top: 2rem; }
-      a { color: #2457d6; } .meta { color: #5d687d; }
-      code { background: #eef2f8; padding: 2px 5px; border-radius: 4px; }
+      :root {
+        color-scheme: light;
+        font-family: Inter, system-ui, sans-serif;
+      }
+      body {
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 48px 24px;
+        color: #172033;
+        line-height: 1.65;
+      }
+      h1 {
+        line-height: 1.15;
+      }
+      h2 {
+        margin-top: 2rem;
+      }
+      a {
+        color: #2457d6;
+      }
+      .meta {
+        color: #5d687d;
+      }
+      code {
+        background: #eef2f8;
+        padding: 2px 5px;
+        border-radius: 4px;
+      }
     </style>
   </head>
   <body>
@@ -25,7 +48,9 @@
     <h2>Available endpoints</h2>
     <ul>
       <li><code>/chatgpt-mcp</code> — public, read-only catalog tools.</li>
-      <li><code>/mcp</code> — authenticated MCP tools for compatible clients.</li>
+      <li>
+        <code>/mcp</code> — authenticated MCP tools for compatible clients.
+      </li>
       <li><code>/health</code> — service health check.</li>
     </ul>
     <h2>Common checks</h2>
@@ -34,6 +59,9 @@
       <code>Authorization: Bearer …</code>, and that your client is using the
       read-only endpoint when it only needs catalog access.
     </p>
-    <p><a href="/privacy.html">Privacy Notice</a> · <a href="/terms.html">Terms of Use</a></p>
+    <p>
+      <a href="/privacy.html">Privacy Notice</a> ·
+      <a href="/terms.html">Terms of Use</a>
+    </p>
   </body>
 </html>

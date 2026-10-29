@@ -16,14 +16,20 @@
  * Engine class both documents that surface and stops a behaviour reaching into
  * scheduling internals it has no business knowing about.
  */
-import type { EdgeState, FailureReason, NodeKind, NodeStats, SimEdge } from './types';
-import type { BehaviourCtx, ReqLike, NodeStateLike } from './engine-types';
-import { DATA_BEHAVIOURS } from './behaviour-data';
-import { EDGE_BEHAVIOURS } from './behaviour-edge';
-import { CONTROL_BEHAVIOURS } from './behaviour-control';
-import { STORE_BEHAVIOURS } from './behaviour-store';
-import { MESSAGING_BEHAVIOURS } from './behaviour-messaging';
-import { RESILIENCE_BEHAVIOURS } from './behaviour-resilience';
+import type {
+  EdgeState,
+  FailureReason,
+  NodeKind,
+  NodeStats,
+  SimEdge,
+} from "./types";
+import type { BehaviourCtx, ReqLike, NodeStateLike } from "./engine-types";
+import { DATA_BEHAVIOURS } from "./behaviour-data";
+import { EDGE_BEHAVIOURS } from "./behaviour-edge";
+import { CONTROL_BEHAVIOURS } from "./behaviour-control";
+import { STORE_BEHAVIOURS } from "./behaviour-store";
+import { MESSAGING_BEHAVIOURS } from "./behaviour-messaging";
+import { RESILIENCE_BEHAVIOURS } from "./behaviour-resilience";
 
 /**
  * What a node does with a request offered to it.
@@ -34,7 +40,7 @@ import { RESILIENCE_BEHAVIOURS } from './behaviour-resilience';
  * - 'handled'  the behaviour fully handled admission itself (queue does this,
  *              because it acks the caller and buffers a detached copy).
  */
-export type AdmitAction = 'shed' | 'serve' | 'passthru' | 'handled';
+export type AdmitAction = "shed" | "serve" | "passthru" | "handled";
 
 /**
  * How a node fans its work out to its downstream neighbours.
@@ -43,7 +49,7 @@ export type AdmitAction = 'shed' | 'serve' | 'passthru' | 'handled';
  * - 'one'   pick a single edge (load balancer).
  * - 'none'  do not call downstream at all; resolve here.
  */
-export type RouteMode = 'all' | 'one' | 'none';
+export type RouteMode = "all" | "one" | "none";
 
 /**
  * What happens once a node has finished its own service time.
@@ -51,16 +57,16 @@ export type RouteMode = 'all' | 'one' | 'none';
  * - 'downstream' proceed to routing (the default).
  * - 'complete'   answer right here without calling downstream (a cache hit).
  */
-export type CompleteAction = 'downstream' | 'complete';
+export type CompleteAction = "downstream" | "complete";
 
 /** How a node's waiting work is drained when a slot frees up. */
 export type PumpMode =
   /** Serve from this node's own FIFO. */
-  | 'own'
+  | "own"
   /** Pull messages out of the queue nodes that feed this node. */
-  | 'sources'
+  | "sources"
   /** Nothing to pump: the node holds no work of its own. */
-  | 'none';
+  | "none";
 
 export interface ComponentBehaviour {
   kind: NodeKind;
@@ -158,7 +164,7 @@ export interface ComponentBehaviour {
    * a breaker, a client): scaleOf() reports null and setScale() is a no-op,
    * rather than silently inventing a fleet for a thing that has none.
    */
-  scaleField?: 'instances' | 'shardCapacity';
+  scaleField?: "instances" | "shardCapacity";
   /**
    * Called after the node's own service time elapsed and its independent error
    * roll passed. Returning 'complete' answers the call here.
@@ -212,7 +218,11 @@ export interface ComponentBehaviour {
    * same way the other hooks keep it out of the event loop. Only called for
    * behaviours that declare it.
    */
-  decorateStats?(ctx: BehaviourCtx, state: NodeStateLike, stats: NodeStats): void;
+  decorateStats?(
+    ctx: BehaviourCtx,
+    state: NodeStateLike,
+    stats: NodeStats,
+  ): void;
 
   /* ---- instance model ---- */
 
@@ -233,7 +243,7 @@ export interface ComponentBehaviour {
    * that comment is the contract, this field only selects which mechanism
    * produces it.
    */
-  instanceModel?: 'slots' | 'custom';
+  instanceModel?: "slots" | "custom";
 
   /**
    * Publish the instance vector for an `instanceModel: 'custom'` kind. Called
@@ -276,14 +286,14 @@ export interface ComponentBehaviour {
  * straight downstream; it never queues and never occupies a slot.
  */
 const client: ComponentBehaviour = {
-  kind: 'client',
+  kind: "client",
   servesRequests: true,
   generatesLoad: true,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: false,
-  onAdmit: () => 'passthru',
+  onAdmit: () => "passthru",
 };
 
 /**
@@ -296,29 +306,29 @@ const client: ComponentBehaviour = {
  * left an autoscaler writing `instances` with nothing to turn (#52).
  */
 const lb: ComponentBehaviour = {
-  kind: 'lb',
+  kind: "lb",
   servesRequests: true,
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'own',
+  pump: "own",
   creditsJoinCompletion: true,
-  route: () => 'one',
+  route: () => "one",
   pickEdge: (ctx, _state, _req, out) => ctx.pickWeightedOrLeastLoaded(out),
 };
 
 /** A plain server: finite slots, a bounded FIFO, then fan-out to everything. */
 const service: ComponentBehaviour = {
-  kind: 'service',
+  kind: "service",
   servesRequests: true,
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'own',
+  pump: "own",
   creditsJoinCompletion: true,
 };
 
@@ -327,23 +337,23 @@ const service: ComponentBehaviour = {
  * through to whatever backs it, or answers anyway if nothing is wired up.
  */
 const cache: ComponentBehaviour = {
-  kind: 'cache',
+  kind: "cache",
   servesRequests: true,
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'own',
+  pump: "own",
   creditsJoinCompletion: true,
   onServiceComplete: (ctx, state, _req) => {
     if (ctx.roll() < clamp01(state.config.hitRate)) {
       ctx.countHit(state);
-      return 'complete';
+      return "complete";
     }
     ctx.countMiss(state);
     // No backing store wired up: a miss is still answered, just slowly.
-    return state.out.length === 0 ? 'complete' : 'downstream';
+    return state.out.length === 0 ? "complete" : "downstream";
   },
 };
 
@@ -358,17 +368,17 @@ const cache: ComponentBehaviour = {
  * it reports zero utilisation.
  */
 const queue: ComponentBehaviour = {
-  kind: 'queue',
+  kind: "queue",
   servesRequests: false,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: true,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
   onAdmit: (ctx, state, req) => {
-    if (ctx.queueDepth(state) >= ctx.effectiveQueueLimit(state)) return 'shed';
+    if (ctx.queueDepth(state) >= ctx.effectiveQueueLimit(state)) return "shed";
     ctx.ackAndBuffer(state, req);
-    return 'handled';
+    return "handled";
   },
 };
 
@@ -378,14 +388,14 @@ const queue: ComponentBehaviour = {
  * regardless of which queue was written to last.
  */
 const worker: ComponentBehaviour = {
-  kind: 'worker',
+  kind: "worker",
   servesRequests: true,
-  instanceModel: 'slots',
-  scaleField: 'instances',
+  instanceModel: "slots",
+  scaleField: "instances",
   generatesLoad: false,
   pullsFromQueues: true,
   buffersForConsumers: false,
-  pump: 'sources',
+  pump: "sources",
   creditsJoinCompletion: true,
 };
 

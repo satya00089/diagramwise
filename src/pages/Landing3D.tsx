@@ -65,8 +65,7 @@ export default function Landing3D() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAiConnectionGuide, setShowAiConnectionGuide] = useState(false);
-  const { isAuthenticated, login, signup, googleLogin } =
-    useAuth();
+  const { isAuthenticated, login, signup, googleLogin } = useAuth();
   const { setTheme, flowColorMode } = useTheme();
   const landingTheme = flowColorMode;
   const storyRef = useRef<HTMLDivElement>(null);
@@ -557,9 +556,9 @@ export default function Landing3D() {
                   Start from a blank canvas <HiArrowUpRight />
                 </h3>
                 <p>
-                  Sketch freely. Once your design is saved and you’re signed
-                  in, invite teammates to collaborate in real time and share a
-                  live link.
+                  Sketch freely. Once your design is saved and you’re signed in,
+                  invite teammates to collaborate in real time and share a live
+                  link.
                 </p>
               </div>
             </Link>
@@ -589,9 +588,9 @@ export default function Landing3D() {
                 <span>01 / GUIDED PRACTICE</span>
                 <h3>Step-by-step walkthroughs for supported problems.</h3>
                 <p>
-                  When you get stuck, follow structured prompts that explain
-                  the reasoning behind each design decision while leaving room
-                  for you to think it through.
+                  When you get stuck, follow structured prompts that explain the
+                  reasoning behind each design decision while leaving room for
+                  you to think it through.
                 </p>
                 <Link className="systema-text-link" to="/problems/">
                   Find a problem with a walkthrough <HiArrowUpRight />
@@ -606,9 +605,8 @@ export default function Landing3D() {
                 <span>02 / LEARNING PATHS</span>
                 <h3>Build your system design skills in sequence.</h3>
                 <p>
-                  Follow curated modules and hands-on lessons that take you
-                  from core concepts to applying them in realistic design
-                  problems.
+                  Follow curated modules and hands-on lessons that take you from
+                  core concepts to applying them in realistic design problems.
                 </p>
                 <Link className="systema-text-link" to="/learning-paths/">
                   Browse learning paths <HiArrowUpRight />

@@ -2,16 +2,34 @@ import React, { useEffect, useRef, useState } from "react";
 import { HiChevronDown } from "react-icons/hi2";
 
 export interface SelectDropdownProps {
-  id: string;
-  value: string;
-  options: string[];
-  onChange: (value: string) => void;
-  "aria-label": string;
-  disabled?: boolean;
-  className?: string;
-  menuPlacement?: "top" | "bottom";
-  onFocus?: React.FocusEventHandler<HTMLButtonElement>;
-  onBlur?: React.FocusEventHandler<HTMLButtonElement>;
+  readonly id: string;
+  readonly value: string;
+  readonly options: readonly string[];
+  readonly onChange: (value: string) => void;
+  readonly "aria-label": string;
+  readonly disabled?: boolean;
+  readonly className?: string;
+  readonly menuPlacement?: "top" | "bottom";
+  readonly onFocus?: React.FocusEventHandler<HTMLButtonElement>;
+  readonly onBlur?: React.FocusEventHandler<HTMLButtonElement>;
+}
+
+function getArrowOpenIndex(
+  key: string,
+  selectedIndex: number,
+  optionCount: number,
+): number {
+  if (selectedIndex >= 0) return selectedIndex;
+  return key === "ArrowDown" ? 0 : optionCount - 1;
+}
+
+function getNextHighlightedIndex(
+  current: number,
+  key: string,
+  optionCount: number,
+): number {
+  const direction = key === "ArrowDown" ? 1 : -1;
+  return (current + direction + optionCount) % optionCount;
 }
 
 const SelectDropdown: React.FC<SelectDropdownProps> = ({
@@ -41,7 +59,9 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
     setHighlightedIndex((current) => {
       const currentOptions = optionsRef.current;
       const selectedIndex = currentOptions.indexOf(value);
-      return selectedIndex >= 0 ? selectedIndex : Math.min(current, currentOptions.length - 1);
+      return selectedIndex >= 0
+        ? selectedIndex
+        : Math.min(current, currentOptions.length - 1);
     });
     const handlePointerDown = (event: PointerEvent) => {
       if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false);
@@ -68,12 +88,15 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={`${id}-menu`}
-        aria-activedescendant={open ? `${id}-option-${highlightedIndex}` : undefined}
+        aria-activedescendant={
+          open ? `${id}-option-${highlightedIndex}` : undefined
+        }
         disabled={disabled}
         onClick={() => setOpen((current) => !current)}
         onFocus={onFocus}
         onBlur={(event) => {
-          if (!wrapperRef.current?.contains(event.relatedTarget as Node | null)) setOpen(false);
+          if (!wrapperRef.current?.contains(event.relatedTarget as Node | null))
+            setOpen(false);
           onBlur?.(event);
         }}
         onKeyDown={(event) => {
@@ -83,9 +106,13 @@ const SelectDropdown: React.FC<SelectDropdownProps> = ({
             if (!open) {
               setOpen(true);
               const selected = options.indexOf(value);
-              setHighlightedIndex(selected >= 0 ? selected : event.key === "ArrowDown" ? 0 : options.length - 1);
+              setHighlightedIndex(
+                getArrowOpenIndex(event.key, selected, options.length),
+              );
             } else {
-              setHighlightedIndex((current) => (current + (event.key === "ArrowDown" ? 1 : -1) + options.length) % options.length);
+              setHighlightedIndex((current) =>
+                getNextHighlightedIndex(current, event.key, options.length),
+              );
             }
           } else if (event.key === "Home") {
             event.preventDefault();

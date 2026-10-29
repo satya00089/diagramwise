@@ -255,13 +255,13 @@ const ERRelationshipEdge: React.FC<EdgeProps> = (props) => {
     selected,
   } = props;
 
-  const { pathType, initialLabel, initialHasLabel, initialCardinality } = getInitialEdgeState(data, label);
+  const { pathType, initialLabel, initialHasLabel, initialCardinality } =
+    getInitialEdgeState(data, label);
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState<string>(initialLabel);
   const [hasLabel, setHasLabel] = useState<boolean>(initialHasLabel);
-  const [cardinality, setCardinality] = useState<ERCardinality>(
-    initialCardinality,
-  );
+  const [cardinality, setCardinality] =
+    useState<ERCardinality>(initialCardinality);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const reduceMotion = useReducedMotion();
   const [routeAnimationId, setRouteAnimationId] = useState(0);

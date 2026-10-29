@@ -123,11 +123,7 @@ const ReadOnlyNodeShell: React.FC<React.PropsWithChildren> = ({ children }) => (
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const ReadOnlyCustomNode = (props: any) => (
   <ReadOnlyNodeShell>
-    <CustomNode
-      {...props}
-      onCopy={noop}
-      isInGroup={false}
-    />
+    <CustomNode {...props} onCopy={noop} isInGroup={false} />
   </ReadOnlyNodeShell>
 );
 const ReadOnlyERNode = (props: any) => (
@@ -217,7 +213,7 @@ const resolveLocalPublicComponent = (componentId?: string) => {
   if (direct) return direct;
   const alias = PUBLIC_COMPONENT_ALIASES[normalizedId];
   return alias
-    ? COMPONENTS.find((component) => component.id === alias) ?? null
+    ? (COMPONENTS.find((component) => component.id === alias) ?? null)
     : null;
 };
 
@@ -228,7 +224,9 @@ const restorePublicNodeIcons = (
   nodes.map((node) => {
     const componentId =
       typeof node.data?.componentId === "string" ? node.data.componentId : null;
-    const localComponent = resolveLocalPublicComponent(componentId ?? undefined);
+    const localComponent = resolveLocalPublicComponent(
+      componentId ?? undefined,
+    );
     const storedIcon = node.data?.icon;
     const safeStoredIcon =
       typeof storedIcon === "function" ||
@@ -332,7 +330,11 @@ const getNodeName = (node: Node | undefined): string => {
 
 const getNodeDescription = (node: Node): string => {
   const data = node.data as Record<string, unknown>;
-  return plainText(data.purpose) || plainText(data.description) || plainText(data.subtitle);
+  return (
+    plainText(data.purpose) ||
+    plainText(data.description) ||
+    plainText(data.subtitle)
+  );
 };
 
 const getNodeProperties = (node: Node): InspectorEntry[] => {
@@ -1500,7 +1502,9 @@ const SharedCanvasPage: React.FC = () => {
         data-diagramwise-capture-root={captureMode ? "true" : undefined}
         data-diagramwise-capture-ready={captureReady}
         aria-label={
-          captureMode ? `${data.title} Diagramwise architecture preview` : undefined
+          captureMode
+            ? `${data.title} Diagramwise architecture preview`
+            : undefined
         }
       >
         {/* Top bar */}
@@ -1517,7 +1521,9 @@ const SharedCanvasPage: React.FC = () => {
             {data.title}
           </span>
           <div className="shared-header-actions ml-auto flex flex-shrink-0 items-center gap-3">
-            <span className="shared-readonly hidden sm:inline-flex">Read-only view</span>
+            <span className="shared-readonly hidden sm:inline-flex">
+              Read-only view
+            </span>
             <div className="shared-theme-control" aria-label="Theme preference">
               <ThemeSwitcher />
             </div>
@@ -1548,9 +1554,12 @@ const SharedCanvasPage: React.FC = () => {
               />
             </ReactFlowProvider>
             <div className="shared-canvas-label" aria-hidden="true">
-              <span className="shared-canvas-label__title">Architecture canvas</span>
+              <span className="shared-canvas-label__title">
+                Architecture canvas
+              </span>
               <span className="shared-canvas-label__meta">
-                {nodes.length} components <span>·</span> {edges.length} connections
+                {nodes.length} components <span>·</span> {edges.length}{" "}
+                connections
               </span>
             </div>
             <div className="shared-canvas-hint" aria-hidden="true">

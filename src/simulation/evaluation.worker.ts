@@ -3,6 +3,16 @@ import { databaseBottleneckScenario } from "@diagramwise/simulation-core/scenari
 import type { Topology } from "@diagramwise/simulation-core";
 
 self.onmessage = (event: MessageEvent<{ topology: Topology }>) => {
-  try { self.postMessage({ result: runScenario(event.data.topology, databaseBottleneckScenario) }); }
-  catch (error) { self.postMessage({ error: error instanceof Error ? error.message : "The solution could not be evaluated." }); }
+  try {
+    self.postMessage({
+      result: runScenario(event.data.topology, databaseBottleneckScenario),
+    });
+  } catch (error) {
+    self.postMessage({
+      error:
+        error instanceof Error
+          ? error.message
+          : "The solution could not be evaluated.",
+    });
+  }
 };

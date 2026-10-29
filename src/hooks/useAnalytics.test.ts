@@ -40,7 +40,10 @@ describe("useAnalytics provider lifecycle", () => {
 
   it("uses the documented API URL before the legacy assessment URL", () => {
     expect(
-      getAnalyticsBatchUrl("https://api.example.com/", "https://legacy.example.com"),
+      getAnalyticsBatchUrl(
+        "https://api.example.com/",
+        "https://legacy.example.com",
+      ),
     ).toBe("https://api.example.com/api/v1/analytics/batch");
   });
 
@@ -52,7 +55,9 @@ describe("useAnalytics provider lifecycle", () => {
 
     const cleanups = reactEffects.callbacks
       .map((effect) => effect())
-      .filter((cleanup): cleanup is () => void => typeof cleanup === "function");
+      .filter(
+        (cleanup): cleanup is () => void => typeof cleanup === "function",
+      );
 
     cleanups.forEach((cleanup) => cleanup());
     providers.forEach(({ flush }) => flush());

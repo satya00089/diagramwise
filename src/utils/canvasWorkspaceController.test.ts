@@ -303,16 +303,31 @@ describe("CanvasWorkspaceController.saveActive", () => {
   });
 
   it("verifies unchanged hydrated content without rewriting the stored legacy graph", async () => {
-    const legacyEdge = { id: "edge-a-b", source: "a", target: "b", data: { description: "Carries the request" } };
-    const initial = { ...TWO_TABS, content: { ...TWO_TABS.content, main: detail("main", 1, [{ id: "a" }, { id: "b" }], [legacyEdge]) } };
+    const legacyEdge = {
+      id: "edge-a-b",
+      source: "a",
+      target: "b",
+      data: { description: "Carries the request" },
+    };
+    const initial = {
+      ...TWO_TABS,
+      content: {
+        ...TWO_TABS.content,
+        main: detail("main", 1, [{ id: "a" }, { id: "b" }], [legacyEdge]),
+      },
+    };
     const { api, state } = fakeApi(initial);
     const controller = new CanvasWorkspaceController(api);
     await controller.load(WS, "main");
     const nodes = [{ id: "a" }, { id: "b" }];
-    const hydrated = [{ ...legacyEdge, data: normalizeEdgeDataPurpose(legacyEdge.data) }];
+    const hydrated = [
+      { ...legacyEdge, data: normalizeEdgeDataPurpose(legacyEdge.data) },
+    ];
     controller.markActiveContentClean("main", nodes, hydrated);
 
-    expect(await controller.saveActive(nodes, hydrated, true)).toBe("unchanged");
+    expect(await controller.saveActive(nodes, hydrated, true)).toBe(
+      "unchanged",
+    );
     expect(state.content.main.edges).toEqual([legacyEdge]);
     expect(await controller.saveActive(nodes, hydrated)).toBe("unchanged");
   });
@@ -546,7 +561,10 @@ describe("CanvasWorkspaceController stale versions", () => {
     const stale = structuredClone(state.content.main);
     state.content.main = { ...state.content.main, version: 2 };
     const readCurrent = api.getCanvas;
-    api.getCanvas = vi.fn().mockResolvedValueOnce(stale).mockImplementation(readCurrent);
+    api.getCanvas = vi
+      .fn()
+      .mockResolvedValueOnce(stale)
+      .mockImplementation(readCurrent);
 
     const moved = [{ id: "m", position: { x: 180, y: 72 } }];
     expect(await controller.saveActive(moved, [])).toBe("saved");
@@ -561,7 +579,8 @@ describe("CanvasWorkspaceController stale versions", () => {
     state.content.main = { ...state.content.main, version: 2 };
     const save = api.saveCanvasContent;
     api.saveCanvasContent = async (workspaceId, canvasId, body) => {
-      if (body.version === 2) state.content.main = { ...state.content.main, version: 3 };
+      if (body.version === 2)
+        state.content.main = { ...state.content.main, version: 3 };
       return save(workspaceId, canvasId, body);
     };
 
@@ -579,7 +598,10 @@ describe("CanvasWorkspaceController stale versions", () => {
     const remote = [{ id: "remote", position: { x: 20, y: 30 } }];
     state.content.main = { ...state.content.main, version: 2, nodes: remote };
     const readCurrent = api.getCanvas;
-    api.getCanvas = vi.fn().mockResolvedValueOnce(stale).mockImplementation(readCurrent);
+    api.getCanvas = vi
+      .fn()
+      .mockResolvedValueOnce(stale)
+      .mockImplementation(readCurrent);
 
     const moved = [{ id: "m", position: { x: 180, y: 72 } }];
     expect(await controller.saveActive(moved, [])).toBe("conflict");
@@ -595,7 +617,12 @@ describe("CanvasWorkspaceController stale versions", () => {
     state.content.main = { ...state.content.main, version: 2 };
     api.getCanvas = vi.fn().mockResolvedValue(stale);
 
-    expect(await controller.saveActive([{ id: "m", position: { x: 180, y: 72 } }], [])).toBe("error");
+    expect(
+      await controller.saveActive(
+        [{ id: "m", position: { x: 180, y: 72 } }],
+        [],
+      ),
+    ).toBe("error");
     expect(api.getCanvas).toHaveBeenCalledTimes(3);
     expect(calls.saves.map((call) => call.version)).toEqual([1]);
     expect(controller.getSnapshot().message).toContain("try saving again");
@@ -626,9 +653,14 @@ describe("CanvasWorkspaceController stale versions", () => {
     const initialMove = [{ id: "m", position: { x: 10, y: 20 } }];
     expect(await controller.saveActive(initialMove, [])).toBe("saved");
     const readCurrent = api.getCanvas;
-    api.getCanvas = vi.fn().mockResolvedValueOnce(stale).mockImplementation(readCurrent);
+    api.getCanvas = vi
+      .fn()
+      .mockResolvedValueOnce(stale)
+      .mockImplementation(readCurrent);
 
-    expect(await controller.saveActive(initialMove, [], true)).toBe("unchanged");
+    expect(await controller.saveActive(initialMove, [], true)).toBe(
+      "unchanged",
+    );
     const nextMove = [{ id: "m", position: { x: 180, y: 72 } }];
     expect(await controller.saveActive(nextMove, [])).toBe("saved");
     expect(calls.saves.map((call) => call.version)).toEqual([1, 2, 3]);
@@ -643,11 +675,21 @@ describe("CanvasWorkspaceController stale versions", () => {
     const remote = [{ id: "remote", position: { x: 9, y: 11 } }];
     const save = api.saveCanvasContent;
     api.saveCanvasContent = async (workspaceId, canvasId, body) => {
-      if (body.version === 2) state.content.main = { ...state.content.main, version: 3, nodes: remote };
+      if (body.version === 2)
+        state.content.main = {
+          ...state.content.main,
+          version: 3,
+          nodes: remote,
+        };
       return save(workspaceId, canvasId, body);
     };
 
-    expect(await controller.saveActive([{ id: "m", position: { x: 180, y: 72 } }], [])).toBe("conflict");
+    expect(
+      await controller.saveActive(
+        [{ id: "m", position: { x: 180, y: 72 } }],
+        [],
+      ),
+    ).toBe("conflict");
     expect(calls.saves.map((call) => call.version)).toEqual([1, 2]);
     expect(state.content.main.nodes).toEqual(remote);
   });
@@ -661,12 +703,17 @@ describe("CanvasWorkspaceController stale versions", () => {
     const remote = [{ id: "remote", position: { x: 9, y: 11 } }];
     state.content.main = { ...state.content.main, version: 3, nodes: remote };
     const readCurrent = api.getCanvas;
-    api.getCanvas = vi.fn().mockResolvedValueOnce(stale).mockImplementation(readCurrent);
+    api.getCanvas = vi
+      .fn()
+      .mockResolvedValueOnce(stale)
+      .mockImplementation(readCurrent);
     const save = api.saveCanvasContent;
     api.saveCanvasContent = async (workspaceId, canvasId, body) => {
-      try { return await save(workspaceId, canvasId, body); }
-      catch (error) {
-        if (body.version === 1 && error instanceof CanvasVersionConflictError) throw new CanvasVersionConflictError(2);
+      try {
+        return await save(workspaceId, canvasId, body);
+      } catch (error) {
+        if (body.version === 1 && error instanceof CanvasVersionConflictError)
+          throw new CanvasVersionConflictError(2);
         throw error;
       }
     };
@@ -684,7 +731,10 @@ describe("CanvasWorkspaceController stale versions", () => {
     const remote = [{ id: "remote", position: { x: 9, y: 11 } }];
     state.content.main = { ...state.content.main, version: 2, nodes: remote };
     const readCurrent = api.getCanvas;
-    api.getCanvas = vi.fn().mockResolvedValueOnce(stale).mockImplementation(readCurrent);
+    api.getCanvas = vi
+      .fn()
+      .mockResolvedValueOnce(stale)
+      .mockImplementation(readCurrent);
 
     expect(await controller.saveActive(stale.nodes, [], true)).toBe("conflict");
     expect(calls.saves.map((call) => call.version)).toEqual([1]);
@@ -795,7 +845,10 @@ describe("CanvasWorkspaceController stale versions", () => {
     };
 
     expect(await controller.saveActive([{ id: "mine" }], [])).toBe("saved");
-    expect(calls.saves).toEqual([{ canvasId: "main", version: 1 }, { canvasId: "main", version: 2 }]);
+    expect(calls.saves).toEqual([
+      { canvasId: "main", version: 1 },
+      { canvasId: "main", version: 2 },
+    ]);
     expect(controller.getSnapshot().message).toBeNull();
     expect(await controller.saveActive([{ id: "mine" }], [])).toBe("unchanged");
   });

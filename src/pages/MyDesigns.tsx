@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import AccountMenu from "../components/AccountMenu";
@@ -189,10 +195,7 @@ const MyDesignsLoadingState: React.FC = () => (
     className="my-designs-loading"
   >
     <span className="sr-only">Loading your designs…</span>
-    <div
-      aria-hidden="true"
-      className="my-designs-tabs flex gap-2 mb-6"
-    >
+    <div aria-hidden="true" className="my-designs-tabs flex gap-2 mb-6">
       {["w-28", "w-32", "w-40"].map((width) => (
         <div
           key={width}
@@ -285,9 +288,8 @@ const MyDesigns: React.FC = () => {
   const [filterBy, setFilterBy] = useState<"all" | "owned" | "shared">("all");
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [diagramToDelete, setDiagramToDelete] = useState<SavedDiagramSummary | null>(
-    null,
-  );
+  const [diagramToDelete, setDiagramToDelete] =
+    useState<SavedDiagramSummary | null>(null);
   const deleteCancelRef = useRef<HTMLButtonElement>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [diagramToUnpublish, setDiagramToUnpublish] =
@@ -298,12 +300,7 @@ const MyDesigns: React.FC = () => {
   const [expandedFamilyIds, setExpandedFamilyIds] = useState<Set<string>>(
     () => new Set(),
   );
-  const {
-    isAuthenticated: isAuth,
-    login,
-    signup,
-    googleLogin,
-  } = useAuth();
+  const { isAuthenticated: isAuth, login, signup, googleLogin } = useAuth();
   const toast = useToast();
 
   // Redirect to home if not authenticated
@@ -420,9 +417,7 @@ const MyDesigns: React.FC = () => {
 
     try {
       await apiService.deleteDiagram(diagram.id);
-      setSavedDiagrams((prev) =>
-        prev.filter((d) => d.id !== diagram.id),
-      );
+      setSavedDiagrams((prev) => prev.filter((d) => d.id !== diagram.id));
       setShowDeleteDialog(false);
       setDiagramToDelete(null);
       toast.success(`“${diagram.title}” was deleted.`);
@@ -479,7 +474,10 @@ const MyDesigns: React.FC = () => {
         2200,
       );
     } catch {
-      window.prompt("Copy this public link:", publicUrlFor(diagram.publicSnapshotId ?? diagram.id));
+      window.prompt(
+        "Copy this public link:",
+        publicUrlFor(diagram.publicSnapshotId ?? diagram.id),
+      );
     }
   };
 
@@ -532,10 +530,12 @@ const MyDesigns: React.FC = () => {
     const byId = new Map(savedDiagrams.map((diagram) => [diagram.id, diagram]));
     const families = new Map<string, DesignFamily>();
 
-    savedDiagrams.filter((diagram) => !isRemix(diagram)).forEach((diagram) => {
-      const key = diagram.familyId || diagram.id;
-      families.set(key, { primary: diagram, related: [] });
-    });
+    savedDiagrams
+      .filter((diagram) => !isRemix(diagram))
+      .forEach((diagram) => {
+        const key = diagram.familyId || diagram.id;
+        families.set(key, { primary: diagram, related: [] });
+      });
 
     savedDiagrams.filter(isRemix).forEach((diagram) => {
       const explicitParent = diagram.sourceDiagramId
@@ -555,26 +555,36 @@ const MyDesigns: React.FC = () => {
             candidate.title.trim() === remixBaseTitle(diagram.title),
         );
       const parent = explicitParent || legacyParent;
-      const key = parent?.familyId || parent?.id || diagram.familyId || diagram.id;
+      const key =
+        parent?.familyId || parent?.id || diagram.familyId || diagram.id;
       const family = families.get(key);
       if (family) {
         family.related.push(diagram);
       } else {
-        families.set(key, { primary: parent || diagram, related: parent ? [diagram] : [] });
+        families.set(key, {
+          primary: parent || diagram,
+          related: parent ? [diagram] : [],
+        });
       }
     });
 
     const filtered = Array.from(families.values())
       .filter((family) => {
         const members = [family.primary, ...family.related];
-        if (filterBy === "owned" && !members.some((diagram) => diagram.isOwner)) return false;
-        if (filterBy === "shared" && !members.some((diagram) => !diagram.isOwner)) return false;
-        return members.some((diagram) =>
-          diagram.title.toLowerCase().includes(searchLower) ||
-          diagram.description?.toLowerCase().includes(searchLower) ||
-          diagram.owner.name.toLowerCase().includes(searchLower) ||
-          diagram.owner.email.toLowerCase().includes(searchLower) ||
-          false,
+        if (filterBy === "owned" && !members.some((diagram) => diagram.isOwner))
+          return false;
+        if (
+          filterBy === "shared" &&
+          !members.some((diagram) => !diagram.isOwner)
+        )
+          return false;
+        return members.some(
+          (diagram) =>
+            diagram.title.toLowerCase().includes(searchLower) ||
+            diagram.description?.toLowerCase().includes(searchLower) ||
+            diagram.owner.name.toLowerCase().includes(searchLower) ||
+            diagram.owner.email.toLowerCase().includes(searchLower) ||
+            false,
         );
       })
       .sort((a, b) => {
@@ -585,12 +595,14 @@ const MyDesigns: React.FC = () => {
             return first.title.localeCompare(second.title);
           case "created":
             return (
-              new Date(second.createdAt).getTime() - new Date(first.createdAt).getTime()
+              new Date(second.createdAt).getTime() -
+              new Date(first.createdAt).getTime()
             );
           case "updated":
           default:
             return (
-              new Date(second.updatedAt).getTime() - new Date(first.updatedAt).getTime()
+              new Date(second.updatedAt).getTime() -
+              new Date(first.updatedAt).getTime()
             );
         }
       });
@@ -816,302 +828,323 @@ const MyDesigns: React.FC = () => {
                 {/* Diagrams Grid */}
                 {filteredFamilies.length > 0 && (
                   <div className="my-designs-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
-                    {filteredFamilies.map(({ primary: diagram, related }, index) => (
-                      <div
-                        key={diagram.id}
-                        data-tour={index === 0 ? "design-card" : undefined}
-                        className={`my-designs-card group elevated-card-bg rounded-2xl transition-all duration-500 overflow-hidden ${CARD_DELAY_CLASSES[index] ?? ""}`}
-                      >
-                        <div className="relative p-6">
-                          <div>
-                            <div className="flex items-start justify-between mb-4">
-                              <div className="flex-1 pr-8">
-                                <div className="flex items-start gap-2 mb-2">
-                                  <h3 className="text-lg font-bold text-theme group-hover:text-[var(--brand)] transition-colors duration-300 line-clamp-2 flex-1">
-                                    <button
-                                      type="button"
-                                      className="w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-                                      onClick={() => handleOpenDiagram(diagram.id)}
-                                    >
-                                      {diagram.title}
-                                    </button>
-                                  </h3>
-                                </div>
-
-                                {diagram.isOwner && (
-                                  <div className="mb-3 flex flex-wrap items-center gap-2">
-                                    <span
-                                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                                        diagram.isPublic
-                                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                                          : "bg-[var(--theme)]/8 text-muted"
-                                      }`}
-                                    >
-                                      {diagram.isPublic ? (
-                                        <MdPublic aria-hidden />
-                                      ) : (
-                                        <MdLockOutline aria-hidden />
-                                      )}
-                                      {diagram.isPublic ? "Public" : "Private"}
-                                    </span>
-                                    {diagram.isPublic && (
-                                      <span className="text-[11px] tabular-nums text-muted">
-                                        {diagram.viewCount ?? 0}{" "}
-                                        {(diagram.viewCount ?? 0) === 1
-                                          ? "view"
-                                          : "views"}
-                                        {diagram.publishedAt
-                                          ? ` · Published ${new Date(diagram.publishedAt).toLocaleDateString()}`
-                                          : ""}
-                                      </span>
-                                    )}
+                    {filteredFamilies.map(
+                      ({ primary: diagram, related }, index) => (
+                        <div
+                          key={diagram.id}
+                          data-tour={index === 0 ? "design-card" : undefined}
+                          className={`my-designs-card group elevated-card-bg rounded-2xl transition-all duration-500 overflow-hidden ${CARD_DELAY_CLASSES[index] ?? ""}`}
+                        >
+                          <div className="relative p-6">
+                            <div>
+                              <div className="flex items-start justify-between mb-4">
+                                <div className="flex-1 pr-8">
+                                  <div className="flex items-start gap-2 mb-2">
+                                    <h3 className="text-lg font-bold text-theme group-hover:text-[var(--brand)] transition-colors duration-300 line-clamp-2 flex-1">
+                                      <button
+                                        type="button"
+                                        className="w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+                                        onClick={() =>
+                                          handleOpenDiagram(diagram.id)
+                                        }
+                                      >
+                                        {diagram.title}
+                                      </button>
+                                    </h3>
                                   </div>
-                                )}
 
-                                {/* Shared-by and permission metadata */}
-                                {!diagram.isOwner && (
-                                  <div className="my-designs-sharing mb-3">
-                                    <div className="my-designs-sharing-person">
-                                      <HiShare
-                                        className="my-designs-sharing-icon"
-                                        aria-hidden="true"
-                                      />
-                                      <div className="my-designs-sharing-avatar">
-                                        <UserAvatar
-                                          userId={diagram.owner.id}
-                                          picture={diagram.owner.pictureUrl}
-                                          avatarKey={diagram.owner.avatarKey}
-                                          size={32}
-                                          className="h-full w-full object-cover"
+                                  {diagram.isOwner && (
+                                    <div className="mb-3 flex flex-wrap items-center gap-2">
+                                      <span
+                                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                          diagram.isPublic
+                                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                                            : "bg-[var(--theme)]/8 text-muted"
+                                        }`}
+                                      >
+                                        {diagram.isPublic ? (
+                                          <MdPublic aria-hidden />
+                                        ) : (
+                                          <MdLockOutline aria-hidden />
+                                        )}
+                                        {diagram.isPublic
+                                          ? "Public"
+                                          : "Private"}
+                                      </span>
+                                      {diagram.isPublic && (
+                                        <span className="text-[11px] tabular-nums text-muted">
+                                          {diagram.viewCount ?? 0}{" "}
+                                          {(diagram.viewCount ?? 0) === 1
+                                            ? "view"
+                                            : "views"}
+                                          {diagram.publishedAt
+                                            ? ` · Published ${new Date(diagram.publishedAt).toLocaleDateString()}`
+                                            : ""}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Shared-by and permission metadata */}
+                                  {!diagram.isOwner && (
+                                    <div className="my-designs-sharing mb-3">
+                                      <div className="my-designs-sharing-person">
+                                        <HiShare
+                                          className="my-designs-sharing-icon"
+                                          aria-hidden="true"
                                         />
+                                        <div className="my-designs-sharing-avatar">
+                                          <UserAvatar
+                                            userId={diagram.owner.id}
+                                            picture={diagram.owner.pictureUrl}
+                                            avatarKey={diagram.owner.avatarKey}
+                                            size={32}
+                                            className="h-full w-full object-cover"
+                                          />
+                                        </div>
+                                        <div className="my-designs-sharing-copy">
+                                          <span className="my-designs-sharing-label">
+                                            Shared by
+                                          </span>
+                                          <span className="my-designs-sharing-name">
+                                            {diagram.owner.name}
+                                          </span>
+                                        </div>
                                       </div>
-                                      <div className="my-designs-sharing-copy">
-                                        <span className="my-designs-sharing-label">
-                                          Shared by
-                                        </span>
-                                        <span className="my-designs-sharing-name">
-                                          {diagram.owner.name}
+
+                                      <div
+                                        className={`my-designs-permission-badge ${
+                                          diagram.permission === "edit"
+                                            ? "my-designs-permission-badge--edit"
+                                            : "my-designs-permission-badge--view"
+                                        }`}
+                                      >
+                                        {diagram.permission === "edit" ? (
+                                          <HiPencilSquare aria-hidden="true" />
+                                        ) : (
+                                          <HiEye aria-hidden="true" />
+                                        )}
+                                        <span>
+                                          {diagram.permission === "edit"
+                                            ? "Can Edit"
+                                            : "View Only"}
                                         </span>
                                       </div>
                                     </div>
+                                  )}
 
-                                    <div
-                                      className={`my-designs-permission-badge ${
-                                        diagram.permission === "edit"
-                                          ? "my-designs-permission-badge--edit"
-                                          : "my-designs-permission-badge--view"
-                                      }`}
-                                    >
-                                      {diagram.permission === "edit" ? (
-                                        <HiPencilSquare aria-hidden="true" />
-                                      ) : (
-                                        <HiEye aria-hidden="true" />
-                                      )}
-                                      <span>
-                                        {diagram.permission === "edit"
-                                          ? "Can Edit"
-                                          : "View Only"}
-                                      </span>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {diagram.description && (
-                                  <p className="text-muted text-sm line-clamp-2 leading-relaxed">
-                                    {diagram.description}
-                                  </p>
-                                )}
+                                  {diagram.description && (
+                                    <p className="text-muted text-sm line-clamp-2 leading-relaxed">
+                                      {diagram.description}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="text-[var(--brand)]/30">
+                                  <HiCube className="w-8 h-8" />
+                                </div>
                               </div>
-                              <div className="text-[var(--brand)]/30">
-                                <HiCube className="w-8 h-8" />
+
+                              <div className="flex items-center justify-between text-sm text-muted mb-4 pb-4 border-b border-[var(--theme)]/10">
+                                <span className="flex items-center gap-1">
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    aria-hidden="true"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+                                    />
+                                  </svg>
+                                  {diagram.nodeCount} node
+                                  {diagram.nodeCount === 1 ? "" : "s"}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-4 w-4"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    aria-hidden="true"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+                                    />
+                                  </svg>
+                                  {diagram.edgeCount} connection
+                                  {diagram.edgeCount === 1 ? "" : "s"}
+                                </span>
                               </div>
-                            </div>
 
-                            <div className="flex items-center justify-between text-sm text-muted mb-4 pb-4 border-b border-[var(--theme)]/10">
-                              <span className="flex items-center gap-1">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-4 w-4"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  aria-hidden="true"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
-                                  />
-                                </svg>
-                                {diagram.nodeCount} node
-                                {diagram.nodeCount === 1 ? "" : "s"}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-4 w-4"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                  aria-hidden="true"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                                  />
-                                </svg>
-                                {diagram.edgeCount} connection
-                                {diagram.edgeCount === 1 ? "" : "s"}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center justify-between text-xs text-muted mb-6">
-                              <span>
-                                Updated{" "}
-                                {new Date(diagram.updatedAt).toLocaleDateString(
-                                  "en-US",
-                                  {
+                              <div className="flex items-center justify-between text-xs text-muted mb-6">
+                                <span>
+                                  Updated{" "}
+                                  {new Date(
+                                    diagram.updatedAt,
+                                  ).toLocaleDateString("en-US", {
                                     month: "short",
                                     day: "numeric",
                                     year: "numeric",
-                                  },
-                                )}
-                              </span>
-                              <span>
-                                Created{" "}
-                                {new Date(diagram.createdAt).toLocaleDateString(
-                                  "en-US",
-                                  {
+                                  })}
+                                </span>
+                                <span>
+                                  Created{" "}
+                                  {new Date(
+                                    diagram.createdAt,
+                                  ).toLocaleDateString("en-US", {
                                     month: "short",
                                     day: "numeric",
-                                  },
-                                )}
-                              </span>
-                            </div>
-
-                            {diagram.isOwner && diagram.isPublic && (
-                              <div className="mb-3 grid grid-cols-3 gap-2">
-                                <button
-                                  type="button"
-                                  onClick={(event) =>
-                                    void handleCopyPublicLink(diagram, event)
-                                  }
-                                  className="inline-flex items-center justify-center gap-1 rounded-lg bg-[var(--theme)]/5 px-2 py-2 text-[11px] font-semibold text-theme hover:bg-[var(--theme)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-                                >
-                                  <MdContentCopy aria-hidden />
-                                  {copiedDiagramId === diagram.id
-                                    ? "Copied"
-                                    : "Copy link"}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(event) =>
-                                    handleOpenPublicPage(diagram, event)
-                                  }
-                                  className="inline-flex items-center justify-center gap-1 rounded-lg bg-[var(--theme)]/5 px-2 py-2 text-[11px] font-semibold text-theme hover:bg-[var(--theme)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
-                                >
-                                  <MdOpenInNew aria-hidden /> View
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(event) =>
-                                    requestUnpublish(diagram, event)
-                                  }
-                                  className="inline-flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-semibold text-muted hover:bg-red-500/10 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:hover:text-red-300"
-                                >
-                                  <MdVisibilityOff aria-hidden /> Unpublish
-                                </button>
+                                  })}
+                                </span>
                               </div>
-                            )}
 
-                            {related.length > 0 && (
-                              <div className="my-designs-related">
-                                <button
-                                  type="button"
-                                  className="my-designs-related-toggle"
-                                  aria-expanded={expandedFamilyIds.has(diagram.id)}
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    setExpandedFamilyIds((current) => {
-                                      const next = new Set(current);
-                                      if (next.has(diagram.id)) next.delete(diagram.id);
-                                      else next.add(diagram.id);
-                                      return next;
-                                    });
-                                  }}
-                                >
-                                  <span className="my-designs-related-heading">
-                                    <span className="my-designs-related-dot" aria-hidden="true" />
-                                    {" "}Related designs
-                                    <span className="my-designs-related-count">{related.length}</span>
-                                  </span>
-                                  <HiChevronDown
-                                    aria-hidden="true"
-                                    className={`my-designs-related-chevron ${expandedFamilyIds.has(diagram.id) ? "is-open" : ""}`}
-                                  />
-                                </button>
-                                {expandedFamilyIds.has(diagram.id) && (
-                                  <div className="my-designs-related-list">
-                                    {related.map((relatedDiagram) => (
-                                      <div className="my-designs-related-row" key={relatedDiagram.id}>
-                                        <div className="my-designs-related-copy">
-                                          <span className="my-designs-related-title">
-                                            {relatedDiagram.title}
-                                          </span>
-                                          <span className="my-designs-related-meta">
-                                            {relatedDiagram.isPublic ? "Public version" : "Independent copy"}
-                                            {relatedDiagram.isPublic ? " · snapshot" : " · changes stay separate"}
-                                          </span>
-                                        </div>
-                                        <button
-                                          type="button"
-                                          className="my-designs-related-action"
-                                          onClick={(event) => {
-                                            event.stopPropagation();
-                                            handleOpenDiagram(relatedDiagram.id);
-                                          }}
-                                        >
-                                          Open
-                                        </button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            <div className="my-designs-card-actions">
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenDiagram(diagram.id);
-                                }}
-                                className="my-designs-primary min-w-0 flex-1 rounded-lg px-4 py-3 font-semibold transition-[transform,filter] duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
-                              >
-                                Open design
-                              </button>
-                              {diagram.isOwner && (
-                                <button
-                                  type="button"
-                                  onClick={(event) =>
-                                    void handleDeleteDiagram(diagram, event)
-                                  }
-                                  className="my-designs-delete-action rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
-                                  aria-label={`Delete ${diagram.title}`}
-                                >
-                                  <MdDeleteOutline aria-hidden />
-                                  <span>Delete</span>
-                                </button>
+                              {diagram.isOwner && diagram.isPublic && (
+                                <div className="mb-3 grid grid-cols-3 gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={(event) =>
+                                      void handleCopyPublicLink(diagram, event)
+                                    }
+                                    className="inline-flex items-center justify-center gap-1 rounded-lg bg-[var(--theme)]/5 px-2 py-2 text-[11px] font-semibold text-theme hover:bg-[var(--theme)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+                                  >
+                                    <MdContentCopy aria-hidden />
+                                    {copiedDiagramId === diagram.id
+                                      ? "Copied"
+                                      : "Copy link"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(event) =>
+                                      handleOpenPublicPage(diagram, event)
+                                    }
+                                    className="inline-flex items-center justify-center gap-1 rounded-lg bg-[var(--theme)]/5 px-2 py-2 text-[11px] font-semibold text-theme hover:bg-[var(--theme)]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)]"
+                                  >
+                                    <MdOpenInNew aria-hidden /> View
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={(event) =>
+                                      requestUnpublish(diagram, event)
+                                    }
+                                    className="inline-flex items-center justify-center gap-1 rounded-lg px-2 py-2 text-[11px] font-semibold text-muted hover:bg-red-500/10 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 dark:hover:text-red-300"
+                                  >
+                                    <MdVisibilityOff aria-hidden /> Unpublish
+                                  </button>
+                                </div>
                               )}
+
+                              {related.length > 0 && (
+                                <div className="my-designs-related">
+                                  <button
+                                    type="button"
+                                    className="my-designs-related-toggle"
+                                    aria-expanded={expandedFamilyIds.has(
+                                      diagram.id,
+                                    )}
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      setExpandedFamilyIds((current) => {
+                                        const next = new Set(current);
+                                        if (next.has(diagram.id))
+                                          next.delete(diagram.id);
+                                        else next.add(diagram.id);
+                                        return next;
+                                      });
+                                    }}
+                                  >
+                                    <span className="my-designs-related-heading">
+                                      <span
+                                        className="my-designs-related-dot"
+                                        aria-hidden="true"
+                                      />{" "}
+                                      Related designs
+                                      <span className="my-designs-related-count">
+                                        {related.length}
+                                      </span>
+                                    </span>
+                                    <HiChevronDown
+                                      aria-hidden="true"
+                                      className={`my-designs-related-chevron ${expandedFamilyIds.has(diagram.id) ? "is-open" : ""}`}
+                                    />
+                                  </button>
+                                  {expandedFamilyIds.has(diagram.id) && (
+                                    <div className="my-designs-related-list">
+                                      {related.map((relatedDiagram) => (
+                                        <div
+                                          className="my-designs-related-row"
+                                          key={relatedDiagram.id}
+                                        >
+                                          <div className="my-designs-related-copy">
+                                            <span className="my-designs-related-title">
+                                              {relatedDiagram.title}
+                                            </span>
+                                            <span className="my-designs-related-meta">
+                                              {relatedDiagram.isPublic
+                                                ? "Public version"
+                                                : "Independent copy"}
+                                              {relatedDiagram.isPublic
+                                                ? " · snapshot"
+                                                : " · changes stay separate"}
+                                            </span>
+                                          </div>
+                                          <button
+                                            type="button"
+                                            className="my-designs-related-action"
+                                            onClick={(event) => {
+                                              event.stopPropagation();
+                                              handleOpenDiagram(
+                                                relatedDiagram.id,
+                                              );
+                                            }}
+                                          >
+                                            Open
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              <div className="my-designs-card-actions">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenDiagram(diagram.id);
+                                  }}
+                                  className="my-designs-primary min-w-0 flex-1 rounded-lg px-4 py-3 font-semibold transition-[transform,filter] duration-200 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
+                                >
+                                  Open design
+                                </button>
+                                {diagram.isOwner && (
+                                  <button
+                                    type="button"
+                                    onClick={(event) =>
+                                      void handleDeleteDiagram(diagram, event)
+                                    }
+                                    className="my-designs-delete-action rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface)]"
+                                    aria-label={`Delete ${diagram.title}`}
+                                  >
+                                    <MdDeleteOutline aria-hidden />
+                                    <span>Delete</span>
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ),
+                    )}
                   </div>
                 )}
 
@@ -1180,7 +1213,10 @@ const MyDesigns: React.FC = () => {
           <div className="app-modal my-designs-delete-dialog relative w-full">
             <div className="app-modal__body">
               <div className="my-designs-delete-dialog__header">
-                <div className="my-designs-delete-dialog__icon" aria-hidden="true">
+                <div
+                  className="my-designs-delete-dialog__icon"
+                  aria-hidden="true"
+                >
                   <MdDeleteOutline size={22} />
                 </div>
                 <div className="min-w-0">
@@ -1193,7 +1229,10 @@ const MyDesigns: React.FC = () => {
                 </div>
               </div>
 
-              <p id="delete-design-description" className="my-designs-delete-dialog__copy">
+              <p
+                id="delete-design-description"
+                className="my-designs-delete-dialog__copy"
+              >
                 “<strong>{diagramToDelete.title}</strong>” and all of its saved
                 data will be permanently removed. You won’t be able to recover
                 this design.

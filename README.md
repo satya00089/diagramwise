@@ -47,21 +47,21 @@ Authentication, cloud persistence, assessment, provider catalogs, analytics, and
 
 ## Routes
 
-| Route | Purpose |
-| --- | --- |
-| `/` | Product home and entry points |
-| `/problems` | Browse system design problems |
-| `/problems/:slug` | Read a problem guide and start an attempt |
-| `/playground/:id` | Design studio and problem playground |
-| `/create-problem` | Create a custom problem |
-| `/learning-paths` | Browse structured learning paths |
-| `/learning-paths/:slug` | Work through a learning path |
-| `/diagrams` | Manage saved and shared designs |
-| `/public/:id` | View a published design |
-| `/system-design-interview` | System design interview guide |
-| `/system-design-practice` | System design practice guide |
-| `/ai-system-design-interview` | AI system design interview guide |
-| `/kubernetes-architecture` | Kubernetes architecture guide |
+| Route                         | Purpose                                   |
+| ----------------------------- | ----------------------------------------- |
+| `/`                           | Product home and entry points             |
+| `/problems`                   | Browse system design problems             |
+| `/problems/:slug`             | Read a problem guide and start an attempt |
+| `/playground/:id`             | Design studio and problem playground      |
+| `/create-problem`             | Create a custom problem                   |
+| `/learning-paths`             | Browse structured learning paths          |
+| `/learning-paths/:slug`       | Work through a learning path              |
+| `/diagrams`                   | Manage saved and shared designs           |
+| `/public/:id`                 | View a published design                   |
+| `/system-design-interview`    | System design interview guide             |
+| `/system-design-practice`     | System design practice guide              |
+| `/ai-system-design-interview` | AI system design interview guide          |
+| `/kubernetes-architecture`    | Kubernetes architecture guide             |
 
 ## Tech stack
 
@@ -104,14 +104,14 @@ The frontend can run its local design, canvas, and import/export workflows witho
 
 The frontend reads Vite variables from `.env.local` or another local environment file:
 
-| Variable | Example | Purpose |
-| --- | --- | --- |
-| `VITE_API_URL` | `http://localhost:8000` | Main Diagramwise API |
-| `VITE_ASSESSMENT_API_URL` | `http://localhost:8000` | Assessment/API base URL when separate |
-| `VITE_YJS_URL` | `ws://localhost:1234` | Optional Yjs WebSocket server |
-| `VITE_GOOGLE_CLIENT_ID` | `your-client-id.apps.googleusercontent.com` | Google Sign-In client ID |
-| `VITE_SENTRY_DSN` | *(empty)* | Optional frontend error monitoring |
-| `VITE_APP_VERSION` | `local` | Client version label used by the app |
+| Variable                  | Example                                     | Purpose                               |
+| ------------------------- | ------------------------------------------- | ------------------------------------- |
+| `VITE_API_URL`            | `http://localhost:8000`                     | Main Diagramwise API                  |
+| `VITE_ASSESSMENT_API_URL` | `http://localhost:8000`                     | Assessment/API base URL when separate |
+| `VITE_YJS_URL`            | `ws://localhost:1234`                       | Optional Yjs WebSocket server         |
+| `VITE_GOOGLE_CLIENT_ID`   | `your-client-id.apps.googleusercontent.com` | Google Sign-In client ID              |
+| `VITE_SENTRY_DSN`         | _(empty)_                                   | Optional frontend error monitoring    |
+| `VITE_APP_VERSION`        | `local`                                     | Client version label used by the app  |
 
 For local development, the usual values are:
 
@@ -153,18 +153,18 @@ The Yjs server listens on `ws://localhost:1234` by default. Production has Yjs c
 
 Run these from the frontend repository:
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Start the Vite development server |
-| `npm run build` | Type-check, build, prerender routes, and run the SEO check |
-| `npm run preview` | Serve the production build locally |
-| `npm run lint` | Run ESLint |
-| `npm test` | Run Vitest in watch mode |
-| `npm test -- --run` | Run the test suite once |
-| `npm run catalog:check` | Validate the problem catalog |
-| `npm run seo:check` | Run the SEO validation script |
-| `npm run storybook` | Start Storybook |
-| `npm run build-storybook` | Build the Storybook static site |
+| Command                   | Purpose                                                    |
+| ------------------------- | ---------------------------------------------------------- |
+| `npm run dev`             | Start the Vite development server                          |
+| `npm run build`           | Type-check, build, prerender routes, and run the SEO check |
+| `npm run preview`         | Serve the production build locally                         |
+| `npm run lint`            | Run ESLint                                                 |
+| `npm test`                | Run Vitest in watch mode                                   |
+| `npm test -- --run`       | Run the test suite once                                    |
+| `npm run catalog:check`   | Validate the problem catalog                               |
+| `npm run seo:check`       | Run the SEO validation script                              |
+| `npm run storybook`       | Start Storybook                                            |
+| `npm run build-storybook` | Build the Storybook static site                            |
 
 Before opening a pull request, run the focused checks relevant to your change, then run `npm run lint`, `npm test -- --run`, and `npm run build`.
 

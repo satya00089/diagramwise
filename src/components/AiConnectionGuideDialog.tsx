@@ -162,8 +162,7 @@ export default function AiConnectionGuideDialog({
                   aria-pressed={geminiClient === "cli"}
                   onClick={() => selectGeminiClient("cli")}
                 >
-                  Gemini CLI{" "}
-                  <span className="systema-ai-tab-status">Soon</span>
+                  Gemini CLI <span className="systema-ai-tab-status">Soon</span>
                 </button>
               </div>
               {geminiClient === "cli" ? (

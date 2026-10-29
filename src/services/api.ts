@@ -131,11 +131,14 @@ class ApiService {
 
   // Authentication endpoints
   async login(credentials: LoginCredentials): Promise<SessionAuthResponse> {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/session/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(credentials),
-    });
+    const response = await apiFetch(
+      `${API_BASE_URL}/api/v1/auth/session/login`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
+      },
+    );
 
     if (!response.ok) {
       throw new Error(await this.getErrorMessage(response, "Login failed"));
@@ -145,12 +148,18 @@ class ApiService {
   }
 
   async upgradeSession(token: string): Promise<SessionAuthResponse> {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/session/upgrade`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await apiFetch(
+      `${API_BASE_URL}/api/v1/auth/session/upgrade`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
     if (!response.ok) {
-      throw await this.createApiError(response, "Could not restore this session");
+      throw await this.createApiError(
+        response,
+        "Could not restore this session",
+      );
     }
     return response.json();
   }
@@ -159,14 +168,20 @@ class ApiService {
     const controller = new AbortController();
     const timeout = window.setTimeout(() => controller.abort(), 5000);
     try {
-      const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/session/logout`, {
-        method: "POST",
-        signal: controller.signal,
-      });
+      const response = await apiFetch(
+        `${API_BASE_URL}/api/v1/auth/session/logout`,
+        {
+          method: "POST",
+          signal: controller.signal,
+        },
+      );
       // An expired or already revoked token cannot be used again.
       if (response.status === 401) return;
       if (!response.ok) {
-        throw await this.createApiError(response, "Could not revoke this session");
+        throw await this.createApiError(
+          response,
+          "Could not revoke this session",
+        );
       }
     } finally {
       window.clearTimeout(timeout);
@@ -196,11 +211,14 @@ class ApiService {
     userId: string,
     token: string,
   ): Promise<SignupPendingResponse> {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/verify-email`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, token }),
-    });
+    const response = await apiFetch(
+      `${API_BASE_URL}/api/v1/auth/verify-email`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, token }),
+      },
+    );
     if (!response.ok) {
       throw new Error(
         await this.getErrorMessage(response, "Unable to activate your account"),
@@ -230,11 +248,14 @@ class ApiService {
   }
 
   async googleLogin(credential: string): Promise<SessionAuthResponse> {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/session/google`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ credential }),
-    });
+    const response = await apiFetch(
+      `${API_BASE_URL}/api/v1/auth/session/google`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential }),
+      },
+    );
 
     if (!response.ok) {
       throw new Error(
@@ -316,9 +337,12 @@ class ApiService {
 
   // User preferences endpoints
   async getPreferences(): Promise<Record<string, unknown> | null> {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/me/preferences`, {
-      headers: this.getAuthHeaders(),
-    });
+    const response = await apiFetch(
+      `${API_BASE_URL}/api/v1/auth/me/preferences`,
+      {
+        headers: this.getAuthHeaders(),
+      },
+    );
 
     if (response.status === 404) return null;
     if (!response.ok) throw new Error("Failed to fetch preferences");
@@ -329,11 +353,14 @@ class ApiService {
   async updatePreferences(
     preferences: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/auth/me/preferences`, {
-      method: "PATCH",
-      headers: this.getAuthHeaders(),
-      body: JSON.stringify(preferences),
-    });
+    const response = await apiFetch(
+      `${API_BASE_URL}/api/v1/auth/me/preferences`,
+      {
+        method: "PATCH",
+        headers: this.getAuthHeaders(),
+        body: JSON.stringify(preferences),
+      },
+    );
 
     if (!response.ok) {
       throw new Error(
@@ -448,7 +475,10 @@ class ApiService {
       { headers: this.getAuthHeaders() },
     );
     if (!response.ok) {
-      throw await this.createApiError(response, "Failed to load design workspace");
+      throw await this.createApiError(
+        response,
+        "Failed to load design workspace",
+      );
     }
     return response.json();
   }
@@ -681,9 +711,18 @@ class ApiService {
   }
 
   // Problem attempts tracking
-  async getSimulationStatus(signal?: AbortSignal): Promise<{ enabled: boolean }> {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/simulation/status`, { signal });
-    if (!response.ok) throw await this.createApiError(response, "Capacity simulation status is unavailable.");
+  async getSimulationStatus(
+    signal?: AbortSignal,
+  ): Promise<{ enabled: boolean }> {
+    const response = await apiFetch(
+      `${API_BASE_URL}/api/v1/simulation/status`,
+      { signal },
+    );
+    if (!response.ok)
+      throw await this.createApiError(
+        response,
+        "Capacity simulation status is unavailable.",
+      );
     return response.json();
   }
 
@@ -692,8 +731,15 @@ class ApiService {
     signal?: AbortSignal,
   ): Promise<SimulationSavedRun[]> {
     const query = new URLSearchParams({ problemId });
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/simulation/runs?${query}`, { signal });
-    if (!response.ok) throw await this.createApiError(response, "Saved simulation runs could not be loaded.");
+    const response = await apiFetch(
+      `${API_BASE_URL}/api/v1/simulation/runs?${query}`,
+      { signal },
+    );
+    if (!response.ok)
+      throw await this.createApiError(
+        response,
+        "Saved simulation runs could not be loaded.",
+      );
     return response.json();
   }
 
@@ -707,23 +753,34 @@ class ApiService {
       headers: this.getAuthHeaders(),
       body: JSON.stringify({ problemId, requirementRevision, snapshot }),
     });
-    if (!response.ok) throw await this.createApiError(response, "This run could not be saved.");
+    if (!response.ok)
+      throw await this.createApiError(response, "This run could not be saved.");
     return response.json();
   }
 
   async deleteSimulationRun(runId: string): Promise<void> {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/simulation/runs/${encodeURIComponent(runId)}`, {
-      method: "DELETE",
-      headers: this.getAuthHeaders(),
-    });
-    if (!response.ok) throw await this.createApiError(response, "This saved run could not be deleted.");
+    const response = await apiFetch(
+      `${API_BASE_URL}/api/v1/simulation/runs/${encodeURIComponent(runId)}`,
+      {
+        method: "DELETE",
+        headers: this.getAuthHeaders(),
+      },
+    );
+    if (!response.ok)
+      throw await this.createApiError(
+        response,
+        "This saved run could not be deleted.",
+      );
   }
 
   // Problem attempts tracking
   async getAttemptedProblems(): Promise<string[]> {
-    const response = await apiFetch(`${API_BASE_URL}/api/v1/problems/attempted`, {
-      headers: this.getAuthHeaders(),
-    });
+    const response = await apiFetch(
+      `${API_BASE_URL}/api/v1/problems/attempted`,
+      {
+        headers: this.getAuthHeaders(),
+      },
+    );
 
     if (!response.ok) {
       // Return empty array if endpoint fails (user not authenticated or endpoint not available)

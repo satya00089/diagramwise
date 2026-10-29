@@ -221,9 +221,7 @@ const ERNode: React.FC<Props> = React.memo(
       ...(data.backgroundColor
         ? { backgroundColor: data.backgroundColor as string }
         : {}),
-      ...(data.borderColor
-        ? { borderColor: data.borderColor as string }
-        : {}),
+      ...(data.borderColor ? { borderColor: data.borderColor as string } : {}),
       // Default dark text for light-bg note/trigger nodes; user textColor always wins
       ...((isNote || isTrigger) && !data.textColor ? { color: "#374151" } : {}),
       ...(data.textColor ? { color: data.textColor as string } : {}),

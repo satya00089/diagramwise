@@ -1,9 +1,9 @@
-import { behaviourFor, type ComponentBehaviour } from './behaviour';
-import type { BehaviourCtx, NodeStateLike, ReqLike } from './engine-types';
-import { MinHeap, type Timed } from './heap';
-import { Rng } from './random';
-import { RollingLatencyHistogram } from './histogram';
-import { DEFAULT_TRAFFIC_PERIOD_S } from './types';
+import { behaviourFor, type ComponentBehaviour } from "./behaviour";
+import type { BehaviourCtx, NodeStateLike, ReqLike } from "./engine-types";
+import { MinHeap, type Timed } from "./heap";
+import { Rng } from "./random";
+import { RollingLatencyHistogram } from "./histogram";
+import { DEFAULT_TRAFFIC_PERIOD_S } from "./types";
 import type {
   ActiveFailure,
   EdgeState,
@@ -20,7 +20,7 @@ import type {
   SystemStats,
   Topology,
   TraceHop,
-} from './types';
+} from "./types";
 
 /* ------------------------------------------------------------------ *
  * Tuning constants
@@ -74,17 +74,27 @@ class SimulationResourceLimit extends Error {}
 export interface AdvanceResult {
   timeMs: number;
   processedEvents: number;
-  status: 'ready' | 'yielded' | 'resource-limited';
+  status: "ready" | "yielded" | "resource-limited";
 }
-export interface RootOffered { requestId: number; sourceId: string; startedAtMs: number }
+export interface RootOffered {
+  requestId: number;
+  sourceId: string;
+  startedAtMs: number;
+}
 export interface RootCompleted extends RootOffered {
-  completedAtMs: number; ok: boolean; reason: FailureReason | null; completedNodeIds: readonly string[];
+  completedAtMs: number;
+  ok: boolean;
+  reason: FailureReason | null;
+  completedNodeIds: readonly string[];
 }
 export interface SimulationObserver {
   onRootOffered?(observation: RootOffered): void;
   onRootCompleted?(observation: RootCompleted): void;
 }
-interface RootObservation { requestId: number; completed: Set<string> }
+interface RootObservation {
+  requestId: number;
+  completed: Set<string>;
+}
 /**
  * Size of the keyspace every client draws request keys from.
  *
@@ -209,7 +219,9 @@ interface Req {
    * serveWithin(), fired when this request's service time elapses so the
    * behaviour can release its own slot. Null for the ordinary path.
    */
-  onDrained: ((ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) => void) | null;
+  onDrained:
+    | ((ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike) => void)
+    | null;
 }
 
 /* ------------------------------------------------------------------ *
@@ -302,7 +314,7 @@ interface Fault {
 
 interface NodeState {
   id: string;
-  kind: SimNode['kind'];
+  kind: SimNode["kind"];
   /**
    * This kind's behaviour, resolved once at buildNodes() time. The event loop
    * reads policy through this reference only -- there is no per-event map
@@ -454,7 +466,9 @@ export class Engine implements BehaviourCtx {
   private observer: SimulationObserver | null = null;
   resourceLimit: string | null = null;
 
-  setObserver(observer: SimulationObserver | null): void { this.observer = observer; }
+  setObserver(observer: SimulationObserver | null): void {
+    this.observer = observer;
+  }
 
   /** Root-level (end-to-end) measurements. */
   private sysLatency = new RollingLatencyHistogram();
@@ -468,17 +482,17 @@ export class Engine implements BehaviourCtx {
     error: 0,
     shed: 0,
     timeout: 0,
-    'no-route': 0,
+    "no-route": 0,
     depth: 0,
     throttled: 0,
     rejected: 0,
     crashed: 0,
     partitioned: 0,
-    'region-down': 0,
-    'conn-refused': 0,
+    "region-down": 0,
+    "conn-refused": 0,
     unauthorized: 0,
-    'bulkhead-full': 0,
-    'acquire-timeout': 0,
+    "bulkhead-full": 0,
+    "acquire-timeout": 0,
     deprioritized: 0,
   };
 
@@ -563,9 +577,9 @@ export class Engine implements BehaviourCtx {
    */
   private authoredScale(
     nodeId: string,
-    field: 'instances' | 'shardCapacity',
+    field: "instances" | "shardCapacity",
   ): number | undefined {
-    return field === 'shardCapacity'
+    return field === "shardCapacity"
       ? this.authoredShardCapacity.get(nodeId)
       : this.authoredInstances.get(nodeId);
   }
@@ -598,7 +612,10 @@ export class Engine implements BehaviourCtx {
       this.authoredCapacity.set(id, Math.max(1, Math.floor(patch.capacity)));
     }
     if (patch.shardCapacity !== undefined) {
-      this.authoredShardCapacity.set(id, Math.max(1, Math.floor(patch.shardCapacity)));
+      this.authoredShardCapacity.set(
+        id,
+        Math.max(1, Math.floor(patch.shardCapacity)),
+      );
     }
     if (patch.instances !== undefined) {
       this.authoredInstances.set(id, Math.max(1, Math.floor(patch.instances)));
@@ -635,7 +652,11 @@ export class Engine implements BehaviourCtx {
    * Attach a fault to a node. One fault per node: injecting again replaces
    * whatever was there, so the UI never has to reason about stacking.
    */
-  injectFailure(nodeId: string, kind: FailureKind, opts: FailureOpts = {}): void {
+  injectFailure(
+    nodeId: string,
+    kind: FailureKind,
+    opts: FailureOpts = {},
+  ): void {
     if (!this.nodes.has(nodeId)) return;
 
     const fault: Fault = {
@@ -653,7 +674,7 @@ export class Engine implements BehaviourCtx {
     // Without this the node would keep answering for one service time after
     // being killed, and a student watching the graph would see the failure
     // arrive late for no visible reason.
-    if (kind === 'crash') this.killInFlight(nodeId);
+    if (kind === "crash") this.killInFlight(nodeId);
   }
 
   /** Heal a node. Work that already failed stays failed; new work succeeds. */
@@ -698,7 +719,7 @@ export class Engine implements BehaviourCtx {
       // A buffered queue message has no caller to inform; it is simply lost,
       // which is what an unreplicated broker losing its disk looks like.
       state.totalFailed++;
-      this.resolve(req, false, 'crashed', 0);
+      this.resolve(req, false, "crashed", 0);
     }
 
     // Requests already in service are deliberately NOT unwound here. Each one
@@ -711,7 +732,7 @@ export class Engine implements BehaviourCtx {
   private rebuildCutEdges(): void {
     this.cutEdges.clear();
     for (const [nodeId, fault] of this.faults) {
-      if (fault.kind !== 'partition') continue;
+      if (fault.kind !== "partition") continue;
       if (fault.edgeIds.length > 0) {
         for (const id of fault.edgeIds) this.cutEdges.add(id);
         continue;
@@ -740,19 +761,37 @@ export class Engine implements BehaviourCtx {
 
   /** Compatibility method; runners should use advanceTo and inspect progress. */
   advance(deltaMs: number): void {
-    if (!(deltaMs > 0)) return;
-    this.advanceTo(this.now + Math.min(deltaMs, MAX_DELTA_MS), MAX_EVENTS_PER_ADVANCE);
+    if (deltaMs <= 0 || Number.isNaN(deltaMs)) return;
+    this.advanceTo(
+      this.now + Math.min(deltaMs, MAX_DELTA_MS),
+      MAX_EVENTS_PER_ADVANCE,
+    );
   }
 
   advanceTo(target: number, eventBudget = 20000): AdvanceResult {
-    if (!Number.isFinite(target) || target < this.now) throw new RangeError('Target time must be finite and cannot go backwards.');
-    if (!Number.isInteger(eventBudget) || eventBudget < 1 || eventBudget > MAX_EVENTS_PER_ADVANCE) throw new RangeError('Event budget must be between 1 and 60000.');
-    if (this.resourceLimit !== null) return { timeMs: this.now, processedEvents: 0, status: 'resource-limited' };
+    if (!Number.isFinite(target) || target < this.now)
+      throw new RangeError(
+        "Target time must be finite and cannot go backwards.",
+      );
+    if (
+      !Number.isInteger(eventBudget) ||
+      eventBudget < 1 ||
+      eventBudget > MAX_EVENTS_PER_ADVANCE
+    )
+      throw new RangeError("Event budget must be between 1 and 60000.");
+    if (this.resourceLimit !== null)
+      return {
+        timeMs: this.now,
+        processedEvents: 0,
+        status: "resource-limited",
+      };
     let processedEvents = 0;
     while (this.heap.peek() && this.heap.peek()!.time <= target) {
-      if (processedEvents >= eventBudget) return { timeMs: this.now, processedEvents, status: 'yielded' };
+      if (processedEvents >= eventBudget)
+        return { timeMs: this.now, processedEvents, status: "yielded" };
       const ev = this.heap.pop()!;
-      if (ev.time < this.now) throw new Error('Simulation clock invariant violated.');
+      if (ev.time < this.now)
+        throw new Error("Simulation clock invariant violated.");
       this.now = ev.time;
       try {
         this.dispatch(ev);
@@ -763,10 +802,15 @@ export class Engine implements BehaviourCtx {
         processedEvents++;
         this.releaseEv(ev);
       }
-      if (this.resourceLimit !== null) return { timeMs: this.now, processedEvents, status: 'resource-limited' };
+      if (this.resourceLimit !== null)
+        return {
+          timeMs: this.now,
+          processedEvents,
+          status: "resource-limited",
+        };
     }
     this.now = target;
-    return { timeMs: this.now, processedEvents, status: 'ready' };
+    return { timeMs: this.now, processedEvents, status: "ready" };
   }
 
   snapshot(): SimSnapshot {
@@ -784,7 +828,8 @@ export class Engine implements BehaviourCtx {
       totalRequests: this.totalRequests,
       totalFailed: this.totalFailed,
       latencySampleCount: this.sysLatency.sampleCount(now),
-      pendingRequests: this.totalRequests - this.totalFailed - this.totalCompletedRoots,
+      pendingRequests:
+        this.totalRequests - this.totalFailed - this.totalCompletedRoots,
     };
     const failRate = this.sysFailed.rate(now);
     const done = system.goodputRps + failRate;
@@ -870,10 +915,10 @@ export class Engine implements BehaviourCtx {
       // the mean across partitions, and a stack drawn from the pre-correction
       // value would disagree with the meter beside it.
       const model = state.behaviour.instanceModel;
-      if (model === 'slots') {
+      if (model === "slots") {
         this.fillSlotInstances(state);
         this.finishInstances(state, entry);
-      } else if (model === 'custom') {
+      } else if (model === "custom") {
         state.instancePending = 0;
         if (state.behaviour.reportInstances)
           state.behaviour.reportInstances(this, state);
@@ -948,7 +993,9 @@ export class Engine implements BehaviourCtx {
    * of its own gets to say so through edgeStateFor(); everything else falls
    * back to whether the edge is actually moving requests.
    */
-  private snapshotEdgeState(rates: Record<string, number>): Record<string, EdgeState> {
+  private snapshotEdgeState(
+    rates: Record<string, number>,
+  ): Record<string, EdgeState> {
     const out = this.snapEdgeState;
     for (const key of Object.keys(out)) delete out[key];
 
@@ -957,7 +1004,7 @@ export class Engine implements BehaviourCtx {
       for (let i = 0; i < state.out.length; i++) {
         const edge = state.out[i];
         if (this.cutEdges.size > 0 && this.cutEdges.has(edge.id)) {
-          out[edge.id] = 'cut';
+          out[edge.id] = "cut";
           continue;
         }
         const declared = hook ? hook(this, state, edge, i) : null;
@@ -965,7 +1012,7 @@ export class Engine implements BehaviourCtx {
           out[edge.id] = declared;
           continue;
         }
-        out[edge.id] = (rates[edge.id] ?? 0) > 0 ? 'live' : 'idle';
+        out[edge.id] = (rates[edge.id] ?? 0) > 0 ? "live" : "idle";
       }
 
       // Control edges get an entry too, because the map promises one per edge
@@ -976,7 +1023,9 @@ export class Engine implements BehaviourCtx {
       // traffic because that is not what it is for.
       for (const edge of state.ctrl) {
         out[edge.id] =
-          this.cutEdges.size > 0 && this.cutEdges.has(edge.id) ? 'cut' : 'standby';
+          this.cutEdges.size > 0 && this.cutEdges.has(edge.id)
+            ? "cut"
+            : "standby";
       }
     }
 
@@ -984,7 +1033,11 @@ export class Engine implements BehaviourCtx {
     // give it a state rather than leaving a hole the UI has to guard against.
     for (const id of this.edgeFlow.keys()) {
       if (out[id] === undefined) {
-        out[id] = this.cutEdges.has(id) ? 'cut' : (rates[id] ?? 0) > 0 ? 'live' : 'idle';
+        out[id] = this.cutEdges.has(id)
+          ? "cut"
+          : (rates[id] ?? 0) > 0
+            ? "live"
+            : "idle";
       }
     }
     return out;
@@ -1025,17 +1078,17 @@ export class Engine implements BehaviourCtx {
       error: 0,
       shed: 0,
       timeout: 0,
-      'no-route': 0,
+      "no-route": 0,
       depth: 0,
       throttled: 0,
       rejected: 0,
       crashed: 0,
       partitioned: 0,
-      'region-down': 0,
-      'conn-refused': 0,
+      "region-down": 0,
+      "conn-refused": 0,
       unauthorized: 0,
-      'bulkhead-full': 0,
-      'acquire-timeout': 0,
+      "bulkhead-full": 0,
+      "acquire-timeout": 0,
       deprioritized: 0,
     };
     this.history = [];
@@ -1139,7 +1192,7 @@ export class Engine implements BehaviourCtx {
       // relationship, not a pushed request route: keep the edge out of
       // `out` in either drawing orientation.
       if (to.behaviour.pullsFromQueues && from.behaviour.buffersForConsumers) {
-        let source = to.sources.find(item => item.queueId === from.id);
+        let source = to.sources.find((item) => item.queueId === from.id);
         if (!source) {
           source = { queueId: from.id, edgeIds: [], nextEdgeIndex: 0 };
           to.sources.push(source);
@@ -1148,7 +1201,7 @@ export class Engine implements BehaviourCtx {
         continue;
       }
       if (from.behaviour.pullsFromQueues && to.behaviour.buffersForConsumers) {
-        let source = from.sources.find(item => item.queueId === to.id);
+        let source = from.sources.find((item) => item.queueId === to.id);
         if (!source) {
           source = { queueId: to.id, edgeIds: [], nextEdgeIndex: 0 };
           from.sources.push(source);
@@ -1180,7 +1233,8 @@ export class Engine implements BehaviourCtx {
     for (const id of newClientIds) {
       this.scheduleArrival(id);
     }
-    if (previous === null) this.push(this.now + CONTROL_INTERVAL_MS, EV_CLOCK_TICK, '', null, 0);
+    if (previous === null)
+      this.push(this.now + CONTROL_INTERVAL_MS, EV_CLOCK_TICK, "", null, 0);
     this.tickNodes = [];
     for (const state of this.nodes.values()) {
       state.pollScheduled = false;
@@ -1198,7 +1252,7 @@ export class Engine implements BehaviourCtx {
   private discardNodeState(state: NodeState): void {
     for (let i = state.waitHead; i < state.waiting.length; i++) {
       const req = state.waiting[i];
-      this.resolve(req, false, 'no-route', 0);
+      this.resolve(req, false, "no-route", 0);
     }
     state.waiting.length = 0;
     state.waitHead = 0;
@@ -1212,7 +1266,7 @@ export class Engine implements BehaviourCtx {
     if (ev.kind === EV_CLOCK_TICK) {
       this.runTicks(CONTROL_INTERVAL_MS);
       this.maybeRecordHistory();
-      this.push(this.now + CONTROL_INTERVAL_MS, EV_CLOCK_TICK, '', null, 0);
+      this.push(this.now + CONTROL_INTERVAL_MS, EV_CLOCK_TICK, "", null, 0);
       return;
     }
     const state = this.nodes.get(ev.nodeId);
@@ -1220,33 +1274,36 @@ export class Engine implements BehaviourCtx {
 
     switch (ev.kind) {
       case EV_ARRIVAL:
-        if (state.behaviour.generatesLoad && state.arrivalGeneration === ev.token) {
+        if (
+          state.behaviour.generatesLoad &&
+          state.arrivalGeneration === ev.token
+        ) {
           this.onClientArrival(state);
         }
         break;
       case EV_SERVICE_DONE:
-        if (ev.req && ev.req.token === ev.token) this.onServiceDone(state, ev.req);
+        if (ev.req?.token === ev.token) this.onServiceDone(state, ev.req);
         break;
       case EV_TIMEOUT:
-        if (ev.req && ev.req.token === ev.token) this.onTimeout(ev.req);
+        if (ev.req?.token === ev.token) this.onTimeout(ev.req);
         break;
       case EV_WORKER_POLL:
         state.pollScheduled = false;
         this.pumpWorker(state);
         break;
       case EV_RETRY:
-        if (ev.req && ev.req.token === ev.token) this.onRetry(state, ev.req);
+        if (ev.req?.token === ev.token) this.onRetry(state, ev.req);
         break;
       case EV_LINK_ARRIVE:
         // The request finished crossing an edge with a latencyMs and is only
         // now offered to the target. A caller that already gave up during the
         // crossing leaves a resolved request, which is dropped here.
-        if (ev.req && ev.req.token === ev.token && !ev.req.resolved) {
+        if (ev.req?.token === ev.token && !ev.req.resolved) {
           this.admit(state, ev.req);
         }
         break;
       case EV_BEHAVIOUR_WAKE:
-        if (ev.req && ev.req.token === ev.token && !ev.req.resolved) {
+        if (ev.req?.token === ev.token && !ev.req.resolved) {
           state.behaviour.onWake?.(this, state, ev.req);
         }
         break;
@@ -1263,14 +1320,26 @@ export class Engine implements BehaviourCtx {
     // The pattern's rate, not the baseline: a spike's quiet phase must
     // actually schedule arrivals further apart.
     const rps = this.effectiveRps(state);
-    if (!(rps > 0)) {
+    if (rps <= 0 || Number.isNaN(rps)) {
       // Poll again shortly so raising the slider, or a pattern coming back up
       // off its trough, resumes traffic.
-      this.push(this.now + 50, EV_ARRIVAL, nodeId, null, state.arrivalGeneration);
+      this.push(
+        this.now + 50,
+        EV_ARRIVAL,
+        nodeId,
+        null,
+        state.arrivalGeneration,
+      );
       return;
     }
     const gap = this.rng.exponential(1000 / rps);
-    this.push(this.now + gap, EV_ARRIVAL, nodeId, null, state.arrivalGeneration);
+    this.push(
+      this.now + gap,
+      EV_ARRIVAL,
+      nodeId,
+      null,
+      state.arrivalGeneration,
+    );
   }
 
   private onClientArrival(state: NodeState): void {
@@ -1292,7 +1361,11 @@ export class Engine implements BehaviourCtx {
     root.key = Math.floor(this.rng.next() * KEYSPACE);
     if (this.observer) {
       root.observation = { requestId: this.nextRootId++, completed: new Set() };
-      this.observer.onRootOffered?.({ requestId: root.observation.requestId, sourceId: state.id, startedAtMs: this.now });
+      this.observer.onRootOffered?.({
+        requestId: root.observation.requestId,
+        sourceId: state.id,
+        startedAtMs: this.now,
+      });
     }
 
     // Trace one request at a time, and only once the previous one has been
@@ -1319,26 +1392,26 @@ export class Engine implements BehaviourCtx {
    */
   private dispatchDownstream(state: NodeState, req: Req): void {
     if (req.hop >= MAX_HOP_DEPTH) {
-      this.resolve(req, false, 'depth', req.ownMs);
+      this.resolve(req, false, "depth", req.ownMs);
       return;
     }
 
     const out = state.out;
     if (out.length === 0) {
       // Terminal node: nothing downstream, this call is done.
-      this.resolve(req, true, 'error', req.ownMs);
+      this.resolve(req, true, "error", req.ownMs);
       return;
     }
 
     const b = state.behaviour;
-    const mode = b.route ? b.route(this, state, req) : 'all';
+    const mode = b.route ? b.route(this, state, req) : "all";
 
-    if (mode === 'none') {
+    if (mode === "none") {
       this.completeNode(state, req, req.ownMs);
       return;
     }
 
-    if (mode === 'one') {
+    if (mode === "one") {
       const edge = b.pickEdge
         ? b.pickEdge(this, state, req, out)
         : this.pickWeightedOrLeastLoaded(out);
@@ -1347,8 +1420,8 @@ export class Engine implements BehaviourCtx {
         // here (a region node that has no healthy region reports
         // 'region-down', not a generic routing error). Read as a plain field,
         // so this stays a trait lookup rather than a kind test.
-        const reason = state.behaviour.noRouteReason ?? 'no-route';
-        if (reason !== 'no-route') {
+        const reason = state.behaviour.noRouteReason ?? "no-route";
+        if (reason !== "no-route") {
           // A deliberate refusal by this node, so it owns the failure. A plain
           // 'no-route' stays uncredited: that is a wiring mistake by the
           // student, not something the node did.
@@ -1401,7 +1474,8 @@ export class Engine implements BehaviourCtx {
       const w = out[i].weight > 0 ? out[i].weight : 0;
       total += w;
       if (firstLive < 0) firstLive = i;
-      else if (Math.abs(out[i].weight - out[firstLive].weight) > 1e-9) uniform = false;
+      else if (Math.abs(out[i].weight - out[firstLive].weight) > 1e-9)
+        uniform = false;
     }
     // Every edge is cut: there is no route, and the caller reports it as such.
     if (firstLive < 0) return null;
@@ -1446,7 +1520,7 @@ export class Engine implements BehaviourCtx {
   ): void {
     const target = this.nodes.get(edge.to);
     if (!target) {
-      this.childResolved(parent, false, 'no-route', 0);
+      this.childResolved(parent, false, "no-route", 0);
       return;
     }
 
@@ -1462,7 +1536,7 @@ export class Engine implements BehaviourCtx {
       stub.attempt = attempt;
       stub.retryTarget = edge.id;
       stub.resolved = true;
-      this.childResolvedFrom(stub, parent, false, 'partitioned', 0);
+      this.childResolvedFrom(stub, parent, false, "partitioned", 0);
       this.recycle(stub);
       return;
     }
@@ -1496,7 +1570,13 @@ export class Engine implements BehaviourCtx {
     // the networking phase adds them alongside this delay.
     const linkMs = edge.latencyMs;
     if (linkMs !== undefined && linkMs > 0) {
-      this.push(this.now + linkMs, EV_LINK_ARRIVE, target.id, child, child.token);
+      this.push(
+        this.now + linkMs,
+        EV_LINK_ARRIVE,
+        target.id,
+        child,
+        child.token,
+      );
       return;
     }
 
@@ -1562,24 +1642,24 @@ export class Engine implements BehaviourCtx {
     // crash takes a node out whatever kind it is, and the caller sees an
     // immediate failure it can retry (or that its breaker can count).
     const fault = this.faults.get(state.id);
-    if (fault && fault.kind === 'crash') {
+    if (fault && fault.kind === "crash") {
       state.errors.add(this.now, 1);
       state.totalFailed++;
-      this.resolve(req, false, 'crashed', 0);
+      this.resolve(req, false, "crashed", 0);
       return;
     }
 
     const b = state.behaviour;
-    const action = b.onAdmit ? b.onAdmit(this, state, req) : 'serve';
+    const action = b.onAdmit ? b.onAdmit(this, state, req) : "serve";
 
-    if (action === 'handled') return;
+    if (action === "handled") return;
 
-    if (action === 'shed') {
+    if (action === "shed") {
       this.shed(state, req);
       return;
     }
 
-    if (action === 'passthru') {
+    if (action === "passthru") {
       // Effectively zero-capacity dispatchers: no queueing, immediate hand-off.
       req.ownMs = 0;
       this.beginZeroService(state, req);
@@ -1609,10 +1689,14 @@ export class Engine implements BehaviourCtx {
    * -- which keeps a faulted run's random stream aligned with a healthy one.
    */
   private serviceTimeFor(state: NodeState): number {
-    if (!(state.config.serviceMs > 0)) return 0;
-    const ms = this.rng.serviceTime(state.config.serviceMs, state.config.serviceCv);
+    if (state.config.serviceMs <= 0 || Number.isNaN(state.config.serviceMs))
+      return 0;
+    const ms = this.rng.serviceTime(
+      state.config.serviceMs,
+      state.config.serviceCv,
+    );
     const fault = this.faults.get(state.id);
-    if (fault && fault.kind === 'slow') return ms * fault.factor;
+    if (fault && fault.kind === "slow") return ms * fault.factor;
     return ms;
   }
 
@@ -1620,7 +1704,7 @@ export class Engine implements BehaviourCtx {
   private shed(state: NodeState, req: Req): void {
     state.sheds.add(this.now, 1);
     state.totalFailed++;
-    this.resolve(req, false, 'shed', 0);
+    this.resolve(req, false, "shed", 0);
   }
 
   /**
@@ -1646,7 +1730,7 @@ export class Engine implements BehaviourCtx {
     state.completions.add(this.now, 1);
     state.totalCompleted++;
     state.latency.add(this.now, ackMs);
-    this.resolve(req, true, 'error', ackMs);
+    this.resolve(req, true, "error", ackMs);
 
     // Wake any worker that feeds off this queue.
     this.wakeWorkersFor(state.id);
@@ -1677,7 +1761,11 @@ export class Engine implements BehaviourCtx {
    * The behaviour must check its own depth limit BEFORE calling this, the
    * same contract ackAndBuffer has.
    */
-  ackAndRelay(stateLike: NodeStateLike, reqLike: ReqLike, extraDeliveryMs = 0): void {
+  ackAndRelay(
+    stateLike: NodeStateLike,
+    reqLike: ReqLike,
+    extraDeliveryMs = 0,
+  ): void {
     const state = stateLike as NodeState;
     const req = reqLike as Req;
     const ackMs = this.serviceTimeFor(state);
@@ -1705,13 +1793,13 @@ export class Engine implements BehaviourCtx {
     state.completions.add(this.now, 1);
     state.totalCompleted++;
     state.latency.add(this.now, ackMs);
-    this.resolve(req, true, 'error', ackMs);
+    this.resolve(req, true, "error", ackMs);
   }
 
   private wakeWorkersFor(queueId: string): void {
     for (const state of this.nodes.values()) {
       if (!state.behaviour.pullsFromQueues) continue;
-      if (!state.sources.some(source => source.queueId === queueId)) continue;
+      if (!state.sources.some((source) => source.queueId === queueId)) continue;
       this.pumpWorker(state);
     }
   }
@@ -1779,8 +1867,8 @@ export class Engine implements BehaviourCtx {
   /** Start serving whoever is next in line, if a slot is free. */
   private pumpQueue(state: NodeState): void {
     const mode = state.behaviour.pump;
-    if (mode === 'none') return;
-    if (mode === 'sources') {
+    if (mode === "none") return;
+    if (mode === "sources") {
       this.pumpWorker(state);
       return;
     }
@@ -1811,7 +1899,9 @@ export class Engine implements BehaviourCtx {
   }
 
   /** Pull the oldest message, retaining which consumer link carried it. */
-  private takeFromSources(state: NodeState): { message: Req; edgeId: string } | null {
+  private takeFromSources(
+    state: NodeState,
+  ): { message: Req; edgeId: string } | null {
     let best: NodeState | null = null;
     let bestSource: QueueSource | null = null;
     let bestEdgeId: string | null = null;
@@ -1820,17 +1910,30 @@ export class Engine implements BehaviourCtx {
     for (let i = 0; i < state.sources.length; i++) {
       const source = state.sources[i];
       const q = this.nodes.get(source.queueId);
-      if (!q || q.waitHead >= q.waiting.length || source.edgeIds.length === 0) continue;
+      if (!q || q.waitHead >= q.waiting.length || source.edgeIds.length === 0)
+        continue;
       let edgeOffset = 0;
-      while (edgeOffset < source.edgeIds.length && this.cutEdges.has(source.edgeIds[(source.nextEdgeIndex + edgeOffset) % source.edgeIds.length])) edgeOffset++;
+      while (
+        edgeOffset < source.edgeIds.length &&
+        this.cutEdges.has(
+          source.edgeIds[
+            (source.nextEdgeIndex + edgeOffset) % source.edgeIds.length
+          ],
+        )
+      )
+        edgeOffset++;
       if (edgeOffset === source.edgeIds.length) continue;
       const head = q.waiting[q.waitHead];
       if (head.enterMs < bestTime) {
         bestTime = head.enterMs;
         best = q;
         bestSource = source;
-        bestEdgeId = source.edgeIds[(source.nextEdgeIndex + edgeOffset) % source.edgeIds.length];
-        bestNextEdgeIndex = (source.nextEdgeIndex + edgeOffset + 1) % source.edgeIds.length;
+        bestEdgeId =
+          source.edgeIds[
+            (source.nextEdgeIndex + edgeOffset) % source.edgeIds.length
+          ];
+        bestNextEdgeIndex =
+          (source.nextEdgeIndex + edgeOffset + 1) % source.edgeIds.length;
       }
     }
     if (!best || !bestSource || bestEdgeId === null) return null;
@@ -1860,33 +1963,36 @@ export class Engine implements BehaviourCtx {
     // The node died while this request was in service. Its work is lost; the
     // slot it held has already been released by the normal path above, so the
     // accounting stays in one place.
-    if (fault && fault.kind === 'crash') {
+    if (fault && fault.kind === "crash") {
       state.errors.add(this.now, 1);
       state.totalFailed++;
-      this.resolve(req, false, 'crashed', req.ownMs);
+      this.resolve(req, false, "crashed", req.ownMs);
       return;
     }
 
     // Independent per-attempt failure.
-    if (state.config.errorRate > 0 && this.rng.next() < state.config.errorRate) {
+    if (
+      state.config.errorRate > 0 &&
+      this.rng.next() < state.config.errorRate
+    ) {
       state.errors.add(this.now, 1);
       state.totalFailed++;
-      this.resolve(req, false, 'error', req.ownMs);
+      this.resolve(req, false, "error", req.ownMs);
       return;
     }
 
     // Injected error rate, rolled after (and independently of) the node's own.
     // Two separate rolls rather than a combined probability, so clearing the
     // fault leaves the configured errorRate behaving exactly as before.
-    if (fault && fault.kind === 'errors' && this.rng.next() < fault.rate) {
+    if (fault && fault.kind === "errors" && this.rng.next() < fault.rate) {
       state.errors.add(this.now, 1);
       state.totalFailed++;
-      this.resolve(req, false, 'error', req.ownMs);
+      this.resolve(req, false, "error", req.ownMs);
       return;
     }
 
     const hook = state.behaviour.onServiceComplete;
-    if (hook && hook(this, state, req) === 'complete') {
+    if (hook && hook(this, state, req) === "complete") {
       this.completeNode(state, req, req.ownMs);
       return;
     }
@@ -1904,7 +2010,7 @@ export class Engine implements BehaviourCtx {
     state.completions.add(this.now, 1);
     state.totalCompleted++;
     state.latency.add(this.now, latencyMs);
-    this.resolve(req, true, 'error', latencyMs);
+    this.resolve(req, true, "error", latencyMs);
   }
 
   /* ---------------- timeouts ---------------- */
@@ -1915,7 +2021,7 @@ export class Engine implements BehaviourCtx {
    */
   private armTimeout(caller: NodeState, call: Req): void {
     const t = caller.config.timeoutMs;
-    if (!(t > 0)) return;
+    if (t <= 0 || Number.isNaN(t)) return;
     this.push(this.now + t, EV_TIMEOUT, caller.id, call, call.token);
   }
 
@@ -1948,7 +2054,13 @@ export class Engine implements BehaviourCtx {
     call.abandoned = true;
 
     if (parent && !parent.resolved) {
-      this.childResolvedFrom(call, parent, false, 'timeout', this.now - call.enterMs);
+      this.childResolvedFrom(
+        call,
+        parent,
+        false,
+        "timeout",
+        this.now - call.enterMs,
+      );
     }
   }
 
@@ -1975,63 +2087,8 @@ export class Engine implements BehaviourCtx {
     this.recordHop(req);
 
     const parent = req.parent;
-
     if (parent === null) {
-      if (req.detached || req.abandoned) {
-        // Either a queue message that finished its worker path, or work the
-        // caller already timed out on. Nobody is waiting for this result.
-        // Free the sampler if this was the traced one, or nothing would ever
-        // be traced again.
-        if (this.tracing === req) this.tracing = null;
-        this.recycle(req);
-        return;
-      }
-      // Root request measured at the client.
-      const total = this.now - req.rootStartMs;
-      if (req.trace) {
-        // Deepest first would be arbitrary; ordering by depth then by the
-        // moment each hop finished gives the reader the path in the order
-        // the request actually walked it.
-        const hops = req.trace.slice().sort((a, b) => a.depth - b.depth);
-        this.lastTrace = {
-          startMs: req.rootStartMs,
-          totalMs: total,
-          ok,
-          reason: ok ? null : reason,
-          hops,
-        };
-        this.tracing = null;
-      }
-      const client = this.nodes.get(req.nodeId);
-      if (req.observation) this.observer?.onRootCompleted?.({
-        requestId: req.observation.requestId, sourceId: req.nodeId,
-        startedAtMs: req.rootStartMs, completedAtMs: this.now, ok,
-        reason: ok ? null : reason, completedNodeIds: [...req.observation.completed],
-      });
-      if (ok) {
-        this.totalCompletedRoots++;
-        this.sysGood.add(this.now, 1);
-        this.sysLatency.add(this.now, total);
-        if (client) {
-          client.completions.add(this.now, 1);
-          client.totalCompleted++;
-          client.latency.add(this.now, total);
-        }
-      } else {
-        this.sysFailed.add(this.now, 1);
-        this.totalFailed++;
-        this.failures[reason]++;
-        if (client) {
-          client.totalFailed++;
-          // No timeout arm. `onTimeout` already attributed it to whichever
-          // node gave up, which is this client when it called its dependency
-          // directly and some node below it otherwise. Counting it again here
-          // is what made a client's timeout rate outrun the load it offered.
-          if (reason === 'shed') client.sheds.add(this.now, 1);
-          else if (reason !== 'timeout') client.errors.add(this.now, 1);
-        }
-      }
-      this.recycle(req);
+      this.resolveRoot(req, ok, reason);
       return;
     }
 
@@ -2039,12 +2096,78 @@ export class Engine implements BehaviourCtx {
     this.recycle(req);
   }
 
+  private resolveRoot(req: Req, ok: boolean, reason: FailureReason): void {
+    if (req.detached || req.abandoned) {
+      if (this.tracing === req) this.tracing = null;
+      this.recycle(req);
+      return;
+    }
+    const total = this.now - req.rootStartMs;
+    this.recordRootTrace(req, ok, reason, total);
+    const client = this.nodes.get(req.nodeId);
+    if (req.observation)
+      this.observer?.onRootCompleted?.({
+        requestId: req.observation.requestId,
+        sourceId: req.nodeId,
+        startedAtMs: req.rootStartMs,
+        completedAtMs: this.now,
+        ok,
+        reason: ok ? null : reason,
+        completedNodeIds: [...req.observation.completed],
+      });
+    this.recordRootOutcome(client, ok, reason, total);
+    this.recycle(req);
+  }
+
+  private recordRootTrace(
+    req: Req,
+    ok: boolean,
+    reason: FailureReason,
+    total: number,
+  ): void {
+    if (!req.trace) return;
+    const hops = req.trace.slice().sort((a, b) => a.depth - b.depth);
+    this.lastTrace = {
+      startMs: req.rootStartMs,
+      totalMs: total,
+      ok,
+      reason: ok ? null : reason,
+      hops,
+    };
+    this.tracing = null;
+  }
+
+  private recordRootOutcome(
+    client: NodeState | undefined,
+    ok: boolean,
+    reason: FailureReason,
+    total: number,
+  ): void {
+    if (ok) {
+      this.totalCompletedRoots++;
+      this.sysGood.add(this.now, 1);
+      this.sysLatency.add(this.now, total);
+      if (!client) return;
+      client.completions.add(this.now, 1);
+      client.totalCompleted++;
+      client.latency.add(this.now, total);
+      return;
+    }
+    this.sysFailed.add(this.now, 1);
+    this.totalFailed++;
+    this.failures[reason]++;
+    if (!client) return;
+    client.totalFailed++;
+    if (reason === "shed") client.sheds.add(this.now, 1);
+    else if (reason !== "timeout") client.errors.add(this.now, 1);
+  }
+
   /** A backoff delay elapsed: re-issue the failed downstream call. */
   private onRetry(state: NodeState, parent: Req): void {
     if (parent.resolved) return;
     const edge = state.out.find((e) => e.id === parent.retryTarget);
     if (!edge) {
-      this.childResolved(parent, false, 'no-route', 0);
+      this.childResolved(parent, false, "no-route", 0);
       return;
     }
     this.sendChild(state, parent, edge, parent.retryAttempt);
@@ -2078,8 +2201,8 @@ export class Engine implements BehaviourCtx {
       if (
         parentState &&
         child.attempt < retries &&
-        reason !== 'depth' &&
-        reason !== 'no-route'
+        reason !== "depth" &&
+        reason !== "no-route"
       ) {
         // Re-issue the same downstream call. This is real extra load.
         const edge = parentState.out.find((e) => e.id === child.retryTarget);
@@ -2093,7 +2216,13 @@ export class Engine implements BehaviourCtx {
           const delay = backoff * (0.5 + this.rng.next());
           parent.retryTarget = edge.id;
           parent.retryAttempt = attempt;
-          this.push(this.now + delay, EV_RETRY, parentState.id, parent, parent.token);
+          this.push(
+            this.now + delay,
+            EV_RETRY,
+            parentState.id,
+            parent,
+            parent.token,
+          );
           return;
         }
       }
@@ -2137,7 +2266,7 @@ export class Engine implements BehaviourCtx {
       parentState.totalCompleted++;
       parentState.latency.add(this.now, total);
     }
-    this.resolve(parent, true, 'error', total);
+    this.resolve(parent, true, "error", total);
   }
 
   /* ---------------- BehaviourCtx surface ---------------- *
@@ -2188,32 +2317,37 @@ export class Engine implements BehaviourCtx {
   effectiveRps(state: NodeStateLike): number {
     const base = state.config.rps;
     const pattern = state.config.traffic;
-    if (!pattern || pattern === 'steady' || !(base > 0)) return base;
+    if (!pattern || pattern === "steady" || base <= 0 || Number.isNaN(base))
+      return base;
 
     const periodS = state.config.trafficPeriodS ?? DEFAULT_TRAFFIC_PERIOD_S;
-    if (!(periodS > 0)) return base;
+    if (periodS <= 0 || Number.isNaN(periodS)) return base;
 
     const t = (this.now / 1000) % periodS;
     const phase = t / periodS;
 
     switch (pattern) {
-      case 'ramp':
+      case "ramp":
         // Climbs over the first cycle and holds. Past one period the reader
         // is watching a system at full load, which is the point of a ramp:
         // it is how you got there that differs, not where you end up.
         return this.now / 1000 >= periodS ? base : base * phase;
-      case 'spike':
+      case "spike":
         // Quiet, then a burst in the last tenth of the cycle. The burst is
         // 4x the baseline and the quiet is a tenth of it, so the MEAN over a
         // cycle stays near the baseline: the reader is comparing the same
         // amount of work arriving unevenly, not simply more work.
-        return phase >= SPIKE_QUIET_FRACTION ? base * SPIKE_PEAK : base * SPIKE_TROUGH;
-      case 'diurnal': {
+        return phase >= SPIKE_QUIET_FRACTION
+          ? base * SPIKE_PEAK
+          : base * SPIKE_TROUGH;
+      case "diurnal": {
         // A day as a cosine between a quarter of the baseline and twice it.
         // Smooth because real daily traffic has no corners, and offset so a
         // run starts in the small hours rather than mid-peak.
         const swing = (1 - Math.cos(2 * Math.PI * phase)) / 2;
-        return base * (DIURNAL_TROUGH + (DIURNAL_PEAK - DIURNAL_TROUGH) * swing);
+        return (
+          base * (DIURNAL_TROUGH + (DIURNAL_PEAK - DIURNAL_TROUGH) * swing)
+        );
       }
       default:
         return base;
@@ -2222,7 +2356,8 @@ export class Engine implements BehaviourCtx {
 
   effectiveCapacity(state: NodeStateLike): number {
     return (
-      Math.max(1, Math.floor(state.config.capacity)) * this.effectiveInstances(state)
+      Math.max(1, Math.floor(state.config.capacity)) *
+      this.effectiveInstances(state)
     );
   }
 
@@ -2327,7 +2462,7 @@ export class Engine implements BehaviourCtx {
     if (!state) return null;
     const field = state.behaviour.scaleField;
     if (field === undefined) return null;
-    if (field === 'shardCapacity') {
+    if (field === "shardCapacity") {
       return Math.max(1, Math.floor(state.config.shardCapacity));
     }
     return this.effectiveInstances(state);
@@ -2371,18 +2506,18 @@ export class Engine implements BehaviourCtx {
    */
   controlTargetOf(stateLike: NodeStateLike): string {
     const ctrl = (stateLike as NodeState).ctrl;
-    if (ctrl.length === 0) return '';
+    if (ctrl.length === 0) return "";
     // A severed control edge means the controller cannot reach its target.
     // Reporting no target is what makes an injected partition on a controller
     // do the thing it says on the tin: the fleet freezes at whatever size it
     // had, which is exactly how a real control plane losing its data plane
     // behaves.
-    if (this.cutEdges.size > 0 && this.cutEdges.has(ctrl[0].id)) return '';
+    if (this.cutEdges.size > 0 && this.cutEdges.has(ctrl[0].id)) return "";
     return ctrl[0].to;
   }
 
   isCrashed(nodeId: string): boolean {
-    return this.faults.get(nodeId)?.kind === 'crash';
+    return this.faults.get(nodeId)?.kind === "crash";
   }
 
   /**
@@ -2416,7 +2551,7 @@ export class Engine implements BehaviourCtx {
   }
 
   addServiceDelay(reqLike: ReqLike, extraMs: number): void {
-    if (!(extraMs > 0)) return;
+    if (extraMs <= 0 || Number.isNaN(extraMs)) return;
     (reqLike as Req).extraServiceMs += extraMs;
   }
 
@@ -2449,7 +2584,8 @@ export class Engine implements BehaviourCtx {
    */
   emitDetached(stateLike: NodeStateLike, edge: SimEdge, key: number): boolean {
     const state = stateLike as NodeState;
-    if (this.liveRequests >= MAX_LIVE_REQUESTS) throw new SimulationResourceLimit('live-request-limit');
+    if (this.liveRequests >= MAX_LIVE_REQUESTS)
+      throw new SimulationResourceLimit("live-request-limit");
     if (this.cutEdges.size > 0 && this.cutEdges.has(edge.id)) return false;
     if (!this.nodes.has(edge.to)) return false;
     const msg = this.acquireReq();
@@ -2470,7 +2606,10 @@ export class Engine implements BehaviourCtx {
    * retained, so a behaviour reusing its own scratch array cannot mutate what
    * the UI is about to read.
    */
-  reportShardUtilization(stateLike: NodeStateLike, perShard: readonly number[]): void {
+  reportShardUtilization(
+    stateLike: NodeStateLike,
+    perShard: readonly number[],
+  ): void {
     const dst = (stateLike as NodeState).shardUtil;
     dst.length = perShard.length;
     for (let i = 0; i < perShard.length; i++) dst[i] = perShard[i];
@@ -2514,8 +2653,7 @@ export class Engine implements BehaviourCtx {
 
     // Utilisation can sit marginally above 1 when a node is oversubscribed;
     // the waterline is capped so no unit ever reports more than full.
-    const util =
-      Math.min(1, Math.max(0, this.projectedUtilization(state)));
+    const util = Math.min(1, Math.max(0, this.projectedUtilization(state)));
     let remaining = util * instances;
     for (let i = 0; i < instances; i++) {
       if (remaining >= 1) {
@@ -2554,7 +2692,8 @@ export class Engine implements BehaviourCtx {
     // The pending count rides on the same array identity, so a change in it
     // alone still has to force a republish -- otherwise warming-up units would
     // appear or vanish without the consumer being told anything changed.
-    if (state.instancePending !== state.instancePendingPublished) changed = true;
+    if (state.instancePending !== state.instancePendingPublished)
+      changed = true;
 
     if (changed) {
       state.instancePublished = units.slice();
@@ -2563,7 +2702,8 @@ export class Engine implements BehaviourCtx {
 
     entry.instances = units.length;
     entry.perInstance = state.instancePublished ?? units;
-    if (state.instancePending > 0) entry.instancesPending = state.instancePending;
+    if (state.instancePending > 0)
+      entry.instancesPending = state.instancePending;
   }
 
   /**
@@ -2572,7 +2712,11 @@ export class Engine implements BehaviourCtx {
    * immediately so smoothing stays on the engine's clock and a behaviour
    * cannot make its meter jump by reporting more often than another kind.
    */
-  reportOccupancy(stateLike: NodeStateLike, busySlots: number, capacity: number): void {
+  reportOccupancy(
+    stateLike: NodeStateLike,
+    busySlots: number,
+    capacity: number,
+  ): void {
     const state = stateLike as NodeState;
     const busy = busySlots > 0 ? busySlots : 0;
     const cap = capacity > 0 ? capacity : 1;
@@ -2596,13 +2740,18 @@ export class Engine implements BehaviourCtx {
     const own = state.ownOccupancy;
     const capacity = own?.capacity ?? this.effectiveCapacity(state);
     const busy = own?.busy ?? state.busy;
-    return state.behaviour.servesRequests ? Math.min(1, capacity > 0 ? busy / capacity : 0) : 0;
+    return state.behaviour.servesRequests
+      ? Math.min(1, capacity > 0 ? busy / capacity : 0)
+      : 0;
   }
 
   private projectedUtilization(state: NodeState): number {
     const dt = Math.max(0, this.now - state.lastIntegrateMs);
     const alpha = 1 - Math.exp(-dt / 500);
-    return state.utilization + (this.instantaneousUtilization(state) - state.utilization) * alpha;
+    return (
+      state.utilization +
+      (this.instantaneousUtilization(state) - state.utilization) * alpha
+    );
   }
 
   private integrateNode(state: NodeState): void {
@@ -2660,7 +2809,8 @@ export class Engine implements BehaviourCtx {
     req: Req | null,
     token: number,
   ): void {
-    if (this.heap.size >= MAX_PENDING_EVENTS) throw new SimulationResourceLimit('pending-event-limit');
+    if (this.heap.size >= MAX_PENDING_EVENTS)
+      throw new SimulationResourceLimit("pending-event-limit");
     const ev = this.freeEv.pop();
     if (ev) {
       ev.time = time;
@@ -2681,19 +2831,20 @@ export class Engine implements BehaviourCtx {
   }
 
   private acquireReq(): Req {
-    if (this.liveRequests >= MAX_LIVE_REQUESTS) throw new SimulationResourceLimit('live-request-limit');
+    if (this.liveRequests >= MAX_LIVE_REQUESTS)
+      throw new SimulationResourceLimit("live-request-limit");
     this.liveRequests++;
     const pooled = this.freeReq;
     if (pooled) {
       this.freeReq = pooled.next;
       pooled.next = null;
       pooled.token = Math.trunc(pooled.token + 1);
-      pooled.nodeId = '';
+      pooled.nodeId = "";
       pooled.parent = null;
       pooled.pending = 0;
       pooled.maxChildMs = 0;
       pooled.childFailed = false;
-      pooled.childReason = 'error';
+      pooled.childReason = "error";
       pooled.enterMs = 0;
       pooled.arriveMs = 0;
       pooled.trace = null;
@@ -2703,9 +2854,9 @@ export class Engine implements BehaviourCtx {
       pooled.attempt = 0;
       pooled.abandoned = false;
       pooled.holdingSlot = false;
-      pooled.viaEdge = '';
+      pooled.viaEdge = "";
       pooled.detached = false;
-      pooled.retryTarget = '';
+      pooled.retryTarget = "";
       pooled.retryAttempt = 0;
       pooled.ownMs = 0;
       pooled.resolved = false;
@@ -2718,12 +2869,12 @@ export class Engine implements BehaviourCtx {
     return {
       token: 1,
       observation: null,
-      nodeId: '',
+      nodeId: "",
       parent: null,
       pending: 0,
       maxChildMs: 0,
       childFailed: false,
-      childReason: 'error',
+      childReason: "error",
       enterMs: 0,
       arriveMs: 0,
       trace: null,
@@ -2732,9 +2883,9 @@ export class Engine implements BehaviourCtx {
       attempt: 0,
       abandoned: false,
       holdingSlot: false,
-      viaEdge: '',
+      viaEdge: "",
       detached: false,
-      retryTarget: '',
+      retryTarget: "",
       retryAttempt: 0,
       ownMs: 0,
       next: null,
@@ -2806,14 +2957,16 @@ function createNodeState(node: SimNode): NodeState {
  */
 function describeFault(nodeId: string, f: Fault): ActiveFailure {
   const out: ActiveFailure = { nodeId, kind: f.kind, sinceMs: f.sinceMs };
-  if (f.kind === 'slow') out.factor = f.factor;
-  else if (f.kind === 'errors') out.rate = f.rate;
-  else if (f.kind === 'partition') out.edgeIds = f.edgeIds.slice();
+  if (f.kind === "slow") out.factor = f.factor;
+  else if (f.kind === "errors") out.rate = f.rate;
+  else if (f.kind === "partition") out.edgeIds = f.edgeIds.slice();
   return out;
 }
 
 function clamp01(v: number): number {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
+  if (v < 0) return 0;
+  if (v > 1) return 1;
+  return v;
 }
 
 function cloneTopology(t: Topology): Topology {

@@ -362,8 +362,8 @@ const SeoGuide: React.FC = () => {
           </div>
         </main>
         <footer className="seo-guide-footer">
-          Diagramwise — design architectures, explain decisions, and improve
-          the result.
+          Diagramwise — design architectures, explain decisions, and improve the
+          result.
         </footer>
       </div>
     </>

@@ -20,14 +20,14 @@ Applied the live API response through `applyGuidedStep`, yielding 11 nodes and 1
 
 Repeated all five earlier variants using the live response across seeds 1, 42, and 1337. The results reproduce the earlier table. An additional seed-1 run advanced in 100 ms increments with a 4,000-event budget, reaching 44.1 seconds without resource limiting:
 
-| Observation | Live-data result |
-| --- | --- |
-| Broker model | `queue`, despite the Kafka label and guide's independent-consumer explanation |
-| Broker buffered messages | 3,044 |
-| Database, object storage, search, response-cache arrivals | Zero for all four |
-| Compiler warnings/errors | None |
-| Actual presentation helper output | Broker: “3,044 waiting”; all four destinations: “Idle” |
-| Request failure display | Current failure rate 0; run-wide failed requests 46 |
+| Observation                                               | Live-data result                                                              |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Broker model                                              | `queue`, despite the Kafka label and guide's independent-consumer explanation |
+| Broker buffered messages                                  | 3,044                                                                         |
+| Database, object storage, search, response-cache arrivals | Zero for all four                                                             |
+| Compiler warnings/errors                                  | None                                                                          |
+| Actual presentation helper output                         | Broker: “3,044 waiting”; all four destinations: “Idle”                        |
+| Request failure display                                   | Current failure rate 0; run-wide failed requests 46                           |
 
 The original broker step has `componentType: message-broker`, 24 partitions in ordinary component properties, and no explicit simulation behavior. It connects directly to the four destinations. There is no explicit worker. Thus the missing-consumer mismatch is confirmed in served content, not just the bundled candidate. A local model-only intervention to `streambroker` restores traffic to all four destinations across the three seeds, but still has consumer lag under its defaults. This establishes the cause of missing delivery; it does not validate the full intended document-editing workload.
 
@@ -54,13 +54,13 @@ Reviewed frontend commit 5169367e. Used the repository's document collaboration 
 
 Ran five variants at 100 requested requests/sec for 44.1 simulated seconds with seeds 1, 42, and 1337 (15 runs). Seed 1 also ran to 60 seconds during initial investigation. Rates below are rolling measurements, not the configured source rate.
 
-| Variant | Observed result |
-| --- | --- |
-| Original walkthrough | Queue backlog 3,044 / 3,147 / 3,178. Database, object storage, search, and response cache all receive zero traffic. No compiler errors. |
-| Broker explicitly assigned `streambroker` | All four destinations receive traffic. Backlog remains 1,131–1,258 because the object-storage consumer group is slower under default assumptions. Changing the model restores delivery but does not establish adequate capacity. |
-| Generic queue with an explicit worker feeding destinations | Queue backlog is zero at the observation time. All four destinations receive traffic. Worker receives 62.2–76.7 messages/sec, yet the queue-to-worker edge reports zero flow in every run. |
-| Database disconnected, with gateway explicitly selected as entrypoint | Compilation still has no errors and no diagnostic explaining that the database is unreachable. |
-| Cache with 100% hits in front of a database | Database receives zero traffic legitimately. A blanket warning for every idle node would be incorrect. |
+| Variant                                                               | Observed result                                                                                                                                                                                                                  |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Original walkthrough                                                  | Queue backlog 3,044 / 3,147 / 3,178. Database, object storage, search, and response cache all receive zero traffic. No compiler errors.                                                                                          |
+| Broker explicitly assigned `streambroker`                             | All four destinations receive traffic. Backlog remains 1,131–1,258 because the object-storage consumer group is slower under default assumptions. Changing the model restores delivery but does not establish adequate capacity. |
+| Generic queue with an explicit worker feeding destinations            | Queue backlog is zero at the observation time. All four destinations receive traffic. Worker receives 62.2–76.7 messages/sec, yet the queue-to-worker edge reports zero flow in every run.                                       |
+| Database disconnected, with gateway explicitly selected as entrypoint | Compilation still has no errors and no diagnostic explaining that the database is unreachable.                                                                                                                                   |
+| Cache with 100% hits in front of a database                           | Database receives zero traffic legitimately. A blanket warning for every idle node would be incorrect.                                                                                                                           |
 
 ### Confirmed mechanisms
 

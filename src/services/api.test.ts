@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  getApiBaseUrl,
-  getGoogleLoginRedirectUri,
-} from "./api";
+import { getApiBaseUrl, getGoogleLoginRedirectUri } from "./api";
 import { getGoogleLoginStartUri } from "./googleAuth";
 
 describe("getApiBaseUrl", () => {

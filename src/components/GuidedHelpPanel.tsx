@@ -227,14 +227,17 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
   const total = walkthrough?.steps.length ?? 0;
 
   // Persisted lesson numbers can differ from navigation order after inserts.
-  const namedPhaseIndex = walkthrough?.phases.findIndex(phase => phase.name === step?.phase) ?? -1;
-  const phaseIndex = namedPhaseIndex >= 0 ? namedPhaseIndex :
-    walkthrough?.phases.findIndex(
-      (p) =>
-        step &&
-        step.stepNumber >= p.stepRange[0] &&
-        step.stepNumber <= p.stepRange[1],
-    ) ?? 0;
+  const namedPhaseIndex =
+    walkthrough?.phases.findIndex((phase) => phase.name === step?.phase) ?? -1;
+  const phaseIndex =
+    namedPhaseIndex >= 0
+      ? namedPhaseIndex
+      : (walkthrough?.phases.findIndex(
+          (p) =>
+            step &&
+            step.stepNumber >= p.stepRange[0] &&
+            step.stepNumber <= p.stepRange[1],
+        ) ?? 0);
 
   const handleApply = useCallback(() => {
     if (!step) return;
@@ -373,11 +376,15 @@ const GuidedHelpPanel: React.FC<GuidedHelpPanelProps> = ({
               key={phase.name}
               type="button"
               onClick={() => {
-                const firstPhaseStep = walkthrough.steps.findIndex(item => item.phase === phase.name);
-                const targetIdx = firstPhaseStep >= 0 ? firstPhaseStep :
-                  walkthrough.steps.findIndex(
-                    (s) => s.stepNumber === phase.stepRange[0],
-                  ) ?? 0;
+                const firstPhaseStep = walkthrough.steps.findIndex(
+                  (item) => item.phase === phase.name,
+                );
+                const targetIdx =
+                  firstPhaseStep >= 0
+                    ? firstPhaseStep
+                    : (walkthrough.steps.findIndex(
+                        (s) => s.stepNumber === phase.stepRange[0],
+                      ) ?? 0);
                 if (targetIdx >= 0) setCurrentStep(targetIdx);
               }}
               className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${

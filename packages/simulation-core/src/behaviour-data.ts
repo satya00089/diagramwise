@@ -11,9 +11,9 @@
  * partitions) and folding that into the registry file would bury the small
  * declarative behaviours that make the registry readable.
  */
-import type { NodeStats } from './types';
-import type { BehaviourCtx, NodeStateLike, ReqLike } from './engine-types';
-import type { AdmitAction, ComponentBehaviour } from './behaviour';
+import type { NodeStats } from "./types";
+import type { BehaviourCtx, NodeStateLike, ReqLike } from "./engine-types";
+import type { AdmitAction, ComponentBehaviour } from "./behaviour";
 
 /** Keyspace the engine draws request keys from; mirrored here for sizing. */
 const KEYSPACE = 64;
@@ -36,7 +36,11 @@ const MAX_SHARD_CAPACITY = 512;
  * absorb that: `new Array(NaN)` throws outright, and a count in the billions
  * allocates until the tab stops rather than merely running slowly.
  */
-function clampInt(v: number, min: number, max = Number.MAX_SAFE_INTEGER): number {
+function clampInt(
+  v: number,
+  min: number,
+  max = Number.MAX_SAFE_INTEGER,
+): number {
   if (!Number.isFinite(v)) return min;
   const n = Math.floor(v);
   return n < min ? min : n > max ? max : n;
@@ -111,7 +115,7 @@ function writeCapacity(state: NodeStateLike): number {
 }
 
 const replica: ComponentBehaviour = {
-  kind: 'replica',
+  kind: "replica",
   servesRequests: true,
   generatesLoad: false,
   pullsFromQueues: false,
@@ -119,7 +123,7 @@ const replica: ComponentBehaviour = {
   // Admission, queueing and slot release are all handled inside onAdmit and
   // the drain callback, because reads and writes draw from two different
   // pools. The engine's single busy/waiting pair cannot express that.
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
 
   initState(_state: NodeStateLike): ReplicaExt {
@@ -151,18 +155,18 @@ const replica: ComponentBehaviour = {
 
     if (busy < capacity) {
       startReplicaService(ctx, state, req, isWrite);
-      return 'handled';
+      return "handled";
     }
 
     // Reads and writes share one configured backlog; a full queue sheds.
-    if (queue.length - head >= ctx.effectiveQueueLimit(state)) return 'shed';
+    if (queue.length - head >= ctx.effectiveQueueLimit(state)) return "shed";
     queue.push(req);
-    return 'handled';
+    return "handled";
   },
 
   // A replica set is a primary plus N read replicas, and drawing it as one
   // box hides the reason adding replicas does not fix a write bottleneck.
-  instanceModel: 'custom',
+  instanceModel: "custom",
 
   /**
    * Unit 0 is the PRIMARY and reports the write pool's utilisation; units
@@ -205,9 +209,13 @@ const replica: ComponentBehaviour = {
     );
   },
 
-  decorateStats(ctx: BehaviourCtx, state: NodeStateLike, stats: NodeStats): void {
-    const fresh = ctx.counterRate(state, 'freshRead');
-    const stale = ctx.counterRate(state, 'staleRead');
+  decorateStats(
+    ctx: BehaviourCtx,
+    state: NodeStateLike,
+    stats: NodeStats,
+  ): void {
+    const fresh = ctx.counterRate(state, "freshRead");
+    const stale = ctx.counterRate(state, "staleRead");
     const total = fresh + stale;
     stats.staleReadRate = total > 0 ? stale / total : 0;
 
@@ -215,7 +223,9 @@ const replica: ComponentBehaviour = {
     // meter still means "how full is this thing".
     const ext = replicaExt(state);
     stats.queued =
-      ext.readQueue.length - ext.readHead + (ext.writeQueue.length - ext.writeHead);
+      ext.readQueue.length -
+      ext.readHead +
+      (ext.writeQueue.length - ext.writeHead);
     stats.inFlight = ext.readBusy + ext.writeBusy;
   },
 };
@@ -244,7 +254,7 @@ function startReplicaService(
     // holds right now. `visibleAt` is the write's arrival deadline on the
     // replicas, so "not yet visible" is exactly a stale read.
     const stale = ctx.now < ext.visibleAt[key];
-    ctx.countCustom(state, stale ? 'staleRead' : 'freshRead', 1);
+    ctx.countCustom(state, stale ? "staleRead" : "freshRead", 1);
   }
 
   if (isWrite) {
@@ -263,7 +273,11 @@ function startReplicaService(
 }
 
 /** A replica-set request finished its service time: free its slot, pull next. */
-function onReplicaDrained(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): void {
+function onReplicaDrained(
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  req: ReqLike,
+): void {
   const ext = replicaExt(state);
   if (req.isWrite) {
     if (ext.writeBusy > 0) ext.writeBusy--;
@@ -297,7 +311,10 @@ function pumpReplica(ctx: BehaviourCtx, state: NodeStateLike): void {
     );
     startReplicaService(ctx, state, req, true);
   }
-  while (ext.readBusy < readCapacity(state) && ext.readHead < ext.readQueue.length) {
+  while (
+    ext.readBusy < readCapacity(state) &&
+    ext.readHead < ext.readQueue.length
+  ) {
     const req = ext.readQueue[ext.readHead];
     ext.readQueue[ext.readHead] = null as unknown as ReqLike;
     ext.readHead++;
@@ -377,7 +394,8 @@ function ensureSized(state: NodeStateLike, ext: ShardExt): ShardExt {
   // Busy slots belong to requests already in service; their drain callback
   // will decrement whichever shard they were charged to, so carry the counts
   // across for the shards that still exist.
-  for (let i = 0; i < Math.min(ext.sized, want); i++) next.busy[i] = ext.busy[i];
+  for (let i = 0; i < Math.min(ext.sized, want); i++)
+    next.busy[i] = ext.busy[i];
   for (const req of orphans) next.queues[req.key % want].push(req);
 
   Object.assign(ext, next);
@@ -401,20 +419,20 @@ function shardIndexFor(
 }
 
 const shard: ComponentBehaviour = {
-  kind: 'shard',
+  kind: "shard",
   servesRequests: true,
   generatesLoad: false,
   pullsFromQueues: false,
   buffersForConsumers: false,
-  pump: 'none',
+  pump: "none",
   creditsJoinCompletion: true,
   // A shard serves from shardCapacity (per partition), never from `capacity`.
   // Without this an autoscaler pointed here writes a field this kind ignores.
-  scaleField: 'shardCapacity',
+  scaleField: "shardCapacity",
   // One unit per partition. This is the kind the instance model exists for:
   // the per-partition numbers are genuinely independent, and the gap between
   // one pinned at 1.0 and the rest near idle IS the sharding lesson.
-  instanceModel: 'custom',
+  instanceModel: "custom",
 
   /**
    * Unit i is partition i, reporting that partition's own smoothed
@@ -437,20 +455,25 @@ const shard: ComponentBehaviour = {
     const ext = ensureSized(state, shardExt(state));
     const count = ext.sized;
     const idx = shardIndexFor(ctx, state, req, count);
-    const capacity = clampInt(state.config.shardCapacity, 1, MAX_SHARD_CAPACITY);
+    const capacity = clampInt(
+      state.config.shardCapacity,
+      1,
+      MAX_SHARD_CAPACITY,
+    );
 
     if (ext.busy[idx] < capacity) {
       startShardService(ctx, state, ext, idx, req);
-      return 'handled';
+      return "handled";
     }
 
     // Each shard has its own backlog. One shard filling up must not steal the
     // headroom of the others, or the hot-key demo would show sheds everywhere
     // instead of on the shard that is actually melting.
     const q = ext.queues[idx];
-    if (q.length - ext.heads[idx] >= ctx.effectiveQueueLimit(state)) return 'shed';
+    if (q.length - ext.heads[idx] >= ctx.effectiveQueueLimit(state))
+      return "shed";
     q.push(req);
-    return 'handled';
+    return "handled";
   },
 
   onTick(ctx: BehaviourCtx, state: NodeStateLike, _dtMs: number): void {
@@ -459,7 +482,11 @@ const shard: ComponentBehaviour = {
     const ext = ensureSized(state, shardExt(state));
     const dt = ctx.now - ext.lastIntegrateMs;
     ext.lastIntegrateMs = ctx.now;
-    const capacity = clampInt(state.config.shardCapacity, 1, MAX_SHARD_CAPACITY);
+    const capacity = clampInt(
+      state.config.shardCapacity,
+      1,
+      MAX_SHARD_CAPACITY,
+    );
     const alpha = 1 - Math.exp(-dt / 500);
     let busy = 0;
     for (let i = 0; i < ext.sized; i++) {
@@ -473,7 +500,11 @@ const shard: ComponentBehaviour = {
     ctx.reportOccupancy(state, busy, ext.sized * capacity);
   },
 
-  decorateStats(ctx: BehaviourCtx, state: NodeStateLike, stats: NodeStats): void {
+  decorateStats(
+    ctx: BehaviourCtx,
+    state: NodeStateLike,
+    stats: NodeStats,
+  ): void {
     const ext = ensureSized(state, shardExt(state));
     const n = ext.sized;
     let max = 0;
@@ -519,7 +550,11 @@ function startShardService(
   ctx.serveWithin(state, req, onShardDrained);
 }
 
-function onShardDrained(ctx: BehaviourCtx, state: NodeStateLike, req: ReqLike): void {
+function onShardDrained(
+  ctx: BehaviourCtx,
+  state: NodeStateLike,
+  req: ReqLike,
+): void {
   const ext = shardExt(state);
   const idx = shardOf.get(req);
   shardOf.delete(req);
