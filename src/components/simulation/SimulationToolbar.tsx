@@ -171,27 +171,30 @@ export function SimulationToolbar({
       aria-label="Simulation controls"
     >
       <div className="sim-toolbar__controls">
-        <button
-          type="button"
-          className="sim-button sim-button--primary sim-toolbar__play"
-          onClick={running ? onPause : onStart}
-        >
-          {running ? (
-            <MdPause aria-hidden="true" size={19} />
-          ) : (
-            <MdPlayArrow aria-hidden="true" size={19} />
-          )}
-          {running ? "Pause" : startLabel}
-        </button>
-        <button
-          type="button"
-          className="sim-button sim-button--icon"
-          onClick={onReset}
-          aria-label="Reset simulation"
-          title="Reset simulation"
-        >
-          <MdRefresh aria-hidden="true" size={19} />
-        </button>
+        <div className="sim-toolbar__control-group">
+          <button
+            type="button"
+            className="sim-button sim-button--primary sim-toolbar__play"
+            onClick={running ? onPause : onStart}
+          >
+            {running ? (
+              <MdPause aria-hidden="true" size={19} />
+            ) : (
+              <MdPlayArrow aria-hidden="true" size={19} />
+            )}
+            {running ? "Pause" : startLabel}
+          </button>
+          <button
+            type="button"
+            className="sim-button sim-button--icon"
+            onClick={onReset}
+            aria-label="Reset simulation"
+            data-tooltip="Reset simulation"
+            data-tooltip-placement="bottom"
+          >
+            <MdRefresh aria-hidden="true" size={19} />
+          </button>
+        </div>
         <div className="sim-toolbar__load">
           <label htmlFor={`${id}-rps`}>Requests / sec</label>
           <input
@@ -242,43 +245,45 @@ export function SimulationToolbar({
             </div>
           </div>
         </div>
-        <div className="sim-toolbar__select">
-          <span>Traffic</span>
-          <SelectDropdown
-            id={`${id}-traffic`}
-            value={
-              TRAFFIC_OPTIONS.find((option) => option.value === pattern)
-                ?.label ?? TRAFFIC_OPTIONS[0].label
-            }
-            options={TRAFFIC_LABELS}
-            aria-label="Traffic pattern"
-            className="sim-toolbar__select-trigger sim-toolbar__select-trigger--traffic"
-            onChange={(label) => {
-              const entry = TRAFFIC_OPTIONS.find(
-                (option) => option.label === label,
-              );
-              if (entry) onPatternChange(entry.value);
-            }}
-          />
-        </div>
-        <div className="sim-toolbar__select">
-          <span>Playback</span>
-          <SelectDropdown
-            id={`${id}-playback`}
-            value={
-              PLAYBACK_OPTIONS.find((option) => option.value === speed)
-                ?.label ?? `${speed}×`
-            }
-            options={PLAYBACK_LABELS}
-            aria-label="Playback speed"
-            className="sim-toolbar__select-trigger sim-toolbar__select-trigger--playback"
-            onChange={(label) => {
-              const entry = PLAYBACK_OPTIONS.find(
-                (option) => option.label === label,
-              );
-              if (entry) onSpeedChange(entry.value);
-            }}
-          />
+        <div className="sim-toolbar__control-group sim-toolbar__control-group--selectors">
+          <div className="sim-toolbar__select">
+            <span>Traffic</span>
+            <SelectDropdown
+              id={`${id}-traffic`}
+              value={
+                TRAFFIC_OPTIONS.find((option) => option.value === pattern)
+                  ?.label ?? TRAFFIC_OPTIONS[0].label
+              }
+              options={TRAFFIC_LABELS}
+              aria-label="Traffic pattern"
+              className="sim-toolbar__select-trigger sim-toolbar__select-trigger--traffic"
+              onChange={(label) => {
+                const entry = TRAFFIC_OPTIONS.find(
+                  (option) => option.label === label,
+                );
+                if (entry) onPatternChange(entry.value);
+              }}
+            />
+          </div>
+          <div className="sim-toolbar__select">
+            <span>Playback</span>
+            <SelectDropdown
+              id={`${id}-playback`}
+              value={
+                PLAYBACK_OPTIONS.find((option) => option.value === speed)
+                  ?.label ?? `${speed}×`
+              }
+              options={PLAYBACK_LABELS}
+              aria-label="Playback speed"
+              className="sim-toolbar__select-trigger sim-toolbar__select-trigger--playback"
+              onChange={(label) => {
+                const entry = PLAYBACK_OPTIONS.find(
+                  (option) => option.label === label,
+                );
+                if (entry) onSpeedChange(entry.value);
+              }}
+            />
+          </div>
         </div>
         {onInspect && (
           <button
@@ -286,7 +291,8 @@ export function SimulationToolbar({
             className="sim-button sim-button--icon"
             onClick={onInspect}
             aria-label="Open simulation details"
-            title="Simulation details"
+            data-tooltip="Simulation details"
+            data-tooltip-placement="bottom"
           >
             <MdTune aria-hidden="true" size={19} />
           </button>
@@ -308,7 +314,8 @@ export function SimulationToolbar({
               <select
                 className="sim-input sim-toolbar__source-select"
                 aria-label="Traffic entrypoint"
-                title="Choose where simulated requests enter the diagram"
+                data-tooltip="Choose where simulated requests enter the diagram"
+                data-tooltip-placement="bottom"
                 value={sourceSelectionValue}
                 onChange={(event) => {
                   const value = event.currentTarget.value;
@@ -367,27 +374,27 @@ export function SimulationToolbar({
           </div>
         )}
         {snapshot && (
-          <>
-            <span>
+          <div className="sim-toolbar__metrics">
+            <span className="sim-toolbar__metric sim-toolbar__metric--responses">
               <strong>
                 {formatSimulationNumber(snapshot.system.goodputRps)}
               </strong>{" "}
               {hasBackgroundDelivery ? "caller responses/s" : "completed/s"}
             </span>
             <span
-              className={
-                snapshot.system.errorRate > 0 ? "sim-text-danger" : undefined
-              }
+              className={`sim-toolbar__metric sim-toolbar__metric--failed${
+                snapshot.system.errorRate > 0 ? " sim-text-danger" : ""
+              }`}
             >
               <strong>
                 {formatSimulationPercent(snapshot.system.errorRate)}
               </strong>{" "}
               failed
             </span>
-            <span className="sim-toolbar__clock">
+            <span className="sim-toolbar__clock sim-toolbar__metric">
               {formatSimulationNumber(timeMs / 1000)} s simulated
             </span>
-          </>
+          </div>
         )}
         {!snapshot && status === "idle" && (
           <span>Start, increase traffic, and watch the paths.</span>

@@ -51,6 +51,16 @@
 }
 .sim-toolbar__controls {
   flex-wrap: wrap;
+  justify-content: space-between;
+}
+.sim-toolbar__control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.sim-toolbar__control-group--selectors {
+  gap: 12px;
 }
 .sim-toolbar__readout {
   flex-wrap: wrap;
@@ -63,10 +73,32 @@
   color: var(--text, #ececec);
   font-weight: 600;
 }
+.sim-toolbar__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 0 1 auto;
+}
+.sim-toolbar__metric {
+  overflow: hidden;
+  flex: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sim-toolbar__metric--responses {
+  width: 154px;
+}
+.sim-toolbar__metric--failed {
+  width: 82px;
+}
 .sim-toolbar__state {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  width: 104px;
+  flex: none;
 }
 .sim-toolbar__source {
   display: inline-flex;
@@ -83,16 +115,17 @@
   white-space: nowrap;
 }
 .sim-toolbar__source-select {
-  width: auto;
-  max-width: 190px;
+  width: 160px;
+  max-width: 160px;
   min-height: 28px;
   padding: 3px 22px 3px 7px;
   font-size: 11px;
   cursor: pointer;
 }
 .sim-toolbar__source-value {
-  max-width: 190px;
+  width: 160px;
   overflow: hidden;
+  flex: none;
   color: var(--text, #ececec);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -115,11 +148,12 @@
   color: var(--sim-danger);
 }
 .sim-toolbar__clock {
-  margin-left: auto;
+  width: 122px;
+  text-align: right;
 }
 .sim-toolbar__load {
   gap: 7px;
-  margin-left: 4px;
+  flex: none;
 }
 .sim-toolbar__load label {
   color: var(--muted, #929292);
@@ -233,7 +267,7 @@
   line-height: 1.25;
 }
 .sim-toolbar__select .sim-toolbar__select-trigger--traffic {
-  min-width: 92px;
+  width: 112px;
 }
 .sim-toolbar__select .sim-toolbar__select-trigger--playback {
   min-width: 58px;
@@ -298,6 +332,9 @@
   background: var(--text, #ececec);
   color: var(--surface, #151515);
   font-weight: 650;
+}
+.sim-toolbar__play {
+  min-width: 172px;
 }
 .sim-button--primary:hover:not(:disabled) {
   background: color-mix(
@@ -704,6 +741,7 @@
   }
   .sim-toolbar__controls {
     gap: 7px;
+    justify-content: flex-start;
   }
   .sim-toolbar__load {
     margin-left: 0;
