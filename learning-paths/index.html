@@ -93,7 +93,7 @@
     <meta name="twitter:image" content="https://diagramwise.com/og/learning-paths.png" />
     <meta name="twitter:image:alt" content="Diagramwise learning paths preview" />
 
-    <link rel="icon" type="image/x-icon" href="/logo.png" />
+    <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <meta name="theme-color" content="#6366f1" />
     <meta name="application-name" content="Diagramwise" />
@@ -131,29 +131,35 @@
         ],
         "screenshot": "https://diagramwise.com/og/home.png",
         "image": "https://diagramwise.com/og/home.png",
-        "author": {
-          "@type": "Organization",
-          "name": "Diagramwise",
-          "url": "https://diagramwise.com/"
-        }
+        "author": { "@id": "https://diagramwise.com/#organization" },
+        "publisher": { "@id": "https://diagramwise.com/#organization" }
       }
     </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "Organization",
+        "@id": "https://diagramwise.com/#organization",
         "name": "Diagramwise",
         "url": "https://diagramwise.com/",
-        "logo": "https://diagramwise.com/logo.png"
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://diagramwise.com/logo.png"
+        },
+        "description": "Diagramwise is a system design practice tool for building architectures visually, explaining trade-offs, and getting structured feedback.",
+        "sameAs": ["https://github.com/satya00089/diagrammatic"]
       }
     </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
+        "@id": "https://diagramwise.com/#website",
         "name": "Diagramwise",
         "alternateName": "Diagramwise System Design Practice",
-        "url": "https://diagramwise.com/"
+        "url": "https://diagramwise.com/",
+        "inLanguage": "en",
+        "publisher": { "@id": "https://diagramwise.com/#organization" }
       }
     </script>
 
@@ -333,6 +339,26 @@
         overflow-wrap: anywhere;
       }
 
+      .static-route-answer p,
+      .static-route-faq p {
+        max-width: 70ch;
+        margin: 0 0 1.25rem;
+        color: #545467;
+        line-height: 1.75;
+      }
+
+      .static-route-faq h3 {
+        max-width: 60ch;
+        margin: 1.5rem 0 0.4rem;
+        font-size: 1.15rem;
+        line-height: 1.3;
+      }
+
+      html.dark .static-route-answer p,
+      html.dark .static-route-faq p {
+        color: #b7b7c8;
+      }
+
       .static-route-footer {
         padding-block: 2rem;
         border-top: 1px solid #d9d9e6;
@@ -396,7 +422,7 @@
         }
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-BalcGHFc.js"></script>
+    <script type="module" crossorigin src="/assets/index-Cy1dtRf_.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-DxHoCUag.css">
       <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/learning-paths/","url":"https://diagramwise.com/learning-paths/","name":"Learning Paths | Diagramwise","description":"Follow curated sequences of modules and lessons that teach system design from first principles to advanced patterns.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/learning-paths/"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"Learning Paths","item":"https://diagramwise.com/learning-paths/"}]}]}</script>
   </head>
@@ -420,10 +446,12 @@
           <p>Follow curated sequences of modules and lessons that teach system design from first principles to advanced patterns.</p>
           <div class="static-route-actions"><a href="/problems/">Practice a challenge</a></div>
         </section>
+        
         <section class="static-route-section" id="route-content">
           <h2>Browse system design paths</h2>
           <ul class="static-route-list"><li><a href="/learning-paths/system-design-foundations/">System Design Foundations</a><span>Beginner · 1 modules · 1 lessons</span></li><li><a href="/learning-paths/back-of-the-envelope-estimation/">Back-of-the-Envelope Estimation</a><span>Beginner · 3 modules · 7 lessons</span></li><li><a href="/learning-paths/dns-fundamentals/">DNS Fundamentals</a><span>Intermediate · 1 modules · 10 lessons</span></li><li><a href="/learning-paths/single-server-setup/">Single-Server Setup</a><span>Beginner · 5 modules · 7 lessons</span></li><li><a href="/learning-paths/load-balancers/">Load Balancers</a><span>Intermediate · 3 modules · 3 lessons</span></li><li><a href="/learning-paths/database-replication/">Database Replication</a><span>Intermediate · 6 modules · 6 lessons</span></li><li><a href="/learning-paths/performance-and-scalability/">Performance &amp; Scalability</a><span>Intermediate · 1 modules · 9 lessons</span></li><li><a href="/learning-paths/latency-vs-throughput/">Latency vs Throughput</a><span>Intermediate · 1 modules · 8 lessons</span></li><li><a href="/learning-paths/cache-fundamentals/">Cache Fundamentals</a><span>Intermediate · 1 modules · 6 lessons</span></li><li><a href="/learning-paths/stateless-web-tier/">Stateless Web Tier</a><span>Intermediate · 1 modules · 6 lessons</span></li><li><a href="/learning-paths/message-queue/">Message Queue</a><span>Intermediate · 1 modules · 6 lessons</span></li><li><a href="/learning-paths/observability-and-automation/">Logging, Metrics &amp; Automation</a><span>Intermediate · 2 modules · 8 lessons</span></li><li><a href="/learning-paths/database-scaling/">Database Scaling</a><span>Intermediate · 2 modules · 9 lessons</span></li><li><a href="/learning-paths/millions-of-users-and-beyond/">Millions of Users and Beyond</a><span>Advanced · 3 modules · 8 lessons</span></li></ul>
         </section>
+        
         
         
       </main>

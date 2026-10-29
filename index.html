@@ -93,7 +93,7 @@
     <meta name="twitter:image" content="https://diagramwise.com/og/home.png" />
     <meta name="twitter:image:alt" content="Diagramwise system design walkthrough preview" />
 
-    <link rel="icon" type="image/x-icon" href="/logo.png" />
+    <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <meta name="theme-color" content="#6366f1" />
     <meta name="application-name" content="Diagramwise" />
@@ -131,29 +131,35 @@
         ],
         "screenshot": "https://diagramwise.com/og/home.png",
         "image": "https://diagramwise.com/og/home.png",
-        "author": {
-          "@type": "Organization",
-          "name": "Diagramwise",
-          "url": "https://diagramwise.com/"
-        }
+        "author": { "@id": "https://diagramwise.com/#organization" },
+        "publisher": { "@id": "https://diagramwise.com/#organization" }
       }
     </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "Organization",
+        "@id": "https://diagramwise.com/#organization",
         "name": "Diagramwise",
         "url": "https://diagramwise.com/",
-        "logo": "https://diagramwise.com/logo.png"
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://diagramwise.com/logo.png"
+        },
+        "description": "Diagramwise is a system design practice tool for building architectures visually, explaining trade-offs, and getting structured feedback.",
+        "sameAs": ["https://github.com/satya00089/diagrammatic"]
       }
     </script>
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
+        "@id": "https://diagramwise.com/#website",
         "name": "Diagramwise",
         "alternateName": "Diagramwise System Design Practice",
-        "url": "https://diagramwise.com/"
+        "url": "https://diagramwise.com/",
+        "inLanguage": "en",
+        "publisher": { "@id": "https://diagramwise.com/#organization" }
       }
     </script>
 
@@ -335,6 +341,26 @@
         overflow-wrap: anywhere;
       }
 
+      .static-route-answer p,
+      .static-route-faq p {
+        max-width: 70ch;
+        margin: 0 0 1.25rem;
+        color: #545467;
+        line-height: 1.75;
+      }
+
+      .static-route-faq h3 {
+        max-width: 60ch;
+        margin: 1.5rem 0 0.4rem;
+        font-size: 1.15rem;
+        line-height: 1.3;
+      }
+
+      html.dark .static-route-answer p,
+      html.dark .static-route-faq p {
+        color: #b7b7c8;
+      }
+
       .static-route-footer {
         padding-block: 2rem;
         border-top: 1px solid #d9d9e6;
@@ -398,9 +424,9 @@
         }
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-BalcGHFc.js"></script>
+    <script type="module" crossorigin src="/assets/index-Cy1dtRf_.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-DxHoCUag.css">
-      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/","url":"https://diagramwise.com/","name":"Diagramwise — Design systems. Understand every decision.","description":"Practice system design on a visual canvas. Build an architecture, explain your trade-offs, review your assumptions, and improve your next iteration.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/"}]}</script>
+      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/","url":"https://diagramwise.com/","name":"Diagramwise — Design systems. Understand every decision.","description":"Practice system design on a visual canvas. Build an architecture, explain your trade-offs, review your assumptions, and improve your next iteration.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/","speakable":{"@type":"SpeakableSpecification","cssSelector":[".static-route-hero h1",".static-route-answer p"]}},{"@type":"FAQPage","@id":"https://diagramwise.com/#faq","mainEntity":[{"@type":"Question","name":"What is Diagramwise?","acceptedAnswer":{"@type":"Answer","text":"Diagramwise is a web-based system design practice environment. It combines an interactive architecture canvas with realistic problems, learning paths, and structured design review."}},{"@type":"Question","name":"Who is Diagramwise for?","acceptedAnswer":{"@type":"Answer","text":"It is built for engineers preparing for system design interviews, developers learning distributed systems, and teams who want to document and review architecture decisions."}},{"@type":"Question","name":"How does the architecture review work?","acceptedAnswer":{"@type":"Answer","text":"You build a diagram and write down your requirements, assumptions, and trade-offs. Diagramwise then reviews the design for scalability, reliability, data design, and trade-offs, and points out strengths, risks, and practical improvements."}},{"@type":"Question","name":"Which cloud and diagram components are supported?","acceptedAnswer":{"@type":"Answer","text":"The canvas includes generic architecture components plus AWS, Azure, and GCP components, along with UML and entity-relationship diagram shapes."}},{"@type":"Question","name":"Is Diagramwise free to use?","acceptedAnswer":{"@type":"Answer","text":"You can open the design studio and browse practice problems and learning paths without paying."}}]}]}</script>
   </head>
   <body>
     <div id="root">
@@ -422,12 +448,20 @@
           <p>Practice system design on a visual canvas. Build an architecture, explain your trade-offs, review your assumptions, and improve your next iteration.</p>
           <div class="static-route-actions"><a href="/problems/">Start designing</a><a href="/learning-paths/">Explore learning paths</a></div>
         </section>
+        <section class="static-route-section static-route-answer" id="quick-answer">
+    <h2>What is Diagramwise?</h2>
+    <p>Diagramwise is a system design practice tool. You pick a realistic problem, build the architecture on a visual canvas, explain your assumptions and trade-offs, and receive structured feedback on scalability, reliability, and data design so you can improve the next iteration.</p>
+  </section>
         <section class="static-route-section" id="route-content">
           <h2>Build, review, and improve your architecture</h2>
           <ul class="static-route-list"><li><strong>Make the request path visible</strong><span>Start with a clear architecture and show how each component connects.</span></li><li><strong>Explain the trade-offs</strong><span>Review assumptions around scale, reliability, latency, and data design.</span></li><li><strong>Improve the next iteration</strong><span>Turn structured feedback into a stronger design you can defend.</span></li></ul>
         </section>
         
         
+        <section class="static-route-section static-route-faq" id="faq">
+    <h2>Frequently asked questions</h2>
+    <h3>What is Diagramwise?</h3><p>Diagramwise is a web-based system design practice environment. It combines an interactive architecture canvas with realistic problems, learning paths, and structured design review.</p><h3>Who is Diagramwise for?</h3><p>It is built for engineers preparing for system design interviews, developers learning distributed systems, and teams who want to document and review architecture decisions.</p><h3>How does the architecture review work?</h3><p>You build a diagram and write down your requirements, assumptions, and trade-offs. Diagramwise then reviews the design for scalability, reliability, data design, and trade-offs, and points out strengths, risks, and practical improvements.</p><h3>Which cloud and diagram components are supported?</h3><p>The canvas includes generic architecture components plus AWS, Azure, and GCP components, along with UML and entity-relationship diagram shapes.</p><h3>Is Diagramwise free to use?</h3><p>You can open the design studio and browse practice problems and learning paths without paying.</p>
+  </section>
       </main>
       <footer class="static-route-footer">
         Diagramwise — system design practice and architecture review.
