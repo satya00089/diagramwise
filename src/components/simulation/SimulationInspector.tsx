@@ -210,7 +210,7 @@ export function SimulationInspector({
       )}
       {status === "stale" && (
         <p className="sim-callout">
-          The design changed. Use <strong>Restart with changes</strong> to
+          The design changed. Use <strong>Restart</strong> to
           collect readings for the updated model.
         </p>
       )}

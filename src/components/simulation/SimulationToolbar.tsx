@@ -166,9 +166,9 @@ function sliderToRate(position: number): number {
 }
 
 function simulationStartLabel(status: SimulationStatus): string {
-  if (status === "stale") return "Restart with changes";
+  if (status === "stale") return "Restart";
   if (status === "paused") return "Resume";
-  return "Start simulation";
+  return "Start";
 }
 
 function simulationNotice(
@@ -270,6 +270,12 @@ export function SimulationToolbar({
             type="button"
             className="sim-button sim-button--primary sim-toolbar__play"
             onClick={running ? onPause : onStart}
+            data-tooltip={
+              status === "stale"
+                ? "Restart with your latest design changes"
+                : undefined
+            }
+            data-tooltip-placement="bottom"
           >
             {running ? (
               <MdPause aria-hidden="true" size={19} />
