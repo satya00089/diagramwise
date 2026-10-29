@@ -57,15 +57,14 @@ export function SimulationEdgeRuntimeOverlay({
   source,
   target,
   path,
-  x,
-  y,
+  placeLabel,
 }: Readonly<{
   id: string;
   source: string;
   target: string;
   path: string;
-  x: number;
-  y: number;
+  /** Returns the badge centre once the badge's width is known. */
+  placeLabel: (width: number) => { x: number; y: number };
 }>) {
   const rate = useSimulationSession((s) => s.snapshot?.edgeFlow[id]);
   const state = useSimulationSession((s) => s.snapshot?.edgeState[id]);
@@ -106,8 +105,7 @@ export function SimulationEdgeRuntimeOverlay({
       running={status === "running"}
       tone={presentation.tone}
       failureLabel={presentation.failureLabel}
-      labelX={x}
-      labelY={y}
+      placeLabel={placeLabel}
       showLabel
     />
   );

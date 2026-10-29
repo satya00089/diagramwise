@@ -15,6 +15,8 @@ export type SimulationEdgeOverlayProps = Readonly<{
   failureLabel?: string;
   labelX?: number;
   labelY?: number;
+  /** Position the badge once its width is known; wins over labelX/labelY. */
+  placeLabel?: (width: number) => { x: number; y: number };
   showLabel?: boolean;
 }>;
 
@@ -63,6 +65,7 @@ export const SimulationEdgeOverlay = memo(function SimulationEdgeOverlay({
   failureLabel,
   labelX,
   labelY,
+  placeLabel,
   showLabel = true,
 }: SimulationEdgeOverlayProps) {
   const effectiveTone = getEffectiveTone(state, tone, rate);
@@ -75,6 +78,10 @@ export const SimulationEdgeOverlay = memo(function SimulationEdgeOverlay({
   const description = getEdgeDescription(state, failureLabel, rate);
   const label = getEdgeLabel(state, failureLabel, rate);
   const width = Math.max(48, Math.min(260, label.length * 6.5 + 16));
+  let position: { x: number; y: number } | undefined;
+  if (placeLabel) position = placeLabel(width);
+  else if (labelX !== undefined && labelY !== undefined)
+    position = { x: labelX, y: labelY };
   const style = {
     "--sim-flow-duration": `${Math.max(0.35, 1.8 - Math.log10(Math.max(1, rate)) * 0.3)}s`,
   } as CSSProperties;
@@ -91,14 +98,13 @@ export const SimulationEdgeOverlay = memo(function SimulationEdgeOverlay({
       <path className="sim-edge__underlay" d={path} fill="none" />
       <path className="sim-edge__flow" d={path} fill="none" />
       {showLabel &&
-        labelX !== undefined &&
-        labelY !== undefined &&
+        position &&
         state !== "standby" &&
         (rate > 0 ||
           effectiveTone === "danger" ||
           failureLabel !== undefined) && (
           <g
-            transform={`translate(${labelX},${labelY})`}
+            transform={`translate(${position.x},${position.y})`}
             className="sim-edge__label"
           >
             <rect x={-width / 2} y={-11} width={width} height={22} rx={5} />

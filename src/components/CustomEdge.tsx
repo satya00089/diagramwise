@@ -21,6 +21,7 @@ import {
 } from "../utils/edgeLabelLayout";
 import { SimulationEdgeRuntimeOverlay } from "../simulation/RuntimeOverlays";
 import { pointOnEdge } from "../simulation/pointOnEdge";
+import { placeBadgeNearLabel } from "../simulation/edgeBadgePlacement";
 import {
   getFallbackHandlePositions,
   getMeasuredHandleAnchor,
@@ -608,16 +609,23 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
     measureHeight: (text, width) =>
       measureEdgeLabelHeight(text, width, labelFont),
   });
-  // The rate badge lives on its own edge: near the source when the edge has a
-  // label at its midpoint, otherwise at the midpoint.
-  const simulationLabelPosition = useMemo(
-    () =>
-      pointOnEdge(edgePath, labelVisible ? 0.28 : 0.5) ?? {
-        x: centerX,
-        y: centerY,
-      },
-    [edgePath, labelVisible, centerX, centerY],
+  // Rate badge: below the edge's own label, else beside it; with no label it
+  // sits on the edge path at the midpoint.
+  const pathMidpoint = useMemo(
+    () => pointOnEdge(edgePath, 0.5) ?? { x: centerX, y: centerY },
+    [edgePath, centerX, centerY],
   );
+  const placeSimulationLabel = (width: number) =>
+    labelVisible
+      ? placeBadgeNearLabel(
+          labelLayout,
+          width,
+          flowNodes.map(
+            (node) => nodeLookup.get(node.id) ?? node,
+          ) as EdgeLabelNode[],
+          occupiedLabels,
+        )
+      : pathMidpoint;
 
   const onLabelDoubleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
@@ -773,8 +781,7 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
         source={source}
         target={target}
         path={edgePath}
-        x={simulationLabelPosition.x}
-        y={simulationLabelPosition.y}
+        placeLabel={placeSimulationLabel}
       />
       {labelContent && (
         <EdgeLabelRenderer>
