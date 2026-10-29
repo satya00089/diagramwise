@@ -42,6 +42,7 @@ const ProblemLanding = lazyWithRetry(
   "problem-landing",
 );
 const SeoGuide = lazyWithRetry(() => import("./pages/SeoGuide"), "seo-guide");
+const About = lazyWithRetry(() => import("./pages/About"), "about");
 const CreateProblem = lazyWithRetry(
   () => import("./pages/CreateProblem"),
   "create-problem",
@@ -162,6 +163,7 @@ const GlobalProductChrome: React.FC = () => {
       "/system-design-practice",
       "/ai-system-design-interview",
       "/kubernetes-architecture",
+      "/about",
     ].includes(pathname) ||
     ["/learning-paths/", "/playground/", "/problems/"].some((prefix) =>
       pathname.startsWith(prefix),
@@ -247,6 +249,7 @@ const AppContent: React.FC = () => {
                       </StoreBoundary>
                     }
                   />
+                  <Route path="/about" element={<About />} />
                   <Route
                     path="/create-problem"
                     element={

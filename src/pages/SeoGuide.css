@@ -163,6 +163,27 @@
   line-height: 1.75;
 }
 
+.seo-guide-answer {
+  max-width: 40rem;
+  margin: 0;
+  color: var(--text, inherit);
+  font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+  line-height: 1.6;
+}
+
+.seo-guide-about-links {
+  grid-template-columns: 1fr;
+  margin-top: 0;
+}
+
+button.seo-guide-problem {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .seo-guide-steps {
   margin: 0;
   padding: 0;

@@ -6,6 +6,7 @@ import ThemeSwitcher from "../components/ThemeSwitcher";
 import ProductHeader from "../components/ProductHeader";
 import { featuredProblems } from "../utils/problemSlug";
 import NotFound from "./NotFound";
+import seoCopy from "../data/seoCopy.json";
 import "./SeoGuide.css";
 
 const SITE_URL = "https://diagramwise.com";
@@ -175,7 +176,16 @@ const guides = {
   },
 } as const;
 
-const faq = [
+interface GuideCopy {
+  answerQuestion: string;
+  answer: string;
+  faqs: { q: string; a: string }[];
+}
+
+// Shared with prerender.js so the static HTML and the live page match.
+const guideCopy = seoCopy as Record<string, GuideCopy>;
+
+const generalFaq = [
   [
     "How should I start a system design problem?",
     "Clarify the users, primary use cases, non-goals, scale assumptions, and quality attributes before choosing components.",
@@ -203,6 +213,11 @@ const SeoGuide: React.FC = () => {
       Boolean(problem),
     );
   const canonical = `${SITE_URL}/${guide}/`;
+  const copy = guideCopy[`/${guide}`];
+  const faq: readonly (readonly [string, string])[] = copy
+    ? copy.faqs.map(({ q, a }) => [q, a] as const)
+    : generalFaq;
+  const organization = { "@id": `${SITE_URL}/#organization` };
 
   return (
     <>
@@ -222,11 +237,11 @@ const SeoGuide: React.FC = () => {
               headline: data.title,
               description: data.description,
               url: canonical,
-              publisher: {
-                "@type": "Organization",
-                name: "Diagramwise",
-                url: `${SITE_URL}/`,
-              },
+              image: "https://diagramwise.com/og/problems.png",
+              inLanguage: "en",
+              mainEntityOfPage: canonical,
+              author: { "@id": `${SITE_URL}/about/#person` },
+              publisher: organization,
             },
             {
               "@type": "FAQPage",
@@ -265,6 +280,18 @@ const SeoGuide: React.FC = () => {
           </section>
 
           <div className="seo-guide-container seo-guide-content">
+            {copy && (
+              <section
+                aria-labelledby="answer-heading"
+                className="seo-guide-section seo-guide-method"
+                id="quick-answer"
+              >
+                <div className="seo-guide-section__intro">
+                  <h2 id="answer-heading">{copy.answerQuestion}</h2>
+                </div>
+                <p className="seo-guide-answer">{copy.answer}</p>
+              </section>
+            )}
             <section
               aria-labelledby="method-heading"
               className="seo-guide-section seo-guide-method"
@@ -330,7 +357,7 @@ const SeoGuide: React.FC = () => {
               className="seo-guide-section seo-guide-faq"
             >
               <div className="seo-guide-section__intro">
-                <h2 id="faq-heading">Common questions</h2>
+                <h2 id="faq-heading">Frequently asked questions</h2>
                 <p>Keep these principles close when a prompt gets ambiguous.</p>
               </div>
               <div className="seo-guide-faq__list">
