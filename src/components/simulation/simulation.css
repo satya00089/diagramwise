@@ -346,7 +346,7 @@
   font-weight: 650;
 }
 .sim-toolbar__play {
-  min-width: 172px;
+  min-width: 132px;
 }
 .sim-button--primary:hover:not(:disabled) {
   background: color-mix(
