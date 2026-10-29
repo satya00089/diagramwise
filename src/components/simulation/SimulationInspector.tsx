@@ -13,6 +13,7 @@ import {
   MdErrorOutline,
   MdWarningAmber,
 } from "react-icons/md";
+import SelectDropdown from "../shared/SelectDropdown";
 import type {
   SimulationDiagnostic,
   SimulationSelectedNode,
@@ -280,31 +281,28 @@ export function SimulationInspector({
             {onSelectModel ? (
               <label className="sim-field">
                 <span>Behavior</span>
-                <select
-                  className="sim-input"
+                <SelectDropdown
+                  id={`${id}-model-selector`}
                   value={selectedNode.kind ?? ""}
-                  onChange={(event) => {
-                    if (event.currentTarget.value)
-                      onSelectModel(
-                        selectedNode.id,
-                        event.currentTarget.value as NodeKind,
-                      );
+                  options={[
+                    {
+                      value: "",
+                      label: "Choose how this component behaves",
+                      disabled: true,
+                    },
+                    ...(
+                      Object.entries(SIMULATION_MODEL_LABELS) as [
+                        NodeKind,
+                        string,
+                      ][]
+                    ).map(([kind, label]) => ({ value: kind, label })),
+                  ]}
+                  aria-label="Behavior"
+                  size="small"
+                  onChange={(kind) => {
+                    if (kind) onSelectModel(selectedNode.id, kind as NodeKind);
                   }}
-                >
-                  <option value="" disabled>
-                    Choose how this component behaves
-                  </option>
-                  {(
-                    Object.entries(SIMULATION_MODEL_LABELS) as [
-                      NodeKind,
-                      string,
-                    ][]
-                  ).map(([kind, label]) => (
-                    <option key={kind} value={kind}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+                />
               </label>
             ) : (
               <p>

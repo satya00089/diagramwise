@@ -1257,6 +1257,30 @@ html .product-sign-in.product-sign-in {
     box-shadow 180ms ease;
 }
 
+.dashboard-select-trigger--small {
+  min-height: 32px;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.dashboard-select-trigger--small > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dashboard-select-trigger--large {
+  min-height: 64px;
+  gap: 14px;
+  padding: 1rem 1.25rem;
+  border-radius: 1rem;
+  font-size: 1.125rem;
+}
+
 .dashboard-select-trigger:hover,
 .dashboard-select-trigger[aria-expanded="true"] {
   border-color: color-mix(in srgb, var(--text) 48%, var(--border));
@@ -1275,6 +1299,16 @@ html .product-sign-in.product-sign-in {
   flex: none;
   color: var(--muted);
   transition: transform 180ms ease;
+}
+
+.dashboard-select-trigger--small .dashboard-select-chevron {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.dashboard-select-trigger--large .dashboard-select-chevron {
+  width: 1.35rem;
+  height: 1.35rem;
 }
 
 .dashboard-select-chevron--open {
@@ -1299,6 +1333,16 @@ html .product-sign-in.product-sign-in {
   scrollbar-color: color-mix(in srgb, var(--text) 28%, transparent) transparent;
 }
 
+.dashboard-select-menu--small {
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.dashboard-select-menu--large {
+  padding: 8px;
+  border-radius: 1rem;
+}
+
 .dashboard-select-option {
   min-height: 38px;
   padding: 9px 11px;
@@ -1312,9 +1356,26 @@ html .product-sign-in.product-sign-in {
     color 150ms ease;
 }
 
+.dashboard-select-menu--small .dashboard-select-option {
+  min-height: 30px;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+}
+
+.dashboard-select-menu--large .dashboard-select-option {
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 1rem;
+}
+
 .dashboard-select-option:hover,
 .dashboard-select-option--highlighted {
   background: var(--bg-hover);
+}
+
+.dashboard-select-option--disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .dashboard-select-option--selected {
@@ -2548,73 +2609,6 @@ html select option {
   background-color: var(--surface);
   color: var(--text);
   border-color: var(--border);
-}
-
-/* Form select: retain the native menu while making the closed control feel
-   consistent with the rest of the creator form. */
-.select-field-wrapper {
-  position: relative;
-}
-
-html .select-field {
-  appearance: none;
-  width: 100%;
-  min-height: 3.5rem;
-  padding: 1rem 3rem 1rem 1.25rem;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  background-color: var(--bg);
-  color: var(--text);
-  font: inherit;
-  font-size: 1.125rem;
-  font-weight: 500;
-  line-height: 1.5;
-  letter-spacing: 0.01em;
-  cursor: pointer;
-  transition:
-    border-color 180ms ease,
-    box-shadow 180ms ease,
-    background-color 180ms ease;
-}
-
-.select-field--compact {
-  min-height: 3.5rem;
-  padding: 0.875rem 2.75rem 0.875rem 1rem;
-}
-
-html .select-field:hover {
-  border-color: color-mix(in srgb, var(--brand) 55%, var(--border));
-  background-color: color-mix(in srgb, var(--bg) 88%, var(--brand) 12%);
-}
-
-.select-field:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--brand) 72%, transparent);
-  outline-offset: 2px;
-  border-color: var(--brand);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 16%, transparent);
-}
-
-.select-field-icon {
-  position: absolute;
-  top: 50%;
-  right: 1.125rem;
-  width: 1.25rem;
-  height: 1.25rem;
-  color: var(--muted);
-  pointer-events: none;
-  transform: translateY(-50%);
-  transition:
-    color 180ms ease,
-    transform 180ms ease;
-}
-
-.select-field-wrapper:hover .select-field-icon,
-.select-field:focus-visible + .select-field-icon {
-  color: var(--brand);
-}
-
-.select-field:focus-visible + .select-field-icon {
-  transform: translateY(-50%) rotate(180deg);
 }
 
 /* Scope additional rules to component-palette and inspector areas to minimize global impact */

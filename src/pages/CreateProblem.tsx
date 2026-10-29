@@ -3,14 +3,10 @@ import { useNavigate } from "react-router-dom";
 import ThemeSwitcher from "../components/ThemeSwitcher";
 import { useTheme } from "../hooks/useTheme";
 import AnimatedTextarea from "../components/shared/AnimatedTextarea";
+import SelectDropdown from "../components/shared/SelectDropdown";
 import Seo from "../components/SEO";
 import type { Requirement, RequirementSpec } from "../types/requirements";
-import {
-  HiDocumentText,
-  HiLightBulb,
-  HiArrowRight,
-  HiChevronDown,
-} from "react-icons/hi2";
+import { HiDocumentText, HiLightBulb, HiArrowRight } from "react-icons/hi2";
 import {
   MdTune,
   MdLabel,
@@ -291,27 +287,23 @@ const CreateProblem: React.FC = () => {
                     >
                       <MdTune className="w-5 h-5" /> Difficulty
                     </label>
-                    <div className="select-field-wrapper">
-                      <select
-                        id="difficulty"
-                        value={formData.difficulty}
-                        onChange={(e) =>
-                          handleInputChange(
-                            "difficulty",
-                            e.target.value as "Easy" | "Medium" | "Hard",
-                          )
-                        }
-                        className="select-field"
-                      >
-                        <option value="Easy">Easy</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Hard">Hard</option>
-                      </select>
-                      <HiChevronDown
-                        aria-hidden="true"
-                        className="select-field-icon"
-                      />
-                    </div>
+                    <SelectDropdown
+                      id="difficulty"
+                      value={formData.difficulty}
+                      options={[
+                        { value: "Easy", label: "Easy" },
+                        { value: "Medium", label: "Medium" },
+                        { value: "Hard", label: "Hard" },
+                      ]}
+                      aria-label="Difficulty"
+                      size="large"
+                      onChange={(value) =>
+                        handleInputChange(
+                          "difficulty",
+                          value as "Easy" | "Medium" | "Hard",
+                        )
+                      }
+                    />
                   </div>
 
                   <div>
@@ -421,33 +413,32 @@ const CreateProblem: React.FC = () => {
                               >
                                 Scope
                               </label>
-                              <div className="select-field-wrapper">
-                                <select
-                                  id={`scope-${item.id}`}
-                                  value={item.scope ?? "core"}
-                                  disabled={isSubmitting}
-                                  onChange={(event) =>
-                                    handleRequirementScopeChange(
-                                      field,
-                                      item.id,
-                                      event.target.value === "extension"
-                                        ? "extension"
-                                        : "core",
-                                    )
-                                  }
-                                  className="select-field"
-                                  aria-label={`Scope for ${title.toLowerCase().replace(/s$/, "")} ${index + 1}`}
-                                >
-                                  <option value="core">Core requirement</option>
-                                  <option value="extension">
-                                    Optional extension
-                                  </option>
-                                </select>
-                                <HiChevronDown
-                                  aria-hidden="true"
-                                  className="select-field-icon"
-                                />
-                              </div>
+                              <SelectDropdown
+                                id={`scope-${item.id}`}
+                                value={item.scope ?? "core"}
+                                disabled={isSubmitting}
+                                options={[
+                                  {
+                                    value: "core",
+                                    label: "Core requirement",
+                                  },
+                                  {
+                                    value: "extension",
+                                    label: "Optional extension",
+                                  },
+                                ]}
+                                aria-label={`Scope for ${title.toLowerCase().replace(/s$/, "")} ${index + 1}`}
+                                size="small"
+                                onChange={(value) =>
+                                  handleRequirementScopeChange(
+                                    field,
+                                    item.id,
+                                    value === "extension"
+                                      ? "extension"
+                                      : "core",
+                                  )
+                                }
+                              />
                             </div>
                           </div>
                           {formData[field].length > 1 && (

@@ -2,7 +2,7 @@ import React from "react";
 import { motion } from "motion/react";
 import { FieldWrapper } from "./AnimatedFieldBase";
 import { useFocus } from "./useFocus";
-import SelectDropdown from "./SelectDropdown";
+import SelectDropdown, { type SelectDropdownSize } from "./SelectDropdown";
 
 export interface AnimatedSelectProps {
   id: string;
@@ -13,6 +13,7 @@ export interface AnimatedSelectProps {
   disabled?: boolean;
   className?: string;
   containerClassName?: string;
+  size?: SelectDropdownSize;
 }
 
 const AnimatedSelect: React.FC<AnimatedSelectProps> = ({
@@ -24,6 +25,7 @@ const AnimatedSelect: React.FC<AnimatedSelectProps> = ({
   disabled,
   className = "",
   containerClassName,
+  size,
 }) => {
   const { focused, onFocus, onBlur } = useFocus();
   const labelId = `${id}-label`;
@@ -55,6 +57,7 @@ const AnimatedSelect: React.FC<AnimatedSelectProps> = ({
           onBlur={onBlur}
           disabled={disabled}
           className={className}
+          size={size}
         />
       </motion.div>
     </FieldWrapper>

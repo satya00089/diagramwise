@@ -1,9 +1,9 @@
 import { useModalDialog } from "../hooks/useModalDialog";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MdClose, MdSend, MdStar, MdStarBorder } from "react-icons/md";
-import { HiChevronDown } from "react-icons/hi2";
 import { useAuth } from "../hooks/useAuth";
 import TiptapAnswerEditor from "./TiptapAnswerEditor";
+import SelectDropdown from "./shared/SelectDropdown";
 import "../styles/feedback-overrides.css";
 import type {
   FeedbackCategory,
@@ -43,112 +43,25 @@ const FeedbackCategorySelect: React.FC<FeedbackCategorySelectProps> = ({
   value,
   onChange,
 }) => {
-  const [open, setOpen] = useState(false);
-  const [highlightedIndex, setHighlightedIndex] = useState(() =>
-    Math.max(
-      0,
-      CATEGORY_OPTIONS.findIndex((option) => option.value === value),
-    ),
-  );
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const selectedIndex = Math.max(
-    0,
-    CATEGORY_OPTIONS.findIndex((option) => option.value === value),
-  );
-  const selectedOption = CATEGORY_OPTIONS[selectedIndex];
-
-  useEffect(() => {
-    if (!open) return;
-    setHighlightedIndex(selectedIndex);
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!wrapperRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [open, selectedIndex]);
-
-  const choose = (nextValue: FeedbackCategory) => {
-    onChange(nextValue);
-    setOpen(false);
-  };
-
+  const selectedValue = CATEGORY_OPTIONS.some(
+    (option) => option.value === value,
+  )
+    ? value
+    : CATEGORY_OPTIONS[0].value;
   return (
-    <div
-      ref={wrapperRef}
-      className="dashboard-select-wrapper feedback-category-select"
-    >
-      <button
-        id="feedback-category"
-        type="button"
-        className="dashboard-select-trigger"
-        aria-label="Feedback category"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-        onKeyDown={(event) => {
-          if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-            event.preventDefault();
-            setOpen(true);
-            setHighlightedIndex((current) =>
-              event.key === "ArrowDown"
-                ? Math.min(CATEGORY_OPTIONS.length - 1, current + 1)
-                : Math.max(0, current - 1),
-            );
-          } else if (event.key === "Home") {
-            event.preventDefault();
-            setOpen(true);
-            setHighlightedIndex(0);
-          } else if (event.key === "End") {
-            event.preventDefault();
-            setOpen(true);
-            setHighlightedIndex(CATEGORY_OPTIONS.length - 1);
-          } else if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            if (open) choose(CATEGORY_OPTIONS[highlightedIndex].value);
-            else setOpen(true);
-          } else if (event.key === "Escape") {
-            setOpen(false);
-          }
-        }}
-      >
-        <span>{selectedOption.label}</span>
-        <HiChevronDown
-          aria-hidden="true"
-          className={`dashboard-select-chevron ${open ? "dashboard-select-chevron--open" : ""}`}
-        />
-      </button>
-      {open && (
-        <div
-          className="dashboard-select-menu"
-          role="listbox"
-          aria-label="Feedback category"
-        >
-          {CATEGORY_OPTIONS.map((option, index) => (
-            <div
-              key={option.value}
-              role="option"
-              tabIndex={0}
-              aria-selected={option.value === value}
-              className={`dashboard-select-option ${
-                index === highlightedIndex
-                  ? "dashboard-select-option--highlighted"
-                  : ""
-              } ${option.value === value ? "dashboard-select-option--selected" : ""}`}
-              onMouseEnter={() => setHighlightedIndex(index)}
-              onClick={() => choose(option.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  choose(option.value);
-                }
-              }}
-            >
-              {option.label}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+    <SelectDropdown
+      id="feedback-category"
+      value={selectedValue}
+      options={CATEGORY_OPTIONS}
+      aria-label="Feedback category"
+      wrapperClassName="feedback-category-select"
+      onChange={(nextValue) => {
+        const option = CATEGORY_OPTIONS.find(
+          (category) => category.value === nextValue,
+        );
+        if (option) onChange(option.value);
+      }}
+    />
   );
 };
 
