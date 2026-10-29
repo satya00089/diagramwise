@@ -302,9 +302,15 @@ export function SimulationToolbar({
         <span
           className={`sim-toolbar__state sim-toolbar__state--${status}`}
           role="status"
+          tabIndex={0}
+          aria-label={SIMULATION_STATUS_LABELS[status]}
+          data-tooltip={SIMULATION_STATUS_LABELS[status]}
+          data-tooltip-placement="bottom"
         >
           <span className="sim-status-dot" aria-hidden="true" />
-          {SIMULATION_STATUS_LABELS[status]}
+          <span className="sim-toolbar__state-label">
+            {SIMULATION_STATUS_LABELS[status]}
+          </span>
         </span>
         {trafficSource && trafficSource.mode !== "none" && (
           <div className="sim-toolbar__source">

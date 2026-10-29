@@ -64,7 +64,7 @@
 }
 .sim-toolbar__readout {
   flex-wrap: wrap;
-  gap: 7px 16px;
+  gap: 7px 8px;
   margin-top: 9px;
   color: var(--text-muted, #929292);
   font-size: 11px;
@@ -88,17 +88,25 @@
   white-space: nowrap;
 }
 .sim-toolbar__metric--responses {
-  width: 154px;
+  width: 140px;
 }
 .sim-toolbar__metric--failed {
-  width: 82px;
+  width: 72px;
 }
 .sim-toolbar__state {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  width: 104px;
+  width: 112px;
   flex: none;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.sim-toolbar__state-label {
+  min-width: 0;
+  overflow: hidden;
+  flex: 1;
+  text-overflow: ellipsis;
 }
 .sim-toolbar__source {
   display: inline-flex;
@@ -148,8 +156,12 @@
   color: var(--sim-danger);
 }
 .sim-toolbar__clock {
-  width: 122px;
+  width: 110px;
   text-align: right;
+}
+.sim-toolbar__readout > .sim-text-button {
+  flex: none;
+  white-space: nowrap;
 }
 .sim-toolbar__load {
   gap: 7px;
@@ -379,6 +391,7 @@
 .sim-text-button:focus-visible,
 .sim-input:focus-visible,
 .sim-toolbar__slider:focus-visible,
+.sim-toolbar__state:focus-visible,
 .sim-attention__item:focus-visible,
 .sim-advanced > summary:focus-visible,
 .sim-node-badge__inspect:focus-visible {
