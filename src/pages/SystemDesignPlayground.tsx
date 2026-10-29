@@ -5708,7 +5708,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                         )}
                         {autoSaveStatus === "saved" && (
                           <>
-                            <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                            <div className="h-2 w-2 rounded-full bg-emerald-400/70"></div>
                             <span>
                               Saved{" "}
                               {lastSavedAt && formatSavedTime(lastSavedAt)}
@@ -5743,7 +5743,16 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                         : "hidden sm:flex items-center gap-2 border-white/20"
                     }
                   >
-                    <div className="flex items-center gap-2 px-2 py-1 text-xs text-white/80">
+                    <div
+                      className="flex items-center gap-2 px-2 py-1 text-xs text-white/80"
+                      aria-live="polite"
+                      data-tooltip={
+                        problemSaveStatus === "saved" ||
+                        problemSaveStatus === "idle"
+                          ? "All changes are saved to your account"
+                          : undefined
+                      }
+                    >
                       {problemSaveStatus === "both-error" && (
                         <>
                           <div className="w-3 h-3 bg-red-400 rounded-full"></div>
@@ -5764,10 +5773,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                       )}
                       {problemSaveStatus === "saved" && (
                         <>
-                          <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                          <div className="h-2 w-2 rounded-full bg-emerald-400/70"></div>
                           <span>
-                            Progress saved{" "}
-                            {lastSavedAt && formatSavedTime(lastSavedAt)}
+                            Saved {lastSavedAt && formatSavedTime(lastSavedAt)}
                           </span>
                         </>
                       )}
@@ -5788,10 +5796,8 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                       )}
                       {problemSaveStatus === "idle" && lastSavedAt && (
                         <>
-                          <div className="w-3 h-3 bg-white/40 rounded-full"></div>
-                          <span>
-                            Progress saved {formatSavedTime(lastSavedAt)}
-                          </span>
+                          <div className="h-2 w-2 rounded-full bg-emerald-400/70"></div>
+                          <span>Saved {formatSavedTime(lastSavedAt)}</span>
                         </>
                       )}
                     </div>
@@ -5860,26 +5866,22 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                     </>
                   )}
 
-                {!isSharedView &&
-                  isAuthenticated &&
-                  ((idFromUrl === "free" &&
-                    currentDiagramId &&
-                    currentDiagram?.isOwner !== false) ||
-                    (idFromUrl !== "free" && savedAttemptId)) && (
-                    <button
-                      type="button"
-                      onClick={() => setShowShareToWorldModal(true)}
-                      className={`nav-trigger flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${publicDesignButtonClass}`}
-                      aria-label={publicDesignAction}
-                      data-tooltip={publicDesignAction}
-                    >
-                      <NavIcon name="publish" />
-                      <span className="hidden lg:inline">
-                        {publicDesignStatus}
-                      </span>
-                    </button>
-                  )}
-
+                {!isSharedView && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      simulationSession.reveal();
+                      simulationSession.start();
+                      setActiveRightTab("simulation");
+                    }}
+                    className="nav-trigger flex items-center gap-1.5 rounded-md bg-white/15 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 cursor-pointer"
+                    aria-label="Start simulation"
+                    data-tooltip="Start a live architecture simulation"
+                  >
+                    <NavIcon name="simulate" />
+                    <span className="hidden md:inline">Simulate</span>
+                  </button>
+                )}
                 {problem?.id !== "free" && (
                   <div
                     data-tour="assess-btn"
@@ -5895,41 +5897,52 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                       disabled={
                         isAssessing || isPreparingInterview || !isAuthenticated
                       }
-                      className="px-6 py-1 text-white font-bold rounded-md hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                    >
-                      {getAssessmentActionLabel(
+                      aria-label={getAssessmentActionLabel(
                         isAssessing,
                         isPreparingInterview,
                       )}
+                      className="header-primary-action nav-trigger flex items-center gap-1.5 rounded-md px-3.5 py-1.5 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--text)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg)] disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <NavIcon name="assessment" />
+                      <span className="hidden md:inline">
+                        {getAssessmentActionLabel(
+                          isAssessing,
+                          isPreparingInterview,
+                        )}
+                      </span>
                     </button>
                   </div>
                 )}
-                {!isSharedView && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      simulationSession.reveal();
-                      simulationSession.start();
-                      setActiveRightTab("simulation");
-                    }}
-                    className="nav-trigger flex items-center gap-1.5 rounded-md border border-white/25 px-3 py-1.5 text-sm font-semibold text-white/90 transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
-                    aria-label="Start simulation"
-                    data-tooltip="Start a live architecture simulation"
-                  >
-                    <NavIcon name="simulate" />
-                    <span>Simulate</span>
-                  </button>
-                )}
+                {!isSharedView &&
+                  isAuthenticated &&
+                  ((idFromUrl === "free" &&
+                    currentDiagramId &&
+                    currentDiagram?.isOwner !== false) ||
+                    (idFromUrl !== "free" && savedAttemptId)) && (
+                    <button
+                      type="button"
+                      onClick={() => setShowShareToWorldModal(true)}
+                      className={`nav-trigger flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${publicDesignButtonClass}`}
+                      aria-label={publicDesignAction}
+                      data-tooltip={publicDesignAction}
+                    >
+                      <NavIcon name="publish" />
+                      <span className="hidden md:inline">
+                        {publicDesignStatus}
+                      </span>
+                    </button>
+                  )}
+
                 {/* Tour trigger */}
                 {!isSharedView && (
                   <button
                     type="button"
                     onClick={startTour}
-                    className="nav-trigger flex items-center gap-1 px-2 py-1.5 text-sm font-medium text-white/80 hover:text-white hover:bg-white/20 rounded-md transition-colors cursor-pointer"
+                    className="nav-trigger p-2 text-white/80 hover:text-white hover:bg-white/20 rounded-md transition-colors cursor-pointer"
+                    aria-label="Take a tour"
                     data-tooltip="Take a tour"
                   >
-                    <NavIcon name="tour" />
-                    <span className="hidden sm:inline text-xs">Tour</span>
+                    <NavIcon name="tour" size={18} />
                   </button>
                 )}
                 <ThemeSwitcher />
