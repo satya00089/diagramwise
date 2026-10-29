@@ -8,6 +8,7 @@ import type {
   SimSnapshot,
 } from "@diagramwise/simulation-core";
 import {
+  MdArrowBack,
   MdArrowForward,
   MdCheckCircleOutline,
   MdErrorOutline,
@@ -44,6 +45,8 @@ export type SimulationInspectorProps = Readonly<{
   onClearFault?: (nodeId: string) => void;
   onFocusDiagnostic?: (diagnostic: SimulationDiagnostic) => void;
   onSelectNode?: (nodeId: string) => void;
+  /** Leave the selected component and return to the whole-simulation view. */
+  onBack?: () => void;
   children?: ReactNode;
 }>;
 
@@ -135,6 +138,7 @@ export function SimulationInspector({
   onClearFault,
   onFocusDiagnostic,
   onSelectNode,
+  onBack,
   children,
 }: SimulationInspectorProps) {
   const id = useId();
@@ -195,6 +199,12 @@ export function SimulationInspector({
   return (
     <section className="sim-inspector" aria-labelledby={`${id}-heading`}>
       <header className="sim-inspector__heading">
+        {selectedNode && onBack && (
+          <button type="button" className="sim-back" onClick={onBack}>
+            <MdArrowBack aria-hidden="true" size={16} />
+            Back to overview
+          </button>
+        )}
         <p className="sim-eyebrow">Simulation</p>
         <h2 id={`${id}-heading`}>
           {selectedNode?.label ?? "Watch your design under load"}

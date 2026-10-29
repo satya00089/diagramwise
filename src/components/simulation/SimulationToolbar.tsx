@@ -247,6 +247,13 @@ export function SimulationToolbar({
     (choice) => choice.value === sourceSelectionValue,
   );
   const sourceLabel = getSourceLabel(trafficSource);
+  // One possible source: keep the same dropdown control, but disabled, so the
+  // toolbar reads the same whether or not there is a choice to make.
+  const fixedSourceLabel = sourceLabel ?? trafficSource?.options[0]?.label ?? "";
+  const showFixedSource =
+    !canSelectSource &&
+    (trafficSource?.mode === "ingress" || trafficSource?.mode === "clients") &&
+    fixedSourceLabel !== "";
 
   const commitRateDraft = () => {
     const parsed = Number(rateDraft);
@@ -434,6 +441,22 @@ export function SimulationToolbar({
                     const nodeId = getChoiceNodeId(choice.value);
                     if (nodeId !== undefined) onTrafficSourceChange(nodeId);
                   }}
+                />
+              </div>
+            ) : showFixedSource ? (
+              <div
+                className="sim-toolbar__source-dropdown"
+                data-tooltip="This design has one traffic source, so there is nothing to choose"
+                data-tooltip-placement="bottom"
+              >
+                <SelectDropdown
+                  id={`${id}-source`}
+                  value={fixedSourceLabel}
+                  options={[fixedSourceLabel]}
+                  aria-label="Traffic entrypoint (only one available)"
+                  className="sim-toolbar__select-trigger sim-toolbar__select-trigger--source"
+                  disabled
+                  onChange={() => undefined}
                 />
               </div>
             ) : (

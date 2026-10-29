@@ -6209,6 +6209,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                 edges={edges}
                 signedIn={isAuthenticated}
                 selectedNodeId={inspectedNodeId}
+                onClearSelection={() => setInspectedNodeId(null)}
                 onModelChange={updateSimulationModel}
                 onEntrypoint={setSimulationEntrypoint}
                 onDemo={REPAIR_CHALLENGE_ENABLED ? openRepairDemo : undefined}

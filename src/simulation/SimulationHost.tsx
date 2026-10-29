@@ -81,6 +81,8 @@ type DetailsProps = Readonly<{
   edges: Edge[];
   signedIn: boolean;
   selectedNodeId?: string | null;
+  /** Clear the canvas-level selection when leaving a component's details. */
+  onClearSelection?: () => void;
   onModelChange: (nodeId: string, kind: NodeKind) => void;
   onEntrypoint: (nodeId: string) => void;
   onDemo?: () => void;
@@ -91,6 +93,7 @@ export function SimulationDetails({
   edges,
   signedIn,
   selectedNodeId,
+  onClearSelection,
   onModelChange,
   onEntrypoint,
   onDemo,
@@ -155,6 +158,11 @@ export function SimulationDetails({
     simulationSession.selectNode(id);
     const item = nodes.find((n) => n.id === id);
     if (item) void fitView({ nodes: [item], padding: 0.6, duration: 200 });
+  }
+  function back() {
+    simulationSession.selectNode(null);
+    onClearSelection?.();
+    void fitView({ padding: 0.2, duration: 200 });
   }
   function artifact() {
     const value = simulationSession.artifact();
@@ -269,6 +277,7 @@ export function SimulationDetails({
         simulationSession.command({ type: "clearFault", nodeId: id })
       }
       onSelectNode={focus}
+      onBack={back}
       onFocusDiagnostic={(diagnostic) => {
         if (diagnostic.nodeId) focus(diagnostic.nodeId);
         else if (diagnostic.edgeId) {

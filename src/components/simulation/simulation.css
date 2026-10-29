@@ -429,7 +429,28 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.sim-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 0 8px -4px;
+  padding: 3px 8px 3px 4px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted, #929292);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+.sim-back:hover {
+  background: var(--bg-hover, rgba(255, 255, 255, 0.08));
+  color: var(--text, inherit);
+}
 .sim-button:focus-visible,
+.sim-back:focus-visible,
 .sim-text-button:focus-visible,
 .sim-input:focus-visible,
 .sim-toolbar__slider:focus-visible,
