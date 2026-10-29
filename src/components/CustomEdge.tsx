@@ -20,7 +20,7 @@ import {
   type EdgeLabelNode,
 } from "../utils/edgeLabelLayout";
 import { SimulationEdgeRuntimeOverlay } from "../simulation/RuntimeOverlays";
-import { edgeBadgePosition } from "../simulation/edgeBadgePosition";
+import { pointOnEdge } from "../simulation/pointOnEdge";
 import {
   getFallbackHandlePositions,
   getMeasuredHandleAnchor,
@@ -608,15 +608,16 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
     measureHeight: (text, width) =>
       measureEdgeLabelHeight(text, width, labelFont),
   });
-  const simulationLabelPosition = labelVisible
-    ? edgeBadgePosition(
-        labelLayout,
-        flowNodes.map(
-          (node) => nodeLookup.get(node.id) ?? node,
-        ) as EdgeLabelNode[],
-        occupiedLabels,
-      )
-    : { x: centerX, y: centerY + 20 };
+  // The rate badge lives on its own edge: near the source when the edge has a
+  // label at its midpoint, otherwise at the midpoint.
+  const simulationLabelPosition = useMemo(
+    () =>
+      pointOnEdge(edgePath, labelVisible ? 0.28 : 0.5) ?? {
+        x: centerX,
+        y: centerY,
+      },
+    [edgePath, labelVisible, centerX, centerY],
+  );
 
   const onLabelDoubleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
