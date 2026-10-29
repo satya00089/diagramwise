@@ -314,6 +314,10 @@ const InspectorPanel: React.FC<InspectorPanelProps> = ({
     }
   }, [isFreeDesignMode, inspectedNodeId, inspectedEdgeId, setActiveTab]);
 
+  React.useEffect(() => {
+    if (activeTab === "simulation") setOpen(true);
+  }, [activeTab]);
+
   if (!problem) return null;
 
   let reviewSpec = problem.requirementSpec;
