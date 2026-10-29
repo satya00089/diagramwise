@@ -18,7 +18,9 @@
 .sim-tone-warning { --sim-tone: var(--sim-warning); }
 .sim-tone-danger { --sim-tone: var(--sim-danger); }
 .sim-toolbar {
+  width: fit-content;
   max-width: min(100%, 950px);
+  margin-inline: auto;
   padding: 10px 12px;
   border: 1px solid var(--border, #343434);
   border-radius: 12px;
