@@ -10,6 +10,7 @@ import {
   type CanvasWorkspaceApi,
 } from "./canvasWorkspaceController";
 import { normalizeEdgeDataPurpose } from "./purposeMigration";
+import { persistProblemAttempt } from "./persistProblemAttempt";
 
 const WS = "design-1";
 
@@ -301,6 +302,21 @@ describe("CanvasWorkspaceController.saveActive", () => {
     expect(api.saveCanvasContent).not.toHaveBeenCalled();
   });
 
+  it("verifies unchanged hydrated content without rewriting the stored legacy graph", async () => {
+    const legacyEdge = { id: "edge-a-b", source: "a", target: "b", data: { description: "Carries the request" } };
+    const initial = { ...TWO_TABS, content: { ...TWO_TABS.content, main: detail("main", 1, [{ id: "a" }, { id: "b" }], [legacyEdge]) } };
+    const { api, state } = fakeApi(initial);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    const nodes = [{ id: "a" }, { id: "b" }];
+    const hydrated = [{ ...legacyEdge, data: normalizeEdgeDataPurpose(legacyEdge.data) }];
+    controller.markActiveContentClean("main", nodes, hydrated);
+
+    expect(await controller.saveActive(nodes, hydrated, true)).toBe("unchanged");
+    expect(state.content.main.edges).toEqual([legacyEdge]);
+    expect(await controller.saveActive(nodes, hydrated)).toBe("unchanged");
+  });
+
   it("reports a conflict instead of overwriting another session's changes", async () => {
     const { api, state } = fakeApi(TWO_TABS);
     const controller = new CanvasWorkspaceController(api);
@@ -523,7 +539,252 @@ describe("CanvasWorkspaceController.getActiveContent", () => {
 });
 
 describe("CanvasWorkspaceController stale versions", () => {
-  it("adopts the latest version without writing when the server already has this content", async () => {
+  it("saves a moved node when conflict recovery first reads an outdated version", async () => {
+    const { api, state, calls } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    const stale = structuredClone(state.content.main);
+    state.content.main = { ...state.content.main, version: 2 };
+    const readCurrent = api.getCanvas;
+    api.getCanvas = vi.fn().mockResolvedValueOnce(stale).mockImplementation(readCurrent);
+
+    const moved = [{ id: "m", position: { x: 180, y: 72 } }];
+    expect(await controller.saveActive(moved, [])).toBe("saved");
+    expect(calls.saves.map((call) => call.version)).toEqual([1, 2]);
+    expect(state.content.main.nodes).toEqual(moved);
+  });
+
+  it("rechecks content if the version advances again during conflict recovery", async () => {
+    const { api, state, calls } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    state.content.main = { ...state.content.main, version: 2 };
+    const save = api.saveCanvasContent;
+    api.saveCanvasContent = async (workspaceId, canvasId, body) => {
+      if (body.version === 2) state.content.main = { ...state.content.main, version: 3 };
+      return save(workspaceId, canvasId, body);
+    };
+
+    const moved = [{ id: "m", position: { x: 180, y: 72 } }];
+    expect(await controller.saveActive(moved, [])).toBe("saved");
+    expect(calls.saves.map((call) => call.version)).toEqual([1, 2, 3]);
+    expect(state.content.main.nodes).toEqual(moved);
+  });
+
+  it("does not overwrite another session when the first recovery read is stale", async () => {
+    const { api, state, calls } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    const stale = structuredClone(state.content.main);
+    const remote = [{ id: "remote", position: { x: 20, y: 30 } }];
+    state.content.main = { ...state.content.main, version: 2, nodes: remote };
+    const readCurrent = api.getCanvas;
+    api.getCanvas = vi.fn().mockResolvedValueOnce(stale).mockImplementation(readCurrent);
+
+    const moved = [{ id: "m", position: { x: 180, y: 72 } }];
+    expect(await controller.saveActive(moved, [])).toBe("conflict");
+    expect(calls.saves.map((call) => call.version)).toEqual([1]);
+    expect(state.content.main.nodes).toEqual(remote);
+  });
+
+  it("stops safely if recovery cannot read a fresh canvas version", async () => {
+    const { api, state, calls } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    const stale = structuredClone(state.content.main);
+    state.content.main = { ...state.content.main, version: 2 };
+    api.getCanvas = vi.fn().mockResolvedValue(stale);
+
+    expect(await controller.saveActive([{ id: "m", position: { x: 180, y: 72 } }], [])).toBe("error");
+    expect(api.getCanvas).toHaveBeenCalledTimes(3);
+    expect(calls.saves.map((call) => call.version)).toEqual([1]);
+    expect(controller.getSnapshot().message).toContain("try saving again");
+    expect(state.content.main.nodes).toEqual(stale.nodes);
+  });
+
+  it("saves the same pending edit when the user retries after reads recover", async () => {
+    const { api, state } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    const stale = structuredClone(state.content.main);
+    state.content.main = { ...state.content.main, version: 2 };
+    const readCurrent = api.getCanvas;
+    api.getCanvas = vi.fn().mockResolvedValue(stale);
+    const moved = [{ id: "m", position: { x: 180, y: 72 } }];
+
+    expect(await controller.saveActive(moved, [])).toBe("error");
+    api.getCanvas = readCurrent;
+    expect(await controller.saveActive(moved, [])).toBe("saved");
+    expect(state.content.main.nodes).toEqual(moved);
+  });
+
+  it("does not replace a known version with a stale read while verifying unchanged content", async () => {
+    const { api, state, calls } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    const stale = structuredClone(state.content.main);
+    const initialMove = [{ id: "m", position: { x: 10, y: 20 } }];
+    expect(await controller.saveActive(initialMove, [])).toBe("saved");
+    const readCurrent = api.getCanvas;
+    api.getCanvas = vi.fn().mockResolvedValueOnce(stale).mockImplementation(readCurrent);
+
+    expect(await controller.saveActive(initialMove, [], true)).toBe("unchanged");
+    const nextMove = [{ id: "m", position: { x: 180, y: 72 } }];
+    expect(await controller.saveActive(nextMove, [])).toBe("saved");
+    expect(calls.saves.map((call) => call.version)).toEqual([1, 2, 3]);
+    expect(state.content.main.nodes).toEqual(nextMove);
+  });
+
+  it("preserves a remote edit made during the retry", async () => {
+    const { api, state, calls } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    state.content.main = { ...state.content.main, version: 2 };
+    const remote = [{ id: "remote", position: { x: 9, y: 11 } }];
+    const save = api.saveCanvasContent;
+    api.saveCanvasContent = async (workspaceId, canvasId, body) => {
+      if (body.version === 2) state.content.main = { ...state.content.main, version: 3, nodes: remote };
+      return save(workspaceId, canvasId, body);
+    };
+
+    expect(await controller.saveActive([{ id: "m", position: { x: 180, y: 72 } }], [])).toBe("conflict");
+    expect(calls.saves.map((call) => call.version)).toEqual([1, 2]);
+    expect(state.content.main.nodes).toEqual(remote);
+  });
+
+  it("does not declare success when stale conflict metadata and content match the pending edit", async () => {
+    const { api, state, calls } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    const moved = [{ id: "m", position: { x: 180, y: 72 } }];
+    const stale = { ...state.content.main, version: 2, nodes: moved };
+    const remote = [{ id: "remote", position: { x: 9, y: 11 } }];
+    state.content.main = { ...state.content.main, version: 3, nodes: remote };
+    const readCurrent = api.getCanvas;
+    api.getCanvas = vi.fn().mockResolvedValueOnce(stale).mockImplementation(readCurrent);
+    const save = api.saveCanvasContent;
+    api.saveCanvasContent = async (workspaceId, canvasId, body) => {
+      try { return await save(workspaceId, canvasId, body); }
+      catch (error) {
+        if (body.version === 1 && error instanceof CanvasVersionConflictError) throw new CanvasVersionConflictError(2);
+        throw error;
+      }
+    };
+
+    expect(await controller.saveActive(moved, [])).toBe("conflict");
+    expect(calls.saves.map((call) => call.version)).toEqual([1, 2]);
+    expect(state.content.main.nodes).toEqual(remote);
+  });
+
+  it("detects a remote edit even when unchanged-content verification reads an old version", async () => {
+    const { api, state, calls } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    const stale = structuredClone(state.content.main);
+    const remote = [{ id: "remote", position: { x: 9, y: 11 } }];
+    state.content.main = { ...state.content.main, version: 2, nodes: remote };
+    const readCurrent = api.getCanvas;
+    api.getCanvas = vi.fn().mockResolvedValueOnce(stale).mockImplementation(readCurrent);
+
+    expect(await controller.saveActive(stale.nodes, [], true)).toBe("conflict");
+    expect(calls.saves.map((call) => call.version)).toEqual([1]);
+    expect(state.content.main.nodes).toEqual(remote);
+  });
+
+  it("detects a remote edit before saving attempt metadata for an unchanged canvas", async () => {
+    const { api, state } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    state.content.main = {
+      ...state.content.main,
+      version: 2,
+      nodes: [{ id: "remote" }],
+    };
+    const writeAttempt = vi.fn(async () => undefined);
+    await expect(
+      persistProblemAttempt(async () => {
+        const result = await controller.saveActive([{ id: "m" }], [], true);
+        if (result === "conflict" || result === "error")
+          throw new Error("canvas failed");
+      }, writeAttempt),
+    ).rejects.toThrow("canvas failed");
+    expect(writeAttempt).not.toHaveBeenCalled();
+  });
+  it("does not update an attempt when the canvas has a genuine conflict", async () => {
+    const { api, state } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    state.content.main = {
+      ...state.content.main,
+      version: 2,
+      nodes: [{ id: "remote" }],
+    };
+    const writeAttempt = vi.fn(async () => undefined);
+    await expect(
+      persistProblemAttempt(async () => {
+        const result = await controller.saveActive([{ id: "mine" }], []);
+        if (result === "conflict" || result === "error")
+          throw new Error("canvas failed");
+      }, writeAttempt),
+    ).rejects.toThrow("canvas failed");
+    expect(writeAttempt).not.toHaveBeenCalled();
+    expect(
+      (await new CanvasWorkspaceController(api).load(WS, "main")).nodes,
+    ).toEqual([{ id: "remote" }]);
+  });
+
+  it("can retry the attempt after its canvas was saved but the attempt write failed", async () => {
+    const { api } = fakeApi(TWO_TABS);
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    const saveCanvas = async () => {
+      const result = await controller.saveActive([{ id: "edited" }], []);
+      if (result === "conflict" || result === "error")
+        throw new Error("canvas failed");
+    };
+    const writeAttempt = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("offline"))
+      .mockResolvedValueOnce("saved");
+    await expect(
+      persistProblemAttempt(saveCanvas, writeAttempt),
+    ).rejects.toThrow("offline");
+    await expect(persistProblemAttempt(saveCanvas, writeAttempt)).resolves.toBe(
+      "saved",
+    );
+    expect(
+      (await new CanvasWorkspaceController(api).load(WS, "main")).nodes,
+    ).toEqual([{ id: "edited" }]);
+  });
+  it("recovers a version change when the loaded canvas was hydrated with an icon", async () => {
+    const initial = structuredClone(TWO_TABS);
+    initial.content.main.nodes = [
+      { id: "m", data: { componentId: "web-app" } },
+    ];
+    const { api, state } = fakeApi(initial);
+    const save = api.saveCanvasContent;
+    api.saveCanvasContent = (workspaceId, canvasId, body) =>
+      save(workspaceId, canvasId, JSON.parse(JSON.stringify(body)));
+    const controller = new CanvasWorkspaceController(api);
+    await controller.load(WS, "main");
+    const hydrated = [
+      {
+        id: "m",
+        data: { componentId: "web-app", icon: () => null, iconUrl: undefined },
+      },
+    ];
+    controller.markActiveContentClean("main", hydrated, []);
+
+    // The server has the same original content, but another write advanced its version.
+    state.content.main = { ...state.content.main, version: 2 };
+    const edited = [...hydrated, { id: "gateway" }];
+    expect(await controller.saveActive(edited, [])).toBe("saved");
+    const reloaded = new CanvasWorkspaceController(api);
+    expect((await reloaded.load(WS, "main")).nodes).toEqual(
+      JSON.parse(JSON.stringify(edited)),
+    );
+  });
+  it("confirms the current version when the server already has this content", async () => {
     const { api, state, calls } = fakeApi(TWO_TABS);
     const controller = new CanvasWorkspaceController(api);
     await controller.load(WS, "main");
@@ -534,7 +795,7 @@ describe("CanvasWorkspaceController stale versions", () => {
     };
 
     expect(await controller.saveActive([{ id: "mine" }], [])).toBe("saved");
-    expect(calls.saves).toEqual([{ canvasId: "main", version: 1 }]);
+    expect(calls.saves).toEqual([{ canvasId: "main", version: 1 }, { canvasId: "main", version: 2 }]);
     expect(controller.getSnapshot().message).toBeNull();
     expect(await controller.saveActive([{ id: "mine" }], [])).toBe("unchanged");
   });

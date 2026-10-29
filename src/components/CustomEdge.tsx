@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useSyncExternalStore } from "react";
 import type {
   Edge,
   EdgeProps,
@@ -8,7 +8,6 @@ import type {
 import {
   EdgeLabelRenderer,
   getBezierPath,
-  getEdgeCenter,
   getStraightPath,
   getSmoothStepPath,
   useStore,
@@ -20,6 +19,9 @@ import {
   type EdgeLabelNode,
 } from "../utils/edgeLabelLayout";
 import { SimulationEdgeRuntimeOverlay } from "../simulation/RuntimeOverlays";
+import { edgeBadgePosition } from "../simulation/edgeBadgePosition";
+import { getFallbackHandlePositions, getMeasuredHandleAnchor } from "../utils/edgeHandlePositions";
+import { getEdgeLabelFont, getEdgeLabelFontRevision, measureEdgeLabelHeight, measureEdgeLabelText, subscribeToEdgeLabelFonts } from "../utils/edgeLabelTextWidth";
 
 export type EdgePathType = "bezier" | "straight" | "step" | "smoothstep";
 export type EdgeLabelPosition = "source" | "center" | "target";
@@ -75,7 +77,10 @@ const getNodeAnchor = (
   node: Node,
   handleId: string | null | undefined,
   fallbackPosition: Position,
+  type: "source" | "target",
 ) => {
+  const measuredAnchor = getMeasuredHandleAnchor(node, handleId, type);
+  if (measuredAnchor) return measuredAnchor;
   const position = nodePosition(node);
   const width = node.measured?.width ?? node.width ?? FALLBACK_NODE_WIDTH;
   const height = node.measured?.height ?? node.height ?? FALLBACK_NODE_HEIGHT;
@@ -94,19 +99,6 @@ const getNodeAnchor = (
     x: position.x + (side === Position.Left ? 0 : width),
     y: position.y + height * fraction,
     position: side,
-  };
-};
-
-const fallbackHandlePositions = (source: Node, target: Node) => {
-  const sourcePosition = nodePosition(source);
-  const targetPosition = nodePosition(target);
-  const sourceSide =
-    targetPosition.x >= sourcePosition.x ? Position.Right : Position.Left;
-  const targetSide =
-    sourceSide === Position.Right ? Position.Left : Position.Right;
-  return {
-    sourcePosition: sourceSide,
-    targetPosition: targetSide,
   };
 };
 
@@ -192,13 +184,7 @@ const computeEdgeParams = (
   }
 
   // Default: bezier
-  const [edgePath] = getBezierPath(params);
-  const [centerX, centerY] = getEdgeCenter({
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-  });
+  const [edgePath, centerX, centerY] = getBezierPath(params);
   return { edgePath, centerX, centerY };
 };
 
@@ -214,29 +200,35 @@ const estimateEdgeLabelRect = ({
   nodes,
   edges,
   occupiedLabels,
+  nodeLookup,
+  labelFont,
 }: {
   edge: Edge;
   nodes: Node[];
+  nodeLookup: Map<string, Node>;
+  labelFont: string | null;
   edges: Edge[];
   occupiedLabels: EdgeLabelRect[];
 }): EdgeLabelRect | null => {
   const { data, label, hasLabel } = getEdgeLabelData(edge);
   if (!hasLabel || !label) return null;
 
-  const sourceNode = nodes.find((node) => node.id === edge.source);
-  const targetNode = nodes.find((node) => node.id === edge.target);
+  const sourceNode = nodeLookup.get(edge.source) ?? nodes.find((node) => node.id === edge.source);
+  const targetNode = nodeLookup.get(edge.target) ?? nodes.find((node) => node.id === edge.target);
   if (!sourceNode || !targetNode) return null;
 
-  const fallback = fallbackHandlePositions(sourceNode, targetNode);
+  const fallback = getFallbackHandlePositions(sourceNode, targetNode);
   const sourceAnchor = getNodeAnchor(
     sourceNode,
     edge.sourceHandle,
     fallback.sourcePosition,
+    "source",
   );
   const targetAnchor = getNodeAnchor(
     targetNode,
     edge.targetHandle,
     fallback.targetPosition,
+    "target",
   );
   const pathType: EdgePathType = data.pathType || "smoothstep";
   const isBidirectional = edges.some(
@@ -261,7 +253,7 @@ const estimateEdgeLabelRect = ({
   const labelDirection = { source: -1, target: 1, center: 0 };
   const labelShift =
     (labelDirection[data.labelPosition ?? "center"] ?? 0) * labelOffset;
-  const textWidth = Math.max(6, label.length * 6);
+  const textWidth = measureEdgeLabelText(label, labelFont);
   return getEdgeLabelLayout({
     label,
     edgePath,
@@ -276,6 +268,7 @@ const estimateEdgeLabelRect = ({
     nodes: nodes as EdgeLabelNode[],
     occupiedLabels,
     labelMaxWidth: data.labelMaxWidth,
+    measureHeight: (text, width) => measureEdgeLabelHeight(text, width, labelFont),
   });
 };
 
@@ -368,6 +361,7 @@ const EdgeLabelContent: React.FC<{
   const boxShadow = selected ? `0 0 0 1px ${colors.brand}` : "none";
   const labelStyle: React.CSSProperties = {
     fontSize: "11px",
+    fontFamily: "inherit",
     padding: "2px 8px",
     borderRadius: "4px",
     backgroundColor: colors.surface,
@@ -419,6 +413,10 @@ const EdgeLabelContent: React.FC<{
             color: "#b91c1c",
             border: "none",
             cursor: "pointer",
+            position: "absolute",
+            left: "calc(100% + 4px)",
+            top: "50%",
+            transform: "translateY(-50%)",
           }}
           aria-label="Remove label"
           data-tooltip="Remove label"
@@ -497,6 +495,7 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
     ),
   );
   const flowNodes = useStore((s: ReactFlowState) => s.nodes);
+  const nodeLookup = useStore((s: ReactFlowState) => s.nodeLookup);
   const flowEdges = useStore((s: ReactFlowState) => s.edges);
 
   // Calculate path and center using extracted helper
@@ -530,20 +529,18 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
   const labelDirection = { source: -1, target: 1, center: 0 };
   const labelShift = (labelDirection[edgeData?.labelPosition ?? "center"] ?? 0) * labelOffset;
   const labelText = value || "Connection";
+  const fontRevision = useSyncExternalStore(subscribeToEdgeLabelFonts, getEdgeLabelFontRevision, () => 0);
+  const labelFont = useMemo(() => {
+    void fontRevision;
+    return getEdgeLabelFont();
+  }, [fontRevision]);
   const textWidth = useMemo(() => {
-    const fallbackWidth = Math.max(6, labelText.length * 6);
-    if (typeof document === "undefined") return fallbackWidth;
-
-    const context = document.createElement("canvas").getContext("2d");
-    if (!context) return fallbackWidth;
-
-    const fontFamily =
-      getComputedStyle(document.body).fontFamily || "Inter, sans-serif";
-    context.font = `11px ${fontFamily}`;
-    return context.measureText(labelText).width;
-  }, [labelText]);
+    void fontRevision;
+    return measureEdgeLabelText(labelText, labelFont);
+  }, [labelText, labelFont, fontRevision]);
   const labelVisible = hasLabel || (!readOnly && Boolean(selected));
   const occupiedLabels = useMemo(() => {
+    void fontRevision;
     if (!labelVisible) return [];
 
     const orderedEdges = [...flowEdges].sort((first, second) =>
@@ -555,13 +552,15 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
       const rect = estimateEdgeLabelRect({
         edge,
         nodes: flowNodes,
+        nodeLookup,
+        labelFont,
         edges: flowEdges,
         occupiedLabels: labels,
       });
       if (rect) labels.push(rect);
     }
     return labels;
-  }, [flowEdges, flowNodes, id, labelVisible]);
+  }, [flowEdges, flowNodes, nodeLookup, id, labelVisible, labelFont, fontRevision]);
   const labelLayout = getEdgeLabelLayout({
     label: labelText,
     edgePath,
@@ -576,7 +575,11 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
     nodes: flowNodes as EdgeLabelNode[],
     occupiedLabels,
     labelMaxWidth: edgeData?.labelMaxWidth,
+    measureHeight: (text, width) => measureEdgeLabelHeight(text, width, labelFont),
   });
+  const simulationLabelPosition = labelVisible
+    ? edgeBadgePosition(labelLayout, flowNodes.map(node => nodeLookup.get(node.id) ?? node) as EdgeLabelNode[], occupiedLabels)
+    : { x: centerX, y: centerY + 20 };
 
   const onLabelDoubleClick = (e: React.MouseEvent) => {
     if (readOnly) return;
@@ -639,6 +642,7 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
           alignItems: "center",
           justifyContent: "center",
           gap: "4px",
+          position: "relative",
         }}
       >
         <EdgeLabelContent
@@ -664,9 +668,6 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
       </div>
     </div>
   ) : null;
-  const foreignObjectWidth =
-    labelLayout.width + (!readOnly && selected && hasLabel ? 28 : 0);
-
   return (
     <>
       <g
@@ -718,27 +719,27 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
           className="transition-colors"
         />
 
-        {!readOnly && labelContent && (
-          <foreignObject
-            x={labelLayout.center.x - foreignObjectWidth / 2}
-            y={labelLayout.center.y - labelLayout.height / 2}
-            width={foreignObjectWidth}
-            height={labelLayout.height}
-            style={{ overflow: "visible" }}
-          >
-            {labelContent}
-          </foreignObject>
+        {labelContent && labelLayout.pathAnchor && (
+          <path
+            d={`M ${labelLayout.pathAnchor.x} ${labelLayout.pathAnchor.y} L ${labelLayout.center.x} ${labelLayout.center.y}`}
+            fill="none"
+            stroke={edgeColor}
+            strokeWidth={1}
+            strokeDasharray="3 3"
+            pointerEvents="none"
+          />
         )}
+
       </g>
       <SimulationEdgeRuntimeOverlay
         id={id}
         source={source}
         target={target}
         path={edgePath}
-        x={centerX}
-        y={centerY}
+        x={simulationLabelPosition.x}
+        y={simulationLabelPosition.y}
       />
-      {readOnly && labelContent && (
+      {labelContent && (
         <EdgeLabelRenderer>
           <div
             className="nodrag nopan"
@@ -753,7 +754,8 @@ const CustomEdge: React.FC<EdgeProps> = (props) => {
               alignItems: "center",
               justifyContent: "center",
               zIndex: 5,
-              pointerEvents: "none",
+              pointerEvents: readOnly ? "none" : "auto",
+              opacity: isDimmed ? 0.22 : 1,
             }}
           >
             {labelContent}

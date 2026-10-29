@@ -71,4 +71,14 @@ describe("content-driven autosave", () => {
     await vi.advanceTimersByTimeAsync(4000);
     expect(save).not.toHaveBeenCalled();
   });
+
+  it("runs an explicit retry immediately without waiting for the edit debounce", async () => {
+    vi.useFakeTimers();
+    const scheduler = createDebouncedSave(3000);
+    const retry = vi.fn();
+    scheduler.schedule(retry, 0);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(retry).toHaveBeenCalledOnce();
+    scheduler.dispose();
+  });
 });

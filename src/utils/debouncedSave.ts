@@ -7,12 +7,12 @@ export function createDebouncedSave(delay: number) {
   let inFlight = false;
   let disposed = false;
 
-  const arm = () => {
+  const arm = (wait = delay) => {
     if (timer !== undefined) clearTimeout(timer);
     timer = setTimeout(() => {
       timer = undefined;
       void flush();
-    }, delay);
+    }, wait);
   };
 
   const flush = async () => {
@@ -36,10 +36,10 @@ export function createDebouncedSave(delay: number) {
   };
 
   return {
-    schedule(task: SaveTask) {
+    schedule(task: SaveTask, wait = delay) {
       if (disposed) return;
       pending = task;
-      arm();
+      arm(wait);
     },
     cancel,
     dispose() {

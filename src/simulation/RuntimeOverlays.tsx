@@ -1,8 +1,9 @@
 import type { SimulationTone } from "../components/simulation/types";
 import { SimulationEdgeOverlay, SimulationNodeBadge } from "../components/simulation";
 import { useSimulationSession } from "./store";
+import type { NodeBadgeAppearance } from "../components/simulation/nodeBadgeAppearance";
 
-export function SimulationNodeRuntimeBadge({ nodeId }: { nodeId: string }) {
+export function SimulationNodeRuntimeBadge({ nodeId, appearance }: { nodeId: string; appearance?: NodeBadgeAppearance }) {
   const stats = useSimulationSession(s => s.snapshot?.nodes[nodeId]);
   const status = useSimulationSession(s => s.status);
   const kind = useSimulationSession(s => s.compilation?.profiles[nodeId]?.kind);
@@ -10,7 +11,7 @@ export function SimulationNodeRuntimeBadge({ nodeId }: { nodeId: string }) {
   const diagnostic = useSimulationSession(s => s.compilation?.diagnostics.find(item => item.nodeId === nodeId && (item.code === "queue-without-consumer" || item.code === "unreachable-component")));
   const faulted = useSimulationSession(s => s.snapshot?.activeFailures.some(f => f.nodeId === nodeId) ?? false);
   if (!stats || status === "stale" || status === "invalid") return null;
-  return <SimulationNodeBadge stats={stats} kind={kind} label={typeof label === "string" ? label : nodeId} diagnostic={diagnostic} running={status === "running"} faulted={faulted}
+  return <SimulationNodeBadge stats={stats} kind={kind} label={typeof label === "string" ? label : nodeId} diagnostic={diagnostic} running={status === "running"} faulted={faulted} appearance={appearance}
     onInspect={() => {
       useSimulationSession.setState({ selectedNodeId: nodeId });
       globalThis.dispatchEvent(new CustomEvent("diagram:simulation-inspect", { detail: { nodeId } }));
@@ -40,5 +41,5 @@ export function SimulationEdgeRuntimeOverlay({ id, source, target, path, x, y }:
   const pressureLabel = queueHasNoConsumer || affectedByQueue ? "No active consumer" : backlogPressure ? (sourceKind === "streambroker" ? "Consumer lag" : "Buffered backlog") : "Waiting downstream";
   return <SimulationEdgeOverlay id={id} path={path} rate={rate} state={state} running={status === "running"}
     tone={tone} failureLabel={state === "cut" ? "Connection cut" : failed ? "Downstream failures" : pressure ? pressureLabel : undefined}
-    labelX={x} labelY={y + 20} showLabel />;
+    labelX={x} labelY={y} showLabel />;
 }

@@ -15,6 +15,49 @@ const baseOptions = {
 };
 
 describe("getEdgeLabelLayout", () => {
+  it("keeps a routed label on the path when another label blocks its midpoint", () => {
+    const layout = getEdgeLabelLayout({
+      ...baseOptions,
+      edgePath: "M 0,0 L 300,0 L 300,100",
+      centerX: 150,
+      centerY: 0,
+      targetX: 300,
+      targetY: 100,
+      textWidth: 80,
+      occupiedLabels: [{ center: { x: 150, y: 0 }, width: 100, height: 18 }],
+    });
+
+    expect(layout.center.y === 0 || layout.center.x === 300).toBe(true);
+    expect(layout.center).not.toEqual({ x: 150, y: 0 });
+  });
+  it("keeps source-shifted labels on a curved path", () => {
+    const layout = getEdgeLabelLayout({
+      ...baseOptions,
+      edgePath: "M 0 0 C 0 100 100 100 100 0",
+      centerX: 50,
+      centerY: 75,
+      targetX: 100,
+      labelShift: -0.5,
+      textWidth: 80,
+    });
+
+    expect(layout.center.x).toBeLessThan(50);
+    expect(layout.center.y).toBeGreaterThan(40);
+  });
+  it("follows a quadratic path when shifting a bidirectional edge label", () => {
+    const layout = getEdgeLabelLayout({
+      ...baseOptions,
+      edgePath: "M 0 0 Q 50 100 100 0",
+      centerX: 50,
+      centerY: 50,
+      targetX: 100,
+      labelShift: -0.5,
+      textWidth: 80,
+    });
+
+    expect(layout.center.x).toBeLessThan(50);
+    expect(layout.center.y).toBeGreaterThan(25);
+  });
   it("wraps long labels to the usable path width", () => {
     const layout = getEdgeLabelLayout({
       ...baseOptions,
@@ -99,6 +142,37 @@ describe("getEdgeLabelLayout", () => {
     });
 
     expect(Math.abs(layout.center.y)).toBeGreaterThan(0);
+  });
+
+  it("separates tall labels when all nearby candidates are blocked", () => {
+    const occupied = { center: { x: 60, y: 0 }, width: 100, height: 130 };
+    const layout = getEdgeLabelLayout({
+      ...baseOptions,
+      label: "A long label describing a path with many wrapped words",
+      textWidth: 750,
+      occupiedLabels: [occupied],
+      nodes: [
+        { id: "source", position: { x: -200, y: -100 }, width: 200, height: 200 },
+        { id: "target", position: { x: 120, y: -100 }, width: 200, height: 200 },
+      ],
+    });
+    const verticallySeparated = Math.abs(layout.center.y - occupied.center.y) >= (layout.height + occupied.height) / 2;
+    const horizontallySeparated = Math.abs(layout.center.x - occupied.center.x) >= (layout.width + occupied.width) / 2;
+    expect(verticallySeparated || horizontallySeparated).toBe(true);
+    expect(layout.pathAnchor).toEqual({ x: 60, y: 0 });
+  });
+
+  it("uses the rendered height of wrapped words for collision checks", () => {
+    const occupied = { center: { x: 60, y: 0 }, width: 100, height: 48 };
+    const layout = getEdgeLabelLayout({
+      ...baseOptions,
+      label: "Document Writer Consumer",
+      textWidth: 130,
+      occupiedLabels: [occupied],
+      measureHeight: () => 48,
+    });
+    expect(layout.height).toBe(48);
+    expect(Math.abs(layout.center.y)).toBeGreaterThanOrEqual(48);
   });
 
   it("respects an explicit maximum width", () => {
