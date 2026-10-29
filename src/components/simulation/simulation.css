@@ -122,13 +122,48 @@
   color: var(--text-muted, #929292);
   white-space: nowrap;
 }
-.sim-toolbar__source-select {
+.sim-toolbar__source-dropdown {
   width: 160px;
-  max-width: 160px;
+  flex: none;
+}
+.sim-toolbar__source-dropdown .dashboard-select-wrapper {
+  width: 100%;
+}
+.sim-toolbar__source-dropdown .sim-toolbar__select-trigger--source {
+  width: 160px;
   min-height: 28px;
-  padding: 3px 22px 3px 7px;
+  gap: 5px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: var(--bg, #111);
   font-size: 11px;
-  cursor: pointer;
+  font-weight: 500;
+  line-height: 1.25;
+}
+.sim-toolbar__source-dropdown .sim-toolbar__select-trigger--source > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sim-toolbar__source-dropdown .dashboard-select-chevron {
+  width: 15px;
+  height: 15px;
+}
+.sim-toolbar__source-dropdown .dashboard-select-menu {
+  right: 0;
+  left: auto;
+  z-index: 120;
+  width: max-content;
+  min-width: 260px;
+  max-width: min(360px, calc(100vw - 24px));
+  padding: 4px;
+  border-radius: 8px;
+}
+.sim-toolbar__source-dropdown .dashboard-select-option {
+  min-height: 31px;
+  padding: 7px 8px;
+  font-size: 12px;
 }
 .sim-toolbar__source-value {
   width: 160px;

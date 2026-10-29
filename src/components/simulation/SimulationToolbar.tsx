@@ -37,6 +37,29 @@ const AUTO_SOURCE_VALUE = "automatic";
 const ALL_CLIENTS_VALUE = "all-clients";
 const SOURCE_NODE_PREFIX = "node:";
 
+type TrafficSourceChoice = { value: string; label: string };
+
+function makeUniqueSourceChoices(
+  choices: readonly TrafficSourceChoice[],
+): TrafficSourceChoice[] {
+  const labelCounts = new Map<string, number>();
+  for (const choice of choices) {
+    labelCounts.set(choice.label, (labelCounts.get(choice.label) ?? 0) + 1);
+  }
+  const usedLabels = new Set<string>();
+  return choices.map((choice) => {
+    let label =
+      (labelCounts.get(choice.label) ?? 0) > 1 &&
+      choice.value.startsWith(SOURCE_NODE_PREFIX)
+        ? `${choice.label} (${choice.value.slice(SOURCE_NODE_PREFIX.length)})`
+        : choice.label;
+    let suffix = 2;
+    while (usedLabels.has(label)) label = `${choice.label} (${suffix++})`;
+    usedLabels.add(label);
+    return { ...choice, label };
+  });
+}
+
 function rateToSlider(rate: number): number {
   const clamped = Math.min(100_000, Math.max(0, rate));
   return clamped <= 1_000
@@ -142,6 +165,34 @@ export function SimulationToolbar({
             ? `${SOURCE_NODE_PREFIX}${trafficSource.selectedNodeId}`
             : ALL_CLIENTS_VALUE
         : "";
+  const sourceChoices = makeUniqueSourceChoices([
+    ...(trafficSource?.mode === "ingress"
+      ? [
+          {
+            value: AUTO_SOURCE_VALUE,
+            label: trafficSource.inferredNodeId
+              ? `Automatic · ${
+                  trafficSource.options.find(
+                    (option) => option.id === trafficSource.inferredNodeId,
+                  )?.label ?? "inferred"
+                }`
+              : "Automatic",
+          },
+        ]
+      : []),
+    ...(trafficSource?.mode === "clients"
+      ? [{ value: ALL_CLIENTS_VALUE, label: "All clients (even split)" }]
+      : []),
+    ...(trafficSource?.mode === "ingress" || trafficSource?.mode === "clients"
+      ? trafficSource.options.map((option) => ({
+          value: `${SOURCE_NODE_PREFIX}${option.id}`,
+          label: option.label,
+        }))
+      : []),
+  ]);
+  const selectedSourceChoice = sourceChoices.find(
+    (choice) => choice.value === sourceSelectionValue,
+  );
   const sourceLabel = trafficSource?.selectedNodeId
     ? trafficSource.options.find(
         (option) => option.id === trafficSource.selectedNodeId,
@@ -317,57 +368,35 @@ export function SimulationToolbar({
             <MdAccountTree aria-hidden="true" size={15} />
             <span className="sim-toolbar__source-label">Traffic source</span>
             {sourceCanBeSelected && onTrafficSourceChange ? (
-              <select
-                className="sim-input sim-toolbar__source-select"
-                aria-label="Traffic entrypoint"
+              <div
+                className="sim-toolbar__source-dropdown"
                 data-tooltip="Choose where simulated requests enter the diagram"
                 data-tooltip-placement="bottom"
-                value={sourceSelectionValue}
-                onChange={(event) => {
-                  const value = event.currentTarget.value;
-                  if (
-                    value === AUTO_SOURCE_VALUE ||
-                    value === ALL_CLIENTS_VALUE
-                  ) {
-                    onTrafficSourceChange(null);
-                  } else if (value.startsWith(SOURCE_NODE_PREFIX)) {
-                    onTrafficSourceChange(
-                      value.slice(SOURCE_NODE_PREFIX.length),
-                    );
-                  }
-                }}
               >
-                {trafficSource.requiresSelection && (
-                  <option value="" disabled>
-                    Choose a source
-                  </option>
-                )}
-                {trafficSource.mode === "ingress" && (
-                  <option value={AUTO_SOURCE_VALUE}>
-                    {trafficSource.inferredNodeId
-                      ? `Automatic · ${
-                          trafficSource.options.find(
-                            (option) =>
-                              option.id === trafficSource.inferredNodeId,
-                          )?.label ?? "inferred"
-                        }`
-                      : "Automatic"}
-                  </option>
-                )}
-                {trafficSource.mode === "clients" && (
-                  <option value={ALL_CLIENTS_VALUE}>
-                    All clients (even split)
-                  </option>
-                )}
-                {trafficSource.options.map((option) => (
-                  <option
-                    key={option.id}
-                    value={`${SOURCE_NODE_PREFIX}${option.id}`}
-                  >
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                <SelectDropdown
+                  id={`${id}-source`}
+                  value={selectedSourceChoice?.label ?? "Choose a source"}
+                  options={sourceChoices.map((choice) => choice.label)}
+                  aria-label="Traffic entrypoint"
+                  className="sim-toolbar__select-trigger sim-toolbar__select-trigger--source"
+                  onChange={(label) => {
+                    const choice = sourceChoices.find(
+                      (option) => option.label === label,
+                    );
+                    if (!choice) return;
+                    if (
+                      choice.value === AUTO_SOURCE_VALUE ||
+                      choice.value === ALL_CLIENTS_VALUE
+                    ) {
+                      onTrafficSourceChange(null);
+                    } else if (choice.value.startsWith(SOURCE_NODE_PREFIX)) {
+                      onTrafficSourceChange(
+                        choice.value.slice(SOURCE_NODE_PREFIX.length),
+                      );
+                    }
+                  }}
+                />
+              </div>
             ) : (
               <span className="sim-toolbar__source-value">
                 {trafficSource.mode === "scheduled"
