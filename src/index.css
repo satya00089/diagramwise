@@ -2180,6 +2180,26 @@ html .design-studio-brand {
   line-height: 1;
 }
 
+/* Desktop: the brand cell mirrors the 224px (w-56) component palette, so its
+   divider lines up with the palette's right edge. */
+@media (min-width: 768px) {
+  .design-studio-page > header .studio-brand-cell {
+    position: relative;
+    box-sizing: border-box;
+  }
+
+  /* A short divider with breathing room above and below, not a full-height rule. */
+  .design-studio-page > header .studio-brand-cell::after {
+    content: "";
+    position: absolute;
+    top: 14px;
+    right: 0;
+    bottom: 14px;
+    width: 1px;
+    background: rgb(255 255 255 / 20%);
+  }
+}
+
 .design-studio-page > header .systema-brand img {
   flex: none;
   width: 30px;

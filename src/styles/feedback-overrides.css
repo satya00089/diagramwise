@@ -77,6 +77,91 @@ html.dark:has(
     transform 180ms ease;
 }
 
+/* The canvas toolbar sits in the bottom-left of the canvas. Where there is no
+   left nav to push it right (shared view, challenges), keep the floating pill
+   beside the toolbar (10px margin, about 76px wide) rather than over it. */
+html:has(.diagram-canvas-toolbar):not(:has(#component-palette-panel))
+  .feedback-launcher--floating {
+  left: 100px;
+  bottom: 14px;
+}
+
+/* With the left nav collapsed, the toolbar reaches the page edge. The labelled
+   pill eases out and an icon-only button eases into the top of the toolbar.
+   Both stay mounted so the swap can animate alongside the nav's 300ms width
+   change; visibility keeps the hidden one out of the tab order. */
+html:has(#component-palette-panel[data-open="false"])
+  .feedback-launcher--floating {
+  visibility: hidden;
+  opacity: 0;
+  transform: translateX(-12px) scale(0.92);
+  pointer-events: none;
+  transition:
+    opacity 180ms ease,
+    transform 240ms ease,
+    visibility 0s linear 240ms;
+}
+
+/* Doubled class: the tooltip system sets `position: relative` on anything with
+   a data-tooltip, which would otherwise win and offset the button by the
+   floating pill's left/bottom. */
+html .feedback-launcher.feedback-launcher--docked {
+  position: static;
+  inset: auto;
+  display: inline-flex;
+  width: 100%;
+  height: 0;
+  min-height: 0;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    height 280ms ease,
+    opacity 160ms ease,
+    border-color 280ms ease,
+    background-color 180ms ease,
+    visibility 0s linear 280ms;
+}
+
+html:has(#component-palette-panel[data-open="false"])
+  .feedback-launcher--docked {
+  height: 30px;
+  min-height: 30px;
+  border-bottom-color: color-mix(
+    in srgb,
+    var(--border, #d9d2c5) 78%,
+    transparent
+  );
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transition:
+    height 280ms ease,
+    opacity 220ms ease 120ms,
+    border-color 280ms ease,
+    background-color 180ms ease,
+    visibility 0s;
+}
+
+html:has(#component-palette-panel[data-open="false"])
+  .feedback-launcher--docked:hover {
+  transform: none;
+  border-bottom-color: color-mix(
+    in srgb,
+    var(--border, #d9d2c5) 78%,
+    transparent
+  );
+  background: color-mix(in srgb, var(--surface) 80%, var(--text) 20%);
+}
+
 .feedback-launcher:hover {
   transform: translateY(-2px);
   border-color: var(--text, #111827);

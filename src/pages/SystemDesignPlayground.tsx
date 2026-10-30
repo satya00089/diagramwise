@@ -5619,16 +5619,21 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           <div className="max-w-full mx-auto px-4 sm:px-6 overflow-visible">
             <div className="flex flex-wrap items-center justify-between min-h-14 gap-y-2 py-2 md:h-14 md:flex-nowrap md:py-0 overflow-visible">
               {/* Left side - Logo and Title */}
-              <div className="flex items-center space-x-4">
-                <Link
-                  className="systema-brand"
-                  to="/"
-                  aria-label="Diagramwise home"
-                >
-                  <img src="/logo-64.png" alt="" aria-hidden="true" />
-                  <span>Diagramwise</span>
-                </Link>
-                <div className="hidden md:flex items-center space-x-3 border-l border-white/20 ml-3 pl-4">
+              <div className="flex items-center md:self-stretch">
+                {/* On desktop this cell is exactly as wide as the component
+                    palette and flush with the page edge, so its right border
+                    continues the palette's border up into the header. */}
+                <div className="studio-brand-cell flex items-center md:h-full md:w-56 md:shrink-0 md:-ml-6 md:pl-6">
+                  <Link
+                    className="systema-brand"
+                    to="/"
+                    aria-label="Diagramwise home"
+                  >
+                    <img src="/logo-64.png" alt="" aria-hidden="true" />
+                    <span>Diagramwise</span>
+                  </Link>
+                </div>
+                <div className="hidden md:flex items-center space-x-3 pl-4">
                   <h1
                     className="text-sm font-semibold text-white max-w-[200px] truncate cursor-default"
                     data-tooltip={problem.title}

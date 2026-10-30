@@ -14,6 +14,7 @@ import {
 import StyledFlowControls from "./shared/StyledFlowControls";
 import CanvasInteractivityControl from "./CanvasInteractivityControl";
 import CanvasBackgroundLayer from "./CanvasBackgroundLayer";
+import FeedbackLauncher from "./FeedbackLauncher";
 import type { CanvasBackground } from "../hooks/useCanvasBackground";
 
 type DiagramCanvasProps = {
@@ -93,21 +94,25 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
               dropdown actions (canvas, layout, canvases, background) on the right. */}
           <Panel
             position="bottom-left"
-            className="diagram-canvas-toolbar flex items-start nodrag nopan"
+            className="diagram-canvas-toolbar flex flex-col items-stretch nodrag nopan"
             style={{ margin: 10 }}
           >
-            <StyledFlowControls
-              showInteractive={false}
-              position="bottom-left"
-              style={{ position: "relative", inset: "auto", margin: 0 }}
-            >
-              <CanvasInteractivityControl />
-            </StyledFlowControls>
-            {canvasActions && (
-              <div className="react-flow__controls diagram-canvas-toolbar-actions flex flex-col">
-                {canvasActions}
-              </div>
-            )}
+            {/* Only visible while the left nav is collapsed (see index.css). */}
+            <FeedbackLauncher variant="docked" />
+            <div className="flex items-start">
+              <StyledFlowControls
+                showInteractive={false}
+                position="bottom-left"
+                style={{ position: "relative", inset: "auto", margin: 0 }}
+              >
+                <CanvasInteractivityControl />
+              </StyledFlowControls>
+              {canvasActions && (
+                <div className="react-flow__controls diagram-canvas-toolbar-actions flex flex-col">
+                  {canvasActions}
+                </div>
+              )}
+            </div>
           </Panel>
           {backgroundVariant !== "none" && (
             <CanvasBackgroundLayer variant={backgroundVariant} />
