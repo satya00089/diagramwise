@@ -3,6 +3,10 @@ import type { SimSnapshot, Topology } from "@diagramwise/simulation-core";
 import type { ScenarioGoalResult } from "@diagramwise/simulation-core/scenario";
 import { nodeSimulationSignal } from "../components/simulation/presentation";
 
+const FIGURE_SPACE = " ";
+/** Wide enough for "1000.0"; shorter rates are padded to this width. */
+const RATE_LABEL_DIGITS = 6;
+
 export function formatGoalActual(goal: ScenarioGoalResult): string {
   if (goal.actual === null) return "No samples";
   const scale = goal.metric === "completionFraction" ? 100 : 1;
@@ -55,7 +59,12 @@ export function buildChallengeNodes(
             <span>{signal.label}</span>
             {stats && (
               <small>
-                {stats.arrivalRate.toFixed(1)} in/s · {stats.queued} waiting
+                <span className="sim-num sim-num--badge">
+                  {stats.arrivalRate.toFixed(1)}
+                </span>{" "}
+                in/s ·{" "}
+                <span className="sim-num sim-num--badge">{stats.queued}</span>{" "}
+                waiting
               </small>
             )}
           </>
@@ -74,12 +83,16 @@ export function buildChallengeEdges(
     const target = snapshot?.nodes[edge.to];
     const pressure = (target?.queued ?? 0) > 0;
     const pressureLabel = pressure ? " · waiting downstream" : "";
-    const label = snapshot ? `${flow.toFixed(1)}/s${pressureLabel}` : undefined;
+    // Figure spaces are as wide as a digit, so padding keeps the label steady
+    // as the rate gains or loses digits.
+    const rate = flow.toFixed(1).padStart(RATE_LABEL_DIGITS, FIGURE_SPACE);
+    const label = snapshot ? `${rate}/s${pressureLabel}` : undefined;
     return {
       id: edge.id,
       source: edge.from,
       target: edge.to,
       label,
+      labelStyle: { fontVariantNumeric: "tabular-nums" },
       style: {
         stroke: pressure ? "var(--brand, #e99ba9)" : "var(--text-muted, #888)",
         strokeWidth: 2,

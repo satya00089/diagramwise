@@ -33,11 +33,7 @@ import {
   routeArrangedEdges,
   type AutoArrangeOptions,
 } from "../utils/autoArrange";
-import {
-  MdAccessTime,
-  MdClose,
-  MdSave,
-} from "react-icons/md";
+import { MdAccessTime, MdClose, MdSave } from "react-icons/md";
 
 // Routing
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -127,6 +123,7 @@ import {
 
 // UI Components - Shared
 import AnimatedCheckbox from "../components/shared/AnimatedCheckbox";
+import ClearCanvasDialog from "../components/ClearCanvasDialog";
 import {
   AnimatedNumberInput,
   AnimatedTextInput,
@@ -5622,16 +5619,21 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
           <div className="max-w-full mx-auto px-4 sm:px-6 overflow-visible">
             <div className="flex flex-wrap items-center justify-between min-h-14 gap-y-2 py-2 md:h-14 md:flex-nowrap md:py-0 overflow-visible">
               {/* Left side - Logo and Title */}
-              <div className="flex items-center space-x-4">
-                <Link
-                  className="systema-brand"
-                  to="/"
-                  aria-label="Diagramwise home"
-                >
-                  <img src="/logo-64.png" alt="" aria-hidden="true" />
-                  <span>Diagramwise</span>
-                </Link>
-                <div className="hidden md:flex items-center space-x-3 border-l border-white/20 ml-3 pl-4">
+              <div className="flex items-center md:self-stretch">
+                {/* On desktop this cell is exactly as wide as the component
+                    palette and flush with the page edge, so its right border
+                    continues the palette's border up into the header. */}
+                <div className="studio-brand-cell flex items-center md:h-full md:w-56 md:shrink-0 md:-ml-6 md:pl-6">
+                  <Link
+                    className="systema-brand"
+                    to="/"
+                    aria-label="Diagramwise home"
+                  >
+                    <img src="/logo-64.png" alt="" aria-hidden="true" />
+                    <span>Diagramwise</span>
+                  </Link>
+                </div>
+                <div className="hidden md:flex items-center space-x-3 pl-4">
                   <h1
                     className="text-sm font-semibold text-white max-w-[200px] truncate cursor-default"
                     data-tooltip={problem.title}
@@ -6364,69 +6366,12 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
 
         {/* Clear Canvas Confirmation Modal */}
         {showClearConfirm && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-surface rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 border border-theme/10">
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 text-red-600 dark:text-red-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-theme">
-                    Clear Canvas?
-                  </h3>
-                  <p className="text-sm text-muted">
-                    Your current diagram will be removed.
-                  </p>
-                </div>
-              </div>
-              <p className="text-muted mb-4">
-                Every component and connection on the canvas will be deleted.
-                You can't undo this.
-              </p>
-
-              <div className="mb-4">
-                <AnimatedCheckbox
-                  id="clear-saved"
-                  variant="danger"
-                  checked={clearSavedOnConfirm}
-                  onChange={setClearSavedOnConfirm}
-                  labelClassName="text-muted"
-                  label="Also delete my saved progress (local and server)"
-                />
-              </div>
-
-              <div className="flex space-x-3">
-                <button
-                  type="button"
-                  onClick={cancelClearCanvas}
-                  className="flex-1 px-4 py-2 bg-theme/5 hover:bg-theme/10 text-theme font-medium rounded-lg transition-colors cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmClearCanvas}
-                  className="flex-1 px-4 py-2 bg-red-600/10 hover:bg-red-600/20 text-red-600 dark:text-red-400 border border-red-600/30 font-semibold rounded-lg transition-colors cursor-pointer"
-                >
-                  Clear canvas
-                </button>
-              </div>
-            </div>
-          </div>
+          <ClearCanvasDialog
+            clearSaved={clearSavedOnConfirm}
+            onClearSavedChange={setClearSavedOnConfirm}
+            onCancel={cancelClearCanvas}
+            onConfirm={confirmClearCanvas}
+          />
         )}
 
         {showAssessmentInterview && (

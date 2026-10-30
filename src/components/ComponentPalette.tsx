@@ -460,6 +460,7 @@ export default function ComponentPalette({
         }`}
         aria-label="Component palette"
         id="component-palette-panel"
+        data-open={open ? "true" : "false"}
       >
         {open ? (
           <>
