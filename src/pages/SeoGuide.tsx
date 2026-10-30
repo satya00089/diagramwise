@@ -6,6 +6,7 @@ import ThemeSwitcher from "../components/ThemeSwitcher";
 import ProductHeader from "../components/ProductHeader";
 import { featuredProblems } from "../utils/problemSlug";
 import NotFound from "./NotFound";
+import seoCopy from "../data/seoCopy.json";
 import "./SeoGuide.css";
 
 const SITE_URL = "https://diagramwise.com";
@@ -175,7 +176,30 @@ const guides = {
   },
 } as const;
 
-const faq = [
+interface GuideSectionTable {
+  headers: string[];
+  rows: string[][];
+}
+
+interface GuideSection {
+  heading: string;
+  paragraphs?: string[];
+  bullets?: string[];
+  table?: GuideSectionTable;
+  paragraphs_after?: string[];
+}
+
+interface GuideCopy {
+  answerQuestion: string;
+  answer: string;
+  faqs: { q: string; a: string }[];
+  sections?: GuideSection[];
+}
+
+// Shared with prerender.js so the static HTML and the live page match.
+const guideCopy = seoCopy as Record<string, GuideCopy>;
+
+const generalFaq = [
   [
     "How should I start a system design problem?",
     "Clarify the users, primary use cases, non-goals, scale assumptions, and quality attributes before choosing components.",
@@ -185,6 +209,29 @@ const faq = [
     "Build the architecture yourself, state the reasoning, review specific weaknesses, and repeat challenges that exercise those weak areas.",
   ],
 ] as const;
+
+const GuideTable: React.FC<{ table: GuideSectionTable }> = ({ table }) => (
+  <div className="seo-guide-table">
+    <table>
+      <thead>
+        <tr>
+          {table.headers.map((cell) => (
+            <th key={cell}>{cell}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {table.rows.map((row) => (
+          <tr key={row.join("|")}>
+            {row.map((cell, cellIndex) => (
+              <td key={table.headers[cellIndex]}>{cell}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
 
 const SeoGuide: React.FC = () => {
   const { pathname } = useLocation();
@@ -203,6 +250,10 @@ const SeoGuide: React.FC = () => {
       Boolean(problem),
     );
   const canonical = `${SITE_URL}/${guide}/`;
+  const copy = guideCopy[`/${guide}`];
+  const faq: readonly (readonly [string, string])[] = copy
+    ? copy.faqs.map(({ q, a }) => [q, a] as const)
+    : generalFaq;
 
   return (
     <>
@@ -222,11 +273,36 @@ const SeoGuide: React.FC = () => {
               headline: data.title,
               description: data.description,
               url: canonical,
+              image: "https://diagramwise.com/og/problems.png",
+              inLanguage: "en",
+              mainEntityOfPage: canonical,
+              author: {
+                "@type": "Organization",
+                "@id": "https://next-zen.dev/#organization",
+                name: "Next Zen",
+                url: "https://next-zen.dev/",
+              },
               publisher: {
                 "@type": "Organization",
+                "@id": `${SITE_URL}/#organization`,
                 name: "Diagramwise",
                 url: `${SITE_URL}/`,
+                logo: {
+                  "@type": "ImageObject",
+                  url: `${SITE_URL}/logo.png`,
+                },
               },
+            },
+            {
+              "@type": "HowTo",
+              name: copy?.answerQuestion ?? data.title,
+              description: data.description,
+              step: data.steps.map(([name, text], index) => ({
+                "@type": "HowToStep",
+                position: index + 1,
+                name,
+                text,
+              })),
             },
             {
               "@type": "FAQPage",
@@ -265,6 +341,18 @@ const SeoGuide: React.FC = () => {
           </section>
 
           <div className="seo-guide-container seo-guide-content">
+            {copy && (
+              <section
+                aria-labelledby="answer-heading"
+                className="seo-guide-section seo-guide-method"
+                id="quick-answer"
+              >
+                <div className="seo-guide-section__intro">
+                  <h2 id="answer-heading">{copy.answerQuestion}</h2>
+                </div>
+                <p className="seo-guide-answer">{copy.answer}</p>
+              </section>
+            )}
             <section
               aria-labelledby="method-heading"
               className="seo-guide-section seo-guide-method"
@@ -290,6 +378,32 @@ const SeoGuide: React.FC = () => {
               </ol>
             </section>
 
+            {copy?.sections?.map((section) => (
+              <section
+                key={section.heading}
+                className="seo-guide-section seo-guide-method"
+              >
+                <div className="seo-guide-section__intro">
+                  <h2>{section.heading}</h2>
+                </div>
+                <div className="seo-guide-prose">
+                  {section.paragraphs?.map((text) => (
+                    <p key={text}>{text}</p>
+                  ))}
+                  {section.bullets && (
+                    <ul>
+                      {section.bullets.map((text) => (
+                        <li key={text}>{text}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {section.table && <GuideTable table={section.table} />}
+                  {section.paragraphs_after?.map((text) => (
+                    <p key={text}>{text}</p>
+                  ))}
+                </div>
+              </section>
+            ))}
             <section
               aria-labelledby="practice-heading"
               className="seo-guide-section seo-guide-practice"
@@ -330,7 +444,7 @@ const SeoGuide: React.FC = () => {
               className="seo-guide-section seo-guide-faq"
             >
               <div className="seo-guide-section__intro">
-                <h2 id="faq-heading">Common questions</h2>
+                <h2 id="faq-heading">Frequently asked questions</h2>
                 <p>Keep these principles close when a prompt gets ambiguous.</p>
               </div>
               <div className="seo-guide-faq__list">
@@ -363,7 +477,7 @@ const SeoGuide: React.FC = () => {
         </main>
         <footer className="seo-guide-footer">
           Diagramwise — design architectures, explain decisions, and improve the
-          result.
+          result. <Link to="/about/">About</Link>
         </footer>
       </div>
     </>

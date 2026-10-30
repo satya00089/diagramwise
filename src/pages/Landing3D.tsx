@@ -772,6 +772,8 @@ export default function Landing3D() {
         <Brand />
         <p>Design. Explain. Improve.</p>
         <nav className="systema-footer-links" aria-label="Footer">
+          <a href="/about/">About</a>
+          <a href="https://next-zen.dev/">Next Zen</a>
           <a href="/privacy.html">Privacy</a>
           <a href="/terms.html">Terms</a>
           <a href="/support.html">Support</a>

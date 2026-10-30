@@ -146,6 +146,18 @@ export const SEO: React.FC<SEOProps> = ({
     const id = "page-structured-data";
     const existing = document.getElementById(id);
 
+    // The prerendered HTML already carries this route's structured data. Keep
+    // it instead of adding a duplicate; on client-side navigation to another
+    // route, drop the stale copy and fall through to the page's own data.
+    const prerendered = document.getElementById("route-structured-data");
+    if (prerendered) {
+      if (prerendered.textContent?.includes(`"@id":"${canonicalUrl}"`)) {
+        existing?.remove();
+        return;
+      }
+      prerendered.remove();
+    }
+
     if (!structuredDataJson) {
       existing?.remove();
       return;
@@ -161,7 +173,7 @@ export const SEO: React.FC<SEOProps> = ({
     if (!script.isConnected) document.head.appendChild(script);
 
     return () => script.remove();
-  }, [structuredDataJson]);
+  }, [structuredDataJson, canonicalUrl]);
 
   return null;
 };

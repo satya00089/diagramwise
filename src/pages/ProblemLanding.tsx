@@ -13,6 +13,7 @@ import {
   MdCheckCircleOutline,
   MdPlayArrow,
   MdSignalCellularAlt,
+  MdExpandMore,
 } from "react-icons/md";
 import { AuthModal } from "../components/AuthModal";
 import ProblemRequirements from "../components/ProblemRequirements";
@@ -28,6 +29,7 @@ import { useAuth } from "../hooks/useAuth";
 import { getApiBaseUrl } from "../services/api";
 import type { SystemDesignProblem } from "../types/systemDesign";
 import { featuredProblems, getFeaturedProblem } from "../utils/problemSlug";
+import { buildProblemFaq } from "../utils/problemFaq.mjs";
 import { lazyWithRetry } from "../utils/lazyWithRetry";
 
 const PublicArchitectureCanvas = lazyWithRetry(
@@ -270,6 +272,7 @@ const ProblemLanding: React.FC = () => {
   const requirements = problem.requirements?.filter(Boolean) || [];
   const constraints = problem.constraints?.filter(Boolean) || [];
   const architecture = guide?.architecture ?? null;
+  const seoCopy = buildProblemFaq(problem, guide);
   const pageDescription = `${problem.description} Work through the requirements, architecture trade-offs, and an interactive design review.`;
 
   const startProblem = () => {
@@ -296,18 +299,30 @@ const ProblemLanding: React.FC = () => {
         type="article"
         structuredData={{
           "@context": "https://schema.org",
-          "@type": "LearningResource",
-          name: problem.title,
-          description: pageDescription,
-          url: canonical,
-          educationalLevel: problem.difficulty,
-          timeRequired: problem.estimated_time,
-          teaches: concepts,
-          provider: {
-            "@type": "Organization",
-            name: "Diagramwise",
-            url: `${SITE_URL}/`,
-          },
+          "@graph": [
+            {
+              "@type": "LearningResource",
+              name: problem.title,
+              description: pageDescription,
+              url: canonical,
+              educationalLevel: problem.difficulty,
+              timeRequired: problem.estimated_time,
+              teaches: concepts,
+              provider: { "@id": `${SITE_URL}/#organization` },
+            },
+            ...(seoCopy.faqs.length
+              ? [
+                  {
+                    "@type": "FAQPage",
+                    mainEntity: seoCopy.faqs.map(({ q, a }) => ({
+                      "@type": "Question",
+                      name: q,
+                      acceptedAnswer: { "@type": "Answer", text: a },
+                    })),
+                  },
+                ]
+              : []),
+          ],
         }}
       />
 
@@ -384,6 +399,20 @@ const ProblemLanding: React.FC = () => {
 
             <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem]">
               <div className="min-w-0 space-y-14">
+                <section
+                  id="quick-answer"
+                  aria-labelledby="quick-answer-heading"
+                >
+                  <h2
+                    id="quick-answer-heading"
+                    className="text-2xl font-bold tracking-[-0.02em]"
+                  >
+                    {seoCopy.answerQuestion}
+                  </h2>
+                  <p className="mt-4 max-w-3xl text-lg leading-8">
+                    {seoCopy.answer}
+                  </p>
+                </section>
                 {guide ? (
                   <ProblemGuideContent
                     guide={guide}
@@ -538,6 +567,32 @@ const ProblemLanding: React.FC = () => {
                     Start this challenge <MdArrowForward aria-hidden="true" />
                   </button>
                 </section>
+                {seoCopy.faqs.length > 0 && (
+                  <section id="faq" aria-labelledby="faq-heading">
+                    <h2
+                      id="faq-heading"
+                      className="text-2xl font-bold tracking-[-0.02em]"
+                    >
+                      Frequently asked questions
+                    </h2>
+                    <div className="mt-5 divide-y divide-theme/10 border-y border-theme/10">
+                      {seoCopy.faqs.map(({ q, a }, index) => (
+                        <details key={q} open={index === 0} className="group">
+                          <summary className="flex cursor-pointer list-none items-start justify-between gap-4 py-5 font-semibold leading-6 marker:hidden [&::-webkit-details-marker]:hidden">
+                            <h3 className="font-semibold leading-6">{q}</h3>
+                            <MdExpandMore
+                              className="mt-0.5 h-5 w-5 flex-none text-muted transition-transform [details[open]_&]:rotate-180"
+                              aria-hidden="true"
+                            />
+                          </summary>
+                          <p className="max-w-3xl pb-5 leading-7 text-muted">
+                            {a}
+                          </p>
+                        </details>
+                      ))}
+                    </div>
+                  </section>
+                )}
               </div>
 
               <aside className="lg:sticky lg:top-8 lg:self-start">
@@ -583,7 +638,10 @@ const ProblemLanding: React.FC = () => {
         </main>
 
         <footer className="border-t border-theme/10 px-4 py-8 text-center text-sm text-muted">
-          Diagramwise — system design practice built around your reasoning.
+          Diagramwise — system design practice built around your reasoning.{" "}
+          <Link to="/about/" className="underline underline-offset-4">
+            About
+          </Link>
         </footer>
       </div>
 

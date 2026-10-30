@@ -163,6 +163,78 @@
   line-height: 1.75;
 }
 
+.seo-guide-answer {
+  max-width: 40rem;
+  margin: 0;
+  color: var(--text, inherit);
+  font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+  line-height: 1.6;
+}
+
+.seo-guide-about-links {
+  grid-template-columns: 1fr;
+  margin-top: 0;
+}
+
+button.seo-guide-problem {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.seo-guide-prose {
+  max-width: 44rem;
+}
+
+.seo-guide-prose p,
+.seo-guide-prose li {
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.seo-guide-prose p {
+  margin: 0 0 1.1rem;
+}
+
+.seo-guide-prose ul {
+  margin: 0 0 1.1rem;
+  padding-left: 1.2rem;
+}
+
+.seo-guide-prose li {
+  margin-bottom: 0.5rem;
+}
+
+.seo-guide-table {
+  margin: 0 0 1.25rem;
+  overflow-x: auto;
+}
+
+.seo-guide-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.seo-guide-table th,
+.seo-guide-table td {
+  padding: 0.65rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.seo-guide-table th {
+  color: inherit;
+  font-weight: 700;
+}
+
+.seo-guide-table td {
+  color: var(--muted);
+}
+
 .seo-guide-steps {
   margin: 0;
   padding: 0;
