@@ -627,12 +627,25 @@ function renderStaticRoute(data) {
     </div>`;
 }
 
+function formatReviewDate(isoDate) {
+  return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 function renderAnswer(data) {
   if (!data.answer) return "";
 
   return `<section class="static-route-section static-route-answer" id="quick-answer">
     <h2>${escapeHtml(data.answerQuestion)}</h2>
-    <p>${escapeHtml(data.answer)}</p>
+    <p>${escapeHtml(data.answer)}</p>${
+      data.updated
+        ? `<p class="static-route-updated">Last reviewed: <time datetime="${data.updated}">${formatReviewDate(data.updated)}</time></p>`
+        : ""
+    }
   </section>`;
 }
 
@@ -800,7 +813,7 @@ function routeStructuredData(route, data) {
       image: data.image,
       inLanguage: "en",
       datePublished: data.published || data.lastmod,
-      dateModified: data.lastmod,
+      dateModified: data.updated || data.lastmod,
       mainEntityOfPage: canonicalUrl(route),
       author: nextZenAuthor,
       publisher: diagramwisePublisher,

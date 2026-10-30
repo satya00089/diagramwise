@@ -20,8 +20,8 @@
         "a": "The canvas includes generic architecture components plus AWS, Azure, and GCP components, along with UML and entity-relationship diagram shapes."
       },
       {
-        "q": "Is Diagramwise free to use?",
-        "a": "You can open the design studio and browse practice problems and learning paths without paying."
+        "q": "Is Diagramwise free?",
+        "a": "Diagramwise is free with usage limits. You can open the design studio, browse practice problems and learning paths, and build diagrams without paying. Features that cost money to run, such as AI feedback, have usage limits. Paid plans may be added later, and any change will be announced first."
       }
     ]
   },
@@ -85,7 +85,11 @@
           "Candidates most often fail by spending the whole hour on one component. A rough budget keeps the conversation balanced. Treat these numbers as a starting point and adjust if the interviewer steers you elsewhere."
         ],
         "table": {
-          "headers": ["Phase", "Time", "Output"],
+          "headers": [
+            "Phase",
+            "Time",
+            "Output"
+          ],
           "rows": [
             [
               "Clarify requirements",
@@ -151,9 +155,21 @@
             "Typical peak (about 3x)"
           ],
           "rows": [
-            ["1 million", "about 12", "about 35"],
-            ["100 million", "about 1,200", "about 3,500"],
-            ["1 billion", "about 11,600", "about 35,000"]
+            [
+              "1 million",
+              "about 12",
+              "about 35"
+            ],
+            [
+              "100 million",
+              "about 1,200",
+              "about 3,500"
+            ],
+            [
+              "1 billion",
+              "about 11,600",
+              "about 35,000"
+            ]
           ]
         },
         "paragraphs_after": [
@@ -182,7 +198,12 @@
           "Every component choice trades one property for another. Interviewers listen for the sentence \"I chose X over Y because...\". If you cannot say what you gave up, you probably have not made a decision yet."
         ],
         "table": {
-          "headers": ["Decision", "Option A", "Option B", "Deciding factor"],
+          "headers": [
+            "Decision",
+            "Option A",
+            "Option B",
+            "Deciding factor"
+          ],
           "rows": [
             [
               "Consistency",
@@ -260,7 +281,8 @@
           "Pick one problem below, set a 45-minute timer, and follow the five steps without looking at a reference. Then review which step was weakest, such as estimation or failure handling, and choose your next problem to exercise that step."
         ]
       }
-    ]
+    ],
+    "updated": "2026-10-30"
   },
   "/system-design-practice": {
     "answerQuestion": "How do you practice system design online?",
@@ -331,7 +353,11 @@
           "A fixed structure keeps sessions comparable, so you can tell whether you are actually improving. This is a workable template; shorten or lengthen the blocks to fit your schedule."
         ],
         "table": {
-          "headers": ["Block", "Time", "What you do"],
+          "headers": [
+            "Block",
+            "Time",
+            "What you do"
+          ],
           "rows": [
             [
               "Read the prompt",
@@ -400,7 +426,11 @@
           "If you have a month, group practice by theme rather than by company or product. Each week deepens one layer, and the final week combines them under time pressure."
         ],
         "table": {
-          "headers": ["Week", "Theme", "Focus"],
+          "headers": [
+            "Week",
+            "Theme",
+            "Focus"
+          ],
           "rows": [
             [
               "1",
@@ -450,7 +480,8 @@
           "When no partner is available, record yourself explaining the design and listen for places where you skip a reason or hedge a decision."
         ]
       }
-    ]
+    ],
+    "updated": "2026-10-30"
   },
   "/ai-system-design-interview": {
     "answerQuestion": "What is an AI system design interview?",
@@ -546,7 +577,11 @@
           "In most AI products the model call dominates both latency and cost, so the design question becomes where you can avoid, shrink, or hide it. Name the lever and its price:"
         ],
         "table": {
-          "headers": ["Technique", "What it improves", "What it costs"],
+          "headers": [
+            "Technique",
+            "What it improves",
+            "What it costs"
+          ],
           "rows": [
             [
               "Response or semantic caching",
@@ -632,7 +667,8 @@
           "Putting user data in prompts or logs without considering privacy and access control."
         ]
       }
-    ]
+    ],
+    "updated": "2026-10-30"
   },
   "/kubernetes-architecture": {
     "answerQuestion": "What is Kubernetes architecture?",
@@ -666,7 +702,11 @@
       {
         "heading": "Control plane and node components",
         "table": {
-          "headers": ["Component", "Where", "What it does"],
+          "headers": [
+            "Component",
+            "Where",
+            "What it does"
+          ],
           "rows": [
             [
               "kube-apiserver",
@@ -724,7 +764,11 @@
           "Picking the wrong controller is a frequent source of design problems. Match the workload type to how the application runs and stores state."
         ],
         "table": {
-          "headers": ["Workload", "Use it for", "Key property"],
+          "headers": [
+            "Workload",
+            "Use it for",
+            "Key property"
+          ],
           "rows": [
             [
               "Deployment",
@@ -746,7 +790,11 @@
               "Finite batch work",
               "Runs to completion and retries on failure"
             ],
-            ["CronJob", "Scheduled batch work", "Creates Jobs on a schedule"]
+            [
+              "CronJob",
+              "Scheduled batch work",
+              "Creates Jobs on a schedule"
+            ]
           ]
         }
       },
@@ -800,7 +848,12 @@
       {
         "heading": "Trade-offs worth stating",
         "table": {
-          "headers": ["Decision", "Option A", "Option B", "Deciding factor"],
+          "headers": [
+            "Decision",
+            "Option A",
+            "Option B",
+            "Deciding factor"
+          ],
           "rows": [
             [
               "Control plane",
@@ -853,7 +906,8 @@
           "Before you call a Kubernetes diagram finished, check that it shows the workload type and why it was chosen, the full request path from client to Pod, the control plane and what it reconciles, where state is stored and how it is recovered, how configuration and secrets are delivered, how the system scales and tolerates node failure, and how you would observe and roll it back. For definitive details on any component, consult the official Kubernetes documentation."
         ]
       }
-    ]
+    ],
+    "updated": "2026-10-30"
   },
   "/about": {
     "answerQuestion": "Who is behind Diagramwise?",
@@ -866,6 +920,10 @@
       {
         "q": "What does Diagramwise do?",
         "a": "It lets you practice system design by building architectures on a visual canvas, explaining your trade-offs, and getting structured feedback on scalability, reliability, and data design."
+      },
+      {
+        "q": "Is Diagramwise free?",
+        "a": "Diagramwise is free with usage limits. You can open the design studio, browse practice problems and learning paths, and build diagrams without paying. Features that cost money to run, such as AI feedback, have usage limits. Paid plans may be added later, and any change will be announced first."
       },
       {
         "q": "What else does Next Zen build?",
