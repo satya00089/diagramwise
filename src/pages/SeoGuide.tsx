@@ -176,10 +176,19 @@ const guides = {
   },
 } as const;
 
+interface GuideSection {
+  heading: string;
+  paragraphs?: string[];
+  bullets?: string[];
+  table?: { headers: string[]; rows: string[][] };
+  paragraphs_after?: string[];
+}
+
 interface GuideCopy {
   answerQuestion: string;
   answer: string;
   faqs: { q: string; a: string }[];
+  sections?: GuideSection[];
 }
 
 // Shared with prerender.js so the static HTML and the live page match.
@@ -240,8 +249,19 @@ const SeoGuide: React.FC = () => {
               image: "https://diagramwise.com/og/problems.png",
               inLanguage: "en",
               mainEntityOfPage: canonical,
-              author: { "@id": `${SITE_URL}/about/#person` },
+              author: { "@id": "https://next-zen.dev/#organization" },
               publisher: organization,
+            },
+            {
+              "@type": "HowTo",
+              name: copy?.answerQuestion ?? data.title,
+              description: data.description,
+              step: data.steps.map(([name, text], index) => ({
+                "@type": "HowToStep",
+                position: index + 1,
+                name,
+                text,
+              })),
             },
             {
               "@type": "FAQPage",
@@ -317,6 +337,53 @@ const SeoGuide: React.FC = () => {
               </ol>
             </section>
 
+            {copy?.sections?.map((section) => (
+              <section
+                key={section.heading}
+                className="seo-guide-section seo-guide-method"
+              >
+                <div className="seo-guide-section__intro">
+                  <h2>{section.heading}</h2>
+                </div>
+                <div className="seo-guide-prose">
+                  {section.paragraphs?.map((text) => (
+                    <p key={text}>{text}</p>
+                  ))}
+                  {section.bullets && (
+                    <ul>
+                      {section.bullets.map((text) => (
+                        <li key={text}>{text}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {section.table && (
+                    <div className="seo-guide-table">
+                      <table>
+                        <thead>
+                          <tr>
+                            {section.table.headers.map((cell, cellIndex) => (
+                              <th key={cellIndex}>{cell}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {section.table.rows.map((row) => (
+                            <tr key={row.join("|")}>
+                              {row.map((cell, cellIndex) => (
+                                <td key={cellIndex}>{cell}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                  {section.paragraphs_after?.map((text) => (
+                    <p key={text}>{text}</p>
+                  ))}
+                </div>
+              </section>
+            ))}
             <section
               aria-labelledby="practice-heading"
               className="seo-guide-section seo-guide-practice"

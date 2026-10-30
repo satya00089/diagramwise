@@ -2,6 +2,8 @@
 
 > Diagramwise is a system design practice tool. You build architectures on a visual canvas, explain your assumptions and trade-offs, and get structured feedback on scalability, reliability, and data design.
 
+Diagramwise is a product of Next Zen (https://next-zen.dev/), which also builds Learn Algo and Orchestrator.
+
 ## Key pages
 
 - [Practice problems](https://diagramwise.com/problems/): System design, infrastructure, AI/ML and MLOps architecture problems with requirements and scale assumptions.

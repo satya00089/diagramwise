@@ -13,19 +13,14 @@ const copy = seoCopy["/about"];
 
 const links = [
   {
-    title: "Satya Subudhi on GitHub",
-    description: "Creator and maintainer of Diagramwise.",
-    href: "https://github.com/satya00089",
+    title: "Next Zen",
+    description: "The studio behind Diagramwise, Learn Algo, and Orchestrator.",
+    href: "https://next-zen.dev/",
   },
   {
     title: "Diagramwise source code",
     description: "The project repository, issues, and releases.",
     href: "https://github.com/satya00089/diagrammatic",
-  },
-  {
-    title: "Portfolio",
-    description: "Other projects and background from the author.",
-    href: "https://satya00089.github.io/portfolio/",
   },
 ];
 
@@ -35,8 +30,8 @@ const About: React.FC = () => {
   return (
     <>
       <Seo
-        title="About Diagramwise and Its Creator | Diagramwise"
-        description="Diagramwise is a system design practice tool created and maintained by Satya Subudhi. Learn what it does, who builds it, and where to find the source code."
+        title="About Diagramwise and Next Zen | Diagramwise"
+        description="Diagramwise is a system design practice tool from Next Zen. Learn what it does, who builds it, and where to find the source code."
         url={`${SITE_URL}/about/`}
         structuredData={{
           "@context": "https://schema.org",
@@ -46,7 +41,7 @@ const About: React.FC = () => {
               "@id": `${SITE_URL}/about/`,
               url: `${SITE_URL}/about/`,
               name: "About Diagramwise",
-              mainEntity: { "@id": `${SITE_URL}/about/#person` },
+              mainEntity: { "@id": `${SITE_URL}/#organization` },
             },
             {
               "@type": "FAQPage",
@@ -102,8 +97,11 @@ const About: React.FC = () => {
               className="seo-guide-section seo-guide-method"
             >
               <div className="seo-guide-section__intro">
-                <h2 id="links-heading">Find the creator and the project</h2>
-                <p>Source code, background, and a direct line to feedback.</p>
+                <h2 id="links-heading">Find the project</h2>
+                <p>
+                  The studio behind it, the source code, and a direct line to
+                  feedback.
+                </p>
               </div>
               <div className="seo-guide-problems seo-guide-about-links">
                 {links.map((link) => (

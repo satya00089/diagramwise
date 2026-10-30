@@ -7,6 +7,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildProblemFaq } from "./src/utils/problemFaq.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -378,33 +379,29 @@ const routeAnswers = JSON.parse(
 );
 
 routes["/about"] = {
-  title: "About Diagramwise and Its Creator | Diagramwise",
+  title: "About Diagramwise and Next Zen | Diagramwise",
   heading: "About Diagramwise",
   description:
-    "Diagramwise is a system design practice tool created and maintained by Satya Subudhi. Learn what it does, who builds it, and where to find the source code.",
+    "Diagramwise is a system design practice tool from Next Zen. Learn what it does, who builds it, and where to find the source code.",
   keywords: "about diagramwise, diagramwise creator, system design practice tool",
   image: `${siteUrl}/og/home.png`,
   imageAlt: "About Diagramwise",
-  sectionTitle: "Where to find the creator and the project",
+  sectionTitle: "Where to find the project",
   actions: [
     { label: "Choose a practice problem", href: "/problems/" },
     { label: "Read the guides", href: "/system-design-interview/" },
   ],
   items: [
     {
-      title: "Satya Subudhi on GitHub",
-      description: "Creator and maintainer of Diagramwise.",
-      href: "https://github.com/satya00089",
+      title: "Next Zen",
+      description:
+        "The studio behind Diagramwise, Learn Algo, and Orchestrator.",
+      href: "https://next-zen.dev/",
     },
     {
       title: "Diagramwise source code",
       description: "The project repository, issues, and releases.",
       href: "https://github.com/satya00089/diagrammatic",
-    },
-    {
-      title: "Portfolio",
-      description: "Other projects and background from the author.",
-      href: "https://satya00089.github.io/portfolio/",
     },
     {
       title: "Send feedback",
@@ -616,6 +613,7 @@ function renderStaticRoute(data) {
           <h2>${escapeHtml(data.sectionTitle)}</h2>
           <ul class="static-route-list">${items}</ul>
         </section>
+        ${renderSections(data.sections)}
         ${renderGuideContent(data.guide)}
         ${renderRelatedProblems(data.relatedProblems)}
         ${renderFaqs(data.faqs)}
@@ -623,6 +621,7 @@ function renderStaticRoute(data) {
       <footer class="static-route-footer">
         Diagramwise — system design practice and architecture review.
         <a href="/about/">About</a>
+        <a href="https://next-zen.dev/">Part of Next Zen</a>
       </footer>
     </div>`;
 }
@@ -636,6 +635,37 @@ function renderAnswer(data) {
   </section>`;
 }
 
+function renderSections(sections = []) {
+  if (!sections.length) return "";
+
+  const paragraphs = (items = []) =>
+    items.map((text) => `<p>${escapeHtml(text)}</p>`).join("");
+  const bullets = (items = []) =>
+    items.length
+      ? `<ul>${items.map((text) => `<li>${escapeHtml(text)}</li>`).join("")}</ul>`
+      : "";
+  const table = (spec) =>
+    spec
+      ? `<table><thead><tr>${spec.headers
+          .map((cell) => `<th>${escapeHtml(cell)}</th>`)
+          .join("")}</tr></thead><tbody>${spec.rows
+          .map(
+            (row) =>
+              `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`,
+          )
+          .join("")}</tbody></table>`
+      : "";
+
+  return sections
+    .map(
+      (section) => `<section class="static-route-section static-route-prose">
+    <h2>${escapeHtml(section.heading)}</h2>
+    ${paragraphs(section.paragraphs)}${bullets(section.bullets)}${table(section.table)}${paragraphs(section.paragraphs_after)}
+  </section>`,
+    )
+    .join("");
+}
+
 function renderFaqs(faqs = []) {
   if (!faqs.length) return "";
 
@@ -643,8 +673,8 @@ function renderFaqs(faqs = []) {
     <h2>Frequently asked questions</h2>
     ${faqs
       .map(
-        (faq) =>
-          `<h3>${escapeHtml(faq.q)}</h3><p>${escapeHtml(faq.a)}</p>`,
+        (faq, index) =>
+          `<details${index === 0 ? " open" : ""}><summary><h3>${escapeHtml(faq.q)}</h3></summary><p>${escapeHtml(faq.a)}</p></details>`,
       )
       .join("")}
   </section>`;
@@ -695,7 +725,7 @@ function breadcrumbsFor(route, title) {
 }
 
 const organizationRef = { "@id": `${siteUrl}/#organization` };
-const personRef = { "@id": `${siteUrl}/about/#person` };
+const nextZenRef = { "@id": "https://next-zen.dev/#organization" };
 
 function routeStructuredData(route, data) {
   const graph = [
@@ -736,6 +766,7 @@ function routeStructuredData(route, data) {
       educationalLevel: data.problem?.difficulty,
       teaches: Array.isArray(data.problem?.tags) ? data.problem.tags : [],
       timeRequired: data.problem?.estimated_time,
+      datePublished: data.published || data.lastmod,
       dateModified: data.lastmod,
       provider: organizationRef,
     });
@@ -750,14 +781,28 @@ function routeStructuredData(route, data) {
       datePublished: data.published || data.lastmod,
       dateModified: data.lastmod,
       mainEntityOfPage: canonicalUrl(route),
-      author: personRef,
+      author: nextZenRef,
       publisher: organizationRef,
+    });
+  }
+
+  if (data.kind === "article" && data.items.length) {
+    graph.push({
+      "@type": "HowTo",
+      name: data.answerQuestion || data.heading,
+      description: data.description,
+      step: data.items.map((item, index) => ({
+        "@type": "HowToStep",
+        position: index + 1,
+        name: item.title,
+        text: item.description,
+      })),
     });
   }
 
   if (data.pageType) {
     graph[0]["@type"] = data.pageType;
-    graph[0].mainEntity = personRef;
+    graph[0].mainEntity = organizationRef;
   }
 
   if (data.answer) {
@@ -1082,6 +1127,10 @@ function addProblemRoutes(problems, guideCatalog) {
       guide: guideCatalog.get(problem.slug),
     };
     routes[route].title = problemSeoTitle(problem.title);
+    Object.assign(
+      routes[route],
+      buildProblemFaq(problem, guideCatalog.get(problem.slug)),
+    );
   }
 }
 
@@ -1309,8 +1358,47 @@ function sourceFileFor(route) {
   return "prerender.js";
 }
 
+// First-published date: when a guide's route key first appeared in
+// prerender.js, or when a problem or path's source file was first added.
+const firstDates = new Map();
+function firstPublishedDate(route) {
+  const guide = [
+    "/system-design-interview",
+    "/system-design-practice",
+    "/ai-system-design-interview",
+    "/kubernetes-architecture",
+  ].includes(route);
+  const file = sourceFileFor(route);
+  const args = guide
+    ? ["log", "--reverse", "--format=%cs", `-S${route}`, "--", file]
+    : ["log", "--reverse", "--diff-filter=A", "--format=%cs", "--", file];
+  const key = args.join(" ");
+  if (!firstDates.has(key)) {
+    let date = null;
+    try {
+      date =
+        execFileSync("git", args, {
+          cwd: __dirname,
+          encoding: "utf-8",
+          stdio: ["ignore", "pipe", "ignore"],
+        })
+          .split(/\r?\n/)[0]
+          .trim() || null;
+    } catch {
+      // No git available: fall back to lastmod.
+    }
+    firstDates.set(key, date);
+  }
+  return firstDates.get(key);
+}
+
 for (const [route, data] of Object.entries(routes)) {
   data.lastmod = lastCommitDate(sourceFileFor(route)) || data.lastmod;
+  if (data.kind) {
+    const published = firstPublishedDate(route);
+    data.published =
+      published && published <= data.lastmod ? published : data.lastmod;
+  }
 }
 
 const baseHtml = fs.readFileSync(indexPath, "utf-8");
