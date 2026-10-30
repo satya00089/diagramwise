@@ -20,6 +20,9 @@ export type SimulationEdgeOverlayProps = Readonly<{
   showLabel?: boolean;
 }>;
 
+/** Fits the longest rate label, such as "100.2/s" or "99.9K/s". */
+const RATE_LABEL_WIDTH = 64;
+
 function getEdgeDescription(
   state: EdgeState,
   failureLabel: string | undefined,
@@ -77,7 +80,13 @@ export const SimulationEdgeOverlay = memo(function SimulationEdgeOverlay({
     state !== "standby";
   const description = getEdgeDescription(state, failureLabel, rate);
   const label = getEdgeLabel(state, failureLabel, rate);
-  const width = Math.max(48, Math.min(260, label.length * 6.5 + 16));
+  const showsRate =
+    state !== "cut" && state !== "blocked" && failureLabel === undefined;
+  // Rate badges keep one width so the pill doesn't resize as the value gains
+  // or loses digits; text badges (cut, blocked, failures) fit their content.
+  const width = showsRate
+    ? RATE_LABEL_WIDTH
+    : Math.max(48, Math.min(260, label.length * 6.5 + 16));
   let position: { x: number; y: number } | undefined;
   if (placeLabel) position = placeLabel(width);
   else if (labelX !== undefined && labelY !== undefined)

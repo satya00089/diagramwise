@@ -6,6 +6,8 @@ import {
   SimulationToolbar,
   SimulationInspector,
 } from "../components/simulation";
+import { MdDragIndicator } from "react-icons/md";
+import { useDraggableIsland } from "../components/simulation/useDraggableIsland";
 import { simulationSession, useSimulationSession } from "./session";
 import type { EventRunArtifact } from "./protocol";
 import {
@@ -28,8 +30,33 @@ export function SimulationCanvasControls({
   onSourceChange: (nodeId: string | null) => void;
   onDemo?: () => void;
 }>) {
+  const visible = useSimulationSession((state) => state.visible);
+  if (!visible) return null;
+  return (
+    <SimulationIsland
+      onInspect={onInspect}
+      onSourceChange={onSourceChange}
+      onDemo={onDemo}
+    />
+  );
+}
+
+function SimulationIsland({
+  onInspect,
+  onSourceChange,
+  onDemo,
+}: Readonly<{
+  onInspect: () => void;
+  onSourceChange: (nodeId: string | null) => void;
+  onDemo?: () => void;
+}>) {
   const s = useSimulationSession();
-  if (!s.visible) return null;
+  const layerRef = useRef<HTMLDivElement>(null);
+  const islandRef = useRef<HTMLDivElement>(null);
+  const { enabled, dragging, position, handleProps } = useDraggableIsland(
+    layerRef,
+    islandRef,
+  );
   const hasBackgroundDelivery = Object.values(
     s.compilation?.profiles ?? {},
   ).some(
@@ -41,36 +68,59 @@ export function SimulationCanvasControls({
   );
   return (
     <Panel
-      position="top-center"
+      position="top-left"
       style={{
-        width: "min(900px, calc(100% - 24px))",
-        marginTop: 12,
-        pointerEvents: "auto",
+        width: "100%",
+        height: "100%",
+        margin: 0,
+        pointerEvents: "none",
       }}
     >
-      <SimulationToolbar
-        status={s.status}
-        rps={s.rps}
-        pattern={s.pattern}
-        speed={s.speed}
-        snapshot={s.snapshot}
-        timeMs={s.snapshot?.system.timeMs ?? 0}
-        achievedSpeed={s.achievedSpeed}
-        diagnostics={s.compilation?.diagnostics}
-        hasBackgroundDelivery={hasBackgroundDelivery}
-        trafficSource={s.compilation?.trafficSource}
-        onStart={() => simulationSession.start()}
-        onPause={() => simulationSession.pause()}
-        onReset={() => simulationSession.reset()}
-        onRpsChange={(rps) => simulationSession.setWorkload(rps)}
-        onPatternChange={(pattern) =>
-          simulationSession.setWorkload(s.rps, pattern)
-        }
-        onSpeedChange={(speed) => simulationSession.setSpeed(speed)}
-        onTrafficSourceChange={onSourceChange}
-        onInspect={onInspect}
-        onDemo={onDemo}
-      />
+      <div ref={layerRef} className="sim-island-layer">
+        <div
+          ref={islandRef}
+          className={`sim-island${position ? "" : " sim-island--docked"}${dragging ? " sim-island--dragging" : ""}`}
+          style={
+            position ? { left: position.left, top: position.top } : undefined
+          }
+        >
+          <SimulationToolbar
+            dragHandle={
+              enabled ? (
+                <button
+                  type="button"
+                  className="sim-island__grip"
+                  aria-label="Move simulation controls"
+                  {...handleProps}
+                >
+                  <MdDragIndicator aria-hidden="true" size={18} />
+                </button>
+              ) : undefined
+            }
+            status={s.status}
+            rps={s.rps}
+            pattern={s.pattern}
+            speed={s.speed}
+            snapshot={s.snapshot}
+            timeMs={s.snapshot?.system.timeMs ?? 0}
+            achievedSpeed={s.achievedSpeed}
+            diagnostics={s.compilation?.diagnostics}
+            hasBackgroundDelivery={hasBackgroundDelivery}
+            trafficSource={s.compilation?.trafficSource}
+            onStart={() => simulationSession.start()}
+            onPause={() => simulationSession.pause()}
+            onReset={() => simulationSession.reset()}
+            onRpsChange={(rps) => simulationSession.setWorkload(rps)}
+            onPatternChange={(pattern) =>
+              simulationSession.setWorkload(s.rps, pattern)
+            }
+            onSpeedChange={(speed) => simulationSession.setSpeed(speed)}
+            onTrafficSourceChange={onSourceChange}
+            onInspect={onInspect}
+            onDemo={onDemo}
+          />
+        </div>
+      </div>
     </Panel>
   );
 }
@@ -233,13 +283,13 @@ export function SimulationDetails({
             </small>
             <small>{describeRunOutcome(row.snapshot)}</small>
             {comparison?.comparable === false && (
-            <small className="sim-muted">
-              {comparison.reason === "same-design"
-                ? "Same design as the previous run, so there is nothing to compare."
-                : "Different traffic load, so not compared with the previous run."}
-            </small>
-          )}
-          {comparison?.comparable &&
+              <small className="sim-muted">
+                {comparison.reason === "same-design"
+                  ? "Same design as the previous run, so there is nothing to compare."
+                  : "Different traffic load, so not compared with the previous run."}
+              </small>
+            )}
+            {comparison?.comparable &&
               (comparison.deltas.length === 0 ? (
                 <small className="sim-muted">
                   No meaningful change from the previous run.

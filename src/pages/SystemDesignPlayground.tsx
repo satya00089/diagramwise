@@ -6389,27 +6389,24 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                     Clear Canvas?
                   </h3>
                   <p className="text-sm text-muted">
-                    This action cannot be undone
+                    Your current diagram will be removed.
                   </p>
                 </div>
               </div>
               <p className="text-muted mb-4">
-                Are you sure you want to clear all components and connections
-                from the canvas? You will lose all your current work.
+                Every component and connection on the canvas will be deleted.
+                You can't undo this.
               </p>
 
-              <div className="mb-4 flex items-start space-x-2">
-                <input
+              <div className="mb-4">
+                <AnimatedCheckbox
                   id="clear-saved"
-                  type="checkbox"
+                  variant="danger"
                   checked={clearSavedOnConfirm}
-                  onChange={(e) => setClearSavedOnConfirm(e.target.checked)}
-                  className="mt-1 h-4 w-4 rounded text-theme"
+                  onChange={setClearSavedOnConfirm}
+                  labelClassName="text-muted"
+                  label="Also delete my saved progress (local and server)"
                 />
-                <label htmlFor="clear-saved" className="text-sm text-muted">
-                  Also delete saved progress (local or server). Use with
-                  caution.
-                </label>
               </div>
 
               <div className="flex space-x-3">
@@ -6423,9 +6420,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
                 <button
                   type="button"
                   onClick={confirmClearCanvas}
-                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors cursor-pointer"
+                  className="flex-1 px-4 py-2 bg-red-600/10 hover:bg-red-600/20 text-red-600 dark:text-red-400 border border-red-600/30 font-semibold rounded-lg transition-colors cursor-pointer"
                 >
-                  Clear All
+                  Clear canvas
                 </button>
               </div>
             </div>

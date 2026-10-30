@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
+import {
+  hasOpenPopup,
+  isTooltipSuppressed,
+} from "../../utils/tooltipVisibility";
 
 type TooltipPlacement = "top" | "right" | "bottom" | "left";
 
@@ -22,12 +26,7 @@ const getTooltipTarget = (target: EventTarget | null): HTMLElement | null => {
     '[data-tooltip]:not([data-tooltip=""])',
   );
   if (!element?.isConnected) return null;
-  if (
-    element.hasAttribute("disabled") ||
-    element.getAttribute("aria-disabled") === "true"
-  ) {
-    return null;
-  }
+  if (isTooltipSuppressed(element)) return null;
   return element;
 };
 
@@ -220,7 +219,12 @@ const AdaptiveTooltipLayer = () => {
       const current = tooltipRef.current;
       if (!current) return;
       const text = current.element.dataset.tooltip?.trim();
-      if (!current.element.isConnected || !text) hideTooltip();
+      if (
+        !current.element.isConnected ||
+        !text ||
+        hasOpenPopup(current.element)
+      )
+        hideTooltip();
       else if (text !== current.text) showTooltip(current.element);
     });
     markTooltipTargets();
@@ -228,7 +232,7 @@ const AdaptiveTooltipLayer = () => {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-tooltip", "title"],
+      attributeFilter: ["data-tooltip", "title", "aria-expanded"],
     });
     document.addEventListener("pointerover", handlePointerOver, true);
     document.addEventListener("pointerout", handlePointerOut, true);
