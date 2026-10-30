@@ -2,20 +2,27 @@
 // prerender.js (static HTML) and ProblemLanding.tsx (live page) so both show
 // identical text. Everything is derived from the problem and guide data.
 
+// Linear-time replacement for /[chars]+$/ (which can backtrack).
+const trimEndChars = (text, chars) => {
+  let end = text.length;
+  while (end > 0 && chars.includes(text[end - 1])) end -= 1;
+  return text.slice(0, end);
+};
+
 const clip = (text = "", max = 220) => {
   const clean = String(text).replace(/\s+/g, " ").trim();
   if (clean.length <= max) return clean;
   const cut = clean.slice(0, max);
   const sentence = cut.lastIndexOf(". ");
   if (sentence > 80) return cut.slice(0, sentence + 1);
-  return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[\s,:;-]+$/, "")}…`;
+  return `${trimEndChars(cut.slice(0, cut.lastIndexOf(" ")), " \t\n,:;-")}…`;
 };
 
 const sentenceList = (items, max = 4) =>
   items
     .filter(Boolean)
     .slice(0, max)
-    .map((item) => clip(item, 140).replace(/[.\s]+$/, ""))
+    .map((item) => trimEndChars(clip(item, 140), ". \t\n"))
     .join("; ");
 
 const readable = (tag) => String(tag).replaceAll("-", " ");
@@ -57,7 +64,7 @@ export function buildProblemFaq(problem, guide) {
         .slice(0, 3)
         .map(
           (item) =>
-            `${item.title}: ${clip(item.recommendation, 160).replace(/[.\s]+$/, "")}.`,
+            `${item.title}: ${trimEndChars(clip(item.recommendation, 160), ". \t\n")}.`,
         )
         .join(" "),
     });

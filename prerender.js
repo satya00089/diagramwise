@@ -383,7 +383,8 @@ routes["/about"] = {
   heading: "About Diagramwise",
   description:
     "Diagramwise is a system design practice tool from Next Zen. Learn what it does, who builds it, and where to find the source code.",
-  keywords: "about diagramwise, diagramwise creator, system design practice tool",
+  keywords:
+    "about diagramwise, diagramwise creator, system design practice tool",
   image: `${siteUrl}/og/home.png`,
   imageAlt: "About Diagramwise",
   sectionTitle: "Where to find the project",
@@ -853,6 +854,13 @@ function replaceMeta(html, attribute, name, content) {
   );
 }
 
+// Linear-time replacement for /[chars]+$/ (which can backtrack).
+function trimEndChars(text, chars) {
+  let end = text.length;
+  while (end > 0 && chars.includes(text[end - 1])) end -= 1;
+  return text.slice(0, end);
+}
+
 // Keep meta descriptions within the ~160 character snippet limit.
 function clampDescription(text = "", max = 160) {
   const clean = text.replace(/\s+/g, " ").trim();
@@ -860,7 +868,7 @@ function clampDescription(text = "", max = 160) {
   const cut = clean.slice(0, max - 1);
   const sentenceEnd = Math.max(cut.lastIndexOf(". "), cut.lastIndexOf("; "));
   if (sentenceEnd > 80) return cut.slice(0, sentenceEnd + 1);
-  return `${cut.slice(0, cut.lastIndexOf(" ")).replace(/[\s,:;-]+$/, "")}…`;
+  return `${trimEndChars(cut.slice(0, cut.lastIndexOf(" ")), " \t\n,:;-")}…`;
 }
 
 function renderHtml(baseHtml, route, data) {
@@ -1024,9 +1032,28 @@ function problemSeoTitle(title) {
       ? candidate.slice(0, candidate.lastIndexOf(" "))
       : candidate;
   // Never end on a dangling connector ("Design a Control Plane for a").
-  shortened = shortened
-    .replace(/(\s+(?:and|or|a|an|the|of|to|for|in|with|on|at|by|from|&))+$/i, "")
-    .replace(/[\s,:;-]+$/, "");
+  const connectors = new Set([
+    "and",
+    "or",
+    "a",
+    "an",
+    "the",
+    "of",
+    "to",
+    "for",
+    "in",
+    "with",
+    "on",
+    "at",
+    "by",
+    "from",
+    "&",
+  ]);
+  const words = shortened.split(" ");
+  while (words.length > 1 && connectors.has(words.at(-1).toLowerCase())) {
+    words.pop();
+  }
+  shortened = trimEndChars(words.join(" "), " \t\n,:;-");
   return `${shortened}${suffix}`;
 }
 
