@@ -109,7 +109,6 @@
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Tool",
         "description": "Interactive system design practice environment for building architectures, explaining decisions, and receiving structured feedback on scalability, reliability, data design, and trade-offs.",
         "url": "https://diagramwise.com/",
         "applicationCategory": "EducationalApplication",
@@ -131,7 +130,7 @@
         ],
         "screenshot": "https://diagramwise.com/og/home.png",
         "image": "https://diagramwise.com/og/home.png",
-        "author": { "@id": "https://diagramwise.com/#organization" },
+        "author": { "@id": "https://next-zen.dev/#organization" },
         "publisher": { "@id": "https://diagramwise.com/#organization" }
       }
     </script>
@@ -147,7 +146,52 @@
           "url": "https://diagramwise.com/logo.png"
         },
         "description": "Diagramwise is a system design practice tool for building architectures visually, explaining trade-offs, and getting structured feedback.",
+        "parentOrganization": { "@id": "https://next-zen.dev/#organization" },
         "sameAs": ["https://github.com/satya00089/diagrammatic"]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://next-zen.dev/#organization",
+        "name": "Next Zen",
+        "url": "https://next-zen.dev/",
+        "description": "Next Zen builds developer tools for learning algorithms, designing system architecture, and automating cloud infrastructure, including Learn Algo, Diagramwise, and Orchestrator.",
+        "founder": { "@id": "https://next-zen.dev/#founder" },
+        "brand": { "@id": "https://diagramwise.com/#organization" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "@id": "https://next-zen.dev/#founder",
+        "name": "Satya Subudhi",
+        "jobTitle": "Cloud & Full-Stack Engineer",
+        "description": "Cloud & Full-Stack Engineer focused on cloud automation, monitoring, and AI/ML-driven systems. Founder of Next Zen.",
+        "knowsAbout": [
+          "Microsoft Azure",
+          "Amazon Web Services",
+          "Terraform",
+          "Bicep",
+          "FastAPI",
+          "Python",
+          "React",
+          "Redux",
+          "MongoDB",
+          "Cloud automation",
+          "System design",
+          "Machine learning"
+        ],
+        "worksFor": { "@id": "https://next-zen.dev/#organization" },
+        "url": "https://satya00089.github.io/portfolio/",
+        "sameAs": [
+          "https://github.com/satya00089",
+          "https://www.linkedin.com/in/satya-subudhi/",
+          "https://satya00089.github.io/portfolio/",
+          "https://next-zen.dev/"
+        ]
       }
     </script>
     <script type="application/ld+json">
@@ -156,7 +200,6 @@
         "@type": "WebSite",
         "@id": "https://diagramwise.com/#website",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Practice",
         "url": "https://diagramwise.com/",
         "inLanguage": "en",
         "publisher": { "@id": "https://diagramwise.com/#organization" }
@@ -349,6 +392,63 @@
         line-height: 1.75;
       }
 
+      .static-route-prose p,
+      .static-route-prose li {
+        max-width: 70ch;
+        color: #545467;
+        line-height: 1.75;
+      }
+
+      .static-route-prose table {
+        width: 100%;
+        max-width: 70ch;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      .static-route-prose th,
+      .static-route-prose td {
+        padding: 0.6rem 0.75rem;
+        border-bottom: 1px solid #d9d9e6;
+        text-align: left;
+      }
+
+      html.dark .static-route-prose p,
+      html.dark .static-route-prose li {
+        color: #b7b7c8;
+      }
+
+      .static-route-faq details {
+        max-width: 70ch;
+        border-bottom: 1px solid #d9d9e6;
+      }
+
+      .static-route-faq summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .static-route-faq summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .static-route-faq summary::after {
+        content: "+";
+        font-size: 1.25rem;
+      }
+
+      .static-route-faq details[open] summary::after {
+        content: "−";
+      }
+
+      html.dark .static-route-faq details {
+        border-color: #333342;
+      }
+
       .static-route-faq h3 {
         max-width: 60ch;
         margin: 1.5rem 0 0.4rem;
@@ -359,6 +459,12 @@
       html.dark .static-route-answer p,
       html.dark .static-route-faq p {
         color: #b7b7c8;
+      }
+
+      .static-route-footer a {
+        margin-left: 0.75rem;
+        color: inherit;
+        font-weight: 650;
       }
 
       .static-route-footer {
@@ -424,9 +530,9 @@
         }
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-Cy1dtRf_.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DxHoCUag.css">
-      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/kubernetes-architecture/","url":"https://diagramwise.com/kubernetes-architecture/","name":"Kubernetes Architecture Guide: Components, Diagrams & Practice | Diagramwise","description":"Learn how Kubernetes control-plane, workload, networking, storage, and observability components fit together, then practice explaining the trade-offs in an architecture diagram.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/kubernetes-architecture/","speakable":{"@type":"SpeakableSpecification","cssSelector":[".static-route-hero h1",".static-route-answer p"]}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"Kubernetes Architecture Guide: Components, Diagrams & Practice","item":"https://diagramwise.com/kubernetes-architecture/"}]},{"@type":"Article","headline":"Kubernetes Architecture Guide","description":"Learn how Kubernetes control-plane, workload, networking, storage, and observability components fit together, then practice explaining the trade-offs in an architecture diagram.","url":"https://diagramwise.com/kubernetes-architecture/","image":"https://diagramwise.com/og/problems.png","inLanguage":"en","datePublished":"2026-10-30","dateModified":"2026-10-30","mainEntityOfPage":"https://diagramwise.com/kubernetes-architecture/","author":{"@id":"https://diagramwise.com/#organization"},"publisher":{"@id":"https://diagramwise.com/#organization"}},{"@type":"FAQPage","@id":"https://diagramwise.com/kubernetes-architecture/#faq","mainEntity":[{"@type":"Question","name":"What are the main components of Kubernetes?","acceptedAnswer":{"@type":"Answer","text":"The control plane has the API server, scheduler, controller manager, and etcd. Each worker node runs a kubelet, a container runtime, and a network proxy, and hosts Pods."}},{"@type":"Question","name":"What is the difference between a Deployment and a StatefulSet?","acceptedAnswer":{"@type":"Answer","text":"A Deployment manages interchangeable stateless Pods. A StatefulSet gives Pods stable identities and storage, which suits databases and other stateful workloads."}},{"@type":"Question","name":"How does traffic reach a Pod in Kubernetes?","acceptedAnswer":{"@type":"Answer","text":"External traffic typically enters through an Ingress, is routed to a Service, and is load-balanced across the matching Pods, with network policies controlling what may connect."}},{"@type":"Question","name":"How do I draw a Kubernetes architecture diagram?","acceptedAnswer":{"@type":"Answer","text":"Show the workload boundary, the traffic path from Ingress to Pods, the control plane, persistent storage, and the operational pieces such as scaling and observability."}}]}]}</script>
+    <script type="module" crossorigin src="/assets/index-cXjIPqRh.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-8XZuSE6o.css">
+      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/kubernetes-architecture/","url":"https://diagramwise.com/kubernetes-architecture/","name":"Kubernetes Architecture Guide: Components, Diagrams & Practice | Diagramwise","description":"Learn how Kubernetes control-plane, workload, networking, storage, and observability components fit together, then practice explaining the trade-offs in an architecture diagram.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/kubernetes-architecture/","speakable":{"@type":"SpeakableSpecification","cssSelector":[".static-route-hero h1",".static-route-answer p"]}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"Kubernetes Architecture Guide: Components, Diagrams & Practice","item":"https://diagramwise.com/kubernetes-architecture/"}]},{"@type":"Article","headline":"Kubernetes Architecture Guide","description":"Learn how Kubernetes control-plane, workload, networking, storage, and observability components fit together, then practice explaining the trade-offs in an architecture diagram.","url":"https://diagramwise.com/kubernetes-architecture/","image":"https://diagramwise.com/og/problems.png","inLanguage":"en","datePublished":"2026-08-30","dateModified":"2026-10-30","mainEntityOfPage":"https://diagramwise.com/kubernetes-architecture/","author":{"@type":"Organization","@id":"https://next-zen.dev/#organization","name":"Next Zen","url":"https://next-zen.dev/"},"publisher":{"@type":"Organization","@id":"https://diagramwise.com/#organization","name":"Diagramwise","url":"https://diagramwise.com/","logo":{"@type":"ImageObject","url":"https://diagramwise.com/logo.png"}}},{"@type":"HowTo","name":"What is Kubernetes architecture?","description":"Learn how Kubernetes control-plane, workload, networking, storage, and observability components fit together, then practice explaining the trade-offs in an architecture diagram.","step":[{"@type":"HowToStep","position":1,"name":"Start with the workload boundary","text":"Use Deployments, StatefulSets, or Jobs according to how the workload runs and stores state."},{"@type":"HowToStep","position":2,"name":"Make traffic explicit","text":"Trace Ingress, Service, and Pod routing, including the policy boundaries that protect it."},{"@type":"HowToStep","position":3,"name":"Separate control from data paths","text":"Show how the API server, scheduler, controllers, and etcd reconcile declared state."},{"@type":"HowToStep","position":4,"name":"Plan state and configuration","text":"Use persistent storage, configuration, and secrets with an explicit recovery boundary."},{"@type":"HowToStep","position":5,"name":"Design for operations","text":"Include readiness, scaling, observability, and a safe rollout strategy."}]},{"@type":"FAQPage","@id":"https://diagramwise.com/kubernetes-architecture/#faq","mainEntity":[{"@type":"Question","name":"What are the main components of Kubernetes?","acceptedAnswer":{"@type":"Answer","text":"The control plane has the API server, scheduler, controller manager, and etcd. Each worker node runs a kubelet, a container runtime, and a network proxy, and hosts Pods."}},{"@type":"Question","name":"What is the difference between a Deployment and a StatefulSet?","acceptedAnswer":{"@type":"Answer","text":"A Deployment manages interchangeable stateless Pods. A StatefulSet gives Pods stable identities and storage, which suits databases and other stateful workloads."}},{"@type":"Question","name":"How does traffic reach a Pod in Kubernetes?","acceptedAnswer":{"@type":"Answer","text":"External traffic typically enters through an Ingress, is routed to a Service, and is load-balanced across the matching Pods, with network policies controlling what may connect."}},{"@type":"Question","name":"How do I draw a Kubernetes architecture diagram?","acceptedAnswer":{"@type":"Answer","text":"Show the workload boundary, the traffic path from Ingress to Pods, the control plane, persistent storage, and the operational pieces such as scaling and observability."}}]}]}</script>
   </head>
   <body>
     <div id="root">
@@ -456,6 +562,43 @@
           <h2>Build a Kubernetes architecture you can explain</h2>
           <ul class="static-route-list"><li><strong>Start with the workload boundary</strong><span>Use Deployments, StatefulSets, or Jobs according to how the workload runs and stores state.</span></li><li><strong>Make traffic explicit</strong><span>Trace Ingress, Service, and Pod routing, including the policy boundaries that protect it.</span></li><li><strong>Separate control from data paths</strong><span>Show how the API server, scheduler, controllers, and etcd reconcile declared state.</span></li><li><strong>Plan state and configuration</strong><span>Use persistent storage, configuration, and secrets with an explicit recovery boundary.</span></li><li><strong>Design for operations</strong><span>Include readiness, scaling, observability, and a safe rollout strategy.</span></li></ul>
         </section>
+        <section class="static-route-section static-route-prose">
+    <h2>The two halves of a cluster</h2>
+    <p>A Kubernetes cluster has a control plane that decides what should run, and worker nodes that run it. The control plane stores the desired state of the cluster and continuously works to make reality match it. Nodes host the Pods, which are the smallest deployable units and contain one or more containers.</p><p>A clear architecture diagram separates these two halves, because they fail differently and are operated differently. Application traffic flows through the nodes; configuration and orchestration flow through the control plane.</p>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Control plane and node components</h2>
+    <table><thead><tr><th>Component</th><th>Where</th><th>What it does</th></tr></thead><tbody><tr><td>kube-apiserver</td><td>Control plane</td><td>The front end of the cluster. Every other component talks to the cluster through it, and it is the only component that reads and writes etcd.</td></tr><tr><td>etcd</td><td>Control plane</td><td>A consistent, highly available key-value store holding all cluster state.</td></tr><tr><td>kube-scheduler</td><td>Control plane</td><td>Watches for new Pods with no node and assigns each to a suitable node.</td></tr><tr><td>kube-controller-manager</td><td>Control plane</td><td>Runs the controllers that move current state toward desired state, such as the Deployment and Node controllers.</td></tr><tr><td>cloud-controller-manager</td><td>Control plane (optional)</td><td>Integrates with a cloud provider for resources such as load balancers and node lifecycle.</td></tr><tr><td>kubelet</td><td>Each node</td><td>Makes sure the containers described in assigned Pods are running and healthy.</td></tr><tr><td>Container runtime</td><td>Each node</td><td>Actually runs containers, for example containerd or CRI-O.</td></tr><tr><td>kube-proxy</td><td>Each node (optional)</td><td>Implements Service networking rules so traffic reaches the right Pods.</td></tr></tbody></table>
+  </section><section class="static-route-section static-route-prose">
+    <h2>The reconciliation loop</h2>
+    <p>The idea that explains most Kubernetes behavior is reconciliation. You declare a desired state, for example three replicas of a service. The API server stores it in etcd. Controllers observe the difference between the desired and the current state and act to close it: creating Pods, replacing failed ones, or scaling up. The scheduler places new Pods on nodes, and each node&#039;s kubelet starts the containers.</p><p>This is why a diagram should show the control plane as a set of loops reacting to declared state, not as a request path. When a node dies, no one tells Kubernetes what to do; the controllers notice the missing Pods and create replacements.</p>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Choose the workload type deliberately</h2>
+    <p>Picking the wrong controller is a frequent source of design problems. Match the workload type to how the application runs and stores state.</p><table><thead><tr><th>Workload</th><th>Use it for</th><th>Key property</th></tr></thead><tbody><tr><td>Deployment</td><td>Stateless services and web APIs</td><td>Interchangeable Pods with rolling updates and rollbacks</td></tr><tr><td>StatefulSet</td><td>Databases and other stateful systems</td><td>Stable network identity and per-Pod persistent storage</td></tr><tr><td>DaemonSet</td><td>Node-level agents such as log or metrics collectors</td><td>One Pod on every matching node</td></tr><tr><td>Job</td><td>Finite batch work</td><td>Runs to completion and retries on failure</td></tr><tr><td>CronJob</td><td>Scheduled batch work</td><td>Creates Jobs on a schedule</td></tr></tbody></table>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Make the traffic path explicit</h2>
+    <p>Every Pod gets its own IP address, but Pods are ephemeral, so clients should not depend on those addresses. A Service provides a stable virtual IP and DNS name and load-balances across the healthy Pods selected by its labels. Common Service types are ClusterIP for internal traffic, NodePort, and LoadBalancer for external exposure through a cloud load balancer.</p><p>For HTTP traffic from outside the cluster, an Ingress, or the newer Gateway API, defines routing rules by host and path. These rules only take effect if an ingress controller is running in the cluster. In a diagram, trace one request: client, load balancer, ingress, Service, Pod, and then any downstream data store.</p><p>Network policies restrict which Pods can talk to which. They are enforced only if the cluster&#039;s network plugin supports them, so state that assumption. By default, all Pods can reach all other Pods, which is rarely what you want in production.</p>
+  </section><section class="static-route-section static-route-prose">
+    <h2>State, configuration, and secrets</h2>
+    <ul><li>Persistent storage: a PersistentVolumeClaim requests storage, a StorageClass describes how it is provisioned, and a PersistentVolume is the underlying volume. Decide the backup and recovery boundary explicitly.</li><li>Configuration: use ConfigMaps for non-sensitive settings so the same image runs in every environment.</li><li>Secrets: they hold credentials, but by default they are only base64-encoded, not encrypted. Enable encryption at rest for etcd, restrict access with RBAC, and consider an external secret manager.</li></ul><p>A useful design question is whether a stateful system belongs in the cluster at all. Running a database in Kubernetes is possible with a StatefulSet and the right operator, but a managed database service often removes significant operational work.</p>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Design for scaling and availability</h2>
+    <p>Availability in Kubernetes is the result of several small settings working together, so a good design names them.</p><ul><li>Resource requests and limits: requests drive scheduling decisions and limits cap usage. Without requests, the scheduler cannot place Pods sensibly.</li><li>Readiness and liveness probes: a readiness probe keeps traffic away from a Pod that is not ready; a liveness probe restarts a stuck container. They answer different questions and are easy to confuse.</li><li>Horizontal Pod Autoscaler: adjusts the number of replicas based on metrics such as CPU. Scaling nodes is a separate mechanism, so a diagram that shows Pods scaling should also show how nodes scale.</li><li>PodDisruptionBudget: limits how many replicas can be down during voluntary disruptions such as node drains.</li><li>Rolling updates: control how many Pods are replaced at a time so a deployment does not remove capacity all at once.</li><li>Spreading replicas: use topology spread constraints or anti-affinity so replicas land on different nodes and zones.</li></ul>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Security basics to include</h2>
+    <p>A diagram that ignores security is incomplete. At minimum, show role-based access control with least-privilege service accounts, network policies limiting Pod-to-Pod traffic, Pod security settings that avoid running as root or with extra privileges, and a trusted image source with pinned versions rather than the mutable latest tag.</p><p>For managed clusters, note which responsibilities belong to the provider, such as the control plane, and which belong to you, such as node configuration, workloads, and access policies.</p>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Observability and operations</h2>
+    <p>Operations is a first-class part of the architecture. Include a metrics pipeline for cluster and application metrics, centralized logging, and alerts on symptoms that users feel, such as error rate and latency, as well as on cluster health, such as failing nodes and Pods stuck in a pending or crash-looping state.</p><p>Also state your rollout and rollback strategy. Kubernetes can roll a Deployment back to a previous revision, but that only helps if your changes are backward compatible with the data they touch.</p>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Trade-offs worth stating</h2>
+    <table><thead><tr><th>Decision</th><th>Option A</th><th>Option B</th><th>Deciding factor</th></tr></thead><tbody><tr><td>Control plane</td><td>Managed (EKS, AKS, GKE)</td><td>Self-managed</td><td>Operational capacity versus need for control</td></tr><tr><td>Isolation</td><td>Namespaces in one cluster</td><td>Separate clusters</td><td>Blast radius, compliance, and cost</td></tr><tr><td>Stateful data</td><td>In-cluster StatefulSet</td><td>Managed database service</td><td>Operational burden versus portability</td></tr><tr><td>Exposure</td><td>Ingress or Gateway API</td><td>One LoadBalancer per Service</td><td>Cost and routing needs</td></tr><tr><td>Scaling</td><td>Fixed replicas</td><td>Autoscaling</td><td>Traffic variability and cost sensitivity</td></tr></tbody></table>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Common mistakes</h2>
+    <ul><li>Omitting resource requests and limits, which makes scheduling unpredictable and lets one workload starve others.</li><li>Skipping readiness probes, so traffic reaches Pods that cannot serve it yet.</li><li>Running a single replica and calling it highly available.</li><li>Treating Pods as durable. Anything written to a container filesystem is lost when the Pod is replaced.</li><li>Assuming Secrets are encrypted by default, or granting broad RBAC permissions out of convenience.</li><li>Using the latest image tag, which makes deployments and rollbacks unpredictable.</li><li>On self-managed clusters, running etcd without backups or a tested restore.</li></ul>
+  </section><section class="static-route-section static-route-prose">
+    <h2>A checklist for your diagram</h2>
+    <p>Before you call a Kubernetes diagram finished, check that it shows the workload type and why it was chosen, the full request path from client to Pod, the control plane and what it reconciles, where state is stored and how it is recovered, how configuration and secrets are delivered, how the system scales and tolerates node failure, and how you would observe and roll it back. For definitive details on any component, consult the official Kubernetes documentation.</p>
+  </section>
         
         <section class="static-route-section" id="related-problems">
     <h2>Practice related problems</h2>
@@ -464,11 +607,13 @@
   </section>
         <section class="static-route-section static-route-faq" id="faq">
     <h2>Frequently asked questions</h2>
-    <h3>What are the main components of Kubernetes?</h3><p>The control plane has the API server, scheduler, controller manager, and etcd. Each worker node runs a kubelet, a container runtime, and a network proxy, and hosts Pods.</p><h3>What is the difference between a Deployment and a StatefulSet?</h3><p>A Deployment manages interchangeable stateless Pods. A StatefulSet gives Pods stable identities and storage, which suits databases and other stateful workloads.</p><h3>How does traffic reach a Pod in Kubernetes?</h3><p>External traffic typically enters through an Ingress, is routed to a Service, and is load-balanced across the matching Pods, with network policies controlling what may connect.</p><h3>How do I draw a Kubernetes architecture diagram?</h3><p>Show the workload boundary, the traffic path from Ingress to Pods, the control plane, persistent storage, and the operational pieces such as scaling and observability.</p>
+    <details open><summary><h3>What are the main components of Kubernetes?</h3></summary><p>The control plane has the API server, scheduler, controller manager, and etcd. Each worker node runs a kubelet, a container runtime, and a network proxy, and hosts Pods.</p></details><details><summary><h3>What is the difference between a Deployment and a StatefulSet?</h3></summary><p>A Deployment manages interchangeable stateless Pods. A StatefulSet gives Pods stable identities and storage, which suits databases and other stateful workloads.</p></details><details><summary><h3>How does traffic reach a Pod in Kubernetes?</h3></summary><p>External traffic typically enters through an Ingress, is routed to a Service, and is load-balanced across the matching Pods, with network policies controlling what may connect.</p></details><details><summary><h3>How do I draw a Kubernetes architecture diagram?</h3></summary><p>Show the workload boundary, the traffic path from Ingress to Pods, the control plane, persistent storage, and the operational pieces such as scaling and observability.</p></details>
   </section>
       </main>
       <footer class="static-route-footer">
         Diagramwise — system design practice and architecture review.
+        <a href="/about/">About</a>
+        <a href="https://next-zen.dev/">Part of Next Zen</a>
       </footer>
     </div><!-- static-route:end -->
     </div>

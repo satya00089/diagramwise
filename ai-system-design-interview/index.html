@@ -109,7 +109,6 @@
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Tool",
         "description": "Interactive system design practice environment for building architectures, explaining decisions, and receiving structured feedback on scalability, reliability, data design, and trade-offs.",
         "url": "https://diagramwise.com/",
         "applicationCategory": "EducationalApplication",
@@ -131,7 +130,7 @@
         ],
         "screenshot": "https://diagramwise.com/og/home.png",
         "image": "https://diagramwise.com/og/home.png",
-        "author": { "@id": "https://diagramwise.com/#organization" },
+        "author": { "@id": "https://next-zen.dev/#organization" },
         "publisher": { "@id": "https://diagramwise.com/#organization" }
       }
     </script>
@@ -147,7 +146,52 @@
           "url": "https://diagramwise.com/logo.png"
         },
         "description": "Diagramwise is a system design practice tool for building architectures visually, explaining trade-offs, and getting structured feedback.",
+        "parentOrganization": { "@id": "https://next-zen.dev/#organization" },
         "sameAs": ["https://github.com/satya00089/diagrammatic"]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://next-zen.dev/#organization",
+        "name": "Next Zen",
+        "url": "https://next-zen.dev/",
+        "description": "Next Zen builds developer tools for learning algorithms, designing system architecture, and automating cloud infrastructure, including Learn Algo, Diagramwise, and Orchestrator.",
+        "founder": { "@id": "https://next-zen.dev/#founder" },
+        "brand": { "@id": "https://diagramwise.com/#organization" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "@id": "https://next-zen.dev/#founder",
+        "name": "Satya Subudhi",
+        "jobTitle": "Cloud & Full-Stack Engineer",
+        "description": "Cloud & Full-Stack Engineer focused on cloud automation, monitoring, and AI/ML-driven systems. Founder of Next Zen.",
+        "knowsAbout": [
+          "Microsoft Azure",
+          "Amazon Web Services",
+          "Terraform",
+          "Bicep",
+          "FastAPI",
+          "Python",
+          "React",
+          "Redux",
+          "MongoDB",
+          "Cloud automation",
+          "System design",
+          "Machine learning"
+        ],
+        "worksFor": { "@id": "https://next-zen.dev/#organization" },
+        "url": "https://satya00089.github.io/portfolio/",
+        "sameAs": [
+          "https://github.com/satya00089",
+          "https://www.linkedin.com/in/satya-subudhi/",
+          "https://satya00089.github.io/portfolio/",
+          "https://next-zen.dev/"
+        ]
       }
     </script>
     <script type="application/ld+json">
@@ -156,7 +200,6 @@
         "@type": "WebSite",
         "@id": "https://diagramwise.com/#website",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Practice",
         "url": "https://diagramwise.com/",
         "inLanguage": "en",
         "publisher": { "@id": "https://diagramwise.com/#organization" }
@@ -349,6 +392,63 @@
         line-height: 1.75;
       }
 
+      .static-route-prose p,
+      .static-route-prose li {
+        max-width: 70ch;
+        color: #545467;
+        line-height: 1.75;
+      }
+
+      .static-route-prose table {
+        width: 100%;
+        max-width: 70ch;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      .static-route-prose th,
+      .static-route-prose td {
+        padding: 0.6rem 0.75rem;
+        border-bottom: 1px solid #d9d9e6;
+        text-align: left;
+      }
+
+      html.dark .static-route-prose p,
+      html.dark .static-route-prose li {
+        color: #b7b7c8;
+      }
+
+      .static-route-faq details {
+        max-width: 70ch;
+        border-bottom: 1px solid #d9d9e6;
+      }
+
+      .static-route-faq summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .static-route-faq summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .static-route-faq summary::after {
+        content: "+";
+        font-size: 1.25rem;
+      }
+
+      .static-route-faq details[open] summary::after {
+        content: "−";
+      }
+
+      html.dark .static-route-faq details {
+        border-color: #333342;
+      }
+
       .static-route-faq h3 {
         max-width: 60ch;
         margin: 1.5rem 0 0.4rem;
@@ -359,6 +459,12 @@
       html.dark .static-route-answer p,
       html.dark .static-route-faq p {
         color: #b7b7c8;
+      }
+
+      .static-route-footer a {
+        margin-left: 0.75rem;
+        color: inherit;
+        font-weight: 650;
       }
 
       .static-route-footer {
@@ -424,9 +530,9 @@
         }
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-Cy1dtRf_.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DxHoCUag.css">
-      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/ai-system-design-interview/","url":"https://diagramwise.com/ai-system-design-interview/","name":"AI System Design Interview Questions & Practice | Diagramwise","description":"Practice AI and ML system design across data pipelines, retrieval, inference, evaluation, monitoring, latency, reliability, and cost trade-offs.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/ai-system-design-interview/","speakable":{"@type":"SpeakableSpecification","cssSelector":[".static-route-hero h1",".static-route-answer p"]}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"AI System Design Interview Questions & Practice","item":"https://diagramwise.com/ai-system-design-interview/"}]},{"@type":"Article","headline":"AI System Design Interview","description":"Practice AI and ML system design across data pipelines, retrieval, inference, evaluation, monitoring, latency, reliability, and cost trade-offs.","url":"https://diagramwise.com/ai-system-design-interview/","image":"https://diagramwise.com/og/problems.png","inLanguage":"en","datePublished":"2026-10-30","dateModified":"2026-10-30","mainEntityOfPage":"https://diagramwise.com/ai-system-design-interview/","author":{"@id":"https://diagramwise.com/#organization"},"publisher":{"@id":"https://diagramwise.com/#organization"}},{"@type":"FAQPage","@id":"https://diagramwise.com/ai-system-design-interview/#faq","mainEntity":[{"@type":"Question","name":"How is AI system design different from classic system design?","acceptedAnswer":{"@type":"Answer","text":"You still design for scale and reliability, but you also reason about data quality, model evaluation, drift, inference latency and cost, and fallbacks when the model is wrong or unavailable."}},{"@type":"Question","name":"What topics come up in AI and ML system design interviews?","acceptedAnswer":{"@type":"Answer","text":"Common topics are data pipelines, feature stores, retrieval and RAG, model serving, evaluation, monitoring, and cost control."}},{"@type":"Question","name":"How should I structure an ML system design answer?","acceptedAnswer":{"@type":"Answer","text":"Define the product behavior and quality metric, show the offline and online paths, budget latency and cost, then cover evaluation, observability, and rollback."}}]}]}</script>
+    <script type="module" crossorigin src="/assets/index-cXjIPqRh.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-8XZuSE6o.css">
+      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/ai-system-design-interview/","url":"https://diagramwise.com/ai-system-design-interview/","name":"AI System Design Interview Questions & Practice | Diagramwise","description":"Practice AI and ML system design across data pipelines, retrieval, inference, evaluation, monitoring, latency, reliability, and cost trade-offs.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/ai-system-design-interview/","speakable":{"@type":"SpeakableSpecification","cssSelector":[".static-route-hero h1",".static-route-answer p"]}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"AI System Design Interview Questions & Practice","item":"https://diagramwise.com/ai-system-design-interview/"}]},{"@type":"Article","headline":"AI System Design Interview","description":"Practice AI and ML system design across data pipelines, retrieval, inference, evaluation, monitoring, latency, reliability, and cost trade-offs.","url":"https://diagramwise.com/ai-system-design-interview/","image":"https://diagramwise.com/og/problems.png","inLanguage":"en","datePublished":"2026-08-23","dateModified":"2026-10-30","mainEntityOfPage":"https://diagramwise.com/ai-system-design-interview/","author":{"@type":"Organization","@id":"https://next-zen.dev/#organization","name":"Next Zen","url":"https://next-zen.dev/"},"publisher":{"@type":"Organization","@id":"https://diagramwise.com/#organization","name":"Diagramwise","url":"https://diagramwise.com/","logo":{"@type":"ImageObject","url":"https://diagramwise.com/logo.png"}}},{"@type":"HowTo","name":"What is an AI system design interview?","description":"Practice AI and ML system design across data pipelines, retrieval, inference, evaluation, monitoring, latency, reliability, and cost trade-offs.","step":[{"@type":"HowToStep","position":1,"name":"Define product behavior","text":"State what the model produces and how quality is measured."},{"@type":"HowToStep","position":2,"name":"Separate offline and online","text":"Show ingestion, preparation, deployment, inference, and feedback."},{"@type":"HowToStep","position":3,"name":"Budget latency, quality, and cost","text":"Make the serving trade-offs explicit."},{"@type":"HowToStep","position":4,"name":"Design evaluation and observability","text":"Track data quality, drift, failures, and user impact."},{"@type":"HowToStep","position":5,"name":"Plan degradation and rollback","text":"Explain how the product behaves when an AI dependency fails."}]},{"@type":"FAQPage","@id":"https://diagramwise.com/ai-system-design-interview/#faq","mainEntity":[{"@type":"Question","name":"How is AI system design different from classic system design?","acceptedAnswer":{"@type":"Answer","text":"You still design for scale and reliability, but you also reason about data quality, model evaluation, drift, inference latency and cost, and fallbacks when the model is wrong or unavailable."}},{"@type":"Question","name":"What topics come up in AI and ML system design interviews?","acceptedAnswer":{"@type":"Answer","text":"Common topics are data pipelines, feature stores, retrieval and RAG, model serving, evaluation, monitoring, and cost control."}},{"@type":"Question","name":"How should I structure an ML system design answer?","acceptedAnswer":{"@type":"Answer","text":"Define the product behavior and quality metric, show the offline and online paths, budget latency and cost, then cover evaluation, observability, and rollback."}}]}]}</script>
   </head>
   <body>
     <div id="root">
@@ -456,6 +562,37 @@
           <h2>Connect the offline and online paths</h2>
           <ul class="static-route-list"><li><strong>Define product behavior</strong><span>State what the model produces and how quality is measured.</span></li><li><strong>Separate offline and online</strong><span>Show ingestion, preparation, deployment, inference, and feedback.</span></li><li><strong>Budget latency, quality, and cost</strong><span>Make the serving trade-offs explicit.</span></li><li><strong>Design evaluation and observability</strong><span>Track data quality, drift, failures, and user impact.</span></li><li><strong>Plan degradation and rollback</strong><span>Explain how the product behaves when an AI dependency fails.</span></li></ul>
         </section>
+        <section class="static-route-section static-route-prose">
+    <h2>How AI system design differs from classic system design</h2>
+    <p>A classic design question asks you to build a deterministic system that scales. An AI design question keeps all of that and adds three things: the output is probabilistic, the quality depends on data that keeps changing, and the most expensive component, the model, behaves differently from ordinary services.</p><p>That means a complete answer covers more than boxes and arrows. You need a definition of quality, a path for data and models to be updated safely, a budget for latency and cost, and a plan for the moments when the model is wrong or unavailable.</p>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Separate the offline path from the online path</h2>
+    <p>The single most useful structure for any ML or LLM design is to split it into two flows that run on different schedules and have different requirements.</p><ul><li>Offline path: data ingestion, cleaning, labeling, feature computation, training or index building, evaluation, and registering a versioned model or index artifact. It is throughput-oriented and can take minutes to days.</li><li>Online path: receiving a request, retrieving features or context, running inference, post-processing, returning a response, and logging inputs and outputs for feedback. It is latency-oriented and must respond in milliseconds to seconds.</li></ul><p>Draw both, and draw the feedback loop that connects them: logged predictions and user outcomes flow back into the offline path as new training and evaluation data. Interviewers often probe whether you remembered that loop.</p>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Define quality before you design</h2>
+    <p>Ask what the model must produce and how anyone will know it is good. Without a metric, every architecture choice is unfalsifiable. Distinguish offline metrics, measured on a held-out evaluation set before release, from online metrics, measured on real traffic, usually through an A/B test.</p><p>Examples of how the metric depends on the product:</p><table><thead><tr><th>System</th><th>Example quality metrics</th><th>Example operational metrics</th></tr></thead><tbody><tr><td>Classifier</td><td>Precision, recall, F1 at a chosen threshold</td><td>p95 latency, error rate, cost per prediction</td></tr><tr><td>Search or retrieval</td><td>Recall at k, mean reciprocal rank, NDCG</td><td>p95 latency, index freshness, cost per query</td></tr><tr><td>Recommender</td><td>NDCG offline, click-through or conversion online</td><td>p95 latency, coverage, cost per request</td></tr><tr><td>LLM assistant</td><td>Task success rate, groundedness against sources, human ratings</td><td>Time to first token, tokens per request, cost per request</td></tr></tbody></table>
+  </section><section class="static-route-section static-route-prose">
+    <h2>A retrieval-augmented generation (RAG) design</h2>
+    <p>Retrieval-augmented generation grounds a language model in your own documents. The offline path splits documents into chunks, converts each chunk into an embedding vector, and stores the vectors in an index. The online path embeds the user&#039;s question, retrieves the most similar chunks, optionally reranks them, places them in the prompt, and asks the model to answer using that context, ideally with citations.</p><p>Each step contains a trade-off worth naming:</p><ul><li>Chunk size: small chunks are precise but lose context; large chunks keep context but dilute relevance and use more of the prompt.</li><li>Number of retrieved chunks: more chunks raise recall but increase cost, latency, and the chance of distracting the model.</li><li>Reranking: a second, more accurate model improves ordering at the price of extra latency and compute.</li><li>Hybrid search: combining keyword search with vector search often handles exact terms, such as product codes, better than vectors alone.</li><li>Freshness: decide how quickly changed documents must appear in the index, and design incremental re-indexing rather than rebuilding everything.</li></ul>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Budget latency, quality, and cost together</h2>
+    <p>In most AI products the model call dominates both latency and cost, so the design question becomes where you can avoid, shrink, or hide it. Name the lever and its price:</p><table><thead><tr><th>Technique</th><th>What it improves</th><th>What it costs</th></tr></thead><tbody><tr><td>Response or semantic caching</td><td>Latency and cost for repeated or similar requests</td><td>Staleness risk and cache-key design</td></tr><tr><td>Smaller or distilled model</td><td>Latency and cost</td><td>Possible drop in quality on hard cases</td></tr><tr><td>Batching requests</td><td>Hardware throughput and cost</td><td>Added waiting time per request</td></tr><tr><td>Streaming the response</td><td>Perceived latency</td><td>More complex client and error handling</td></tr><tr><td>Asynchronous processing</td><td>Removes the model from the user&#039;s wait</td><td>Only works when the result is not needed immediately</td></tr><tr><td>Quantization</td><td>Memory use and speed</td><td>Small potential quality loss</td></tr></tbody></table>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Evaluate before release and monitor after</h2>
+    <p>Model quality changes after launch because the world changes. Input data drifts, user behavior shifts, and upstream pipelines break silently. A strong design treats evaluation as an ongoing system, not a one-time test.</p><p>Before release, run the candidate against a fixed evaluation set and compare it with the current model. Release gradually, using shadow mode to run it without serving its output, then a canary on a small share of traffic, then a wider A/B test.</p><ul><li>Monitor input distributions to detect data drift.</li><li>Sample and review outputs, using automated checks and human review, to catch quality regressions.</li><li>Track operational metrics: latency percentiles, error rates, token or compute usage, and cost.</li><li>Log enough to reproduce a bad answer: the model version, the retrieved context, and the prompt.</li></ul>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Plan for degradation and rollback</h2>
+    <p>Interviewers like to ask what happens when the model, the vector index, the feature store, or a third-party provider is unavailable. Have an answer for each, in order from best to worst experience.</p><ul><li>Fall back to a smaller model, a cached answer, or a simple rule-based or keyword result.</li><li>Return a clear partial result or an honest error instead of a confident wrong answer.</li><li>Keep previous model and index versions deployed so you can roll back quickly, and make the switch a configuration change.</li><li>Provide a kill switch for a misbehaving feature, and a human review path where mistakes are costly.</li></ul>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Safety, privacy, and access control</h2>
+    <p>Production AI systems need a few non-negotiable controls, and mentioning them signals maturity. Apply access control before retrieval, so a user can only receive context from documents they are permitted to see; filtering afterward risks leaking restricted content into the prompt.</p><p>Treat retrieved text and user input as untrusted. A document or web page can contain instructions that try to hijack the model, a risk called prompt injection, so keep untrusted content separated from system instructions and limit what actions the model can trigger. Minimize and mask personal data in logs and training sets, and define retention rules.</p>
+  </section><section class="static-route-section static-route-prose">
+    <h2>A worked estimate: semantic search</h2>
+    <p>Suppose the prompt is a semantic search over one million support articles, using 768-dimensional embeddings stored as 32-bit floats.</p><p>Each vector is 768 times 4 bytes, which is 3,072 bytes. One million vectors is about 3 GB of raw vector data. Indexes add overhead, so plan for a few multiples of that, but the result is small enough to hold in memory on a single node. At 50 queries per second, a replicated pair of index nodes is comfortable, and the model that creates query embeddings is likely the larger latency cost than the vector lookup itself.</p><p>The numbers lead directly to design decisions: no sharding is needed at this size, replication is for availability rather than capacity, and the effort belongs in chunking, reranking, and evaluation quality rather than infrastructure.</p>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Common mistakes</h2>
+    <ul><li>Designing only the serving path and forgetting how data and models are produced and updated.</li><li>Never defining a quality metric, so no design can be judged better or worse.</li><li>Ignoring cost. A design that is accurate but costs too much per request is not viable.</li><li>No fallback, so a model outage becomes a full product outage.</li><li>Evaluating once at launch and never monitoring drift afterward.</li><li>Putting user data in prompts or logs without considering privacy and access control.</li></ul>
+  </section>
         
         <section class="static-route-section" id="related-problems">
     <h2>Practice related problems</h2>
@@ -464,11 +601,13 @@
   </section>
         <section class="static-route-section static-route-faq" id="faq">
     <h2>Frequently asked questions</h2>
-    <h3>How is AI system design different from classic system design?</h3><p>You still design for scale and reliability, but you also reason about data quality, model evaluation, drift, inference latency and cost, and fallbacks when the model is wrong or unavailable.</p><h3>What topics come up in AI and ML system design interviews?</h3><p>Common topics are data pipelines, feature stores, retrieval and RAG, model serving, evaluation, monitoring, and cost control.</p><h3>How should I structure an ML system design answer?</h3><p>Define the product behavior and quality metric, show the offline and online paths, budget latency and cost, then cover evaluation, observability, and rollback.</p>
+    <details open><summary><h3>How is AI system design different from classic system design?</h3></summary><p>You still design for scale and reliability, but you also reason about data quality, model evaluation, drift, inference latency and cost, and fallbacks when the model is wrong or unavailable.</p></details><details><summary><h3>What topics come up in AI and ML system design interviews?</h3></summary><p>Common topics are data pipelines, feature stores, retrieval and RAG, model serving, evaluation, monitoring, and cost control.</p></details><details><summary><h3>How should I structure an ML system design answer?</h3></summary><p>Define the product behavior and quality metric, show the offline and online paths, budget latency and cost, then cover evaluation, observability, and rollback.</p></details>
   </section>
       </main>
       <footer class="static-route-footer">
         Diagramwise — system design practice and architecture review.
+        <a href="/about/">About</a>
+        <a href="https://next-zen.dev/">Part of Next Zen</a>
       </footer>
     </div><!-- static-route:end -->
     </div>

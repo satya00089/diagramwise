@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Queue analytics immediately, but fetch the third-party script only
+         after real engagement or a generous fallback delay. -->
+    <script>
+      globalThis.dataLayer = globalThis.dataLayer || [];
+      globalThis.gtag = function () {
+        globalThis.dataLayer.push(arguments);
+      };
+      globalThis.gtag("js", new Date());
+      globalThis.gtag("config", "G-GCKXSRDHMN");
+
+      window.addEventListener("load", function () {
+        var loaded = false;
+        var fallbackId;
+        var engagementEvents = ["pointerdown", "keydown", "scroll"];
+
+        function loadGoogleAnalytics() {
+          if (loaded) return;
+          loaded = true;
+          window.clearTimeout(fallbackId);
+          engagementEvents.forEach(function (eventName) {
+            window.removeEventListener(eventName, loadGoogleAnalytics);
+          });
+
+          var script = document.createElement("script");
+          script.async = true;
+          script.src =
+            "https://www.googletagmanager.com/gtag/js?id=G-GCKXSRDHMN";
+          document.head.appendChild(script);
+        }
+
+        engagementEvents.forEach(function (eventName) {
+          window.addEventListener(eventName, loadGoogleAnalytics, {
+            once: true,
+            passive: true,
+          });
+        });
+        fallbackId = window.setTimeout(loadGoogleAnalytics, 15000);
+      });
+    </script>
+
+    <!-- Microsoft Clarity -->
+    <script>
+      if (window.location.hostname === "diagramwise.com") {
+        (function (c, l, a, r, i, t, y) {
+          c[a] =
+            c[a] ||
+            function () {
+              (c[a].q = c[a].q || []).push(arguments);
+            };
+          t = l.createElement(r);
+          t.async = 1;
+          t.src = "https://www.clarity.ms/tag/" + i;
+          y = l.getElementsByTagName(r)[0];
+          y.parentNode.insertBefore(t, y);
+        })(window, document, "clarity", "script", "yjtbvqfw61");
+      }
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Primary metadata -->
+    <title>About Diagramwise and Next Zen | Diagramwise</title>
+    <meta name="title" content="About Diagramwise and Next Zen | Diagramwise" />
+    <meta name="description" content="Diagramwise is a system design practice tool from Next Zen. Learn what it does, who builds it, and where to find the source code." />
+    <meta name="keywords" content="about diagramwise, diagramwise creator, system design practice tool" />
+    <meta name="author" content="Diagramwise" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://diagramwise.com/about/" />
+
+    <meta
+      name="google-site-verification"
+      content="hLzGTO7z4lldB2b1_FITsTH7uyfZC3yrI2MEBGJ8Huw"
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://diagramwise.com/about/" />
+    <meta property="og:title" content="About Diagramwise and Next Zen | Diagramwise" />
+    <meta property="og:description" content="Diagramwise is a system design practice tool from Next Zen. Learn what it does, who builds it, and where to find the source code." />
+    <meta property="og:image" content="https://diagramwise.com/og/home.png" />
+    <meta property="og:image:alt" content="About Diagramwise" />
+    <meta property="og:site_name" content="Diagramwise" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://diagramwise.com/about/" />
+    <meta name="twitter:title" content="About Diagramwise and Next Zen | Diagramwise" />
+    <meta name="twitter:description" content="Diagramwise is a system design practice tool from Next Zen. Learn what it does, who builds it, and where to find the source code." />
+    <meta name="twitter:image" content="https://diagramwise.com/og/home.png" />
+    <meta name="twitter:image:alt" content="About Diagramwise" />
+
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <meta name="theme-color" content="#6366f1" />
+    <meta name="application-name" content="Diagramwise" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Diagramwise" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Site-wide structured data. Route-specific data is added at build time. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Diagramwise",
+        "description": "Interactive system design practice environment for building architectures, explaining decisions, and receiving structured feedback on scalability, reliability, data design, and trade-offs.",
+        "url": "https://diagramwise.com/",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and HTML5.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD",
+          "availability": "https://schema.org/InStock"
+        },
+        "featureList": [
+          "System design practice problems",
+          "Structured architecture review",
+          "Interactive architecture canvas",
+          "AWS, Azure, and GCP components",
+          "Real-time collaboration",
+          "UML and entity-relationship diagrams"
+        ],
+        "screenshot": "https://diagramwise.com/og/home.png",
+        "image": "https://diagramwise.com/og/home.png",
+        "author": { "@id": "https://next-zen.dev/#organization" },
+        "publisher": { "@id": "https://diagramwise.com/#organization" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://diagramwise.com/#organization",
+        "name": "Diagramwise",
+        "url": "https://diagramwise.com/",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "https://diagramwise.com/logo.png"
+        },
+        "description": "Diagramwise is a system design practice tool for building architectures visually, explaining trade-offs, and getting structured feedback.",
+        "parentOrganization": { "@id": "https://next-zen.dev/#organization" },
+        "sameAs": ["https://github.com/satya00089/diagrammatic"]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://next-zen.dev/#organization",
+        "name": "Next Zen",
+        "url": "https://next-zen.dev/",
+        "description": "Next Zen builds developer tools for learning algorithms, designing system architecture, and automating cloud infrastructure, including Learn Algo, Diagramwise, and Orchestrator.",
+        "founder": { "@id": "https://next-zen.dev/#founder" },
+        "brand": { "@id": "https://diagramwise.com/#organization" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "@id": "https://next-zen.dev/#founder",
+        "name": "Satya Subudhi",
+        "jobTitle": "Cloud & Full-Stack Engineer",
+        "description": "Cloud & Full-Stack Engineer focused on cloud automation, monitoring, and AI/ML-driven systems. Founder of Next Zen.",
+        "knowsAbout": [
+          "Microsoft Azure",
+          "Amazon Web Services",
+          "Terraform",
+          "Bicep",
+          "FastAPI",
+          "Python",
+          "React",
+          "Redux",
+          "MongoDB",
+          "Cloud automation",
+          "System design",
+          "Machine learning"
+        ],
+        "worksFor": { "@id": "https://next-zen.dev/#organization" },
+        "url": "https://satya00089.github.io/portfolio/",
+        "sameAs": [
+          "https://github.com/satya00089",
+          "https://www.linkedin.com/in/satya-subudhi/",
+          "https://satya00089.github.io/portfolio/",
+          "https://next-zen.dev/"
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "@id": "https://diagramwise.com/#website",
+        "name": "Diagramwise",
+        "url": "https://diagramwise.com/",
+        "inLanguage": "en",
+        "publisher": { "@id": "https://diagramwise.com/#organization" }
+      }
+    </script>
+
+    <script>
+      // Apply theme before paint.
+      (function () {
+        try {
+          const theme = localStorage.getItem("theme") || "light";
+          const root = document.documentElement;
+          const systemDark =
+            globalThis.matchMedia &&
+            globalThis.matchMedia("(prefers-color-scheme: dark)").matches;
+
+          if (theme === "dark" || (theme === "system" && systemDark)) {
+            root.classList.add("dark");
+          }
+        } catch {
+          // The application will apply its default theme.
+        }
+      })();
+    </script>
+
+    <!-- Build-time learning-path catalog used for immediate rendering and SEO. -->
+    <script id="learning-paths-data" type="application/json">
+      []
+    </script>
+
+    <!-- Visible static route content, replaced by the interactive app after load. -->
+    <style id="static-route-styles">
+      .static-route-shell {
+        min-height: 100vh;
+        background: #f7f7fb;
+        color: #171724;
+        font-family: Inter, system-ui, sans-serif;
+      }
+
+      .static-route-header,
+      .static-route-main,
+      .static-route-footer {
+        width: min(1120px, calc(100% - 2rem));
+        margin-inline: auto;
+      }
+
+      .static-route-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.5rem;
+        padding-block: 1.25rem;
+      }
+
+      .static-route-brand,
+      .static-route-nav a,
+      .static-route-actions a,
+      .static-route-list a {
+        color: inherit;
+        text-decoration-thickness: 1.5px;
+        text-underline-offset: 0.24em;
+      }
+
+      .static-route-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      .static-route-brand img {
+        width: 1.75rem;
+        height: 1.75rem;
+      }
+
+      .static-route-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        font-size: 0.925rem;
+        font-weight: 650;
+      }
+
+      .static-route-main {
+        padding-block: clamp(3.5rem, 8vw, 7rem);
+      }
+
+      .static-route-hero {
+        max-width: 800px;
+      }
+
+      .static-route-hero h1 {
+        max-width: 15ch;
+        margin: 0;
+        font-size: clamp(2.6rem, 7vw, 5.8rem);
+        line-height: 0.98;
+        letter-spacing: -0.04em;
+      }
+
+      .static-route-hero > p {
+        max-width: 68ch;
+        margin-block: 1.5rem 0;
+        color: #545467;
+        font-size: clamp(1.05rem, 2vw, 1.25rem);
+        line-height: 1.7;
+      }
+
+      .static-route-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 2rem;
+      }
+
+      .static-route-actions a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 2.9rem;
+        padding-inline: 1.1rem;
+        border: 1px solid #d9d9e6;
+        border-radius: 12px;
+        background: #fff;
+        font-weight: 750;
+        text-decoration: none;
+      }
+
+      .static-route-actions a:first-child {
+        border-color: #5b5bd6;
+        background: #5b5bd6;
+        color: #fff;
+      }
+
+      .static-route-section {
+        margin-top: clamp(4rem, 9vw, 7rem);
+      }
+
+      .static-route-section h2 {
+        max-width: 24ch;
+        margin: 0 0 1.5rem;
+        font-size: clamp(1.8rem, 4vw, 2.75rem);
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+      }
+
+      .static-route-section > p {
+        max-width: 70ch;
+        color: #5f5f72;
+        line-height: 1.75;
+      }
+
+      .static-route-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0;
+        margin: 2rem 0 0;
+        padding: 0;
+        list-style: none;
+        border-top: 1px solid #d9d9e6;
+      }
+
+      .static-route-list li {
+        min-width: 0;
+        padding: 1.35rem 1.5rem 1.35rem 0;
+        border-bottom: 1px solid #d9d9e6;
+      }
+
+      .static-route-list strong,
+      .static-route-list a {
+        display: block;
+        margin-bottom: 0.35rem;
+        font-size: 1.05rem;
+        font-weight: 750;
+      }
+
+      .static-route-list p,
+      .static-route-list span {
+        display: block;
+        margin: 0;
+        color: #646477;
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+      }
+
+      .static-route-answer p,
+      .static-route-faq p {
+        max-width: 70ch;
+        margin: 0 0 1.25rem;
+        color: #545467;
+        line-height: 1.75;
+      }
+
+      .static-route-prose p,
+      .static-route-prose li {
+        max-width: 70ch;
+        color: #545467;
+        line-height: 1.75;
+      }
+
+      .static-route-prose table {
+        width: 100%;
+        max-width: 70ch;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      .static-route-prose th,
+      .static-route-prose td {
+        padding: 0.6rem 0.75rem;
+        border-bottom: 1px solid #d9d9e6;
+        text-align: left;
+      }
+
+      html.dark .static-route-prose p,
+      html.dark .static-route-prose li {
+        color: #b7b7c8;
+      }
+
+      .static-route-faq details {
+        max-width: 70ch;
+        border-bottom: 1px solid #d9d9e6;
+      }
+
+      .static-route-faq summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .static-route-faq summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .static-route-faq summary::after {
+        content: "+";
+        font-size: 1.25rem;
+      }
+
+      .static-route-faq details[open] summary::after {
+        content: "−";
+      }
+
+      html.dark .static-route-faq details {
+        border-color: #333342;
+      }
+
+      .static-route-faq h3 {
+        max-width: 60ch;
+        margin: 1.5rem 0 0.4rem;
+        font-size: 1.15rem;
+        line-height: 1.3;
+      }
+
+      html.dark .static-route-answer p,
+      html.dark .static-route-faq p {
+        color: #b7b7c8;
+      }
+
+      .static-route-footer a {
+        margin-left: 0.75rem;
+        color: inherit;
+        font-weight: 650;
+      }
+
+      .static-route-footer {
+        padding-block: 2rem;
+        border-top: 1px solid #d9d9e6;
+        color: #646477;
+        font-size: 0.9rem;
+      }
+
+      html.dark .static-route-shell {
+        background: #111118;
+        color: #f5f5fb;
+      }
+
+      html.dark .static-route-hero > p,
+      html.dark .static-route-section > p,
+      html.dark .static-route-list p,
+      html.dark .static-route-list span,
+      html.dark .static-route-footer {
+        color: #b7b7c8;
+      }
+
+      html.dark .static-route-actions a {
+        border-color: #3a3a4b;
+        background: #1a1a24;
+      }
+
+      html.dark .static-route-actions a:first-child {
+        border-color: #7373f1;
+        background: #7373f1;
+      }
+
+      html.dark .static-route-list,
+      html.dark .static-route-list li,
+      html.dark .static-route-footer {
+        border-color: #333342;
+      }
+
+      .static-route-brand:focus-visible,
+      .static-route-nav a:focus-visible,
+      .static-route-actions a:focus-visible,
+      .static-route-list a:focus-visible {
+        outline: 3px solid #8b8bf8;
+        outline-offset: 4px;
+      }
+
+      @media (max-width: 640px) {
+        .static-route-header {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .static-route-main {
+          padding-top: 2.75rem;
+        }
+
+        .static-route-list {
+          grid-template-columns: 1fr;
+        }
+
+        .static-route-list li {
+          padding-right: 0;
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-cXjIPqRh.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-8XZuSE6o.css">
+      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"AboutPage","@id":"https://diagramwise.com/about/","url":"https://diagramwise.com/about/","name":"About Diagramwise and Next Zen | Diagramwise","description":"Diagramwise is a system design practice tool from Next Zen. Learn what it does, who builds it, and where to find the source code.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/about/","mainEntity":{"@id":"https://diagramwise.com/#organization"},"speakable":{"@type":"SpeakableSpecification","cssSelector":[".static-route-hero h1",".static-route-answer p"]}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"About Diagramwise and Next Zen","item":"https://diagramwise.com/about/"}]},{"@type":"FAQPage","@id":"https://diagramwise.com/about/#faq","mainEntity":[{"@type":"Question","name":"Who makes Diagramwise?","acceptedAnswer":{"@type":"Answer","text":"Diagramwise is made by Next Zen, which also builds Learn Algo and Orchestrator."}},{"@type":"Question","name":"What does Diagramwise do?","acceptedAnswer":{"@type":"Answer","text":"It lets you practice system design by building architectures on a visual canvas, explaining your trade-offs, and getting structured feedback on scalability, reliability, and data design."}},{"@type":"Question","name":"What else does Next Zen build?","acceptedAnswer":{"@type":"Answer","text":"Learn Algo teaches algorithms visually, from data structures to machine learning, and Orchestrator lets you design cloud infrastructure visually and generate Terraform."}},{"@type":"Question","name":"How can I report a bug or ask a question?","acceptedAnswer":{"@type":"Answer","text":"Use the Send feedback option on this page, or the Feedback button in the corner of the app, to report a bug, ask a question, or suggest an improvement. You can also open an issue in the GitHub repository at github.com/satya00089/diagrammatic."}}]}]}</script>
+  </head>
+  <body>
+    <div id="root">
+      <!-- static-route:start -->
+    <div class="static-route-shell">
+      <header class="static-route-header">
+        <a class="static-route-brand" href="/">
+          <img src="/logo-64.png" alt="" width="28" height="28">
+          <span>Diagramwise</span>
+        </a>
+        <nav class="static-route-nav" aria-label="Main navigation">
+          <a href="/problems/">Practice problems</a>
+          <a href="/learning-paths/">Learning paths</a>
+        </nav>
+      </header>
+      <main class="static-route-main">
+        <section class="static-route-hero">
+          <h1>About Diagramwise</h1>
+          <p>Diagramwise is a system design practice tool from Next Zen. Learn what it does, who builds it, and where to find the source code.</p>
+          <div class="static-route-actions"><a href="/problems/">Choose a practice problem</a><a href="/system-design-interview/">Read the guides</a></div>
+        </section>
+        <section class="static-route-section static-route-answer" id="quick-answer">
+    <h2>Who is behind Diagramwise?</h2>
+    <p>Diagramwise is a product of Next Zen, a studio that builds developer tools for learning algorithms, designing system architecture, and automating cloud infrastructure. It is built and maintained by Next Zen, and its source code is on GitHub.</p>
+  </section>
+        <section class="static-route-section" id="route-content">
+          <h2>Where to find the project</h2>
+          <ul class="static-route-list"><li><a href="https://next-zen.dev/">Next Zen</a><span>The studio behind Diagramwise, Learn Algo, and Orchestrator.</span></li><li><a href="https://github.com/satya00089/diagrammatic">Diagramwise source code</a><span>The project repository, issues, and releases.</span></li><li><strong>Send feedback</strong><span>Use the Feedback button on any page to report a problem or ask a question.</span></li></ul>
+        </section>
+        
+        
+        
+        <section class="static-route-section static-route-faq" id="faq">
+    <h2>Frequently asked questions</h2>
+    <details open><summary><h3>Who makes Diagramwise?</h3></summary><p>Diagramwise is made by Next Zen, which also builds Learn Algo and Orchestrator.</p></details><details><summary><h3>What does Diagramwise do?</h3></summary><p>It lets you practice system design by building architectures on a visual canvas, explaining your trade-offs, and getting structured feedback on scalability, reliability, and data design.</p></details><details><summary><h3>What else does Next Zen build?</h3></summary><p>Learn Algo teaches algorithms visually, from data structures to machine learning, and Orchestrator lets you design cloud infrastructure visually and generate Terraform.</p></details><details><summary><h3>How can I report a bug or ask a question?</h3></summary><p>Use the Send feedback option on this page, or the Feedback button in the corner of the app, to report a bug, ask a question, or suggest an improvement. You can also open an issue in the GitHub repository at github.com/satya00089/diagrammatic.</p></details>
+  </section>
+      </main>
+      <footer class="static-route-footer">
+        Diagramwise — system design practice and architecture review.
+        <a href="/about/">About</a>
+        <a href="https://next-zen.dev/">Part of Next Zen</a>
+      </footer>
+    </div><!-- static-route:end -->
+    </div>
+  </body>
+</html>

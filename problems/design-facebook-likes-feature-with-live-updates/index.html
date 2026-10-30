@@ -109,7 +109,6 @@
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Tool",
         "description": "Interactive system design practice environment for building architectures, explaining decisions, and receiving structured feedback on scalability, reliability, data design, and trade-offs.",
         "url": "https://diagramwise.com/",
         "applicationCategory": "EducationalApplication",
@@ -131,7 +130,7 @@
         ],
         "screenshot": "https://diagramwise.com/og/home.png",
         "image": "https://diagramwise.com/og/home.png",
-        "author": { "@id": "https://diagramwise.com/#organization" },
+        "author": { "@id": "https://next-zen.dev/#organization" },
         "publisher": { "@id": "https://diagramwise.com/#organization" }
       }
     </script>
@@ -147,7 +146,52 @@
           "url": "https://diagramwise.com/logo.png"
         },
         "description": "Diagramwise is a system design practice tool for building architectures visually, explaining trade-offs, and getting structured feedback.",
+        "parentOrganization": { "@id": "https://next-zen.dev/#organization" },
         "sameAs": ["https://github.com/satya00089/diagrammatic"]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://next-zen.dev/#organization",
+        "name": "Next Zen",
+        "url": "https://next-zen.dev/",
+        "description": "Next Zen builds developer tools for learning algorithms, designing system architecture, and automating cloud infrastructure, including Learn Algo, Diagramwise, and Orchestrator.",
+        "founder": { "@id": "https://next-zen.dev/#founder" },
+        "brand": { "@id": "https://diagramwise.com/#organization" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "@id": "https://next-zen.dev/#founder",
+        "name": "Satya Subudhi",
+        "jobTitle": "Cloud & Full-Stack Engineer",
+        "description": "Cloud & Full-Stack Engineer focused on cloud automation, monitoring, and AI/ML-driven systems. Founder of Next Zen.",
+        "knowsAbout": [
+          "Microsoft Azure",
+          "Amazon Web Services",
+          "Terraform",
+          "Bicep",
+          "FastAPI",
+          "Python",
+          "React",
+          "Redux",
+          "MongoDB",
+          "Cloud automation",
+          "System design",
+          "Machine learning"
+        ],
+        "worksFor": { "@id": "https://next-zen.dev/#organization" },
+        "url": "https://satya00089.github.io/portfolio/",
+        "sameAs": [
+          "https://github.com/satya00089",
+          "https://www.linkedin.com/in/satya-subudhi/",
+          "https://satya00089.github.io/portfolio/",
+          "https://next-zen.dev/"
+        ]
       }
     </script>
     <script type="application/ld+json">
@@ -156,7 +200,6 @@
         "@type": "WebSite",
         "@id": "https://diagramwise.com/#website",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Practice",
         "url": "https://diagramwise.com/",
         "inLanguage": "en",
         "publisher": { "@id": "https://diagramwise.com/#organization" }
@@ -349,6 +392,63 @@
         line-height: 1.75;
       }
 
+      .static-route-prose p,
+      .static-route-prose li {
+        max-width: 70ch;
+        color: #545467;
+        line-height: 1.75;
+      }
+
+      .static-route-prose table {
+        width: 100%;
+        max-width: 70ch;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      .static-route-prose th,
+      .static-route-prose td {
+        padding: 0.6rem 0.75rem;
+        border-bottom: 1px solid #d9d9e6;
+        text-align: left;
+      }
+
+      html.dark .static-route-prose p,
+      html.dark .static-route-prose li {
+        color: #b7b7c8;
+      }
+
+      .static-route-faq details {
+        max-width: 70ch;
+        border-bottom: 1px solid #d9d9e6;
+      }
+
+      .static-route-faq summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .static-route-faq summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .static-route-faq summary::after {
+        content: "+";
+        font-size: 1.25rem;
+      }
+
+      .static-route-faq details[open] summary::after {
+        content: "−";
+      }
+
+      html.dark .static-route-faq details {
+        border-color: #333342;
+      }
+
       .static-route-faq h3 {
         max-width: 60ch;
         margin: 1.5rem 0 0.4rem;
@@ -359,6 +459,12 @@
       html.dark .static-route-answer p,
       html.dark .static-route-faq p {
         color: #b7b7c8;
+      }
+
+      .static-route-footer a {
+        margin-left: 0.75rem;
+        color: inherit;
+        font-weight: 650;
       }
 
       .static-route-footer {
@@ -424,9 +530,9 @@
         }
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-Cy1dtRf_.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DxHoCUag.css">
-      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/problems/design-facebook-likes-feature-with-live-updates/","url":"https://diagramwise.com/problems/design-facebook-likes-feature-with-live-updates/","name":"Design Facebook Likes with Live | System Design Guide","description":"Design a like and unlike feature with reliable per-user state, scalable counts, and live updates for viewers of the same post. Work through the requirements, architecture trade-offs, and an interactive design review.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/problems/design-facebook-likes-feature-with-live-updates/"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"Practice Problems","item":"https://diagramwise.com/problems/"},{"@type":"ListItem","position":3,"name":"Design Facebook Likes with Live | System Design Guide","item":"https://diagramwise.com/problems/design-facebook-likes-feature-with-live-updates/"}]},{"@type":"LearningResource","name":"Design Facebook Likes with Live Updates — System Design Interview Practice","description":"Design a like and unlike feature with reliable per-user state, scalable counts, and live updates for viewers of the same post. Work through the requirements, architecture trade-offs, and an interactive design review.","url":"https://diagramwise.com/problems/design-facebook-likes-feature-with-live-updates/","educationalLevel":"Hard","teaches":["social-media","real-time","event-driven","scalability","consistency"],"timeRequired":"60-90 minutes","dateModified":"2026-10-29","provider":{"@id":"https://diagramwise.com/#organization"}}]}</script>
+    <script type="module" crossorigin src="/assets/index-cXjIPqRh.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-8XZuSE6o.css">
+      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/problems/design-facebook-likes-feature-with-live-updates/","url":"https://diagramwise.com/problems/design-facebook-likes-feature-with-live-updates/","name":"Design Facebook Likes with Live | System Design Guide","description":"Design a like and unlike feature with reliable per-user state, scalable counts, and live updates for viewers of the same post. Work through the requirements, architecture trade-offs, and an interactive design review.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/problems/design-facebook-likes-feature-with-live-updates/","speakable":{"@type":"SpeakableSpecification","cssSelector":[".static-route-hero h1",".static-route-answer p"]}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"Practice Problems","item":"https://diagramwise.com/problems/"},{"@type":"ListItem","position":3,"name":"Design Facebook Likes with Live | System Design Guide","item":"https://diagramwise.com/problems/design-facebook-likes-feature-with-live-updates/"}]},{"@type":"LearningResource","name":"Design Facebook Likes with Live Updates — System Design Interview Practice","description":"Design a like and unlike feature with reliable per-user state, scalable counts, and live updates for viewers of the same post. Work through the requirements, architecture trade-offs, and an interactive design review.","url":"https://diagramwise.com/problems/design-facebook-likes-feature-with-live-updates/","educationalLevel":"Hard","teaches":["social-media","real-time","event-driven","scalability","consistency"],"timeRequired":"60-90 minutes","datePublished":"2026-08-23","dateModified":"2026-10-29","provider":{"@id":"https://diagramwise.com/#organization"}},{"@type":"FAQPage","@id":"https://diagramwise.com/problems/design-facebook-likes-feature-with-live-updates/#faq","mainEntity":[{"@type":"Question","name":"What are the key requirements for \"Design Facebook Likes with Live Updates\"?","acceptedAnswer":{"@type":"Answer","text":"Key requirements include: Allow an authenticated user to like or unlike a post and see whether they have liked it; Display a count and optionally a preview of representative users who liked the post; Push count and membership changes to viewers who are currently looking at the post; Keep moderation, privacy, blocked-user, and deleted-post rules reflected in reads and events."}},{"@type":"Question","name":"What scale should I assume for \"Design Facebook Likes with Live Updates\"?","acceptedAnswer":{"@type":"Answer","text":"Plan for: 1 billion registered users, 300 million daily active users, and 100 million posts receiving interactions each day; Assume 20 million like/unlike operations per day on average, with 10x bursts during live events; Most posts have fewer than 1,000 active viewers, but the hottest 1,000 posts can each have 100,000 viewers."}},{"@type":"Question","name":"What are the main trade-offs in \"Design Facebook Likes with Live Updates\"?","acceptedAnswer":{"@type":"Answer","text":"Exact counter versus approximate count: Use an exact ledger and asynchronously projected counter; allow approximate display semantics only when product tolerates it. Fanout-on-write versus fanout-on-read: Use a partitioned counter projector and room fanout for subscribed viewers, with coalescing for bursts. Push-only versus cursor resync: Push low-latency deltas but include versions and a pull/resync endpoint."}},{"@type":"Question","name":"What are the core entities in \"Design Facebook Likes with Live Updates\"?","acceptedAnswer":{"@type":"Answer","text":"The core entities are LikeState, LikeEvent, PostCounter, RoomSubscription."}},{"@type":"Question","name":"What are common mistakes when designing \"Design Facebook Likes with Live Updates\"?","acceptedAnswer":{"@type":"Answer","text":"Incrementing a count without recording the user's state; Using an unconditional toggle that makes retries invert the result; Broadcasting every event individually for a hot post."}}]}]}</script>
   </head>
   <body>
     <div id="root">
@@ -448,11 +554,15 @@
           <p>Design a like and unlike feature with reliable per-user state, scalable counts, and live updates for viewers of the same post. Work through the requirements, architecture trade-offs, and an interactive design review.</p>
           <div class="static-route-actions"><a href="/problems/?q=Design%20Facebook%20Likes%20with%20Live%20Updates">Open this challenge</a><a href="/system-design-interview/">Read the interview guide</a></div>
         </section>
-        
+        <section class="static-route-section static-route-answer" id="quick-answer">
+    <h2>What does the &quot;Design Facebook Likes with Live Updates&quot; problem ask you to design?</h2>
+    <p>Design a like and unlike feature with reliable per-user state, scalable counts, and live updates for viewers of the same post. It is a practice challenge with Hard difficulty, about 60-90 minutes.</p>
+  </section>
         <section class="static-route-section" id="route-content">
           <h2>Concepts and architecture decisions to consider</h2>
           <ul class="static-route-list"><li><strong>social media</strong><span>Concept to explore</span></li><li><strong>real time</strong><span>Concept to explore</span></li><li><strong>event driven</strong><span>Concept to explore</span></li><li><strong>scalability</strong><span>Concept to explore</span></li><li><strong>consistency</strong><span>Concept to explore</span></li></ul>
         </section>
+        
         <div class="static-route-guide" aria-label="System design guide">
     <section class="static-route-section static-route-guide-section" id="guide-prompt">
     <h2>Interview prompt</h2>
@@ -480,10 +590,15 @@
     <p>Apply the ideas from this page to a concrete architecture challenge.</p>
     <ul class="static-route-list"><li><a href="/problems/count-facebook-likes-especially-for-high-profile-users/">Count Facebook Likes, Especially for High-Profile Users</a><span>Medium system design challenge</span></li><li><a href="/problems/twitter-system-design/">Design Twitter for millions of users</a><span>Easy system design challenge</span></li><li><a href="/problems/social-media-news-feed/">Social Media News Feed</a><span>Hard system design challenge</span></li><li><a href="/problems/instagram-system-design/">Design Instagram</a><span>Easy system design challenge</span></li></ul>
   </section>
-        
+        <section class="static-route-section static-route-faq" id="faq">
+    <h2>Frequently asked questions</h2>
+    <details open><summary><h3>What are the key requirements for &quot;Design Facebook Likes with Live Updates&quot;?</h3></summary><p>Key requirements include: Allow an authenticated user to like or unlike a post and see whether they have liked it; Display a count and optionally a preview of representative users who liked the post; Push count and membership changes to viewers who are currently looking at the post; Keep moderation, privacy, blocked-user, and deleted-post rules reflected in reads and events.</p></details><details><summary><h3>What scale should I assume for &quot;Design Facebook Likes with Live Updates&quot;?</h3></summary><p>Plan for: 1 billion registered users, 300 million daily active users, and 100 million posts receiving interactions each day; Assume 20 million like/unlike operations per day on average, with 10x bursts during live events; Most posts have fewer than 1,000 active viewers, but the hottest 1,000 posts can each have 100,000 viewers.</p></details><details><summary><h3>What are the main trade-offs in &quot;Design Facebook Likes with Live Updates&quot;?</h3></summary><p>Exact counter versus approximate count: Use an exact ledger and asynchronously projected counter; allow approximate display semantics only when product tolerates it. Fanout-on-write versus fanout-on-read: Use a partitioned counter projector and room fanout for subscribed viewers, with coalescing for bursts. Push-only versus cursor resync: Push low-latency deltas but include versions and a pull/resync endpoint.</p></details><details><summary><h3>What are the core entities in &quot;Design Facebook Likes with Live Updates&quot;?</h3></summary><p>The core entities are LikeState, LikeEvent, PostCounter, RoomSubscription.</p></details><details><summary><h3>What are common mistakes when designing &quot;Design Facebook Likes with Live Updates&quot;?</h3></summary><p>Incrementing a count without recording the user&#039;s state; Using an unconditional toggle that makes retries invert the result; Broadcasting every event individually for a hot post.</p></details>
+  </section>
       </main>
       <footer class="static-route-footer">
         Diagramwise — system design practice and architecture review.
+        <a href="/about/">About</a>
+        <a href="https://next-zen.dev/">Part of Next Zen</a>
       </footer>
     </div><!-- static-route:end -->
     </div>

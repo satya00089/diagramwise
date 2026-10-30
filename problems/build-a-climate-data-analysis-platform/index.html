@@ -109,7 +109,6 @@
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Tool",
         "description": "Interactive system design practice environment for building architectures, explaining decisions, and receiving structured feedback on scalability, reliability, data design, and trade-offs.",
         "url": "https://diagramwise.com/",
         "applicationCategory": "EducationalApplication",
@@ -131,7 +130,7 @@
         ],
         "screenshot": "https://diagramwise.com/og/home.png",
         "image": "https://diagramwise.com/og/home.png",
-        "author": { "@id": "https://diagramwise.com/#organization" },
+        "author": { "@id": "https://next-zen.dev/#organization" },
         "publisher": { "@id": "https://diagramwise.com/#organization" }
       }
     </script>
@@ -147,7 +146,52 @@
           "url": "https://diagramwise.com/logo.png"
         },
         "description": "Diagramwise is a system design practice tool for building architectures visually, explaining trade-offs, and getting structured feedback.",
+        "parentOrganization": { "@id": "https://next-zen.dev/#organization" },
         "sameAs": ["https://github.com/satya00089/diagrammatic"]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://next-zen.dev/#organization",
+        "name": "Next Zen",
+        "url": "https://next-zen.dev/",
+        "description": "Next Zen builds developer tools for learning algorithms, designing system architecture, and automating cloud infrastructure, including Learn Algo, Diagramwise, and Orchestrator.",
+        "founder": { "@id": "https://next-zen.dev/#founder" },
+        "brand": { "@id": "https://diagramwise.com/#organization" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "@id": "https://next-zen.dev/#founder",
+        "name": "Satya Subudhi",
+        "jobTitle": "Cloud & Full-Stack Engineer",
+        "description": "Cloud & Full-Stack Engineer focused on cloud automation, monitoring, and AI/ML-driven systems. Founder of Next Zen.",
+        "knowsAbout": [
+          "Microsoft Azure",
+          "Amazon Web Services",
+          "Terraform",
+          "Bicep",
+          "FastAPI",
+          "Python",
+          "React",
+          "Redux",
+          "MongoDB",
+          "Cloud automation",
+          "System design",
+          "Machine learning"
+        ],
+        "worksFor": { "@id": "https://next-zen.dev/#organization" },
+        "url": "https://satya00089.github.io/portfolio/",
+        "sameAs": [
+          "https://github.com/satya00089",
+          "https://www.linkedin.com/in/satya-subudhi/",
+          "https://satya00089.github.io/portfolio/",
+          "https://next-zen.dev/"
+        ]
       }
     </script>
     <script type="application/ld+json">
@@ -156,7 +200,6 @@
         "@type": "WebSite",
         "@id": "https://diagramwise.com/#website",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Practice",
         "url": "https://diagramwise.com/",
         "inLanguage": "en",
         "publisher": { "@id": "https://diagramwise.com/#organization" }
@@ -349,6 +392,63 @@
         line-height: 1.75;
       }
 
+      .static-route-prose p,
+      .static-route-prose li {
+        max-width: 70ch;
+        color: #545467;
+        line-height: 1.75;
+      }
+
+      .static-route-prose table {
+        width: 100%;
+        max-width: 70ch;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      .static-route-prose th,
+      .static-route-prose td {
+        padding: 0.6rem 0.75rem;
+        border-bottom: 1px solid #d9d9e6;
+        text-align: left;
+      }
+
+      html.dark .static-route-prose p,
+      html.dark .static-route-prose li {
+        color: #b7b7c8;
+      }
+
+      .static-route-faq details {
+        max-width: 70ch;
+        border-bottom: 1px solid #d9d9e6;
+      }
+
+      .static-route-faq summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .static-route-faq summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .static-route-faq summary::after {
+        content: "+";
+        font-size: 1.25rem;
+      }
+
+      .static-route-faq details[open] summary::after {
+        content: "−";
+      }
+
+      html.dark .static-route-faq details {
+        border-color: #333342;
+      }
+
       .static-route-faq h3 {
         max-width: 60ch;
         margin: 1.5rem 0 0.4rem;
@@ -359,6 +459,12 @@
       html.dark .static-route-answer p,
       html.dark .static-route-faq p {
         color: #b7b7c8;
+      }
+
+      .static-route-footer a {
+        margin-left: 0.75rem;
+        color: inherit;
+        font-weight: 650;
       }
 
       .static-route-footer {
@@ -424,9 +530,9 @@
         }
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-Cy1dtRf_.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DxHoCUag.css">
-      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/problems/build-a-climate-data-analysis-platform/","url":"https://diagramwise.com/problems/build-a-climate-data-analysis-platform/","name":"Build a Climate Data Analysis Platform | System Design Guide","description":"Design a scientific data analysis platform that processes satellite imagery, analyzes geospatial data, runs climate models, and provides visualization dashboards. Work through the requirements, architecture trade-offs, and an interactive design review.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/problems/build-a-climate-data-analysis-platform/"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"Practice Problems","item":"https://diagramwise.com/problems/"},{"@type":"ListItem","position":3,"name":"Build a Climate Data Analysis Platform | System Design Guide","item":"https://diagramwise.com/problems/build-a-climate-data-analysis-platform/"}]},{"@type":"LearningResource","name":"Build a Climate Data Analysis Platform — System Design Interview Practice","description":"Design a scientific data analysis platform that processes satellite imagery, analyzes geospatial data, runs climate models, and provides visualization dashboards. Work through the requirements, architecture trade-offs, and an interactive design review.","url":"https://diagramwise.com/problems/build-a-climate-data-analysis-platform/","educationalLevel":"Very Hard","teaches":["gcp","earth-engine","bigquery","scientific-computing","geospatial"],"timeRequired":"90+ minutes","dateModified":"2026-10-29","provider":{"@id":"https://diagramwise.com/#organization"}}]}</script>
+    <script type="module" crossorigin src="/assets/index-cXjIPqRh.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-8XZuSE6o.css">
+      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/problems/build-a-climate-data-analysis-platform/","url":"https://diagramwise.com/problems/build-a-climate-data-analysis-platform/","name":"Build a Climate Data Analysis Platform | System Design Guide","description":"Design a scientific data analysis platform that processes satellite imagery, analyzes geospatial data, runs climate models, and provides visualization dashboards. Work through the requirements, architecture trade-offs, and an interactive design review.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/problems/build-a-climate-data-analysis-platform/","speakable":{"@type":"SpeakableSpecification","cssSelector":[".static-route-hero h1",".static-route-answer p"]}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"Practice Problems","item":"https://diagramwise.com/problems/"},{"@type":"ListItem","position":3,"name":"Build a Climate Data Analysis Platform | System Design Guide","item":"https://diagramwise.com/problems/build-a-climate-data-analysis-platform/"}]},{"@type":"LearningResource","name":"Build a Climate Data Analysis Platform — System Design Interview Practice","description":"Design a scientific data analysis platform that processes satellite imagery, analyzes geospatial data, runs climate models, and provides visualization dashboards. Work through the requirements, architecture trade-offs, and an interactive design review.","url":"https://diagramwise.com/problems/build-a-climate-data-analysis-platform/","educationalLevel":"Very Hard","teaches":["gcp","earth-engine","bigquery","scientific-computing","geospatial"],"timeRequired":"90+ minutes","datePublished":"2026-08-23","dateModified":"2026-10-29","provider":{"@id":"https://diagramwise.com/#organization"}},{"@type":"FAQPage","@id":"https://diagramwise.com/problems/build-a-climate-data-analysis-platform/#faq","mainEntity":[{"@type":"Question","name":"What are the key requirements for \"Build a Climate Data Analysis Platform\"?","acceptedAnswer":{"@type":"Answer","text":"Key requirements include: Ingest satellite scenes and station observations, validate metadata, and create searchable collections; Run tiled raster transforms, temporal aggregations, and climate-model jobs with progress and reproducible outputs; Display map layers, time series, provenance, quality flags, and exportable results for authorized users."}},{"@type":"Question","name":"What scale should I assume for \"Build a Climate Data Analysis Platform\"?","acceptedAnswer":{"@type":"Answer","text":"Plan for: Petabyte-scale archive across decades of satellite scenes and derived products; Partition by spatial tile, acquisition date, sensor, and collection; split popular tiles by time or resolution; Keep raw scenes immutable, retain manifests and provenance, and cache only bounded metadata and rendered tiles."}},{"@type":"Question","name":"What are the main trade-offs in \"Build a Climate Data Analysis Platform\"?","acceptedAnswer":{"@type":"Answer","text":"Streaming versus batch: Use streaming for freshness-critical climate data analysis platform paths and batch for backfills, compaction, and expensive recomputation. Raw retention versus curated-only storage: Retain enough immutable raw evidence for replay, audit, and correction, then tier or expire it according to policy. Central warehouse versus domain-owned datasets: Centralize governance and discovery while letting domain owners own contracts and quality signals."}},{"@type":"Question","name":"What are the core entities in \"Build a Climate Data Analysis Platform\"?","acceptedAnswer":{"@type":"Answer","text":"The core entities are SourcePartition, SchemaVersion, ProcessingRun, AnalyticalDataset."}},{"@type":"Question","name":"What are common mistakes when designing \"Build a Climate Data Analysis Platform\"?","acceptedAnswer":{"@type":"Answer","text":"Treating climate data analysis platform ingestion success as proof that downstream data is complete or correct; Dropping late events or schema failures without a quarantine and replay path; Using wall-clock processing time where event-time windows and watermarks are required."}}]}]}</script>
   </head>
   <body>
     <div id="root">
@@ -448,11 +554,15 @@
           <p>Design a scientific data analysis platform that processes satellite imagery, analyzes geospatial data, runs climate models, and provides visualization dashboards. Work through the requirements, architecture trade-offs, and an interactive design review.</p>
           <div class="static-route-actions"><a href="/problems/?q=Build%20a%20Climate%20Data%20Analysis%20Platform">Open this challenge</a><a href="/system-design-interview/">Read the interview guide</a></div>
         </section>
-        
+        <section class="static-route-section static-route-answer" id="quick-answer">
+    <h2>What does the &quot;Build a Climate Data Analysis Platform&quot; problem ask you to design?</h2>
+    <p>Design a scientific data analysis platform that processes satellite imagery, analyzes geospatial data, runs climate models, and provides visualization dashboards. It is a practice challenge with Very Hard difficulty, about 90+ minutes.</p>
+  </section>
         <section class="static-route-section" id="route-content">
           <h2>Concepts and architecture decisions to consider</h2>
           <ul class="static-route-list"><li><strong>gcp</strong><span>Concept to explore</span></li><li><strong>earth engine</strong><span>Concept to explore</span></li><li><strong>bigquery</strong><span>Concept to explore</span></li><li><strong>scientific computing</strong><span>Concept to explore</span></li><li><strong>geospatial</strong><span>Concept to explore</span></li></ul>
         </section>
+        
         <div class="static-route-guide" aria-label="System design guide">
     <section class="static-route-section static-route-guide-section" id="guide-prompt">
     <h2>Interview prompt</h2>
@@ -480,10 +590,15 @@
     <p>Apply the ideas from this page to a concrete architecture challenge.</p>
     <ul class="static-route-list"><li><a href="/problems/build-a-real-time-analytics-dashboard/">Build a Real-time Analytics Dashboard</a><span>Medium system design challenge</span></li><li><a href="/problems/build-a-big-data-processing-pipeline/">Build a Big Data Processing Pipeline</a><span>Hard system design challenge</span></li><li><a href="/problems/build-an-intelligent-document-processing-pipeline/">Build an Intelligent Document Processing Pipeline</a><span>Medium system design challenge</span></li><li><a href="/problems/serverless-event-driven-architecture/">Build a Serverless Event-Driven Architecture</a><span>Medium system design challenge</span></li></ul>
   </section>
-        
+        <section class="static-route-section static-route-faq" id="faq">
+    <h2>Frequently asked questions</h2>
+    <details open><summary><h3>What are the key requirements for &quot;Build a Climate Data Analysis Platform&quot;?</h3></summary><p>Key requirements include: Ingest satellite scenes and station observations, validate metadata, and create searchable collections; Run tiled raster transforms, temporal aggregations, and climate-model jobs with progress and reproducible outputs; Display map layers, time series, provenance, quality flags, and exportable results for authorized users.</p></details><details><summary><h3>What scale should I assume for &quot;Build a Climate Data Analysis Platform&quot;?</h3></summary><p>Plan for: Petabyte-scale archive across decades of satellite scenes and derived products; Partition by spatial tile, acquisition date, sensor, and collection; split popular tiles by time or resolution; Keep raw scenes immutable, retain manifests and provenance, and cache only bounded metadata and rendered tiles.</p></details><details><summary><h3>What are the main trade-offs in &quot;Build a Climate Data Analysis Platform&quot;?</h3></summary><p>Streaming versus batch: Use streaming for freshness-critical climate data analysis platform paths and batch for backfills, compaction, and expensive recomputation. Raw retention versus curated-only storage: Retain enough immutable raw evidence for replay, audit, and correction, then tier or expire it according to policy. Central warehouse versus domain-owned datasets: Centralize governance and discovery while letting domain owners own contracts and quality signals.</p></details><details><summary><h3>What are the core entities in &quot;Build a Climate Data Analysis Platform&quot;?</h3></summary><p>The core entities are SourcePartition, SchemaVersion, ProcessingRun, AnalyticalDataset.</p></details><details><summary><h3>What are common mistakes when designing &quot;Build a Climate Data Analysis Platform&quot;?</h3></summary><p>Treating climate data analysis platform ingestion success as proof that downstream data is complete or correct; Dropping late events or schema failures without a quarantine and replay path; Using wall-clock processing time where event-time windows and watermarks are required.</p></details>
+  </section>
       </main>
       <footer class="static-route-footer">
         Diagramwise — system design practice and architecture review.
+        <a href="/about/">About</a>
+        <a href="https://next-zen.dev/">Part of Next Zen</a>
       </footer>
     </div><!-- static-route:end -->
     </div>

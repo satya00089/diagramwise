@@ -109,7 +109,6 @@
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Tool",
         "description": "Interactive system design practice environment for building architectures, explaining decisions, and receiving structured feedback on scalability, reliability, data design, and trade-offs.",
         "url": "https://diagramwise.com/",
         "applicationCategory": "EducationalApplication",
@@ -131,7 +130,7 @@
         ],
         "screenshot": "https://diagramwise.com/og/home.png",
         "image": "https://diagramwise.com/og/home.png",
-        "author": { "@id": "https://diagramwise.com/#organization" },
+        "author": { "@id": "https://next-zen.dev/#organization" },
         "publisher": { "@id": "https://diagramwise.com/#organization" }
       }
     </script>
@@ -147,7 +146,52 @@
           "url": "https://diagramwise.com/logo.png"
         },
         "description": "Diagramwise is a system design practice tool for building architectures visually, explaining trade-offs, and getting structured feedback.",
+        "parentOrganization": { "@id": "https://next-zen.dev/#organization" },
         "sameAs": ["https://github.com/satya00089/diagrammatic"]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://next-zen.dev/#organization",
+        "name": "Next Zen",
+        "url": "https://next-zen.dev/",
+        "description": "Next Zen builds developer tools for learning algorithms, designing system architecture, and automating cloud infrastructure, including Learn Algo, Diagramwise, and Orchestrator.",
+        "founder": { "@id": "https://next-zen.dev/#founder" },
+        "brand": { "@id": "https://diagramwise.com/#organization" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "@id": "https://next-zen.dev/#founder",
+        "name": "Satya Subudhi",
+        "jobTitle": "Cloud & Full-Stack Engineer",
+        "description": "Cloud & Full-Stack Engineer focused on cloud automation, monitoring, and AI/ML-driven systems. Founder of Next Zen.",
+        "knowsAbout": [
+          "Microsoft Azure",
+          "Amazon Web Services",
+          "Terraform",
+          "Bicep",
+          "FastAPI",
+          "Python",
+          "React",
+          "Redux",
+          "MongoDB",
+          "Cloud automation",
+          "System design",
+          "Machine learning"
+        ],
+        "worksFor": { "@id": "https://next-zen.dev/#organization" },
+        "url": "https://satya00089.github.io/portfolio/",
+        "sameAs": [
+          "https://github.com/satya00089",
+          "https://www.linkedin.com/in/satya-subudhi/",
+          "https://satya00089.github.io/portfolio/",
+          "https://next-zen.dev/"
+        ]
       }
     </script>
     <script type="application/ld+json">
@@ -156,7 +200,6 @@
         "@type": "WebSite",
         "@id": "https://diagramwise.com/#website",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Practice",
         "url": "https://diagramwise.com/",
         "inLanguage": "en",
         "publisher": { "@id": "https://diagramwise.com/#organization" }
@@ -349,6 +392,63 @@
         line-height: 1.75;
       }
 
+      .static-route-prose p,
+      .static-route-prose li {
+        max-width: 70ch;
+        color: #545467;
+        line-height: 1.75;
+      }
+
+      .static-route-prose table {
+        width: 100%;
+        max-width: 70ch;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      .static-route-prose th,
+      .static-route-prose td {
+        padding: 0.6rem 0.75rem;
+        border-bottom: 1px solid #d9d9e6;
+        text-align: left;
+      }
+
+      html.dark .static-route-prose p,
+      html.dark .static-route-prose li {
+        color: #b7b7c8;
+      }
+
+      .static-route-faq details {
+        max-width: 70ch;
+        border-bottom: 1px solid #d9d9e6;
+      }
+
+      .static-route-faq summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .static-route-faq summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .static-route-faq summary::after {
+        content: "+";
+        font-size: 1.25rem;
+      }
+
+      .static-route-faq details[open] summary::after {
+        content: "−";
+      }
+
+      html.dark .static-route-faq details {
+        border-color: #333342;
+      }
+
       .static-route-faq h3 {
         max-width: 60ch;
         margin: 1.5rem 0 0.4rem;
@@ -359,6 +459,12 @@
       html.dark .static-route-answer p,
       html.dark .static-route-faq p {
         color: #b7b7c8;
+      }
+
+      .static-route-footer a {
+        margin-left: 0.75rem;
+        color: inherit;
+        font-weight: 650;
       }
 
       .static-route-footer {
@@ -424,9 +530,9 @@
         }
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-Cy1dtRf_.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DxHoCUag.css">
-      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/problems/design-an-intelligent-capacity-planning-system/","url":"https://diagramwise.com/problems/design-an-intelligent-capacity-planning-system/","name":"Design an Intelligent Capacity | System Design Guide","description":"Design an AI-driven capacity planning system that forecasts future resource needs, models growth scenarios, optimizes cloud spending, and provides procurement recommendations. Work through the requirements, architecture trade-offs, and an interactive design review.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/problems/design-an-intelligent-capacity-planning-system/"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"Practice Problems","item":"https://diagramwise.com/problems/"},{"@type":"ListItem","position":3,"name":"Design an Intelligent Capacity | System Design Guide","item":"https://diagramwise.com/problems/design-an-intelligent-capacity-planning-system/"}]},{"@type":"LearningResource","name":"Design an Intelligent Capacity Planning System — System Design Interview Practice","description":"Design an AI-driven capacity planning system that forecasts future resource needs, models growth scenarios, optimizes cloud spending, and provides procurement recommendations. Work through the requirements, architecture trade-offs, and an interactive design review.","url":"https://diagramwise.com/problems/design-an-intelligent-capacity-planning-system/","educationalLevel":"Hard","teaches":["aiops","capacity-planning","forecasting","cost-optimization","resource-management","cloud"],"timeRequired":"60-90 minutes","dateModified":"2026-10-29","provider":{"@id":"https://diagramwise.com/#organization"}}]}</script>
+    <script type="module" crossorigin src="/assets/index-cXjIPqRh.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-8XZuSE6o.css">
+      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/problems/design-an-intelligent-capacity-planning-system/","url":"https://diagramwise.com/problems/design-an-intelligent-capacity-planning-system/","name":"Design an Intelligent Capacity | System Design Guide","description":"Design an AI-driven capacity planning system that forecasts future resource needs, models growth scenarios, optimizes cloud spending, and provides procurement recommendations. Work through the requirements, architecture trade-offs, and an interactive design review.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/problems/design-an-intelligent-capacity-planning-system/","speakable":{"@type":"SpeakableSpecification","cssSelector":[".static-route-hero h1",".static-route-answer p"]}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"Practice Problems","item":"https://diagramwise.com/problems/"},{"@type":"ListItem","position":3,"name":"Design an Intelligent Capacity | System Design Guide","item":"https://diagramwise.com/problems/design-an-intelligent-capacity-planning-system/"}]},{"@type":"LearningResource","name":"Design an Intelligent Capacity Planning System — System Design Interview Practice","description":"Design an AI-driven capacity planning system that forecasts future resource needs, models growth scenarios, optimizes cloud spending, and provides procurement recommendations. Work through the requirements, architecture trade-offs, and an interactive design review.","url":"https://diagramwise.com/problems/design-an-intelligent-capacity-planning-system/","educationalLevel":"Hard","teaches":["aiops","capacity-planning","forecasting","cost-optimization","resource-management","cloud"],"timeRequired":"60-90 minutes","datePublished":"2026-08-23","dateModified":"2026-10-29","provider":{"@id":"https://diagramwise.com/#organization"}},{"@type":"FAQPage","@id":"https://diagramwise.com/problems/design-an-intelligent-capacity-planning-system/#faq","mainEntity":[{"@type":"Question","name":"What are the key requirements for \"Design an Intelligent Capacity Planning System\"?","acceptedAnswer":{"@type":"Answer","text":"Key requirements include: Collect resource metrics and demand drivers, generate baseline/scenario forecasts, calculate headroom, and flag future capacity risks; Provide forecasts with intervals, assumptions, cost/options, dependency impact, owner approval, and procurement or scaling recommendations; Support overrides, what-if simulations, data corrections, forecast versioning, alerts, recommendation execution, and rollback/audit."}},{"@type":"Question","name":"What scale should I assume for \"Design an Intelligent Capacity Planning System\"?","acceptedAnswer":{"@type":"Answer","text":"Plan for: 5M resource series, 90-day horizons, and 10k service owners; Partition by the primary tenant, user, item, or geographic key and isolate hot partitions; Keep serving state bounded; retain raw events or durable records for replay and auditing."}},{"@type":"Question","name":"What are the main trade-offs in \"Design an Intelligent Capacity Planning System\"?","acceptedAnswer":{"@type":"Answer","text":"Baseline model versus scenario simulation: Use a stable baseline for planning and isolate scenarios for what-if decisions and failure analysis. Automatic scaling versus approved capacity: Let existing autoscaling handle bounded real-time response and use governed recommendations for procurement or structural changes. Central forecast versus owner-specific models: Centralize evidence, contracts, and evaluation while allowing resource owners to supply domain drivers and constraints."}},{"@type":"Question","name":"What are the core entities in \"Design an Intelligent Capacity Planning System\"?","acceptedAnswer":{"@type":"Answer","text":"The core entities are DemandSignal, CapacityForecast, PlanningScenario, CapacityDecision."}},{"@type":"Question","name":"What are common mistakes when designing \"Design an Intelligent Capacity Planning System\"?","acceptedAnswer":{"@type":"Answer","text":"Forecasting from utilization alone while ignoring demand drivers and deployments; Showing point estimates without intervals, assumptions, or freshness; Running scenarios by mutating the baseline forecast in place."}}]}]}</script>
   </head>
   <body>
     <div id="root">
@@ -448,11 +554,15 @@
           <p>Design an AI-driven capacity planning system that forecasts future resource needs, models growth scenarios, optimizes cloud spending, and provides procurement recommendations. Work through the requirements, architecture trade-offs, and an interactive design review.</p>
           <div class="static-route-actions"><a href="/problems/?q=Design%20an%20Intelligent%20Capacity%20Planning%20System">Open this challenge</a><a href="/system-design-interview/">Read the interview guide</a></div>
         </section>
-        
+        <section class="static-route-section static-route-answer" id="quick-answer">
+    <h2>What does the &quot;Design an Intelligent Capacity Planning System&quot; problem ask you to design?</h2>
+    <p>Design an AI-driven capacity planning system that forecasts future resource needs, models growth scenarios, optimizes cloud spending, and provides procurement recommendations. It is a practice challenge with Hard difficulty, about 60-90 minutes.</p>
+  </section>
         <section class="static-route-section" id="route-content">
           <h2>Concepts and architecture decisions to consider</h2>
           <ul class="static-route-list"><li><strong>aiops</strong><span>Concept to explore</span></li><li><strong>capacity planning</strong><span>Concept to explore</span></li><li><strong>forecasting</strong><span>Concept to explore</span></li><li><strong>cost optimization</strong><span>Concept to explore</span></li><li><strong>resource management</strong><span>Concept to explore</span></li><li><strong>cloud</strong><span>Concept to explore</span></li></ul>
         </section>
+        
         <div class="static-route-guide" aria-label="System design guide">
     <section class="static-route-section static-route-guide-section" id="guide-prompt">
     <h2>Interview prompt</h2>
@@ -480,10 +590,15 @@
     <p>Apply the ideas from this page to a concrete architecture challenge.</p>
     <ul class="static-route-list"><li><a href="/problems/design-a-predictive-auto-scaling-system/">Design a Predictive Auto-Scaling System</a><span>Hard system design challenge</span></li><li><a href="/problems/design-a-cost-optimized-architecture-for-batch-processing/">Design a Cost-Optimized Architecture for Batch Processing</a><span>Hard system design challenge</span></li><li><a href="/problems/design-an-ai-powered-cloud-cost-optimization-platform/">Design an AI-Powered Cloud Cost Optimization Platform</a><span>Hard system design challenge</span></li><li><a href="/problems/design-a-smart-sla-monitoring-and-prediction-system/">Design a Smart SLA Monitoring and Prediction System</a><span>Medium system design challenge</span></li></ul>
   </section>
-        
+        <section class="static-route-section static-route-faq" id="faq">
+    <h2>Frequently asked questions</h2>
+    <details open><summary><h3>What are the key requirements for &quot;Design an Intelligent Capacity Planning System&quot;?</h3></summary><p>Key requirements include: Collect resource metrics and demand drivers, generate baseline/scenario forecasts, calculate headroom, and flag future capacity risks; Provide forecasts with intervals, assumptions, cost/options, dependency impact, owner approval, and procurement or scaling recommendations; Support overrides, what-if simulations, data corrections, forecast versioning, alerts, recommendation execution, and rollback/audit.</p></details><details><summary><h3>What scale should I assume for &quot;Design an Intelligent Capacity Planning System&quot;?</h3></summary><p>Plan for: 5M resource series, 90-day horizons, and 10k service owners; Partition by the primary tenant, user, item, or geographic key and isolate hot partitions; Keep serving state bounded; retain raw events or durable records for replay and auditing.</p></details><details><summary><h3>What are the main trade-offs in &quot;Design an Intelligent Capacity Planning System&quot;?</h3></summary><p>Baseline model versus scenario simulation: Use a stable baseline for planning and isolate scenarios for what-if decisions and failure analysis. Automatic scaling versus approved capacity: Let existing autoscaling handle bounded real-time response and use governed recommendations for procurement or structural changes. Central forecast versus owner-specific models: Centralize evidence, contracts, and evaluation while allowing resource owners to supply domain drivers and constraints.</p></details><details><summary><h3>What are the core entities in &quot;Design an Intelligent Capacity Planning System&quot;?</h3></summary><p>The core entities are DemandSignal, CapacityForecast, PlanningScenario, CapacityDecision.</p></details><details><summary><h3>What are common mistakes when designing &quot;Design an Intelligent Capacity Planning System&quot;?</h3></summary><p>Forecasting from utilization alone while ignoring demand drivers and deployments; Showing point estimates without intervals, assumptions, or freshness; Running scenarios by mutating the baseline forecast in place.</p></details>
+  </section>
       </main>
       <footer class="static-route-footer">
         Diagramwise — system design practice and architecture review.
+        <a href="/about/">About</a>
+        <a href="https://next-zen.dev/">Part of Next Zen</a>
       </footer>
     </div><!-- static-route:end -->
     </div>

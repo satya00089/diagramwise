@@ -109,7 +109,6 @@
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Tool",
         "description": "Interactive system design practice environment for building architectures, explaining decisions, and receiving structured feedback on scalability, reliability, data design, and trade-offs.",
         "url": "https://diagramwise.com/",
         "applicationCategory": "EducationalApplication",
@@ -131,7 +130,7 @@
         ],
         "screenshot": "https://diagramwise.com/og/home.png",
         "image": "https://diagramwise.com/og/home.png",
-        "author": { "@id": "https://diagramwise.com/#organization" },
+        "author": { "@id": "https://next-zen.dev/#organization" },
         "publisher": { "@id": "https://diagramwise.com/#organization" }
       }
     </script>
@@ -147,7 +146,52 @@
           "url": "https://diagramwise.com/logo.png"
         },
         "description": "Diagramwise is a system design practice tool for building architectures visually, explaining trade-offs, and getting structured feedback.",
+        "parentOrganization": { "@id": "https://next-zen.dev/#organization" },
         "sameAs": ["https://github.com/satya00089/diagrammatic"]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://next-zen.dev/#organization",
+        "name": "Next Zen",
+        "url": "https://next-zen.dev/",
+        "description": "Next Zen builds developer tools for learning algorithms, designing system architecture, and automating cloud infrastructure, including Learn Algo, Diagramwise, and Orchestrator.",
+        "founder": { "@id": "https://next-zen.dev/#founder" },
+        "brand": { "@id": "https://diagramwise.com/#organization" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "@id": "https://next-zen.dev/#founder",
+        "name": "Satya Subudhi",
+        "jobTitle": "Cloud & Full-Stack Engineer",
+        "description": "Cloud & Full-Stack Engineer focused on cloud automation, monitoring, and AI/ML-driven systems. Founder of Next Zen.",
+        "knowsAbout": [
+          "Microsoft Azure",
+          "Amazon Web Services",
+          "Terraform",
+          "Bicep",
+          "FastAPI",
+          "Python",
+          "React",
+          "Redux",
+          "MongoDB",
+          "Cloud automation",
+          "System design",
+          "Machine learning"
+        ],
+        "worksFor": { "@id": "https://next-zen.dev/#organization" },
+        "url": "https://satya00089.github.io/portfolio/",
+        "sameAs": [
+          "https://github.com/satya00089",
+          "https://www.linkedin.com/in/satya-subudhi/",
+          "https://satya00089.github.io/portfolio/",
+          "https://next-zen.dev/"
+        ]
       }
     </script>
     <script type="application/ld+json">
@@ -156,7 +200,6 @@
         "@type": "WebSite",
         "@id": "https://diagramwise.com/#website",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Practice",
         "url": "https://diagramwise.com/",
         "inLanguage": "en",
         "publisher": { "@id": "https://diagramwise.com/#organization" }
@@ -349,6 +392,63 @@
         line-height: 1.75;
       }
 
+      .static-route-prose p,
+      .static-route-prose li {
+        max-width: 70ch;
+        color: #545467;
+        line-height: 1.75;
+      }
+
+      .static-route-prose table {
+        width: 100%;
+        max-width: 70ch;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      .static-route-prose th,
+      .static-route-prose td {
+        padding: 0.6rem 0.75rem;
+        border-bottom: 1px solid #d9d9e6;
+        text-align: left;
+      }
+
+      html.dark .static-route-prose p,
+      html.dark .static-route-prose li {
+        color: #b7b7c8;
+      }
+
+      .static-route-faq details {
+        max-width: 70ch;
+        border-bottom: 1px solid #d9d9e6;
+      }
+
+      .static-route-faq summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .static-route-faq summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .static-route-faq summary::after {
+        content: "+";
+        font-size: 1.25rem;
+      }
+
+      .static-route-faq details[open] summary::after {
+        content: "−";
+      }
+
+      html.dark .static-route-faq details {
+        border-color: #333342;
+      }
+
       .static-route-faq h3 {
         max-width: 60ch;
         margin: 1.5rem 0 0.4rem;
@@ -359,6 +459,12 @@
       html.dark .static-route-answer p,
       html.dark .static-route-faq p {
         color: #b7b7c8;
+      }
+
+      .static-route-footer a {
+        margin-left: 0.75rem;
+        color: inherit;
+        font-weight: 650;
       }
 
       .static-route-footer {
@@ -424,9 +530,9 @@
         }
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-Cy1dtRf_.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DxHoCUag.css">
-      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/problems/ride-sharing-system/","url":"https://diagramwise.com/problems/ride-sharing-system/","name":"Ride Sharing Service | System Design Guide","description":"Design a ride-sharing platform like Uber or Lyft that matches drivers with passengers in real time. Work through the requirements, architecture trade-offs, and an interactive design review.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/problems/ride-sharing-system/"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"Practice Problems","item":"https://diagramwise.com/problems/"},{"@type":"ListItem","position":3,"name":"Ride Sharing Service | System Design Guide","item":"https://diagramwise.com/problems/ride-sharing-system/"}]},{"@type":"LearningResource","name":"Ride Sharing Service — System Design Interview Practice","description":"Design a ride-sharing platform like Uber or Lyft that matches drivers with passengers in real time. Work through the requirements, architecture trade-offs, and an interactive design review.","url":"https://diagramwise.com/problems/ride-sharing-system/","educationalLevel":"Hard","teaches":["location-services","real-time","geospatial"],"timeRequired":"60-90 minutes","dateModified":"2026-10-29","provider":{"@id":"https://diagramwise.com/#organization"}}]}</script>
+    <script type="module" crossorigin src="/assets/index-cXjIPqRh.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-8XZuSE6o.css">
+      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/problems/ride-sharing-system/","url":"https://diagramwise.com/problems/ride-sharing-system/","name":"Ride Sharing Service | System Design Guide","description":"Design a ride-sharing platform like Uber or Lyft that matches drivers with passengers in real time. Work through the requirements, architecture trade-offs, and an interactive design review.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/problems/ride-sharing-system/","speakable":{"@type":"SpeakableSpecification","cssSelector":[".static-route-hero h1",".static-route-answer p"]}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"Practice Problems","item":"https://diagramwise.com/problems/"},{"@type":"ListItem","position":3,"name":"Ride Sharing Service | System Design Guide","item":"https://diagramwise.com/problems/ride-sharing-system/"}]},{"@type":"LearningResource","name":"Ride Sharing Service — System Design Interview Practice","description":"Design a ride-sharing platform like Uber or Lyft that matches drivers with passengers in real time. Work through the requirements, architecture trade-offs, and an interactive design review.","url":"https://diagramwise.com/problems/ride-sharing-system/","educationalLevel":"Hard","teaches":["location-services","real-time","geospatial"],"timeRequired":"60-90 minutes","datePublished":"2026-08-23","dateModified":"2026-10-29","provider":{"@id":"https://diagramwise.com/#organization"}},{"@type":"FAQPage","@id":"https://diagramwise.com/problems/ride-sharing-system/#faq","mainEntity":[{"@type":"Question","name":"What are the key requirements for \"Ride Sharing Service\"?","acceptedAnswer":{"@type":"Answer","text":"Key requirements include: Support the core workflow to request and match a ride; Expose status, results, and freshness appropriate to trip requests, driver availability, geospatial matching, and trip lifecycle; Support authorization, validation, updates, deletion, and recovery semantics."}},{"@type":"Question","name":"What scale should I assume for \"Ride Sharing Service\"?","acceptedAnswer":{"@type":"Answer","text":"Plan for: 10M trips per day and 1M location updates per second; Partition by the primary tenant, user, item, or geographic key and isolate hot partitions; Keep serving state bounded; retain raw events or durable records for replay and auditing."}},{"@type":"Question","name":"What are the main trade-offs in \"Ride Sharing Service\"?","acceptedAnswer":{"@type":"Answer","text":"Direct fan-out versus pull-based reads: Use push for latency-sensitive ride sharing system deltas and pull or replay for reconnect, history, and recovery. Per-recipient queues versus shared streams: Use shared partitioned streams with per-recipient cursors where fan-out is large, and isolate exceptional high-fanout objects. Strong ordering versus availability: Guarantee ordering only within the scope the product needs, such as a room, object, or conversation."}},{"@type":"Question","name":"What are the core entities in \"Ride Sharing Service\"?","acceptedAnswer":{"@type":"Answer","text":"The core entities are Interaction, ConnectionSession, FanoutCursor, DeliveryReceipt."}},{"@type":"Question","name":"What are common mistakes when designing \"Ride Sharing Service\"?","acceptedAnswer":{"@type":"Answer","text":"Making every ride sharing system recipient part of the synchronous write transaction; Assuming a websocket send means the event was durably delivered; Using a global sequence or hot celebrity key without partition isolation."}}]}]}</script>
   </head>
   <body>
     <div id="root">
@@ -448,11 +554,15 @@
           <p>Design a ride-sharing platform like Uber or Lyft that matches drivers with passengers in real time. Work through the requirements, architecture trade-offs, and an interactive design review.</p>
           <div class="static-route-actions"><a href="/problems/?q=Ride%20Sharing%20Service">Open this challenge</a><a href="/system-design-interview/">Read the interview guide</a></div>
         </section>
-        
+        <section class="static-route-section static-route-answer" id="quick-answer">
+    <h2>What does the &quot;Ride Sharing Service&quot; problem ask you to design?</h2>
+    <p>Design a ride-sharing platform like Uber or Lyft that matches drivers with passengers in real time. It is a practice challenge with Hard difficulty, about 60-90 minutes.</p>
+  </section>
         <section class="static-route-section" id="route-content">
           <h2>Concepts and architecture decisions to consider</h2>
           <ul class="static-route-list"><li><strong>location services</strong><span>Concept to explore</span></li><li><strong>real time</strong><span>Concept to explore</span></li><li><strong>geospatial</strong><span>Concept to explore</span></li></ul>
         </section>
+        
         <div class="static-route-guide" aria-label="System design guide">
     <section class="static-route-section static-route-guide-section" id="guide-prompt">
     <h2>Interview prompt</h2>
@@ -480,10 +590,15 @@
     <p>Apply the ideas from this page to a concrete architecture challenge.</p>
     <ul class="static-route-list"><li><a href="/problems/design-yelp-or-nearby-friends/">Design Yelp or Nearby Friends</a><span>Very Hard system design challenge</span></li><li><a href="/problems/uber-rider-matching/">Find a Rider for Uber or Uber Eats</a><span>Hard system design challenge</span></li><li><a href="/problems/eta-location-sharing/">Design an ETA Service and Location Sharing Between Driver and Rider</a><span>Very Hard system design challenge</span></li><li><a href="/problems/surge-pricing-system-uber-stream-processing/">Surge Pricing System: Uber - Stream Processing</a><span>Very Hard system design challenge</span></li></ul>
   </section>
-        
+        <section class="static-route-section static-route-faq" id="faq">
+    <h2>Frequently asked questions</h2>
+    <details open><summary><h3>What are the key requirements for &quot;Ride Sharing Service&quot;?</h3></summary><p>Key requirements include: Support the core workflow to request and match a ride; Expose status, results, and freshness appropriate to trip requests, driver availability, geospatial matching, and trip lifecycle; Support authorization, validation, updates, deletion, and recovery semantics.</p></details><details><summary><h3>What scale should I assume for &quot;Ride Sharing Service&quot;?</h3></summary><p>Plan for: 10M trips per day and 1M location updates per second; Partition by the primary tenant, user, item, or geographic key and isolate hot partitions; Keep serving state bounded; retain raw events or durable records for replay and auditing.</p></details><details><summary><h3>What are the main trade-offs in &quot;Ride Sharing Service&quot;?</h3></summary><p>Direct fan-out versus pull-based reads: Use push for latency-sensitive ride sharing system deltas and pull or replay for reconnect, history, and recovery. Per-recipient queues versus shared streams: Use shared partitioned streams with per-recipient cursors where fan-out is large, and isolate exceptional high-fanout objects. Strong ordering versus availability: Guarantee ordering only within the scope the product needs, such as a room, object, or conversation.</p></details><details><summary><h3>What are the core entities in &quot;Ride Sharing Service&quot;?</h3></summary><p>The core entities are Interaction, ConnectionSession, FanoutCursor, DeliveryReceipt.</p></details><details><summary><h3>What are common mistakes when designing &quot;Ride Sharing Service&quot;?</h3></summary><p>Making every ride sharing system recipient part of the synchronous write transaction; Assuming a websocket send means the event was durably delivered; Using a global sequence or hot celebrity key without partition isolation.</p></details>
+  </section>
       </main>
       <footer class="static-route-footer">
         Diagramwise — system design practice and architecture review.
+        <a href="/about/">About</a>
+        <a href="https://next-zen.dev/">Part of Next Zen</a>
       </footer>
     </div><!-- static-route:end -->
     </div>

@@ -109,7 +109,6 @@
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Tool",
         "description": "Interactive system design practice environment for building architectures, explaining decisions, and receiving structured feedback on scalability, reliability, data design, and trade-offs.",
         "url": "https://diagramwise.com/",
         "applicationCategory": "EducationalApplication",
@@ -131,7 +130,7 @@
         ],
         "screenshot": "https://diagramwise.com/og/home.png",
         "image": "https://diagramwise.com/og/home.png",
-        "author": { "@id": "https://diagramwise.com/#organization" },
+        "author": { "@id": "https://next-zen.dev/#organization" },
         "publisher": { "@id": "https://diagramwise.com/#organization" }
       }
     </script>
@@ -147,7 +146,52 @@
           "url": "https://diagramwise.com/logo.png"
         },
         "description": "Diagramwise is a system design practice tool for building architectures visually, explaining trade-offs, and getting structured feedback.",
+        "parentOrganization": { "@id": "https://next-zen.dev/#organization" },
         "sameAs": ["https://github.com/satya00089/diagrammatic"]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://next-zen.dev/#organization",
+        "name": "Next Zen",
+        "url": "https://next-zen.dev/",
+        "description": "Next Zen builds developer tools for learning algorithms, designing system architecture, and automating cloud infrastructure, including Learn Algo, Diagramwise, and Orchestrator.",
+        "founder": { "@id": "https://next-zen.dev/#founder" },
+        "brand": { "@id": "https://diagramwise.com/#organization" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "@id": "https://next-zen.dev/#founder",
+        "name": "Satya Subudhi",
+        "jobTitle": "Cloud & Full-Stack Engineer",
+        "description": "Cloud & Full-Stack Engineer focused on cloud automation, monitoring, and AI/ML-driven systems. Founder of Next Zen.",
+        "knowsAbout": [
+          "Microsoft Azure",
+          "Amazon Web Services",
+          "Terraform",
+          "Bicep",
+          "FastAPI",
+          "Python",
+          "React",
+          "Redux",
+          "MongoDB",
+          "Cloud automation",
+          "System design",
+          "Machine learning"
+        ],
+        "worksFor": { "@id": "https://next-zen.dev/#organization" },
+        "url": "https://satya00089.github.io/portfolio/",
+        "sameAs": [
+          "https://github.com/satya00089",
+          "https://www.linkedin.com/in/satya-subudhi/",
+          "https://satya00089.github.io/portfolio/",
+          "https://next-zen.dev/"
+        ]
       }
     </script>
     <script type="application/ld+json">
@@ -156,7 +200,6 @@
         "@type": "WebSite",
         "@id": "https://diagramwise.com/#website",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Practice",
         "url": "https://diagramwise.com/",
         "inLanguage": "en",
         "publisher": { "@id": "https://diagramwise.com/#organization" }
@@ -349,6 +392,63 @@
         line-height: 1.75;
       }
 
+      .static-route-prose p,
+      .static-route-prose li {
+        max-width: 70ch;
+        color: #545467;
+        line-height: 1.75;
+      }
+
+      .static-route-prose table {
+        width: 100%;
+        max-width: 70ch;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      .static-route-prose th,
+      .static-route-prose td {
+        padding: 0.6rem 0.75rem;
+        border-bottom: 1px solid #d9d9e6;
+        text-align: left;
+      }
+
+      html.dark .static-route-prose p,
+      html.dark .static-route-prose li {
+        color: #b7b7c8;
+      }
+
+      .static-route-faq details {
+        max-width: 70ch;
+        border-bottom: 1px solid #d9d9e6;
+      }
+
+      .static-route-faq summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .static-route-faq summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .static-route-faq summary::after {
+        content: "+";
+        font-size: 1.25rem;
+      }
+
+      .static-route-faq details[open] summary::after {
+        content: "−";
+      }
+
+      html.dark .static-route-faq details {
+        border-color: #333342;
+      }
+
       .static-route-faq h3 {
         max-width: 60ch;
         margin: 1.5rem 0 0.4rem;
@@ -359,6 +459,12 @@
       html.dark .static-route-answer p,
       html.dark .static-route-faq p {
         color: #b7b7c8;
+      }
+
+      .static-route-footer a {
+        margin-left: 0.75rem;
+        color: inherit;
+        font-weight: 650;
       }
 
       .static-route-footer {
@@ -424,9 +530,9 @@
         }
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-Cy1dtRf_.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DxHoCUag.css">
-      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/problems/design-a-parts-compatibility-feature-for-an-ecommerce-site/","url":"https://diagramwise.com/problems/design-a-parts-compatibility-feature-for-an-ecommerce-site/","name":"Design a Parts Compatibility Feature | System Design Guide","description":"Design a compatibility service that helps shoppers determine whether a part fits their vehicle, device, or existing product before they buy. Work through the requirements, architecture trade-offs, and an interactive design review.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/problems/design-a-parts-compatibility-feature-for-an-ecommerce-site/"},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"Practice Problems","item":"https://diagramwise.com/problems/"},{"@type":"ListItem","position":3,"name":"Design a Parts Compatibility Feature | System Design Guide","item":"https://diagramwise.com/problems/design-a-parts-compatibility-feature-for-an-ecommerce-site/"}]},{"@type":"LearningResource","name":"Design a Parts Compatibility Feature for an E-commerce Site — System Design Interview Practice","description":"Design a compatibility service that helps shoppers determine whether a part fits their vehicle, device, or existing product before they buy. Work through the requirements, architecture trade-offs, and an interactive design review.","url":"https://diagramwise.com/problems/design-a-parts-compatibility-feature-for-an-ecommerce-site/","educationalLevel":"Hard","teaches":["e-commerce","catalog","search","data-modeling","consistency"],"timeRequired":"60-90 minutes","dateModified":"2026-10-29","provider":{"@id":"https://diagramwise.com/#organization"}}]}</script>
+    <script type="module" crossorigin src="/assets/index-cXjIPqRh.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-8XZuSE6o.css">
+      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/problems/design-a-parts-compatibility-feature-for-an-ecommerce-site/","url":"https://diagramwise.com/problems/design-a-parts-compatibility-feature-for-an-ecommerce-site/","name":"Design a Parts Compatibility Feature | System Design Guide","description":"Design a compatibility service that helps shoppers determine whether a part fits their vehicle, device, or existing product before they buy. Work through the requirements, architecture trade-offs, and an interactive design review.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/problems/design-a-parts-compatibility-feature-for-an-ecommerce-site/","speakable":{"@type":"SpeakableSpecification","cssSelector":[".static-route-hero h1",".static-route-answer p"]}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"Practice Problems","item":"https://diagramwise.com/problems/"},{"@type":"ListItem","position":3,"name":"Design a Parts Compatibility Feature | System Design Guide","item":"https://diagramwise.com/problems/design-a-parts-compatibility-feature-for-an-ecommerce-site/"}]},{"@type":"LearningResource","name":"Design a Parts Compatibility Feature for an E-commerce Site — System Design Interview Practice","description":"Design a compatibility service that helps shoppers determine whether a part fits their vehicle, device, or existing product before they buy. Work through the requirements, architecture trade-offs, and an interactive design review.","url":"https://diagramwise.com/problems/design-a-parts-compatibility-feature-for-an-ecommerce-site/","educationalLevel":"Hard","teaches":["e-commerce","catalog","search","data-modeling","consistency"],"timeRequired":"60-90 minutes","datePublished":"2026-08-23","dateModified":"2026-10-29","provider":{"@id":"https://diagramwise.com/#organization"}},{"@type":"FAQPage","@id":"https://diagramwise.com/problems/design-a-parts-compatibility-feature-for-an-ecommerce-site/#faq","mainEntity":[{"@type":"Question","name":"What are the key requirements for \"Design a Parts Compatibility Feature for an E-commerce Site\"?","acceptedAnswer":{"@type":"Answer","text":"Key requirements include: Let shoppers select or search for a vehicle, device, or existing product and save that context; Show compatible, incompatible, and unknown states for a product, with a short reason where possible; Filter category/search results by compatibility and carry the selected context into cart and checkout; Let catalog operators import, validate, approve, publish, correct, and roll back fitment data."}},{"@type":"Question","name":"What scale should I assume for \"Design a Parts Compatibility Feature for an E-commerce Site\"?","acceptedAnswer":{"@type":"Answer","text":"Plan for: Assume 50 million products and 200 million normalized product-context relationships across markets; Assume 10 million daily active shoppers, 40 compatibility checks per shopper, and 4,600 average checks/second with 10x peak headroom; Assume 2 million fitment changes per day, processed in batches; read traffic is roughly 20:1 over writes."}},{"@type":"Question","name":"What are the main trade-offs in \"Design a Parts Compatibility Feature for an E-commerce Site\"?","acceptedAnswer":{"@type":"Answer","text":"Rule engine versus precomputed fitment index: Use precomputed/indexed results for high-volume reads and a rule engine for publication validation and bounded misses. Cache speed versus vehicle/device changes: Key caches by normalized context and catalog version with targeted invalidation on publication. Strict fitment versus useful uncertainty: Return compatible, incompatible, and unknown states with explanations instead of guessing when data is incomplete."}},{"@type":"Question","name":"What are the core entities in \"Design a Parts Compatibility Feature for an E-commerce Site\"?","acceptedAnswer":{"@type":"Answer","text":"The core entities are CompatibilityContext, CompatibilityRule, FitmentResult, CatalogVersion."}},{"@type":"Question","name":"What are common mistakes when designing \"Design a Parts Compatibility Feature for an E-commerce Site\"?","acceptedAnswer":{"@type":"Answer","text":"Matching on raw user text without normalization; Publishing rules without conflict detection or versioning; Caching results without catalog/context versions."}}]}]}</script>
   </head>
   <body>
     <div id="root">
@@ -448,11 +554,15 @@
           <p>Design a compatibility service that helps shoppers determine whether a part fits their vehicle, device, or existing product before they buy. Work through the requirements, architecture trade-offs, and an interactive design review.</p>
           <div class="static-route-actions"><a href="/problems/?q=Design%20a%20Parts%20Compatibility%20Feature%20for%20an%20E-commerce%20Site">Open this challenge</a><a href="/system-design-interview/">Read the interview guide</a></div>
         </section>
-        
+        <section class="static-route-section static-route-answer" id="quick-answer">
+    <h2>What does the &quot;Design a Parts Compatibility Feature for an E-commerce Site&quot; problem ask you to design?</h2>
+    <p>Design a compatibility service that helps shoppers determine whether a part fits their vehicle, device, or existing product before they buy. It is a practice challenge with Hard difficulty, about 60-90 minutes.</p>
+  </section>
         <section class="static-route-section" id="route-content">
           <h2>Concepts and architecture decisions to consider</h2>
           <ul class="static-route-list"><li><strong>e commerce</strong><span>Concept to explore</span></li><li><strong>catalog</strong><span>Concept to explore</span></li><li><strong>search</strong><span>Concept to explore</span></li><li><strong>data modeling</strong><span>Concept to explore</span></li><li><strong>consistency</strong><span>Concept to explore</span></li></ul>
         </section>
+        
         <div class="static-route-guide" aria-label="System design guide">
     <section class="static-route-section static-route-guide-section" id="guide-prompt">
     <h2>Interview prompt</h2>
@@ -480,10 +590,15 @@
     <p>Apply the ideas from this page to a concrete architecture challenge.</p>
     <ul class="static-route-list"><li><a href="/problems/build-a-marketplace-feature-for-facebook/">Build a Marketplace Feature for Facebook</a><span>Easy system design challenge</span></li><li><a href="/problems/web-search-engine/">Web Search Engine</a><span>Hard system design challenge</span></li><li><a href="/problems/design-facebook-likes-feature-with-live-updates/">Design Facebook Likes with Live Updates</a><span>Hard system design challenge</span></li><li><a href="/problems/design-a-key-value-store/">Design a Key-Value Store</a><span>Medium system design challenge</span></li></ul>
   </section>
-        
+        <section class="static-route-section static-route-faq" id="faq">
+    <h2>Frequently asked questions</h2>
+    <details open><summary><h3>What are the key requirements for &quot;Design a Parts Compatibility Feature for an E-commerce Site&quot;?</h3></summary><p>Key requirements include: Let shoppers select or search for a vehicle, device, or existing product and save that context; Show compatible, incompatible, and unknown states for a product, with a short reason where possible; Filter category/search results by compatibility and carry the selected context into cart and checkout; Let catalog operators import, validate, approve, publish, correct, and roll back fitment data.</p></details><details><summary><h3>What scale should I assume for &quot;Design a Parts Compatibility Feature for an E-commerce Site&quot;?</h3></summary><p>Plan for: Assume 50 million products and 200 million normalized product-context relationships across markets; Assume 10 million daily active shoppers, 40 compatibility checks per shopper, and 4,600 average checks/second with 10x peak headroom; Assume 2 million fitment changes per day, processed in batches; read traffic is roughly 20:1 over writes.</p></details><details><summary><h3>What are the main trade-offs in &quot;Design a Parts Compatibility Feature for an E-commerce Site&quot;?</h3></summary><p>Rule engine versus precomputed fitment index: Use precomputed/indexed results for high-volume reads and a rule engine for publication validation and bounded misses. Cache speed versus vehicle/device changes: Key caches by normalized context and catalog version with targeted invalidation on publication. Strict fitment versus useful uncertainty: Return compatible, incompatible, and unknown states with explanations instead of guessing when data is incomplete.</p></details><details><summary><h3>What are the core entities in &quot;Design a Parts Compatibility Feature for an E-commerce Site&quot;?</h3></summary><p>The core entities are CompatibilityContext, CompatibilityRule, FitmentResult, CatalogVersion.</p></details><details><summary><h3>What are common mistakes when designing &quot;Design a Parts Compatibility Feature for an E-commerce Site&quot;?</h3></summary><p>Matching on raw user text without normalization; Publishing rules without conflict detection or versioning; Caching results without catalog/context versions.</p></details>
+  </section>
       </main>
       <footer class="static-route-footer">
         Diagramwise — system design practice and architecture review.
+        <a href="/about/">About</a>
+        <a href="https://next-zen.dev/">Part of Next Zen</a>
       </footer>
     </div><!-- static-route:end -->
     </div>

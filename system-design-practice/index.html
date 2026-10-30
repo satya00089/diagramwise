@@ -109,7 +109,6 @@
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Tool",
         "description": "Interactive system design practice environment for building architectures, explaining decisions, and receiving structured feedback on scalability, reliability, data design, and trade-offs.",
         "url": "https://diagramwise.com/",
         "applicationCategory": "EducationalApplication",
@@ -131,7 +130,7 @@
         ],
         "screenshot": "https://diagramwise.com/og/home.png",
         "image": "https://diagramwise.com/og/home.png",
-        "author": { "@id": "https://diagramwise.com/#organization" },
+        "author": { "@id": "https://next-zen.dev/#organization" },
         "publisher": { "@id": "https://diagramwise.com/#organization" }
       }
     </script>
@@ -147,7 +146,52 @@
           "url": "https://diagramwise.com/logo.png"
         },
         "description": "Diagramwise is a system design practice tool for building architectures visually, explaining trade-offs, and getting structured feedback.",
+        "parentOrganization": { "@id": "https://next-zen.dev/#organization" },
         "sameAs": ["https://github.com/satya00089/diagrammatic"]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "@id": "https://next-zen.dev/#organization",
+        "name": "Next Zen",
+        "url": "https://next-zen.dev/",
+        "description": "Next Zen builds developer tools for learning algorithms, designing system architecture, and automating cloud infrastructure, including Learn Algo, Diagramwise, and Orchestrator.",
+        "founder": { "@id": "https://next-zen.dev/#founder" },
+        "brand": { "@id": "https://diagramwise.com/#organization" }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "@id": "https://next-zen.dev/#founder",
+        "name": "Satya Subudhi",
+        "jobTitle": "Cloud & Full-Stack Engineer",
+        "description": "Cloud & Full-Stack Engineer focused on cloud automation, monitoring, and AI/ML-driven systems. Founder of Next Zen.",
+        "knowsAbout": [
+          "Microsoft Azure",
+          "Amazon Web Services",
+          "Terraform",
+          "Bicep",
+          "FastAPI",
+          "Python",
+          "React",
+          "Redux",
+          "MongoDB",
+          "Cloud automation",
+          "System design",
+          "Machine learning"
+        ],
+        "worksFor": { "@id": "https://next-zen.dev/#organization" },
+        "url": "https://satya00089.github.io/portfolio/",
+        "sameAs": [
+          "https://github.com/satya00089",
+          "https://www.linkedin.com/in/satya-subudhi/",
+          "https://satya00089.github.io/portfolio/",
+          "https://next-zen.dev/"
+        ]
       }
     </script>
     <script type="application/ld+json">
@@ -156,7 +200,6 @@
         "@type": "WebSite",
         "@id": "https://diagramwise.com/#website",
         "name": "Diagramwise",
-        "alternateName": "Diagramwise System Design Practice",
         "url": "https://diagramwise.com/",
         "inLanguage": "en",
         "publisher": { "@id": "https://diagramwise.com/#organization" }
@@ -349,6 +392,63 @@
         line-height: 1.75;
       }
 
+      .static-route-prose p,
+      .static-route-prose li {
+        max-width: 70ch;
+        color: #545467;
+        line-height: 1.75;
+      }
+
+      .static-route-prose table {
+        width: 100%;
+        max-width: 70ch;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+
+      .static-route-prose th,
+      .static-route-prose td {
+        padding: 0.6rem 0.75rem;
+        border-bottom: 1px solid #d9d9e6;
+        text-align: left;
+      }
+
+      html.dark .static-route-prose p,
+      html.dark .static-route-prose li {
+        color: #b7b7c8;
+      }
+
+      .static-route-faq details {
+        max-width: 70ch;
+        border-bottom: 1px solid #d9d9e6;
+      }
+
+      .static-route-faq summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        cursor: pointer;
+        list-style: none;
+      }
+
+      .static-route-faq summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .static-route-faq summary::after {
+        content: "+";
+        font-size: 1.25rem;
+      }
+
+      .static-route-faq details[open] summary::after {
+        content: "−";
+      }
+
+      html.dark .static-route-faq details {
+        border-color: #333342;
+      }
+
       .static-route-faq h3 {
         max-width: 60ch;
         margin: 1.5rem 0 0.4rem;
@@ -359,6 +459,12 @@
       html.dark .static-route-answer p,
       html.dark .static-route-faq p {
         color: #b7b7c8;
+      }
+
+      .static-route-footer a {
+        margin-left: 0.75rem;
+        color: inherit;
+        font-weight: 650;
       }
 
       .static-route-footer {
@@ -424,9 +530,9 @@
         }
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-Cy1dtRf_.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DxHoCUag.css">
-      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/system-design-practice/","url":"https://diagramwise.com/system-design-practice/","name":"System Design Practice Online with Architecture Feedback | Diagramwise","description":"Practice system design online with realistic prompts, an interactive architecture canvas, explicit trade-offs, and structured review.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/system-design-practice/","speakable":{"@type":"SpeakableSpecification","cssSelector":[".static-route-hero h1",".static-route-answer p"]}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"System Design Practice Online with Architecture Feedback","item":"https://diagramwise.com/system-design-practice/"}]},{"@type":"Article","headline":"System Design Practice","description":"Practice system design online with realistic prompts, an interactive architecture canvas, explicit trade-offs, and structured review.","url":"https://diagramwise.com/system-design-practice/","image":"https://diagramwise.com/og/problems.png","inLanguage":"en","datePublished":"2026-10-30","dateModified":"2026-10-30","mainEntityOfPage":"https://diagramwise.com/system-design-practice/","author":{"@id":"https://diagramwise.com/#organization"},"publisher":{"@id":"https://diagramwise.com/#organization"}},{"@type":"FAQPage","@id":"https://diagramwise.com/system-design-practice/#faq","mainEntity":[{"@type":"Question","name":"How can I practice system design on my own?","acceptedAnswer":{"@type":"Answer","text":"Pick a problem, write requirements first, draw the architecture, explain why each component exists, and review the result before changing the diagram."}},{"@type":"Question","name":"What is deliberate practice in system design?","acceptedAnswer":{"@type":"Answer","text":"It means isolating one skill, such as caching or database scaling, getting feedback on it, and repeating until the weakness disappears, instead of only solving new problems."}},{"@type":"Question","name":"How do I know my design is good?","acceptedAnswer":{"@type":"Answer","text":"A good design meets the stated requirements, makes its trade-offs explicit, and survives walkthroughs of overload, partial failure, and recovery."}}]}]}</script>
+    <script type="module" crossorigin src="/assets/index-cXjIPqRh.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-8XZuSE6o.css">
+      <script id="route-structured-data" type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"WebPage","@id":"https://diagramwise.com/system-design-practice/","url":"https://diagramwise.com/system-design-practice/","name":"System Design Practice Online with Architecture Feedback | Diagramwise","description":"Practice system design online with realistic prompts, an interactive architecture canvas, explicit trade-offs, and structured review.","isPartOf":{"@type":"WebSite","url":"https://diagramwise.com/","name":"Diagramwise"},"mainEntityOfPage":"https://diagramwise.com/system-design-practice/","speakable":{"@type":"SpeakableSpecification","cssSelector":[".static-route-hero h1",".static-route-answer p"]}},{"@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Home","item":"https://diagramwise.com/"},{"@type":"ListItem","position":2,"name":"System Design Practice Online with Architecture Feedback","item":"https://diagramwise.com/system-design-practice/"}]},{"@type":"Article","headline":"System Design Practice","description":"Practice system design online with realistic prompts, an interactive architecture canvas, explicit trade-offs, and structured review.","url":"https://diagramwise.com/system-design-practice/","image":"https://diagramwise.com/og/problems.png","inLanguage":"en","datePublished":"2026-08-23","dateModified":"2026-10-30","mainEntityOfPage":"https://diagramwise.com/system-design-practice/","author":{"@type":"Organization","@id":"https://next-zen.dev/#organization","name":"Next Zen","url":"https://next-zen.dev/"},"publisher":{"@type":"Organization","@id":"https://diagramwise.com/#organization","name":"Diagramwise","url":"https://diagramwise.com/","logo":{"@type":"ImageObject","url":"https://diagramwise.com/logo.png"}}},{"@type":"HowTo","name":"How do you practice system design online?","description":"Practice system design online with realistic prompts, an interactive architecture canvas, explicit trade-offs, and structured review.","step":[{"@type":"HowToStep","position":1,"name":"Choose one narrow prompt","text":"Match the challenge to the skill you want to isolate."},{"@type":"HowToStep","position":2,"name":"Time-box clarification","text":"Write requirements, assumptions, and success criteria first."},{"@type":"HowToStep","position":3,"name":"Build and annotate","text":"Label flows and record why every major component exists."},{"@type":"HowToStep","position":4,"name":"Review the architecture","text":"Capture weaknesses before changing the diagram."},{"@type":"HowToStep","position":5,"name":"Repeat the weak dimension","text":"Choose the next problem around the bottleneck you missed."}]},{"@type":"FAQPage","@id":"https://diagramwise.com/system-design-practice/#faq","mainEntity":[{"@type":"Question","name":"How can I practice system design on my own?","acceptedAnswer":{"@type":"Answer","text":"Pick a problem, write requirements first, draw the architecture, explain why each component exists, and review the result before changing the diagram."}},{"@type":"Question","name":"What is deliberate practice in system design?","acceptedAnswer":{"@type":"Answer","text":"It means isolating one skill, such as caching or database scaling, getting feedback on it, and repeating until the weakness disappears, instead of only solving new problems."}},{"@type":"Question","name":"How do I know my design is good?","acceptedAnswer":{"@type":"Answer","text":"A good design meets the stated requirements, makes its trade-offs explicit, and survives walkthroughs of overload, partial failure, and recovery."}}]}]}</script>
   </head>
   <body>
     <div id="root">
@@ -456,6 +562,34 @@
           <h2>A deliberate practice loop</h2>
           <ul class="static-route-list"><li><strong>Choose one narrow prompt</strong><span>Match the challenge to the skill you want to isolate.</span></li><li><strong>Time-box clarification</strong><span>Write requirements, assumptions, and success criteria first.</span></li><li><strong>Build and annotate</strong><span>Label flows and record why every major component exists.</span></li><li><strong>Review the architecture</strong><span>Capture weaknesses before changing the diagram.</span></li><li><strong>Repeat the weak dimension</strong><span>Choose the next problem around the bottleneck you missed.</span></li></ul>
         </section>
+        <section class="static-route-section static-route-prose">
+    <h2>Why reading solutions is not enough</h2>
+    <p>Reading a finished design builds recognition: you see a diagram and think it looks right. An interview, and real design work, tests recall. You start from a blank page, an ambiguous prompt, and a clock. The gap between those two skills is why people who have read many solutions still freeze on the first question.</p><p>Deliberate practice closes that gap. It means working on one specific skill, producing your own answer before looking at anyone else&#039;s, getting concrete feedback, and repeating the weak area until it stops being weak.</p>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Pick one narrow skill per session</h2>
+    <p>The most common practice mistake is choosing the largest, most famous problem every time. A problem that touches ten concerns gives you feedback on none of them. Instead, choose a prompt that isolates the skill you want to improve, then match it to a problem.</p><table><thead><tr><th>Skill to isolate</th><th>What the problem forces you to decide</th></tr></thead><tbody><tr><td>Caching and invalidation</td><td>What to cache, where, for how long, and how stale entries are handled (a distributed cache)</td></tr><tr><td>Rate limiting and fairness</td><td>Algorithm choice, shared counters, behavior under burst (an API rate limiter)</td></tr><tr><td>Asynchronous work</td><td>Queues, retries, delivery guarantees, fan-out (a notification system)</td></tr><tr><td>Scheduling and reliability</td><td>Exactly-once versus at-least-once, leases, recovery (a job scheduler)</td></tr><tr><td>Consistency under contention</td><td>Preventing double booking and handling concurrent updates (a hotel booking system)</td></tr><tr><td>Correctness and idempotency</td><td>Retries, duplicate requests, reconciliation (a payment system)</td></tr></tbody></table>
+  </section><section class="static-route-section static-route-prose">
+    <h2>A 60-minute practice session</h2>
+    <p>A fixed structure keeps sessions comparable, so you can tell whether you are actually improving. This is a workable template; shorten or lengthen the blocks to fit your schedule.</p><table><thead><tr><th>Block</th><th>Time</th><th>What you do</th></tr></thead><tbody><tr><td>Read the prompt</td><td>5 min</td><td>Read once, then close any reference material</td></tr><tr><td>Write requirements</td><td>10 min</td><td>Functional requirements, non-goals, scale assumptions, success criteria</td></tr><tr><td>Build and annotate</td><td>25 min</td><td>Draw the architecture and label each flow and component with why it exists</td></tr><tr><td>Review</td><td>10 min</td><td>Check the design against your own requirements and the checklist below, writing down weaknesses without fixing them yet</td></tr><tr><td>Revise one thing</td><td>10 min</td><td>Change the design to address the single most important weakness</td></tr></tbody></table><p>Writing down weaknesses before editing the diagram matters. If you fix problems as you notice them, you never see which kinds of mistakes you repeat.</p>
+  </section><section class="static-route-section static-route-prose">
+    <h2>A self-review checklist</h2>
+    <p>After building, review your own design before comparing it with any reference. Ask these questions about each major component and flow:</p><ul><li>Does every component trace back to a stated requirement or a number you estimated?</li><li>Can I explain what this component costs, such as latency, consistency, operational burden, or money?</li><li>What is the single point of failure, and what happens when it fails?</li><li>Where does the data live, which copy is the source of truth, and how do the others stay in sync?</li><li>What happens at ten times the assumed load? Which part breaks first?</li><li>Is each operation safe to retry, or can a retry cause a duplicate effect?</li><li>How would I notice that this is broken in production?</li></ul>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Keep a decision log</h2>
+    <p>A diagram records what you built. A decision log records why, which is the part interviewers and teammates actually test. For each significant choice, write four short lines:</p><ul><li>Decision: what you chose.</li><li>Alternatives: what you considered and rejected.</li><li>Reason and cost: why you chose it and what it gives up.</li><li>Revisit when: the condition, such as a scale threshold, that would change the decision.</li></ul><p>Reading your own log a week later is one of the fastest ways to spot shallow reasoning, such as decisions that have no stated alternative or no stated cost.</p>
+  </section><section class="static-route-section static-route-prose">
+    <h2>A four-week plan</h2>
+    <p>If you have a month, group practice by theme rather than by company or product. Each week deepens one layer, and the final week combines them under time pressure.</p><table><thead><tr><th>Week</th><th>Theme</th><th>Focus</th></tr></thead><tbody><tr><td>1</td><td>Foundations</td><td>Requirements, back-of-the-envelope estimation, single server to a load-balanced service</td></tr><tr><td>2</td><td>Data</td><td>Storage choices, caching, replication, partitioning, consistency</td></tr><tr><td>3</td><td>Asynchrony and reliability</td><td>Queues, retries, idempotency, failure modes, observability</td></tr><tr><td>4</td><td>Integration</td><td>Full problems under a timer, followed by a written review of recurring weaknesses</td></tr></tbody></table>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Common mistakes in practice</h2>
+    <ul><li>Memorizing diagrams. A memorized answer collapses as soon as the interviewer changes one requirement.</li><li>Always practicing the same famous problem and never the ones that expose your gaps.</li><li>Skipping the review step, so each session repeats the last session&#039;s mistakes.</li><li>Practicing only the area you already enjoy, such as drawing boxes, and avoiding estimation or failure analysis.</li><li>Never timing yourself, then running out of time in the real interview.</li><li>Practicing silently. Explaining your reasoning out loud, or to another person, is a separate skill that needs its own repetition.</li></ul>
+  </section><section class="static-route-section static-route-prose">
+    <h2>How to tell you are improving</h2>
+    <p>Progress in system design is easy to feel and hard to measure, so use concrete signals. You can produce a usable estimate in about five minutes. You can name at least two trade-offs for each major component without prompting. You find your own weaknesses during review instead of discovering them later.</p><p>One of the most useful tests is to repeat a problem two weeks later without looking at your earlier answer. If the second attempt is clearer, better justified, and faster, the practice is working.</p>
+  </section><section class="static-route-section static-route-prose">
+    <h2>Practice with another person</h2>
+    <p>Solo practice builds the design skill, but a partner builds the conversation skill. Ask someone to play the interviewer: they give the prompt, answer clarifying questions, and push back on one decision. Even a friend who is not a system design expert can ask why you chose something, which forces you to articulate reasoning you may have only half formed.</p><p>When no partner is available, record yourself explaining the design and listen for places where you skip a reason or hedge a decision.</p>
+  </section>
         
         <section class="static-route-section" id="related-problems">
     <h2>Practice related problems</h2>
@@ -464,11 +598,13 @@
   </section>
         <section class="static-route-section static-route-faq" id="faq">
     <h2>Frequently asked questions</h2>
-    <h3>How can I practice system design on my own?</h3><p>Pick a problem, write requirements first, draw the architecture, explain why each component exists, and review the result before changing the diagram.</p><h3>What is deliberate practice in system design?</h3><p>It means isolating one skill, such as caching or database scaling, getting feedback on it, and repeating until the weakness disappears, instead of only solving new problems.</p><h3>How do I know my design is good?</h3><p>A good design meets the stated requirements, makes its trade-offs explicit, and survives walkthroughs of overload, partial failure, and recovery.</p>
+    <details open><summary><h3>How can I practice system design on my own?</h3></summary><p>Pick a problem, write requirements first, draw the architecture, explain why each component exists, and review the result before changing the diagram.</p></details><details><summary><h3>What is deliberate practice in system design?</h3></summary><p>It means isolating one skill, such as caching or database scaling, getting feedback on it, and repeating until the weakness disappears, instead of only solving new problems.</p></details><details><summary><h3>How do I know my design is good?</h3></summary><p>A good design meets the stated requirements, makes its trade-offs explicit, and survives walkthroughs of overload, partial failure, and recovery.</p></details>
   </section>
       </main>
       <footer class="static-route-footer">
         Diagramwise — system design practice and architecture review.
+        <a href="/about/">About</a>
+        <a href="https://next-zen.dev/">Part of Next Zen</a>
       </footer>
     </div><!-- static-route:end -->
     </div>
