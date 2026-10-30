@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { marked } from "marked";
-import DOMPurify from "dompurify";
 import type { Lesson, Exercise } from "../../services/contentLoader";
+import { renderMarkdownToHtml } from "../../utils/markdownContent";
 
 function ExerciseRunner({
   exercise,
@@ -196,6 +195,10 @@ const LessonRenderer: React.FC<{
       contentRef.current.scrollTop = 0;
     }
   }, [lesson.id]);
+  const contentHtml = React.useMemo(
+    () => renderMarkdownToHtml(lesson.content),
+    [lesson.content],
+  );
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -216,24 +219,14 @@ const LessonRenderer: React.FC<{
       <div className="flex-1 overflow-auto component-palette" ref={contentRef}>
         {lesson.type === "article" && (
           <div className="prose max-w-none prose-headings:text-theme prose-p:text-theme prose-strong:text-theme prose-li:text-theme prose-code:text-theme dark:prose-invert">
-            <div
-              dangerouslySetInnerHTML={{
-                __html: DOMPurify.sanitize(marked.parse(lesson.content || "")),
-              }}
-            />
+            <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
           </div>
         )}
 
         {lesson.type === "exercise" && (
           <div>
             <div className="prose max-w-none prose-headings:text-theme prose-p:text-theme prose-strong:text-theme prose-li:text-theme prose-code:text-theme dark:prose-invert mb-6">
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(
-                    marked.parse(lesson.content || ""),
-                  ),
-                }}
-              />
+              <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
             </div>
             <ExerciseRunner exercise={lesson.exercise} />
           </div>

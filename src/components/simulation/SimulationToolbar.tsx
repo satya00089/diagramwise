@@ -339,6 +339,18 @@ export function SimulationToolbar({
             )}
             {running ? "Pause" : startLabel}
           </button>
+          {canStop && (
+            <button
+              type="button"
+              className="sim-button sim-button--icon"
+              onClick={onReset}
+              aria-label="Stop simulation"
+              data-tooltip="Stop simulation"
+              data-tooltip-placement="bottom"
+            >
+              <MdStop aria-hidden="true" size={19} />
+            </button>
+          )}
           <output
             className={`sim-toolbar__state sim-toolbar__state--${status}`}
             aria-label={SIMULATION_STATUS_LABELS[status]}

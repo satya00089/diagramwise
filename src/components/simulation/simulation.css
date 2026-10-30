@@ -718,6 +718,7 @@ body.sim-island-dragging * {
   font-size: 11px;
 }
 .sim-metric dd {
+  font-variant-numeric: tabular-nums;
   margin: 3px 0 0;
   font-size: 15px;
   font-weight: 600;
