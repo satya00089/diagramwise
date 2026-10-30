@@ -190,6 +190,7 @@ interface GuideSection {
 }
 
 interface GuideCopy {
+  updated?: string;
   answerQuestion: string;
   answer: string;
   faqs: { q: string; a: string }[];
@@ -275,6 +276,7 @@ const SeoGuide: React.FC = () => {
               url: canonical,
               image: "https://diagramwise.com/og/problems.png",
               inLanguage: "en",
+              dateModified: copy?.updated,
               mainEntityOfPage: canonical,
               author: {
                 "@type": "Organization",
@@ -351,6 +353,22 @@ const SeoGuide: React.FC = () => {
                   <h2 id="answer-heading">{copy.answerQuestion}</h2>
                 </div>
                 <p className="seo-guide-answer">{copy.answer}</p>
+                {copy.updated && (
+                  <p className="seo-guide-updated">
+                    Last reviewed:{" "}
+                    <time dateTime={copy.updated}>
+                      {new Date(`${copy.updated}T00:00:00Z`).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          timeZone: "UTC",
+                        },
+                      )}
+                    </time>
+                  </p>
+                )}
               </section>
             )}
             <section
