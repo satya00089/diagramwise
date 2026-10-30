@@ -1,11 +1,20 @@
-import { useEffect, useId, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useId,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import type { SimSnapshot, TrafficPattern } from "@diagramwise/simulation-core";
 import type { CompiledTrafficSource } from "@diagramwise/simulation-core/compiler";
 import {
   MdAccountTree,
+  MdExpandLess,
+  MdExpandMore,
   MdPause,
   MdPlayArrow,
   MdRefresh,
+  MdStop,
   MdTune,
   MdWarningAmber,
 } from "react-icons/md";
@@ -36,6 +45,16 @@ const PLAYBACK_LABELS = PLAYBACK_OPTIONS.map((option) => option.label);
 const AUTO_SOURCE_VALUE = "automatic";
 const ALL_CLIENTS_VALUE = "all-clients";
 const SOURCE_NODE_PREFIX = "node:";
+
+const COLLAPSED_STORAGE_KEY = "sim-toolbar-collapsed";
+
+function readCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_STORAGE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 type TrafficSourceChoice = { value: string; label: string };
 
@@ -204,6 +223,8 @@ export type SimulationToolbarProps = Readonly<{
   onTrafficSourceChange?: (nodeId: string | null) => void;
   onInspect?: () => void;
   onDemo?: () => void;
+  /** Optional grip that lets the host move the toolbar; shown in both states. */
+  dragHandle?: ReactNode;
 }>;
 
 export function SimulationToolbar({
@@ -226,6 +247,7 @@ export function SimulationToolbar({
   onTrafficSourceChange,
   onInspect,
   onDemo,
+  dragHandle,
 }: SimulationToolbarProps) {
   const id = useId();
   const running = status === "running";
@@ -249,11 +271,42 @@ export function SimulationToolbar({
   const sourceLabel = getSourceLabel(trafficSource);
   // One possible source: keep the same dropdown control, but disabled, so the
   // toolbar reads the same whether or not there is a choice to make.
-  const fixedSourceLabel = sourceLabel ?? trafficSource?.options[0]?.label ?? "";
+  const fixedSourceLabel =
+    sourceLabel ?? trafficSource?.options[0]?.label ?? "";
   const showFixedSource =
     !canSelectSource &&
     (trafficSource?.mode === "ingress" || trafficSource?.mode === "clients") &&
     fixedSourceLabel !== "";
+
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const bodyId = `${id}-body`;
+  const toggleCollapsed = (next: boolean) => {
+    setCollapsed(next);
+    try {
+      localStorage.setItem(COLLAPSED_STORAGE_KEY, next ? "1" : "0");
+    } catch {
+      // Storage can be unavailable; the toggle still works for this session.
+    }
+  };
+  const canStop = status !== "idle" && status !== "invalid";
+  const stopRun = () => {
+    onReset();
+    toggleCollapsed(true);
+  };
+  const notice = (errors.length > 0 ||
+    status === "resource-limited" ||
+    status === "error" ||
+    slower) && (
+    <div className="sim-toolbar__notice">
+      <MdWarningAmber aria-hidden="true" size={16} />
+      <span>{simulationNotice(status, errors, achievedSpeed)}</span>
+      {onInspect && (
+        <button type="button" className="sim-text-button" onClick={onInspect}>
+          Details
+        </button>
+      )}
+    </div>
+  );
 
   const commitRateDraft = () => {
     const parsed = Number(rateDraft);
@@ -266,13 +319,62 @@ export function SimulationToolbar({
     onRpsChange(next);
   };
 
+  if (collapsed) {
+    return (
+      <section
+        className="sim-toolbar sim-toolbar--collapsed nodrag nopan"
+        aria-label="Simulation controls"
+      >
+        <div className="sim-toolbar__pill">
+          {dragHandle}
+          <button
+            type="button"
+            className="sim-button sim-button--primary sim-toolbar__play"
+            onClick={running ? onPause : onStart}
+          >
+            {running ? (
+              <MdPause aria-hidden="true" size={19} />
+            ) : (
+              <MdPlayArrow aria-hidden="true" size={19} />
+            )}
+            {running ? "Pause" : startLabel}
+          </button>
+          <output
+            className={`sim-toolbar__state sim-toolbar__state--${status}`}
+            aria-label={SIMULATION_STATUS_LABELS[status]}
+          >
+            <span className="sim-status-dot" aria-hidden="true" />
+            <span className="sim-toolbar__state-label">
+              {SIMULATION_STATUS_LABELS[status]}
+            </span>
+          </output>
+          <button
+            type="button"
+            className="sim-button sim-button--icon"
+            onClick={() => toggleCollapsed(false)}
+            aria-label="Expand simulation controls"
+            aria-expanded={false}
+            aria-controls={bodyId}
+            data-tooltip="Expand simulation controls"
+            data-tooltip-placement="bottom"
+          >
+            <MdExpandMore aria-hidden="true" size={19} />
+          </button>
+        </div>
+        {notice}
+      </section>
+    );
+  }
+
   return (
     <section
+      id={bodyId}
       className="sim-toolbar nodrag nopan"
       aria-label="Simulation controls"
     >
       <div className="sim-toolbar__controls">
         <div className="sim-toolbar__control-group">
+          {dragHandle}
           <button
             type="button"
             className="sim-button sim-button--primary sim-toolbar__play"
@@ -301,6 +403,18 @@ export function SimulationToolbar({
           >
             <MdRefresh aria-hidden="true" size={19} />
           </button>
+          {canStop && (
+            <button
+              type="button"
+              className="sim-button sim-button--icon"
+              onClick={stopRun}
+              aria-label="Stop simulation"
+              data-tooltip="Stop simulation and minimize controls"
+              data-tooltip-placement="bottom"
+            >
+              <MdStop aria-hidden="true" size={19} />
+            </button>
+          )}
         </div>
         <div className="sim-toolbar__load">
           <label htmlFor={`${id}-rps`}>Requests / sec</label>
@@ -469,7 +583,7 @@ export function SimulationToolbar({
         {snapshot && (
           <div className="sim-toolbar__metrics">
             <span className="sim-toolbar__metric sim-toolbar__metric--responses">
-              <strong>
+              <strong className="sim-num">
                 {formatSimulationNumber(snapshot.system.goodputRps)}
               </strong>{" "}
               {hasBackgroundDelivery ? "caller responses/s" : "completed/s"}
@@ -479,13 +593,16 @@ export function SimulationToolbar({
                 snapshot.system.errorRate > 0 ? " sim-text-danger" : ""
               }`}
             >
-              <strong>
+              <strong className="sim-num">
                 {formatSimulationPercent(snapshot.system.errorRate)}
               </strong>{" "}
               failed
             </span>
             <span className="sim-toolbar__clock sim-toolbar__metric">
-              {formatSimulationNumber(timeMs / 1000)} s simulated
+              <span className="sim-num">
+                {formatSimulationNumber(timeMs / 1000)}
+              </span>{" "}
+              s simulated
             </span>
           </div>
         )}
@@ -497,25 +614,20 @@ export function SimulationToolbar({
             Try a repair challenge
           </button>
         )}
+        <button
+          type="button"
+          className="sim-button sim-button--icon sim-toolbar__collapse"
+          onClick={() => toggleCollapsed(true)}
+          aria-label="Minimize simulation controls"
+          aria-expanded={true}
+          aria-controls={bodyId}
+          data-tooltip="Minimize controls"
+          data-tooltip-placement="bottom"
+        >
+          <MdExpandLess aria-hidden="true" size={19} />
+        </button>
       </div>
-      {(errors.length > 0 ||
-        status === "resource-limited" ||
-        status === "error" ||
-        slower) && (
-        <div className="sim-toolbar__notice">
-          <MdWarningAmber aria-hidden="true" size={16} />
-          <span>{simulationNotice(status, errors, achievedSpeed)}</span>
-          {onInspect && (
-            <button
-              type="button"
-              className="sim-text-button"
-              onClick={onInspect}
-            >
-              Details
-            </button>
-          )}
-        </div>
-      )}
+      {notice}
     </section>
   );
 }

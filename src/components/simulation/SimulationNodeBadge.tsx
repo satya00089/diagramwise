@@ -66,9 +66,10 @@ function getPressureDescription(
   queued: number,
   backlogLabel: string,
   utilization: number,
-): string {
-  if (backlogKind) return `${formatSimulationNumber(queued)} ${backlogLabel}`;
-  return `${formatSimulationPercent(utilization)} busy`;
+): { value: string; text: string } {
+  if (backlogKind)
+    return { value: formatSimulationNumber(queued), text: backlogLabel };
+  return { value: formatSimulationPercent(utilization), text: "busy" };
 }
 
 function getMeterPercent(
@@ -118,6 +119,12 @@ export const SimulationNodeBadge = memo(function SimulationNodeBadge({
     kind === "writebehind";
   const throughputLabel = getThroughputLabel(kind);
   const backlogLabel = getBacklogLabel(kind);
+  const pressure = getPressureDescription(
+    backlogKind,
+    stats?.queued ?? 0,
+    backlogLabel,
+    stats?.utilization ?? 0,
+  );
   const { style, customForeground } = getNodeBadgeAppearance(
     appearance ?? {},
     customBackground && !customText ? calculatedForeground : undefined,
@@ -139,21 +146,23 @@ export const SimulationNodeBadge = memo(function SimulationNodeBadge({
         <>
           <div className="sim-node-badge__metrics">
             <span title="Incoming requests per second">
-              {formatSimulationNumber(stats.arrivalRate)} in/s
+              <span className="sim-num sim-num--badge">
+                {formatSimulationNumber(stats.arrivalRate)}
+              </span>{" "}
+              in/s
             </span>
             <MdArrowForward aria-hidden="true" />
             <span title={getThroughputDescription(kind)}>
-              {formatSimulationNumber(stats.throughput)} {throughputLabel}
+              <span className="sim-num sim-num--badge">
+                {formatSimulationNumber(stats.throughput)}
+              </span>{" "}
+              {throughputLabel}
             </span>
           </div>
           <div className="sim-node-badge__pressure">
             <span>
-              {getPressureDescription(
-                backlogKind,
-                stats.queued,
-                backlogLabel,
-                stats.utilization,
-              )}
+              <span className="sim-num sim-num--badge">{pressure.value}</span>{" "}
+              {pressure.text}
             </span>
             {stats.instances !== undefined && (
               <span>
