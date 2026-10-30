@@ -75,7 +75,9 @@ const FeedbackDialog: React.FC<FeedbackDialogProps> = ({
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const [category, setCategory] = useState<FeedbackCategory>(
     initialOptions.category ??
-      (initialOptions.source === "assessment" ? "assessment" : "other"),
+      (initialOptions.source === "assessment"
+        ? "assessment"
+        : "feature_request"),
   );
   const [rating, setRating] = useState<number | undefined>();
   const [hoveredRating, setHoveredRating] = useState<number | undefined>();
