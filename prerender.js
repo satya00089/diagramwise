@@ -1378,6 +1378,8 @@ addRelatedProblemLinks(publicProblems);
 // Derive lastmod from the last commit that touched each route's source so the
 // sitemap reflects real changes. Falls back to the hard-coded date when git
 // history is unavailable (e.g. a shallow clone).
+// git is resolved through PATH; this only runs during the build and passes no
+// user input. If git is unavailable, lastmod falls back to the static dates.
 const lastCommitDates = new Map();
 function lastCommitDate(file) {
   if (!lastCommitDates.has(file)) {
