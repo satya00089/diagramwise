@@ -639,23 +639,21 @@ function renderAnswer(data) {
 function renderSections(sections = []) {
   if (!sections.length) return "";
 
-  const paragraphs = (items = []) =>
-    items.map((text) => `<p>${escapeHtml(text)}</p>`).join("");
+  const wrap = (name, html) => "<" + name + ">" + html + "</" + name + ">";
+  const textCells = (name, cells) =>
+    cells.map((cell) => wrap(name, escapeHtml(cell))).join("");
+  const paragraphs = (items = []) => textCells("p", items);
   const bullets = (items = []) =>
-    items.length
-      ? `<ul>${items.map((text) => `<li>${escapeHtml(text)}</li>`).join("")}</ul>`
-      : "";
-  const table = (spec) =>
-    spec
-      ? `<table><thead><tr>${spec.headers
-          .map((cell) => `<th>${escapeHtml(cell)}</th>`)
-          .join("")}</tr></thead><tbody>${spec.rows
-          .map(
-            (row) =>
-              `<tr>${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`,
-          )
-          .join("")}</tbody></table>`
-      : "";
+    items.length ? wrap("ul", textCells("li", items)) : "";
+  const table = (spec) => {
+    if (!spec) return "";
+    const head = wrap("thead", wrap("tr", textCells("th", spec.headers)));
+    const body = wrap(
+      "tbody",
+      spec.rows.map((row) => wrap("tr", textCells("td", row))).join(""),
+    );
+    return wrap("table", head + body);
+  };
 
   return sections
     .map(
@@ -670,14 +668,24 @@ function renderSections(sections = []) {
 function renderFaqs(faqs = []) {
   if (!faqs.length) return "";
 
+  const items = faqs.map((faq, index) => {
+    const open = index === 0 ? " open" : "";
+    const question = "<h3>" + escapeHtml(faq.q) + "</h3>";
+    const answer = "<p>" + escapeHtml(faq.a) + "</p>";
+    return (
+      "<details" +
+      open +
+      "><summary>" +
+      question +
+      "</summary>" +
+      answer +
+      "</details>"
+    );
+  });
+
   return `<section class="static-route-section static-route-faq" id="faq">
     <h2>Frequently asked questions</h2>
-    ${faqs
-      .map(
-        (faq, index) =>
-          `<details${index === 0 ? " open" : ""}><summary><h3>${escapeHtml(faq.q)}</h3></summary><p>${escapeHtml(faq.a)}</p></details>`,
-      )
-      .join("")}
+    ${items.join("")}
   </section>`;
 }
 

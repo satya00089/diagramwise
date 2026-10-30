@@ -176,11 +176,16 @@ const guides = {
   },
 } as const;
 
+interface GuideSectionTable {
+  headers: string[];
+  rows: string[][];
+}
+
 interface GuideSection {
   heading: string;
   paragraphs?: string[];
   bullets?: string[];
-  table?: { headers: string[]; rows: string[][] };
+  table?: GuideSectionTable;
   paragraphs_after?: string[];
 }
 
@@ -204,6 +209,29 @@ const generalFaq = [
     "Build the architecture yourself, state the reasoning, review specific weaknesses, and repeat challenges that exercise those weak areas.",
   ],
 ] as const;
+
+const GuideTable: React.FC<{ table: GuideSectionTable }> = ({ table }) => (
+  <div className="seo-guide-table">
+    <table>
+      <thead>
+        <tr>
+          {table.headers.map((cell) => (
+            <th key={cell}>{cell}</th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {table.rows.map((row) => (
+          <tr key={row.join("|")}>
+            {row.map((cell, cellIndex) => (
+              <td key={table.headers[cellIndex]}>{cell}</td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
 
 const SeoGuide: React.FC = () => {
   const { pathname } = useLocation();
@@ -369,28 +397,7 @@ const SeoGuide: React.FC = () => {
                       ))}
                     </ul>
                   )}
-                  {section.table && (
-                    <div className="seo-guide-table">
-                      <table>
-                        <thead>
-                          <tr>
-                            {section.table.headers.map((cell, cellIndex) => (
-                              <th key={cellIndex}>{cell}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {section.table.rows.map((row) => (
-                            <tr key={row.join("|")}>
-                              {row.map((cell, cellIndex) => (
-                                <td key={cellIndex}>{cell}</td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+                  {section.table && <GuideTable table={section.table} />}
                   {section.paragraphs_after?.map((text) => (
                     <p key={text}>{text}</p>
                   ))}
