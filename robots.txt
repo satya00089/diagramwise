@@ -8,5 +8,23 @@ Disallow: /api/
 Disallow: /__blobstorage__/
 Disallow: /admin
 
+# AI search and assistant crawlers are welcome on public pages.
+User-agent: OAI-SearchBot
+User-agent: GPTBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: CCBot
+User-agent: Bingbot
+Allow: /
+Disallow: /api/
+Disallow: /__blobstorage__/
+Disallow: /admin
+
 # Sitemap
 Sitemap: https://diagramwise.com/sitemap.xml
