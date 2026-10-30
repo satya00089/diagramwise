@@ -116,5 +116,23 @@ jobs:
           # deployment can still load its lazy chunks during the transition.
           npx --yes gh-pages -d dist -a -r "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
 
+      - name: Notify search engines (IndexNow)
+        # A failed ping must never fail a finished deployment.
+        continue-on-error: true
+        run: |
+          # Pages can take a few minutes to serve the new files; the key file
+          # must be live or IndexNow rejects the submission with 403.
+          key="267e1a51fb1142bf9b06dd23f530df11"
+          for attempt in $(seq 1 20); do
+            if curl -fsS "https://diagramwise.com/${key}.txt" | grep -q "$key"; then
+              node scripts/indexnow.mjs
+              exit 0
+            fi
+            echo "Key file not live yet (attempt $attempt), waiting..."
+            sleep 15
+          done
+          echo "Key file never became reachable; skipping IndexNow."
+          exit 1
+
       - name: Deployment complete
         run: echo "🚀 Deployment complete! Visit https://diagramwise.com"
