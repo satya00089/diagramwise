@@ -226,7 +226,6 @@ const SeoGuide: React.FC = () => {
   const faq: readonly (readonly [string, string])[] = copy
     ? copy.faqs.map(({ q, a }) => [q, a] as const)
     : generalFaq;
-  const organization = { "@id": `${SITE_URL}/#organization` };
 
   return (
     <>
@@ -249,8 +248,22 @@ const SeoGuide: React.FC = () => {
               image: "https://diagramwise.com/og/problems.png",
               inLanguage: "en",
               mainEntityOfPage: canonical,
-              author: { "@id": "https://next-zen.dev/#organization" },
-              publisher: organization,
+              author: {
+                "@type": "Organization",
+                "@id": "https://next-zen.dev/#organization",
+                name: "Next Zen",
+                url: "https://next-zen.dev/",
+              },
+              publisher: {
+                "@type": "Organization",
+                "@id": `${SITE_URL}/#organization`,
+                name: "Diagramwise",
+                url: `${SITE_URL}/`,
+                logo: {
+                  "@type": "ImageObject",
+                  url: `${SITE_URL}/logo.png`,
+                },
+              },
             },
             {
               "@type": "HowTo",

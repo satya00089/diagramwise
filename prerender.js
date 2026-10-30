@@ -725,7 +725,19 @@ function breadcrumbsFor(route, title) {
 }
 
 const organizationRef = { "@id": `${siteUrl}/#organization` };
-const nextZenRef = { "@id": "https://next-zen.dev/#organization" };
+const nextZenAuthor = {
+  "@type": "Organization",
+  "@id": "https://next-zen.dev/#organization",
+  name: "Next Zen",
+  url: "https://next-zen.dev/",
+};
+const diagramwisePublisher = {
+  "@type": "Organization",
+  "@id": `${siteUrl}/#organization`,
+  name: "Diagramwise",
+  url: `${siteUrl}/`,
+  logo: { "@type": "ImageObject", url: `${siteUrl}/logo.png` },
+};
 
 function routeStructuredData(route, data) {
   const graph = [
@@ -781,8 +793,8 @@ function routeStructuredData(route, data) {
       datePublished: data.published || data.lastmod,
       dateModified: data.lastmod,
       mainEntityOfPage: canonicalUrl(route),
-      author: nextZenRef,
-      publisher: organizationRef,
+      author: nextZenAuthor,
+      publisher: diagramwisePublisher,
     });
   }
 
