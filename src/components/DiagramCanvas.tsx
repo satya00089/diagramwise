@@ -6,7 +6,6 @@ import {
   type NodeTypes,
   type EdgeTypes,
   ReactFlow,
-  MiniMap,
   ConnectionMode,
   BackgroundVariant,
   Panel,
@@ -15,6 +14,7 @@ import StyledFlowControls from "./shared/StyledFlowControls";
 import CanvasInteractivityControl from "./CanvasInteractivityControl";
 import CanvasBackgroundLayer from "./CanvasBackgroundLayer";
 import FeedbackLauncher from "./FeedbackLauncher";
+import { CanvasInset } from "./CanvasInset";
 import type { CanvasBackground } from "../hooks/useCanvasBackground";
 
 type DiagramCanvasProps = {
@@ -35,6 +35,8 @@ type DiagramCanvasProps = {
   canvasActions?: React.ReactNode;
   /** Background pattern, or "none" to hide it. */
   backgroundVariant?: CanvasBackground;
+  /** While a simulation is open: its traffic, offered as a tab beside the minimap. */
+  simulationInset?: React.ReactNode;
   children?: React.ReactNode;
 };
 
@@ -55,6 +57,7 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
   onEdgeClick,
   canvasActions,
   backgroundVariant = BackgroundVariant.Dots,
+  simulationInset,
   children,
 }) => {
   return (
@@ -89,7 +92,7 @@ const DiagramCanvas: React.FC<DiagramCanvasProps> = ({
           fitView
           proOptions={{ hideAttribution: true }}
         >
-          <MiniMap nodeStrokeWidth={3} />
+          <CanvasInset traffic={simulationInset} />
           {/* Two columns in one bottom-left group: direct actions (zoom, fit, lock) on the left,
               dropdown actions (canvas, layout, canvases, background) on the right. */}
           <Panel

@@ -1384,9 +1384,20 @@ html:has(.systema-page[data-theme="dark"]) {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
 }
+.systema-value-grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 32px;
+}
 .systema-value-grid article {
   border-top: 1px solid var(--systema-line);
   padding-top: 14px;
+}
+.systema-value-link {
+  margin-top: 18px;
+}
+.systema-value-grid code {
+  font-size: 11px;
+  overflow-wrap: anywhere;
 }
 .systema-value-index {
   color: var(--systema-muted);

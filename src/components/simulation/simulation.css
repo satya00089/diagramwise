@@ -552,7 +552,9 @@ body.sim-island-dragging * {
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
 }
 .sim-back:hover {
   background: var(--bg-hover, rgba(255, 255, 255, 0.08));
@@ -1001,4 +1003,247 @@ body.sim-island-dragging * {
   .sim-edge__flow {
     animation: none;
   }
+}
+
+/* The canvas's bottom-right corner: the minimap, or the run's traffic.
+   The body is only as tall as the traffic content and the map fills that
+   same height, so neither tab carries empty space and switching tabs never
+   resizes the corner. The canvas is the priority, so every pixel here is
+   kept tight and the whole body can be folded away. */
+.canvas-inset {
+  width: 224px;
+  max-width: calc(100vw - 32px);
+  overflow: hidden;
+  border: 1px solid var(--border, #343434);
+  border-radius: 10px;
+  background: var(--surface, #151515);
+  box-shadow: 0 4px 24px #00000018;
+}
+.canvas-inset__body {
+  position: relative;
+  padding: 8px 10px;
+}
+.canvas-inset__layer--hidden {
+  visibility: hidden;
+}
+.canvas-inset .react-flow__panel.canvas-inset__map {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  margin: 0;
+  border: none;
+  box-shadow: none;
+}
+.canvas-inset__map svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.canvas-inset__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px 0 4px;
+  border-top: 1px solid var(--border, #343434);
+}
+.canvas-inset--collapsed .canvas-inset__bar {
+  border-top: none;
+}
+.canvas-inset__tabs {
+  display: flex;
+  gap: 2px;
+}
+.canvas-inset__tab {
+  padding: 4px 8px 3px;
+  border: none;
+  border-top: 2px solid transparent;
+  background: none;
+  color: var(--text-muted, #929292);
+  font: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+.canvas-inset__tab[aria-selected="true"] {
+  border-top-color: var(--accent, #4f8cff);
+  color: var(--text, #ececec);
+  font-weight: 600;
+}
+.canvas-inset--collapsed .canvas-inset__tab[aria-selected="true"] {
+  border-top-color: transparent;
+}
+.canvas-inset__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-muted, #929292);
+  cursor: pointer;
+}
+.canvas-inset__toggle:hover {
+  background: var(--bg-hover, #ffffff12);
+  color: var(--text, #ececec);
+}
+.canvas-inset__tab:focus-visible,
+.canvas-inset__toggle:focus-visible {
+  outline: 2px solid var(--accent, #4f8cff);
+  outline-offset: -2px;
+}
+
+/* Traffic over time: the pattern's plan against what was sent and completed. */
+.sim-traffic-panel {
+  --sim-neutral: var(--text-muted, #9b9b9b);
+  --sim-danger: #d54d58;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text, #ececec);
+  font-size: 10.5px;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+}
+:is(.dark, [data-theme="dark"]) .sim-traffic-panel {
+  --sim-danger: #ff939c;
+}
+.sim-traffic-panel p {
+  margin: 0;
+}
+.sim-traffic-panel__now {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sim-traffic-panel__now strong {
+  font-weight: 600;
+}
+.sim-traffic-panel__summary {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  color: var(--text-muted, #929292);
+}
+.sim-traffic-chart {
+  margin: 0;
+}
+.sim-traffic-chart__plot {
+  position: relative;
+}
+.sim-traffic-chart svg {
+  display: block;
+  width: 100%;
+  height: 48px;
+  overflow: visible;
+  cursor: crosshair;
+}
+.sim-traffic-chart path,
+.sim-traffic-chart line {
+  vector-effect: non-scaling-stroke;
+  fill: none;
+}
+.sim-traffic-chart__baseline {
+  stroke: var(--border, #343434);
+  stroke-width: 1;
+}
+.sim-traffic-chart__plan {
+  stroke: var(--sim-neutral);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+.sim-traffic-chart__sent {
+  stroke: var(--text, #ececec);
+  stroke-width: 1.5;
+  stroke-opacity: 0.7;
+}
+.sim-traffic-chart__completed {
+  stroke: var(--accent, #4f8cff);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.sim-traffic-chart path.sim-traffic-chart__gap {
+  fill: var(--sim-danger);
+  fill-opacity: 0.22;
+  stroke: none;
+}
+.sim-traffic-chart__now {
+  stroke: var(--text-muted, #929292);
+  stroke-width: 1;
+  stroke-dasharray: 2 2;
+}
+.sim-traffic-chart__crosshair {
+  stroke: var(--text, #ececec);
+  stroke-width: 1;
+  stroke-opacity: 0.5;
+}
+.sim-traffic-chart__tooltip {
+  position: absolute;
+  /* Below the plot: the inset clips anything drawn above its top edge. */
+  top: calc(100% + 4px);
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  border: 1px solid var(--border, #343434);
+  border-radius: 6px;
+  background: var(--surface, #151515);
+  color: var(--text, #ececec);
+  font-size: 11px;
+  width: max-content;
+  max-width: 200px;
+  pointer-events: none;
+  z-index: 2;
+}
+/* A fixed two-column grid with fixed-width numbers: nothing in the legend
+   changes size while a run updates its values. */
+.sim-traffic-chart__legend {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: 3px 10px;
+  margin-top: 3px;
+  color: var(--text-muted, #929292);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+.sim-traffic-chart__legend strong {
+  color: var(--text, #ececec);
+  font-weight: 600;
+}
+.sim-traffic-chart__value {
+  display: inline-block;
+  min-width: 4ch;
+  text-align: right;
+}
+.sim-traffic-chart__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.sim-traffic-chart__swatch {
+  display: inline-block;
+  width: 12px;
+  height: 0;
+  border-top: 2px solid var(--accent, #4f8cff);
+}
+.sim-traffic-chart__swatch--plan {
+  height: 2px;
+  border: none;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--sim-neutral) 0 3px,
+    transparent 3px 6px
+  );
+}
+.sim-traffic-chart__swatch--sent {
+  border-top-color: var(--text, #ececec);
+  opacity: 0.7;
+}
+.sim-traffic-chart__swatch--gap {
+  height: 8px;
+  border: none;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--sim-danger) 30%, transparent);
 }

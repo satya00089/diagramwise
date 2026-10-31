@@ -85,6 +85,25 @@ const bufferedKinds = new Set<NodeKind>([
   "retryqueue",
   "writebehind",
 ]);
+/* Stores an end-user client must not call directly: they speak a database
+   protocol, need credentials the client would expose, and would give every
+   user their own connection. Object storage is absent on purpose, because
+   pre-signed uploads and downloads are a real pattern, and so are queues. */
+const clientUnreachableKinds = new Set<NodeKind>([
+  "db",
+  "cache",
+  "replica",
+  "shard",
+  "searchindex",
+  "vectordb",
+  "graphdb",
+  "timeseriesdb",
+  "coldstorage",
+  "writebehind",
+]);
+/* Stores built to be reached from a client: Firestore through SDKs guarded by
+   security rules, and warehouses, which BI tools query directly. */
+const clientFacingStores = new Set(["gcp-firestore", "data-warehouse"]);
 const scalableKinds = new Set<NodeKind>([
   "service",
   "worker",
@@ -437,6 +456,7 @@ function compileEdge(
     return;
   }
   diagnoseEdgeMode(mode, source, target, edge.id, graph.diagnostics);
+  diagnoseDirectDataAccess(source, target, edge.id, graph);
   const validSettings = getValidEdgeSettings(settings);
   if (!validSettings) {
     graph.diagnostics.push({
@@ -503,6 +523,30 @@ function diagnoseEdgeMode(
         "Traffic sources and autoscalers cannot receive application requests. Mark response/documentation arrows as annotations.",
     });
   }
+}
+
+/**
+ * A client wired straight to a data store is a design error, not something
+ * the run should quietly make work: the request would succeed in the model
+ * while the real system would leak credentials and exhaust connections.
+ */
+function diagnoseDirectDataAccess(
+  source: SimNode,
+  target: SimNode,
+  edgeId: string,
+  graph: GraphCompilation,
+): void {
+  if (source.kind !== "client" || !clientUnreachableKinds.has(target.kind))
+    return;
+  if (clientFacingStores.has(graph.profiles[target.id]?.componentId ?? ""))
+    return;
+  graph.diagnostics.push({
+    severity: "error",
+    code: "client-to-datastore",
+    edgeId,
+    action: "fix-connection",
+    message: `${source.label} connects straight to ${target.label}. A browser or mobile app cannot safely hold its credentials, and every user would open their own connection. Route the request through an API or backend service.`,
+  });
 }
 
 function getValidEdgeSettings(

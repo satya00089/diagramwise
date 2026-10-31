@@ -8,6 +8,7 @@ import {
 } from "../components/simulation";
 import { MdDragIndicator } from "react-icons/md";
 import { useDraggableIsland } from "../components/simulation/useDraggableIsland";
+import { TrafficPanel } from "../components/simulation/TrafficPanel";
 import { simulationSession, useSimulationSession } from "./session";
 import type { EventRunArtifact } from "./protocol";
 import {
@@ -39,6 +40,18 @@ export function SimulationCanvasControls({
       onDemo={onDemo}
     />
   );
+}
+
+/**
+ * The open run's traffic, for the canvas inset. It subscribes to snapshots
+ * itself, so the page hosting the canvas re-renders only when a run opens or
+ * closes, not on every snapshot.
+ */
+export function SimulationTrafficInset() {
+  const snapshot = useSimulationSession((state) => state.snapshot);
+  const rps = useSimulationSession((state) => state.rps);
+  const pattern = useSimulationSession((state) => state.pattern);
+  return <TrafficPanel snapshot={snapshot} rps={rps} pattern={pattern} />;
 }
 
 function SimulationIsland({

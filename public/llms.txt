@@ -4,6 +4,11 @@
 
 Diagramwise is a product of Next Zen (https://next-zen.dev/), which also builds Learn Algo and Orchestrator.
 
+## Features
+
+- **Architecture simulator:** In Design Studio, select Simulate to run live traffic through a design. Set load up to 100,000 requests per second, choose a steady, ramp-up, burst or daily-cycle pattern, adjust playback speed, and watch each component's throughput, busy level and failures. Slow a component down or make it return errors to see where the design breaks, and compare runs.
+- **MCP server:** Diagramwise has a remote MCP (Model Context Protocol) server at https://mcp.diagramwise.com/mcp. Connect it as a custom connector in ChatGPT, Claude or Gemini Apps, sign in with a Diagramwise account, and the assistant can create and save architectures to that account. Setup steps are in the "AI connections" dialog on https://diagramwise.com/.
+
 ## Key pages
 
 - [Practice problems](https://diagramwise.com/problems/): System design, infrastructure, AI/ML and MLOps architecture problems with requirements and scale assumptions.

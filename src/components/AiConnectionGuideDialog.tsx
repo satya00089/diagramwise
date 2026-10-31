@@ -90,7 +90,7 @@ export default function AiConnectionGuideDialog({
     >
       <div className="systema-ai-dialog-content">
         <div className="systema-ai-dialog-topline">
-          <span>OPTIONAL CONNECTION</span>
+          <span>MCP CONNECTION · OPTIONAL</span>
           <button
             type="button"
             className="systema-ai-icon-button"
@@ -104,8 +104,9 @@ export default function AiConnectionGuideDialog({
           Connect Diagramwise to your AI assistant
         </h2>
         <p className="systema-ai-dialog-intro">
-          Create and refine architectures in Diagramwise from your AI workspace.
-          Choose the assistant you use below.
+          Diagramwise has an MCP server. Connect it to create and refine
+          architectures from your AI workspace. Choose the assistant you use
+          below.
         </p>
 
         <div

@@ -19,6 +19,11 @@ import {
   MdWarningAmber,
 } from "react-icons/md";
 import SelectDropdown from "../shared/SelectDropdown";
+import {
+  TRAFFIC_OPTIONS,
+  trafficPatternLabel,
+  trafficPatternSummary,
+} from "./trafficPatterns";
 import type { SimulationDiagnostic, SimulationStatus } from "./types";
 import { SIMULATION_STATUS_LABELS } from "./types";
 import {
@@ -27,13 +32,6 @@ import {
 } from "./presentation";
 import "./simulation.css";
 
-const TRAFFIC_OPTIONS: ReadonlyArray<{ value: TrafficPattern; label: string }> =
-  [
-    { value: "steady", label: "Steady" },
-    { value: "ramp", label: "Ramp up" },
-    { value: "spike", label: "Burst" },
-    { value: "diurnal", label: "Daily cycle" },
-  ];
 const TRAFFIC_LABELS = TRAFFIC_OPTIONS.map((option) => option.label);
 const PLAYBACK_OPTIONS: ReadonlyArray<{ value: number; label: string }> = [
   { value: 0.5, label: "0.5×" },
@@ -479,14 +477,15 @@ export function SimulationToolbar({
           </div>
         </div>
         <div className="sim-toolbar__control-group sim-toolbar__control-group--selectors">
-          <div className="sim-toolbar__select">
+          <div
+            className="sim-toolbar__select"
+            data-tooltip={trafficPatternSummary(pattern)}
+            data-tooltip-placement="bottom"
+          >
             <span>Traffic</span>
             <SelectDropdown
               id={`${id}-traffic`}
-              value={
-                TRAFFIC_OPTIONS.find((option) => option.value === pattern)
-                  ?.label ?? TRAFFIC_OPTIONS[0].label
-              }
+              value={trafficPatternLabel(pattern)}
               options={TRAFFIC_LABELS}
               aria-label="Traffic pattern"
               className="sim-toolbar__select-trigger sim-toolbar__select-trigger--traffic"

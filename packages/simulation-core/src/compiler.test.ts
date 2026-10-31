@@ -393,3 +393,89 @@ describe("compileGraph", () => {
     );
   });
 });
+
+describe("direct data access from a client", () => {
+  const node = (id: string, componentId: string, label: string) => ({
+    id,
+    data: { componentId, label },
+  });
+
+  it("refuses a web client wired straight to a database", () => {
+    const result = compileGraph({
+      nodes: [
+        node("web", "web-app", "Web Client"),
+        node("db", "database", "Postgres"),
+      ],
+      edges: [{ id: "web-db", source: "web", target: "db" }],
+    });
+    expect(result.topology).toBeNull();
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "client-to-datastore",
+        severity: "error",
+        edgeId: "web-db",
+        action: "fix-connection",
+        message: expect.stringContaining(
+          "Web Client connects straight to Postgres",
+        ),
+      }),
+    );
+  });
+
+  it("accepts the same store behind a backend service", () => {
+    const result = compileGraph({
+      nodes: [
+        node("web", "web-app", "Web Client"),
+        node("api", "backend-server", "API"),
+        node("db", "database", "Postgres"),
+      ],
+      edges: [
+        { id: "web-api", source: "web", target: "api" },
+        { id: "api-db", source: "api", target: "db" },
+      ],
+    });
+    expect(result.topology).not.toBeNull();
+    expect(result.diagnostics.map((item) => item.code)).not.toContain(
+      "client-to-datastore",
+    );
+  });
+
+  it.each([
+    ["object storage, for pre-signed transfers", "object-storage"],
+    ["a warehouse, which BI tools query directly", "data-warehouse"],
+  ])("allows a client to reach %s", (_, componentId) => {
+    const result = compileGraph({
+      nodes: [
+        node("web", "web-app", "Web Client"),
+        node("store", componentId, "Store"),
+      ],
+      edges: [{ id: "web-store", source: "web", target: "store" }],
+    });
+    expect(result.diagnostics.map((item) => item.code)).not.toContain(
+      "client-to-datastore",
+    );
+  });
+
+  it("leaves a documentation arrow to a database alone", () => {
+    const result = compileGraph({
+      nodes: [
+        node("web", "web-app", "Web Client"),
+        node("api", "backend-server", "API"),
+        node("db", "database", "Postgres"),
+      ],
+      edges: [
+        { id: "web-api", source: "web", target: "api" },
+        { id: "api-db", source: "api", target: "db" },
+        {
+          id: "web-db-note",
+          source: "web",
+          target: "db",
+          data: { simulation: { mode: "annotation" } },
+        },
+      ],
+    });
+    expect(result.diagnostics.map((item) => item.code)).not.toContain(
+      "client-to-datastore",
+    );
+  });
+});

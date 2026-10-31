@@ -194,8 +194,8 @@ export default function Landing3D() {
       />
       <Seo
         title="Diagramwise — System design. Understand every decision."
-        description="Practice system design on a visual canvas. Build an architecture, explain your trade-offs, review your assumptions, and improve your next iteration."
-        keywords="system design, system design practice, architecture diagram, software architecture, distributed systems, architecture trade-offs, system design interview"
+        description="Practice system design on a visual canvas. Build an architecture, simulate live traffic, explain your trade-offs, review your assumptions, and connect ChatGPT, Claude, or Gemini through the Diagramwise MCP server."
+        keywords="system design, system design practice, architecture diagram, software architecture, distributed systems, architecture trade-offs, system design interview, architecture simulator, traffic simulation, MCP server, Diagramwise MCP"
         image="https://diagramwise.com/og/home.png"
         imageAlt="Diagramwise system design walkthrough preview"
         url="https://diagramwise.com/"
@@ -683,6 +683,60 @@ export default function Landing3D() {
                 Draw labeled data flows and attach notes, metadata, and custom
                 fields to explain every important decision.
               </p>
+            </article>
+          </div>
+        </section>
+
+        <section
+          id="simulator-and-mcp"
+          className="systema-value systema-simulate systema-container"
+          aria-labelledby="systema-simulate-title"
+        >
+          <div className="systema-value-heading">
+            <span>SIMULATOR &amp; MCP</span>
+            <h2 id="systema-simulate-title">
+              Test the design.
+              <br />
+              <span>Bring your AI.</span>
+            </h2>
+          </div>
+          <div className="systema-value-grid systema-value-grid--two">
+            <article>
+              <span className="systema-value-index">01</span>
+              <h3>Architecture simulator</h3>
+              <p>
+                Run live traffic through your design. Set the load up to 100,000
+                requests per second, pick a steady, ramp-up, burst, or
+                daily-cycle pattern, and watch each component’s throughput, busy
+                level, and failures change in real time. Slow a component down
+                or make it return errors to see where the design breaks.
+              </p>
+              <Link
+                className="systema-text-link systema-value-link"
+                to="/playground/free"
+              >
+                Open Design Studio and select Simulate{" "}
+                <HiArrowUpRight aria-hidden="true" />
+              </Link>
+            </article>
+            <article>
+              <span className="systema-value-index">02</span>
+              <h3>Diagramwise MCP server</h3>
+              <p>
+                Connect ChatGPT, Claude, or Gemini to the Diagramwise MCP server
+                at <code>https://mcp.diagramwise.com/mcp</code>. Describe the
+                architecture you want and your assistant creates and saves it to
+                your Diagramwise account, ready to refine on the canvas.
+              </p>
+              <button
+                type="button"
+                className="systema-text-link systema-text-button systema-value-link"
+                aria-haspopup="dialog"
+                aria-controls="ai-connection-guide-dialog"
+                onClick={() => setShowAiConnectionGuide(true)}
+              >
+                Set up the MCP connection <HiArrowRight aria-hidden="true" />
+              </button>
             </article>
           </div>
         </section>
