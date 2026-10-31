@@ -310,6 +310,18 @@ function nodeProfile(
   diagnostics: SimulationDiagnostic[],
 ): CatalogProfile {
   let profile = resolveCatalogProfile(componentId);
+  if (settings.mode === "documentation" && settings.kind === undefined) {
+    // The component-level counterpart of an annotation arrow: it stays on the
+    // canvas but is not part of the request path, so a secrets manager or a
+    // policy box is neither simulated nor reported as unreachable. Choosing a
+    // behaviour model for it later is an explicit decision and wins.
+    return {
+      componentId,
+      classification: "structural",
+      assumption:
+        "Marked as documentation; it does not execute requests in the simulation.",
+    };
+  }
   if (settings.kind !== undefined) {
     if (isNodeKind(settings.kind)) {
       return {
@@ -539,6 +551,14 @@ function diagnoseDirectDataAccess(
   if (source.kind !== "client" || !clientUnreachableKinds.has(target.kind))
     return;
   if (clientFacingStores.has(graph.profiles[target.id]?.componentId ?? ""))
+    return;
+  // Only an end-user client is at fault. A backend job or service that an
+  // author deliberately models as where traffic starts is a simulation choice,
+  // and it may well talk to its own database.
+  if (
+    resolveCatalogProfile(graph.profiles[source.id]?.componentId ?? "").kind !==
+    "client"
+  )
     return;
   graph.diagnostics.push({
     severity: "error",

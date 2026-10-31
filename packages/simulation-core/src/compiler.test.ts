@@ -479,3 +479,128 @@ describe("direct data access from a client", () => {
     );
   });
 });
+
+describe("documentation-only components", () => {
+  const node = (id: string, componentId: string, simulation?: object) => ({
+    id,
+    data: { componentId, label: id, ...(simulation ? { simulation } : {}) },
+  });
+  const graph = (secretsSimulation?: object) => ({
+    nodes: [
+      node("web", "web-app"),
+      node("api", "backend-server"),
+      node("secrets", "secrets-manager", secretsSimulation),
+    ],
+    edges: [
+      { id: "web-api", source: "web", target: "api" },
+      { id: "secrets-api", source: "secrets", target: "api" },
+    ],
+  });
+
+  it("simulates an unmarked secrets manager as a generic service", () => {
+    const result = compileGraph(graph());
+    expect(result.topology?.nodes.map((n) => n.id)).toContain("secrets");
+  });
+
+  it("keeps a documentation component out of the run without any warning", () => {
+    const result = compileGraph(graph({ mode: "documentation" }));
+    expect(result.topology).not.toBeNull();
+    expect(result.topology?.nodes.map((n) => n.id)).not.toContain("secrets");
+    expect(result.topology?.edges.map((e) => e.id)).toEqual(["web-api"]);
+    expect(
+      result.diagnostics.filter((item) => item.severity !== "info"),
+    ).toEqual([]);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "documentation-connection",
+        edgeId: "secrets-api",
+      }),
+    );
+  });
+});
+
+describe("direct data access guard scope", () => {
+  const node = (id: string, componentId: string, simulation?: object) => ({
+    id,
+    data: { componentId, label: id, ...(simulation ? { simulation } : {}) },
+  });
+
+  it("does not fault a backend service that is modelled as where traffic starts", () => {
+    const result = compileGraph({
+      nodes: [
+        node("job", "backend-server", { kind: "client" }),
+        node("db", "database"),
+      ],
+      edges: [{ id: "job-db", source: "job", target: "db" }],
+    });
+    expect(result.diagnostics.map((item) => item.code)).not.toContain(
+      "client-to-datastore",
+    );
+  });
+
+  it("still faults an end-user client even when it is given an explicit client model", () => {
+    const result = compileGraph({
+      nodes: [
+        node("web", "web-app", { kind: "client" }),
+        node("db", "database"),
+      ],
+      edges: [{ id: "web-db", source: "web", target: "db" }],
+    });
+    expect(result.diagnostics.map((item) => item.code)).toContain(
+      "client-to-datastore",
+    );
+  });
+});
+
+describe("choosing a model for a documentation component", () => {
+  it("brings the component back into the run", () => {
+    const result = compileGraph({
+      nodes: [
+        { id: "web", data: { componentId: "web-app", label: "web" } },
+        { id: "api", data: { componentId: "backend-server", label: "api" } },
+        {
+          id: "audit",
+          data: {
+            componentId: "custom-component",
+            label: "audit",
+            simulation: { mode: "documentation", kind: "service" },
+          },
+        },
+      ],
+      edges: [
+        { id: "web-api", source: "web", target: "api" },
+        { id: "api-audit", source: "api", target: "audit" },
+      ],
+    });
+    expect(result.topology?.nodes.map((n) => n.id)).toContain("audit");
+    expect(result.topology?.edges.map((e) => e.id)).toContain("api-audit");
+  });
+});
+
+describe("a documentation component placed inline on a path", () => {
+  it("cuts the path and says so, instead of silently simulating nothing", () => {
+    const node = (id: string, componentId: string, simulation?: object) => ({
+      id,
+      data: { componentId, label: id, ...(simulation ? { simulation } : {}) },
+    });
+    const result = compileGraph({
+      nodes: [
+        node("web", "web-app"),
+        node("gate", "custom-component", { mode: "documentation" }),
+        node("api", "backend-server"),
+      ],
+      edges: [
+        { id: "web-gate", source: "web", target: "gate" },
+        { id: "gate-api", source: "gate", target: "api" },
+      ],
+    });
+    expect(result.topology).toBeNull();
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({
+        code: "disconnected-source",
+        severity: "error",
+        nodeId: "web",
+      }),
+    );
+  });
+});

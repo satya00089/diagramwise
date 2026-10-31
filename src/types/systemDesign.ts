@@ -279,6 +279,13 @@ export interface GuidedConnectionStep {
   connectionType: ConnectionType;
   label: string;
   description: string;
+  /**
+   * Extra settings for the edge, mirroring a component step's `data`. Only
+   * `simulation` is read: it lets a walkthrough mark a response or telemetry
+   * arrow as `{ mode: "annotation" }` so it documents the design without
+   * carrying simulated requests.
+   */
+  data?: Record<string, unknown>;
 }
 
 export interface GuidedDecisionAlternative {
