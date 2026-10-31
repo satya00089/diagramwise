@@ -76,6 +76,15 @@ describe("traffic patterns", () => {
     expect(held).toBeLessThan(BASELINE_RPS * 1.2);
   });
 
+  it("ramp starts arriving at once instead of waiting out its first gap", () => {
+    // The first gap is drawn when the rate is near zero, so it is seconds
+    // long; without re-reading the rate the ramp's opening stays empty.
+    // Expected over the first four seconds: 100 * 4^2 / (2 * 20) = 40.
+    const opening = arrivalsPerSecond("ramp", 4).reduce((a, b) => a + b, 0);
+    expect(opening).toBeGreaterThan(20);
+    expect(opening).toBeLessThan(65);
+  });
+
   it("spike is quiet, then bursts above the baseline", () => {
     const arrivals = arrivalsPerSecond("spike", PERIOD_S);
     const peak = Math.max(...arrivals);
@@ -116,5 +125,37 @@ describe("traffic patterns leave existing designs alone", () => {
       const b = arrivalsPerSecond(pattern, 15);
       expect(b).toEqual(a);
     }
+  });
+});
+
+describe("changing pattern mid-run", () => {
+  function runFor(engine: Engine, seconds: number): number {
+    const before = engine.snapshot().system.totalRequests;
+    for (let f = 0; f < seconds * 60; f += 1) engine.advance(1000 / 60);
+    return engine.snapshot().system.totalRequests - before;
+  }
+
+  it("starts the new pattern's cycle where it was chosen", () => {
+    const topology = clientTopology("steady");
+    const engine = new Engine(topology, 42);
+    runFor(engine, 30);
+    engine.updateNodeConfig(topology.nodes[0].id, { traffic: "ramp" });
+    expect(engine.snapshot().system.trafficStartMs).toBeCloseTo(30_000, 3);
+    // A ramp joined at second 30 of a 20 s cycle would already hold at the
+    // baseline (~300 in 3 s). Restarted, it climbs from zero: 100 * 9 / 40.
+    const opening = runFor(engine, 3);
+    expect(opening).toBeGreaterThan(8);
+    expect(opening).toBeLessThan(60);
+  });
+
+  it("keeps the cycle when only the rate changes", () => {
+    const topology = clientTopology("spike");
+    const engine = new Engine(topology, 42);
+    runFor(engine, 5);
+    engine.updateNodeConfig(topology.nodes[0].id, {
+      rps: 200,
+      traffic: "spike",
+    });
+    expect(engine.snapshot().system.trafficStartMs).toBe(0);
   });
 });

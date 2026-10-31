@@ -13,6 +13,8 @@ import type { ScenarioResult } from "@diagramwise/simulation-core/scenario";
 import { useAuth } from "../hooks/useAuth";
 import { useModalDialog } from "../hooks/useModalDialog";
 import { SimulationToolbar } from "../components/simulation/SimulationToolbar";
+import { TrafficPanel } from "../components/simulation/TrafficPanel";
+import { CanvasInset } from "../components/CanvasInset";
 import type { SimulationStatus } from "../components/simulation/types";
 import { buildChallengeNodes, buildChallengeEdges } from "./presentation";
 import type { WorkerResponse } from "../simulation/protocol";
@@ -507,6 +509,16 @@ function Workspace({ owner }: Readonly<{ owner: string }>) {
                 >
                   <Background />
                   <Controls showInteractive={false} />
+                  <CanvasInset
+                    map={false}
+                    traffic={
+                      <TrafficPanel
+                        snapshot={snapshot}
+                        rps={rps}
+                        pattern={pattern}
+                      />
+                    }
+                  />
                 </ReactFlow>
               </div>
             </section>

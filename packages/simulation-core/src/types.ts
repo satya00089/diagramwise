@@ -1211,6 +1211,11 @@ export interface SystemStats {
   p99: number;
   totalRequests: number;
   totalFailed: number;
+  /**
+   * Simulated ms at which the current traffic pattern began its cycle: 0 for
+   * a pattern set before the run, later for one changed mid-run.
+   */
+  trafficStartMs?: number;
 }
 
 /**

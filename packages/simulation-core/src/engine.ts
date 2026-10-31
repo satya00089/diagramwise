@@ -4,6 +4,7 @@ import { MinHeap, type Timed } from "./heap";
 import { Rng } from "./random";
 import { RollingLatencyHistogram } from "./histogram";
 import { DEFAULT_TRAFFIC_PERIOD_S } from "./types";
+import { trafficMultiplier } from "./traffic";
 import type {
   ActiveFailure,
   EdgeState,
@@ -43,17 +44,8 @@ const MAX_HOP_DEPTH = 32;
 const MAX_INSTANCES = 512;
 // Latency observations use a bounded histogram rather than strided samples.
 /** Trailing window for rate (per-second) measurements. */
-/* Traffic pattern shape. Chosen so a spike's MEAN over one cycle stays near
-   the baseline: the reader compares the same work arriving unevenly, not more
-   of it. 0.9 quiet at 0.1x plus 0.1 loud at 4x averages 0.49x, near enough
-   that the comparison is about burstiness rather than volume. */
-const SPIKE_QUIET_FRACTION = 0.9;
-const SPIKE_PEAK = 4;
-const SPIKE_TROUGH = 0.1;
-
-/* A day swings between a quarter of the baseline and twice it. */
-const DIURNAL_TROUGH = 0.25;
-const DIURNAL_PEAK = 2;
+/** Longest a patterned client holds one drawn gap before re-reading its rate. */
+const PATTERN_RECHECK_MS = 100;
 
 const RATE_WINDOW_MS = 1000;
 /** Number of buckets the rate window is split into. */
@@ -127,6 +119,8 @@ const EV_LINK_ARRIVE = 5;
 /** A timer owned by a behaviour for a request it held at admission. */
 const EV_BEHAVIOUR_WAKE = 6;
 const EV_CLOCK_TICK = 7;
+/** A patterned client re-draws its next gap at the current rate; no request. */
+const EV_ARRIVAL_RECHECK = 8;
 
 interface Ev extends Timed {
   time: number;
@@ -540,6 +534,13 @@ export class Engine implements BehaviourCtx {
    * rather than skip it, because a scale-up will have written a number there.
    */
   private authoredInstances = new Map<string, number | undefined>();
+  /**
+   * When each client's current traffic pattern began, in simulated ms. A
+   * pattern chosen mid-run starts its own cycle there -- a ramp from zero, a
+   * burst from its quiet phase -- instead of joining a cycle already under way.
+   */
+  private trafficStartMs = new Map<string, number>();
+  private lastTrafficStartMs = 0;
 
   constructor(topology: Topology, seed = 1) {
     this.seed = seed >>> 0;
@@ -601,6 +602,11 @@ export class Engine implements BehaviourCtx {
   }
 
   updateNodeConfig(id: string, patch: Partial<NodeConfig>): void {
+    const current = this.nodes.get(id)?.config.traffic ?? "steady";
+    if (patch.traffic !== undefined && patch.traffic !== current) {
+      this.trafficStartMs.set(id, this.now);
+      this.lastTrafficStartMs = this.now;
+    }
     const node = this.topology.nodes.find((n) => n.id === id);
     if (node) Object.assign(node.config, patch);
     // A scale value the student typed is a new authored value, so reset() should
@@ -830,6 +836,7 @@ export class Engine implements BehaviourCtx {
       latencySampleCount: this.sysLatency.sampleCount(now),
       pendingRequests:
         this.totalRequests - this.totalFailed - this.totalCompletedRoots,
+      trafficStartMs: this.lastTrafficStartMs,
     };
     const failRate = this.sysFailed.rate(now);
     const done = system.goodputRps + failRate;
@@ -1059,6 +1066,8 @@ export class Engine implements BehaviourCtx {
   reset(): void {
     this.rng = new Rng(this.seed);
     this.now = 0;
+    this.trafficStartMs.clear();
+    this.lastTrafficStartMs = 0;
     this.seq = 0;
     this.nextArrivalGeneration = 1;
     this.heap.clear();
@@ -1281,6 +1290,14 @@ export class Engine implements BehaviourCtx {
           this.onClientArrival(state);
         }
         break;
+      case EV_ARRIVAL_RECHECK:
+        if (
+          state.behaviour.generatesLoad &&
+          state.arrivalGeneration === ev.token
+        ) {
+          this.scheduleArrival(state.id);
+        }
+        break;
       case EV_SERVICE_DONE:
         if (ev.req?.token === ev.token) this.onServiceDone(state, ev.req);
         break;
@@ -1333,6 +1350,24 @@ export class Engine implements BehaviourCtx {
       return;
     }
     const gap = this.rng.exponential(1000 / rps);
+    // A patterned rate keeps moving under a pending arrival: a ramp drawing
+    // its first gap near zero would otherwise wait out a gap of many seconds
+    // while the rate climbs past it. Exponential gaps are memoryless, so
+    // discarding a gap longer than one step and re-drawing at the new rate is
+    // exact for a rate held over each step. Steady traffic never takes this
+    // path, so its runs replay unchanged.
+    const patterned =
+      state.config.traffic !== undefined && state.config.traffic !== "steady";
+    if (patterned && gap > PATTERN_RECHECK_MS) {
+      this.push(
+        this.now + PATTERN_RECHECK_MS,
+        EV_ARRIVAL_RECHECK,
+        nodeId,
+        null,
+        state.arrivalGeneration,
+      );
+      return;
+    }
     this.push(
       this.now + gap,
       EV_ARRIVAL,
@@ -2321,37 +2356,10 @@ export class Engine implements BehaviourCtx {
       return base;
 
     const periodS = state.config.trafficPeriodS ?? DEFAULT_TRAFFIC_PERIOD_S;
-    if (periodS <= 0 || Number.isNaN(periodS)) return base;
-
-    const t = (this.now / 1000) % periodS;
-    const phase = t / periodS;
-
-    switch (pattern) {
-      case "ramp":
-        // Climbs over the first cycle and holds. Past one period the reader
-        // is watching a system at full load, which is the point of a ramp:
-        // it is how you got there that differs, not where you end up.
-        return this.now / 1000 >= periodS ? base : base * phase;
-      case "spike":
-        // Quiet, then a burst in the last tenth of the cycle. The burst is
-        // 4x the baseline and the quiet is a tenth of it, so the MEAN over a
-        // cycle stays near the baseline: the reader is comparing the same
-        // amount of work arriving unevenly, not simply more work.
-        return phase >= SPIKE_QUIET_FRACTION
-          ? base * SPIKE_PEAK
-          : base * SPIKE_TROUGH;
-      case "diurnal": {
-        // A day as a cosine between a quarter of the baseline and twice it.
-        // Smooth because real daily traffic has no corners, and offset so a
-        // run starts in the small hours rather than mid-peak.
-        const swing = (1 - Math.cos(2 * Math.PI * phase)) / 2;
-        return (
-          base * (DIURNAL_TROUGH + (DIURNAL_PEAK - DIURNAL_TROUGH) * swing)
-        );
-      }
-      default:
-        return base;
-    }
+    const startMs = this.trafficStartMs.get(state.id) ?? 0;
+    return (
+      base * trafficMultiplier(pattern, (this.now - startMs) / 1000, periodS)
+    );
   }
 
   effectiveCapacity(state: NodeStateLike): number {

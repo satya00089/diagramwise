@@ -17,5 +17,13 @@ export type {
   RecordedSimulationCommand,
 } from "./runtime";
 export { defaultConfig, PRESETS } from "./presets";
+export {
+  DIURNAL_PEAK,
+  DIURNAL_TROUGH,
+  SPIKE_PEAK,
+  SPIKE_QUIET_FRACTION,
+  SPIKE_TROUGH,
+  trafficMultiplier,
+} from "./traffic";
 export * from "./types";
 export { LatencyHistogram, RollingLatencyHistogram } from "./histogram";

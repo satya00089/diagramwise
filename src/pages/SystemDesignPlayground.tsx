@@ -149,10 +149,11 @@ import InspectorPanel from "../components/InspectorPanel";
 import {
   SimulationCanvasControls,
   SimulationDetails,
+  SimulationTrafficInset,
 } from "../simulation/SimulationHost";
 import { NavIcon } from "../components/navIcons/NavIcon";
 import { useSimulationDocument } from "../simulation/canvas";
-import { simulationSession } from "../simulation/session";
+import { simulationSession, useSimulationSession } from "../simulation/session";
 import { challengeUrl } from "../challenges/model";
 import type { NodeKind } from "@diagramwise/simulation-core";
 
@@ -2887,6 +2888,7 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
     exerciseId: idFromUrl && idFromUrl !== "free" ? idFromUrl : null,
   };
   useSimulationDocument(simulationScope, nodes, edges);
+  const simulationVisible = useSimulationSession((state) => state.visible);
   const [isRepairDemoConfirmOpen, setIsRepairDemoConfirmOpen] = useState(false);
   const repairDemoDialogRef = useModalDialog(isRepairDemoConfirmOpen);
 
@@ -6104,6 +6106,9 @@ const SystemDesignPlayground: React.FC<SystemDesignPlaygroundProps> = () => {
             onMouseMove={handleCanvasMouseMove}
             onEdgeClick={handleEdgeClick}
             backgroundVariant={canvasBackground}
+            simulationInset={
+              simulationVisible ? <SimulationTrafficInset /> : null
+            }
             canvasActions={
               isSharedView ? null : (
                 <CanvasActionControls
