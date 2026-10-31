@@ -158,6 +158,103 @@ describe("walkthrough application and review serialization", () => {
     expect(broker?.kind).toBe("streambroker");
     expect(broker?.config.partitions).toBe(24);
   });
+  describe("connection simulation settings", () => {
+    const addComponent = (
+      nodeId: string,
+      componentType: string,
+      x: number,
+    ): GuidedStep => ({
+      id: `add-${nodeId}`,
+      stepNumber: 1,
+      phase: "core",
+      title: nodeId,
+      type: "add_component",
+      content: "",
+      component: {
+        nodeId,
+        componentType,
+        label: nodeId,
+        position: { x, y: 0 },
+        properties: {},
+        highlightReason: "",
+      },
+    });
+    const addConnection = (
+      edgeId: string,
+      sourceNodeId: string,
+      targetNodeId: string,
+      data?: Record<string, unknown>,
+    ): GuidedStep => ({
+      id: `connect-${edgeId}`,
+      stepNumber: 1,
+      phase: "core",
+      title: edgeId,
+      type: "add_connection",
+      content: "",
+      connection: {
+        edgeId,
+        sourceNodeId,
+        targetNodeId,
+        connectionType: "http",
+        label: edgeId,
+        description: "",
+        ...(data ? { data } : {}),
+      },
+    });
+    const build = (responseData?: Record<string, unknown>) =>
+      [
+        addComponent("web", "web-app", 0),
+        addComponent("api", "backend-server", 200),
+        addConnection("web-api", "web", "api"),
+        addConnection("api-web", "api", "web", responseData),
+      ].reduce((current, guided) => applyGuidedStep(current, guided), {
+        nodes: [],
+        edges: [],
+      } as Parameters<typeof applyGuidedStep>[0]);
+
+    it("carries a connection's simulation settings onto the edge", () => {
+      const canvas = build({ simulation: { mode: "annotation" } });
+      expect(canvas.edges.find((e) => e.id === "api-web")?.data).toMatchObject({
+        simulation: { mode: "annotation" },
+        label: "api-web",
+      });
+      expect(
+        canvas.edges.find((e) => e.id === "web-api")?.data,
+      ).not.toHaveProperty("simulation");
+    });
+
+    it("gives the edge its own copy of the walkthrough's settings", () => {
+      const data = { simulation: { mode: "annotation" } };
+      const copied = build(data).edges.find((e) => e.id === "api-web")?.data
+        ?.simulation;
+      expect(copied).toEqual(data.simulation);
+      expect(copied).not.toBe(data.simulation);
+    });
+
+    it("ignores a simulation setting that is not an object", () => {
+      for (const bad of ["annotation", ["annotation"], null, 7])
+        expect(
+          build({ simulation: bad }).edges.find((e) => e.id === "api-web")
+            ?.data,
+        ).not.toHaveProperty("simulation");
+    });
+
+    it("lets a response arrow into a traffic source be documentation only", () => {
+      const without = compileGraph(build());
+      expect(without.topology).toBeNull();
+      expect(without.diagnostics).toContainEqual(
+        expect.objectContaining({
+          code: "invalid-request-target",
+          edgeId: "api-web",
+        }),
+      );
+      const withMode = compileGraph(
+        build({ simulation: { mode: "annotation" } }),
+      );
+      expect(withMode.topology).not.toBeNull();
+      expect(withMode.topology?.edges.map((e) => e.id)).toEqual(["web-api"]);
+    });
+  });
   it.each([1, 42, 1337])(
     "delivers Kafka guide traffic to every direct consumer at seed %i",
     (seed) => {

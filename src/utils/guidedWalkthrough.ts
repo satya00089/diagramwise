@@ -75,6 +75,7 @@ export function applyGuidedStep(
       )
     )
       return canvas;
+    const simulation = connection.data?.simulation;
     return {
       ...canvas,
       edges: [
@@ -92,6 +93,11 @@ export function applyGuidedStep(
               purpose: connection.description,
               type: connection.connectionType,
               hasLabel: true,
+              ...(simulation &&
+              typeof simulation === "object" &&
+              !Array.isArray(simulation)
+                ? { simulation: { ...asRecord(simulation) } }
+                : {}),
             },
             step.id,
           ),
