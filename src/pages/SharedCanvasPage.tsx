@@ -17,6 +17,7 @@ import { componentProviderService } from "../services/componentProviderService";
 import CustomNode from "../components/Node";
 import ERNode from "../components/ERNode";
 import TableNode from "../components/TableNode";
+import DataModelNode from "../components/DataModelNode";
 import GroupNode from "../components/GroupNode";
 import FreeformNode from "../components/FreeformNode";
 import StyledFlowControls from "../components/shared/StyledFlowControls";
@@ -136,6 +137,13 @@ const ReadOnlyTableNode = (props: any) => (
     <TableNode {...props} onCopy={noop} isInGroup={false} />
   </ReadOnlyNodeShell>
 );
+const ReadOnlyDataModelNode = (
+  props: React.ComponentProps<typeof DataModelNode>,
+) => (
+  <ReadOnlyNodeShell>
+    <DataModelNode {...props} readOnly isInGroup={false} />
+  </ReadOnlyNodeShell>
+);
 const ReadOnlyFreeformNode = (props: any) => (
   <ReadOnlyNodeShell>
     <FreeformNode {...props} onCopy={noop} isInGroup={false} />
@@ -155,6 +163,7 @@ const NODE_TYPES = {
   custom: ReadOnlyCustomNode,
   erNode: ReadOnlyERNode,
   tableNode: ReadOnlyTableNode,
+  dataModelNode: ReadOnlyDataModelNode,
   freeform: ReadOnlyFreeformNode,
   group: ReadOnlyGroupNode,
 };

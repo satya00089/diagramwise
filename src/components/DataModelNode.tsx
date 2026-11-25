@@ -22,6 +22,7 @@ type Props = {
   data: DataModelNodeData;
   onCopy?: (id: string, data: DataModelNodeData) => void;
   isInGroup?: boolean;
+  readOnly?: boolean;
 };
 
 const getFieldIndent = (field: DataModelField) => {
@@ -37,7 +38,7 @@ const getFieldRole = (field: DataModelField) => {
 };
 
 const DataModelNode: React.FC<Props> = React.memo(
-  ({ id, data, onCopy, isInGroup }) => {
+  ({ id, data, onCopy, isInGroup, readOnly = false }) => {
     const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState({ name: "", type: "" });
     const [isHovered, setIsHovered] = useState(false);
@@ -125,24 +126,28 @@ const DataModelNode: React.FC<Props> = React.memo(
               id="top"
               type="source"
               position={Position.Top}
+              isConnectable={!readOnly}
               className="!w-full !h-2 !bg-transparent !border-0 !opacity-0"
             />
             <Handle
               id="right"
               type="source"
               position={Position.Right}
+              isConnectable={!readOnly}
               className="!w-2 !h-full !bg-transparent !border-0 !opacity-0"
             />
             <Handle
               id="bottom"
               type="source"
               position={Position.Bottom}
+              isConnectable={!readOnly}
               className="!w-full !h-2 !bg-transparent !border-0 !opacity-0"
             />
             <Handle
               id="left"
               type="source"
               position={Position.Left}
+              isConnectable={!readOnly}
               className="!w-2 !h-full !bg-transparent !border-0 !opacity-0"
             />
           </>
@@ -158,33 +163,37 @@ const DataModelNode: React.FC<Props> = React.memo(
               </div>
             )}
           </div>
-          <button
-            type="button"
-            className="nodrag p-1 rounded hover:bg-white/10"
-            aria-label={
-              isCollapsed ? "Expand data model" : "Collapse data model"
-            }
-            onClick={(event) => {
-              event.stopPropagation();
-              emit("diagram:table-collapse-toggle", { id });
-            }}
-          >
-            <MdExpandMore
-              size={18}
-              className={isCollapsed ? "-rotate-90" : ""}
-            />
-          </button>
-          <button
-            type="button"
-            className="nodrag p-1 rounded hover:bg-white/10"
-            aria-label="Open data model properties"
-            onClick={(event) => {
-              event.stopPropagation();
-              emit("diagram:node-toggle", { id });
-            }}
-          >
-            <MdSettings size={16} />
-          </button>
+          {!readOnly && (
+            <>
+              <button
+                type="button"
+                className="nodrag p-1 rounded hover:bg-white/10"
+                aria-label={
+                  isCollapsed ? "Expand data model" : "Collapse data model"
+                }
+                onClick={(event) => {
+                  event.stopPropagation();
+                  emit("diagram:table-collapse-toggle", { id });
+                }}
+              >
+                <MdExpandMore
+                  size={18}
+                  className={isCollapsed ? "-rotate-90" : ""}
+                />
+              </button>
+              <button
+                type="button"
+                className="nodrag p-1 rounded hover:bg-white/10"
+                aria-label="Open data model properties"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  emit("diagram:node-toggle", { id });
+                }}
+              >
+                <MdSettings size={16} />
+              </button>
+            </>
+          )}
           {isCollapsed && isDocumentModel && fields.length > 0 && (
             <div
               className="pointer-events-none absolute inset-0 z-20"
@@ -196,7 +205,8 @@ const DataModelNode: React.FC<Props> = React.memo(
                   fieldId={field.id}
                   label={field.name}
                   top="50%"
-                  showIcon={isHovered}
+                  showIcon={!readOnly && isHovered}
+                  isConnectable={!readOnly}
                 />
               ))}
             </div>
@@ -213,32 +223,51 @@ const DataModelNode: React.FC<Props> = React.memo(
             </div>
             {fields.length === 0 ? (
               <div className="px-3 py-4 text-xs text-muted">
-                Add a field to define this model.
+                {readOnly
+                  ? "No fields defined."
+                  : "Add a field to define this model."}
               </div>
             ) : (
               fields.map((field) => {
-                const isEditing = editingFieldId === field.id;
+                const isEditing = !readOnly && editingFieldId === field.id;
                 const indent = getFieldIndent(field);
+                const role =
+                  getFieldRole(field) || (field.required ? "Required" : "");
                 return (
                   <div
                     key={field.id}
                     className="group relative grid grid-cols-[22px_minmax(0,1fr)_minmax(90px,0.8fr)_72px] gap-2 items-center px-3 py-1.5 border-b border-theme/70 last:border-b-0"
-                    {...rowReordering.getRowProps(field.id)}
+                    {...(readOnly ? {} : rowReordering.getRowProps(field.id))}
                   >
-                    <button
-                      {...rowReordering.getHandleProps(field.id, field.name)}
-                    >
-                      <MdDragIndicator className="h-4 w-4" aria-hidden="true" />
-                    </button>
+                    {readOnly ? (
+                      <span aria-hidden="true" />
+                    ) : (
+                      <button
+                        {...rowReordering.getHandleProps(field.id, field.name)}
+                      >
+                        <MdDragIndicator
+                          className="h-4 w-4"
+                          aria-hidden="true"
+                        />
+                      </button>
+                    )}
                     {isDocumentModel && (
                       <FieldConnectionHandles
                         fieldId={field.id}
                         label={field.name}
                         top="50%"
-                        showIcon={isHovered}
+                        showIcon={!readOnly && isHovered}
+                        isConnectable={!readOnly}
                       />
                     )}
-                    {isEditing ? (
+                    {readOnly ? (
+                      <span
+                        className="min-w-0 truncate"
+                        style={{ paddingLeft: `${indent * 12}px` }}
+                      >
+                        {field.name}
+                      </span>
+                    ) : isEditing ? (
                       <input
                         className="nodrag min-w-0 w-full px-1 py-0.5 bg-surface border border-theme rounded text-xs"
                         value={editingValue.name}
@@ -292,36 +321,41 @@ const DataModelNode: React.FC<Props> = React.memo(
                     ) : (
                       <span className="truncate text-muted">{field.type}</span>
                     )}
-                    <div className="flex items-center justify-between gap-1 text-[10px] text-muted">
-                      <button
-                        type="button"
-                        className="nodrag truncate hover:text-theme"
-                        aria-label={`Toggle ${field.name} role`}
-                        onClick={() =>
-                          emit("diagram:data-model-field-toggle", {
-                            nodeId: id,
-                            fieldId: field.id,
-                            key: field.keyRole ? "keyRole" : "indexed",
-                          })
-                        }
-                      >
-                        {getFieldRole(field) ||
-                          (field.required ? "Required" : "")}
-                      </button>
-                      <button
-                        type="button"
-                        className="nodrag opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-700"
-                        aria-label={`Delete ${field.name}`}
-                        onClick={() =>
-                          emit("diagram:data-model-field-delete", {
-                            nodeId: id,
-                            fieldId: field.id,
-                          })
-                        }
-                      >
-                        <MdDelete size={13} />
-                      </button>
-                    </div>
+                    {readOnly ? (
+                      <span className="truncate text-[10px] text-muted">
+                        {role}
+                      </span>
+                    ) : (
+                      <div className="flex items-center justify-between gap-1 text-[10px] text-muted">
+                        <button
+                          type="button"
+                          className="nodrag truncate hover:text-theme"
+                          aria-label={`Toggle ${field.name} role`}
+                          onClick={() =>
+                            emit("diagram:data-model-field-toggle", {
+                              nodeId: id,
+                              fieldId: field.id,
+                              key: field.keyRole ? "keyRole" : "indexed",
+                            })
+                          }
+                        >
+                          {role}
+                        </button>
+                        <button
+                          type="button"
+                          className="nodrag opacity-0 group-hover:opacity-100 text-red-600 hover:text-red-700"
+                          aria-label={`Delete ${field.name}`}
+                          onClick={() =>
+                            emit("diagram:data-model-field-delete", {
+                              nodeId: id,
+                              fieldId: field.id,
+                            })
+                          }
+                        >
+                          <MdDelete size={13} />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })
@@ -329,44 +363,46 @@ const DataModelNode: React.FC<Props> = React.memo(
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-1 px-2 py-1 bg-[var(--bg-hover)] border-t border-theme nodrag">
-          <button
-            type="button"
-            className="p-1 text-muted hover:text-theme"
-            aria-label="Add data model field"
-            data-tooltip="Add field"
-            onClick={handleAddField}
-          >
-            <MdAdd size={14} />
-          </button>
-          <button
-            type="button"
-            className="p-1 text-muted hover:text-theme"
-            aria-label={`Duplicate ${actionLabel}`}
-            data-tooltip={`Duplicate ${actionLabel}`}
-            data-tooltip-placement="top"
-            onClick={(event) => {
-              event.stopPropagation();
-              onCopy?.(id, data);
-            }}
-          >
-            <IoDuplicateOutline size={14} />
-          </button>
-          <button
-            type="button"
-            className="p-1 text-muted transition-colors hover:!text-red-600 focus-visible:!text-red-600"
-            aria-label={`Double-click to delete ${actionLabel}`}
-            data-tooltip={`Double-click to delete ${actionLabel}`}
-            data-tooltip-placement="top"
-            onClick={(event) => event.stopPropagation()}
-            onDoubleClick={(event) => {
-              event.stopPropagation();
-              emit("diagram:node-delete", { id });
-            }}
-          >
-            <MdDelete size={14} className="transition-colors" />
-          </button>
-        </div>
+        {!readOnly && (
+          <div className="flex items-center justify-end gap-1 px-2 py-1 bg-[var(--bg-hover)] border-t border-theme nodrag">
+            <button
+              type="button"
+              className="p-1 text-muted hover:text-theme"
+              aria-label="Add data model field"
+              data-tooltip="Add field"
+              onClick={handleAddField}
+            >
+              <MdAdd size={14} />
+            </button>
+            <button
+              type="button"
+              className="p-1 text-muted hover:text-theme"
+              aria-label={`Duplicate ${actionLabel}`}
+              data-tooltip={`Duplicate ${actionLabel}`}
+              data-tooltip-placement="top"
+              onClick={(event) => {
+                event.stopPropagation();
+                onCopy?.(id, data);
+              }}
+            >
+              <IoDuplicateOutline size={14} />
+            </button>
+            <button
+              type="button"
+              className="p-1 text-muted transition-colors hover:!text-red-600 focus-visible:!text-red-600"
+              aria-label={`Double-click to delete ${actionLabel}`}
+              data-tooltip={`Double-click to delete ${actionLabel}`}
+              data-tooltip-placement="top"
+              onClick={(event) => event.stopPropagation()}
+              onDoubleClick={(event) => {
+                event.stopPropagation();
+                emit("diagram:node-delete", { id });
+              }}
+            >
+              <MdDelete size={14} className="transition-colors" />
+            </button>
+          </div>
+        )}
       </motion.div>
     );
   },

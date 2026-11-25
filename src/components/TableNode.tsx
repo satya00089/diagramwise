@@ -15,6 +15,7 @@ import {
 import { IoDuplicateOutline } from "react-icons/io5";
 import { FiUnlock } from "react-icons/fi";
 import { FieldConnectionHandles } from "./FieldConnectionHandles";
+import { COMPONENTS } from "../config/components";
 import { useReorderableRows } from "../hooks/useReorderableRows";
 import type { NodeRenderConfig, TableColumn } from "../types/canvas";
 import {
@@ -49,6 +50,10 @@ export type TableNodeData = {
   isCollapsed?: boolean;
   [key: string]: unknown;
 };
+
+const entityColumns = COMPONENTS.find(
+  (component) => component.id === "entity",
+)?.renderConfig?.columns;
 
 const getEntityRowHoverBackground = (
   backgroundColor: string,
@@ -232,8 +237,21 @@ const TableNode: React.FC<Props> = React.memo(
 
     // Get column configuration from renderConfig or use defaults
     const columns = React.useMemo<TableColumn[]>(() => {
-      if (data.renderConfig?.columns && data.renderConfig.columns.length > 0) {
-        return data.renderConfig.columns;
+      const configuredColumns = data.renderConfig?.columns?.length
+        ? data.renderConfig.columns
+        : isERTable
+          ? entityColumns
+          : undefined;
+      if (configuredColumns?.length) {
+        return configuredColumns.map((column) =>
+          column.key === "isNullable" && column.label === "NULL"
+            ? {
+                ...column,
+                label: "NOT NULL",
+                width: column.width === "w-8" ? "w-12" : column.width,
+              }
+            : column,
+        );
       }
       // Default columns for database table
       return [
@@ -255,7 +273,7 @@ const TableNode: React.FC<Props> = React.memo(
         },
         { key: "actions", label: "", width: "w-8", type: "readonly" },
       ];
-    }, [data.renderConfig]);
+    }, [data.renderConfig, isERTable]);
 
     const onDelete = useCallback(
       (e: React.MouseEvent) => {
